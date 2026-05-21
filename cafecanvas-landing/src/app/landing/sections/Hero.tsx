@@ -5,12 +5,12 @@ import Link from 'next/link';
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden pt-20 bg-gradient-to-b from-white via-orange-50/30 to-white">
+    <section className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden pt-20">
       {/* Background Animation */}
       <motion.div
-        className="absolute inset-0 z-0 pointer-events-none"
+        className="absolute inset-0 z-0"
         animate={{ rotate: 360 }}
-        transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
       >
         <div className="absolute top-20 left-10 w-72 h-72 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30" />
         <div className="absolute top-40 right-10 w-72 h-72 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30" />
@@ -23,12 +23,11 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight tracking-tight">
-            Your Restaurant <br className="hidden md:inline" />
-            <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Deserves Better</span>
+          <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+            Your Restaurant Deserves Better
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed">
             Stop juggling spreadsheets, lost orders, and missed customers.
             <br />
             <span className="text-orange-600 font-semibold">
@@ -42,11 +41,11 @@ export default function Hero() {
             transition={{ delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
           >
-            <Link href="/demo">
+            <Link href="/demo" className="inline-block">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-semibold text-lg hover:shadow-lg transition cursor-pointer"
+                className="w-full px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-semibold text-lg hover:shadow-lg transition cursor-pointer"
               >
                 ✨ See It In Action (Free Demo)
               </motion.button>
@@ -74,7 +73,7 @@ export default function Hero() {
           ].map((feature, i) => (
             <div
               key={i}
-              className="px-4 py-2 bg-white bg-opacity-70 backdrop-blur-md rounded-full text-gray-700 text-sm font-medium border border-orange-200 shadow-sm transition hover:border-orange-400 cursor-default"
+              className="px-4 py-2 bg-white bg-opacity-70 backdrop-blur rounded-full text-gray-700 text-sm font-medium border border-orange-200"
             >
               {feature}
             </div>
@@ -88,7 +87,7 @@ export default function Hero() {
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        <p className="text-gray-500 text-xs mb-2">Scroll to discover</p>
+        <p className="text-gray-600 text-sm mb-2">Scroll to discover</p>
         <svg className="w-6 h-6 text-orange-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
         </svg>

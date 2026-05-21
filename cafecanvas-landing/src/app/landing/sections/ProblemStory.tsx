@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 
 export default function ProblemStory() {
-  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
+  const { ref, inView } = useInView({ threshold: 0.3, triggerOnce: true });
 
   const problems = [
     {
@@ -40,7 +40,7 @@ export default function ProblemStory() {
   ];
 
   return (
-    <section ref={ref} className="py-24 px-4 bg-white relative">
+    <section ref={ref} className="py-20 px-4 bg-white">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -48,11 +48,11 @@ export default function ProblemStory() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 tracking-tight">
+          <h2 className="text-5xl font-bold text-gray-900 mb-6">
             Sound Like Your Restaurant?
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Every restaurant owner faces these problems. Most think it's &quot;just how restaurants work.&quot;
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Every restaurant owner faces these problems. Most think it's "just how restaurants work."
             <br />
             <span className="text-orange-600 font-semibold">It doesn't have to be.</span>
           </p>
@@ -65,40 +65,37 @@ export default function ProblemStory() {
               key={i}
               initial={{ opacity: 0, y: 20 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: i * 0.08, duration: 0.5 }}
-              whileHover={{ scale: 1.03, y: -5 }}
-              className="p-6 bg-gradient-to-br from-red-50/50 to-orange-50/50 border border-red-100 rounded-2xl shadow-sm hover:shadow-md transition duration-300"
+              transition={{ delay: i * 0.1 }}
+              whileHover={{ scale: 1.05, y: -5 }}
+              className="p-6 bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-xl"
             >
-              <div className="text-4xl mb-4">{problem.icon}</div>
+              <div className="text-4xl mb-3">{problem.icon}</div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">{problem.title}</h3>
-              <p className="text-gray-600 leading-relaxed">{problem.description}</p>
+              <p className="text-gray-700">{problem.description}</p>
             </motion.div>
           ))}
         </div>
 
         {/* Story Narrative */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={inView ? { opacity: 1, scale: 1 } : {}}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          className="mt-16 p-8 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-200 shadow-sm"
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.6 }}
+          className="mt-16 p-8 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border-2 border-orange-200"
         >
-          <div className="prose max-w-none text-gray-800 leading-relaxed">
-            <p className="text-lg">
-              <strong className="text-orange-800 text-xl block mb-2">Meet Raj.</strong> 
-              He owns a 30-seat restaurant in Mumbai. Yesterday, he lost ₹8,000 due to a billing error. The waiter forgot to add 3 dishes. This week, his best staff member quit because payroll was calculated wrong. He&apos;s thinking of closing down.
-            </p>
-            <div className="h-px bg-orange-200 my-4" />
-            <p className="text-lg">
-              <strong className="text-orange-800 text-xl block mb-2">He&apos;s not alone.</strong> 
-              60% of restaurant owners feel stuck in a cycle of manual operations. They work 16-hour days. They can&apos;t scale. They can&apos;t innovate.
-            </p>
-            <p className="mt-6 text-center">
-              <span className="text-orange-600 font-bold text-xl inline-block px-4 py-2 bg-white rounded-full border border-orange-200 shadow-sm animate-float">
-                But what if it didn&apos;t have to be this way?
-              </span>
-            </p>
-          </div>
+          <p className="text-lg text-gray-800 leading-relaxed">
+            <strong className="text-orange-700">Meet Raj.</strong> He owns a 30-seat restaurant in Mumbai.
+            Yesterday, he lost ₹8,000 due to a billing error. The waiter forgot to add 3 dishes.
+            This week, his best staff member quit because payroll was calculated wrong.
+            He's thinking of closing down.
+            <br /><br />
+            <strong className="text-orange-700">He's not alone.</strong> 60% of restaurant owners feel stuck in a cycle
+            of manual operations. They work 16-hour days. They can't scale. They can't innovate.
+            <br /><br />
+            <span className="text-orange-600 font-semibold text-lg">
+              But what if it didn't have to be this way?
+            </span>
+          </p>
         </motion.div>
       </div>
     </section>

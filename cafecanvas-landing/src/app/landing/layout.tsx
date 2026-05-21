@@ -1,9 +1,8 @@
-import type { Metadata } from 'next';
-import './styles/animations.css';
+import React from 'react';
 
-export const metadata: Metadata = {
-  title: 'CafeCanvas - Your Restaurant Deserves Better',
-  description: 'Stop juggling spreadsheets, lost orders, and missed customers. One software. Complete control. 10x efficiency.',
+export const metadata = {
+  title: 'CafeCanvas - Revolutionize Your Restaurant Management',
+  description: 'Say goodbye to order confusion, billing errors, and manual staff management. Complete control and 10x efficiency with CafeCanvas.',
 };
 
 export default function LandingLayout({
@@ -12,7 +11,7 @@ export default function LandingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-full overflow-x-hidden">
+    <div className="w-full min-h-screen font-sans text-gray-900 antialiased selection:bg-orange-500 selection:text-white">
       {children}
     </div>
   );
