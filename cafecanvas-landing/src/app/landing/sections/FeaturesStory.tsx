@@ -1,112 +1,94 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { useInView } from 'react-intersection-observer';
+import { motion } from "framer-motion";
+import { useInView } from "react-intersection-observer";
 
 export default function FeaturesStory() {
-  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
+  const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true });
 
   const features = [
     {
-      emoji: '🍽️',
-      title: 'QR-Based Table Ordering',
-      subtitle: 'Your Restaurant, Digitized',
-      story: 'Instead of waiter confusion:\n• Customer scans QR at table\n• Browses menu on phone\n• Orders directly\n• Kitchen gets instant alert\n• Bill auto-calculated\n\nNo paper. No mistakes. No waiting.',
-      benefits: ['Instant Orders', 'Zero Errors', 'Happy Customers'],
-      color: 'from-blue-50 to-blue-100',
-      borderColor: 'border-blue-300'
+      title: "Smart Billing",
+      desc: "Split bills instantly, customize tax codes (GST ready), handle multiple payment modes (UPI, Cash, Cards), and issue digital receipts.",
+      accent: "border-l-4 border-l-orange-500",
+      badge: "Fast Operations"
     },
     {
-      emoji: '💰',
-      title: 'Smart Billing System',
-      subtitle: 'Accuracy You Can Trust',
-      story: 'Every order is tracked perfectly:\n• GST calculated automatically\n• Discounts applied correctly\n• Payment methods recorded\n• Cash/Card/UPI/Wallet\n• Real-time reconciliation\n• Invoice printed/emailed instantly',
-      benefits: ['Zero Errors', 'GST Compliant', 'Auto Reconciliation'],
-      color: 'from-green-50 to-green-100',
-      borderColor: 'border-green-300'
+      title: "QR Table Ordering",
+      desc: "Allow customers to order directly from their tables. Reduce waiter overhead and double your order turnaround speeds.",
+      accent: "border-l-4 border-l-amber-500",
+      badge: "Self-Checkout"
     },
     {
-      emoji: '👥',
-      title: 'Staff Management Done Right',
-      subtitle: 'People Make the Restaurant',
-      story: 'Manage your team effortlessly:\n• Auto attendance tracking\n• Performance ratings\n• Instant payroll calculation\n• Staff shifts management\n• Role-based permissions\n• Real-time productivity metrics',
-      benefits: ['Happy Staff', 'Fair Pay', 'Zero Disputes'],
-      color: 'from-purple-50 to-purple-100',
-      borderColor: 'border-purple-300'
+      title: "Real-Time Analytics",
+      desc: "Track sales margins, peak performance hours, top-selling inventory items, and wait times in a unified dashboard.",
+      accent: "border-l-4 border-l-blue-500",
+      badge: "Insights"
     },
     {
-      emoji: '🎨',
-      title: '52+ Beautiful Themes',
-      subtitle: 'Brand Your Restaurant',
-      story: 'Make your restaurant stand out:\n• Pre-designed themes for every style\n• Customize colors, fonts, images\n• Dark mode for late-night customers\n• Mobile-responsive always\n• Change themes in one click\n• No coding needed',
-      benefits: ['Professional Look', 'Brand Identity', 'Customer WOW'],
-      color: 'from-pink-50 to-pink-100',
-      borderColor: 'border-pink-300'
+      title: "Inventory Control",
+      desc: "Recipe-level stock deduction, shrinkage checks, auto-reordering models, and purchase order tracking to maintain margins.",
+      accent: "border-l-4 border-l-emerald-500",
+      badge: "Margins"
     },
     {
-      emoji: '📊',
-      title: 'Real-Time Analytics',
-      subtitle: 'See Your Business Clearly',
-      story: 'Data that matters:\n• Top 10 dishes (by revenue)\n• Peak hours analysis\n• Customer preferences\n• Profit margins per item\n• Staff performance ranking\n• Forecast next month\'s trends',
-      benefits: ['Smart Decisions', 'Spot Trends', 'Increase Profits'],
-      color: 'from-yellow-50 to-yellow-100',
-      borderColor: 'border-yellow-300'
+      title: "Staff Management",
+      desc: "Monitor staff check-ins, configure role-based app logins, track individual waiter tip allocations, and coordinate payroll.",
+      accent: "border-l-4 border-l-indigo-500",
+      badge: "Team Core"
     },
     {
-      emoji: '📈',
-      title: 'Scale & Marketing Built-In',
-      subtitle: 'Grow Without Growing Chaos',
-      story: 'Built for growth from day one:\n• Email campaigns (targeted)\n• WhatsApp marketing\n• Loyalty program\n• Customer database\n• Repeat customer tracking\n• Promotional offers management',
-      benefits: ['Grow Revenue', 'Keep Customers', 'Own Your Data'],
-      color: 'from-orange-50 to-orange-100',
-      borderColor: 'border-orange-300'
+      title: "Multi-Outlet Control",
+      desc: "Coordinate menu changes, brand catalogs, master pricing, and stock transfers across multiple locations from one login.",
+      accent: "border-l-4 border-l-purple-500",
+      badge: "Scalable"
+    },
+    {
+      title: "Customer Loyalty",
+      desc: "Acquire user contacts securely, design customized discount tiers, and launch targeted promotional WhatsApp/Email models.",
+      accent: "border-l-4 border-l-rose-500",
+      badge: "CRM Tools"
+    },
+    {
+      title: "Operations Automation",
+      desc: "Trigger automatic KDS alerts on receipt confirmation. Connect online sales aggregators (Zomato/Swiggy) directly to POS.",
+      accent: "border-l-4 border-l-teal-500",
+      badge: "Auto Sync"
     }
   ];
 
   return (
-    <section ref={ref} className="py-20 px-4 bg-white">
-      <div className="max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          className="text-center mb-16"
-        >
-          <h2 className="text-5xl font-bold text-gray-900 mb-4">
-            Not Just Software. A Complete Solution.
+    <section ref={ref} className="py-24 bg-white text-gray-950 px-4 border-b border-gray-100">
+      <div className="max-w-7xl mx-auto space-y-16">
+        <div className="text-center space-y-4 max-w-2xl mx-auto">
+          <span className="text-xs font-bold text-orange-500 uppercase tracking-widest">
+            Core Features
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Everything Needed to Run Hospitality.
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Every feature is built around one goal: <strong>Make your restaurant run itself</strong>
+          <p className="text-gray-600 text-sm sm:text-base">
+            Powering billing operations, menu management, customer relationships, and supply chains for leading outlets.
           </p>
-        </motion.div>
+        </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 gap-8">
+        {/* Feature Cards Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: i * 0.1 }}
-              whileHover={{ scale: 1.02, y: -10 }}
-              className={`p-8 bg-gradient-to-br ${feature.color} border-2 ${feature.borderColor} rounded-2xl`}
+              transition={{ delay: i * 0.05, duration: 0.4 }}
+              whileHover={{ y: -4 }}
+              className={`p-6 bg-gray-50 hover:bg-white border border-gray-200 hover:border-gray-300 rounded-xl hover:shadow-md transition flex flex-col justify-between ${feature.accent}`}
             >
-              <div className="text-5xl mb-4">{feature.emoji}</div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-1">{feature.title}</h3>
-              <p className="text-orange-600 font-semibold mb-4">{feature.subtitle}</p>
-              
-              <p className="text-gray-800 whitespace-pre-line mb-6 leading-relaxed">
-                {feature.story}
-              </p>
-
-              <div className="flex flex-wrap gap-2">
-                {feature.benefits.map((benefit, j) => (
-                  <span
-                    key={j}
-                    className="px-3 py-1 bg-white bg-opacity-60 text-gray-700 rounded-full text-sm font-medium"
-                  >
-                    ✓ {benefit}
-                  </span>
-                ))}
+              <div className="space-y-4">
+                <span className="inline-block px-2.5 py-0.5 text-[10px] font-bold text-gray-500 bg-gray-100 rounded-full">
+                  {feature.badge}
+                </span>
+                <h3 className="font-extrabold text-gray-900 text-lg">{feature.title}</h3>
+                <p className="text-gray-500 text-xs leading-relaxed">{feature.desc}</p>
               </div>
             </motion.div>
           ))}

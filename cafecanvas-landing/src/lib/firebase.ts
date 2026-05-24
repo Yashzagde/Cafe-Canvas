@@ -1,5 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDawhnejQHUBecpSO9Xgbs2NnqOu0F17gw",
@@ -14,6 +16,9 @@ const firebaseConfig = {
 // Initialize Firebase (ensuring singleton usage during local hot reload)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
+const auth = getAuth(app);
+const db = getFirestore(app);
+
 // Initialize Analytics only in browser
 let analytics: any = null;
 if (typeof window !== "undefined") {
@@ -24,4 +29,5 @@ if (typeof window !== "undefined") {
   });
 }
 
-export { app, analytics };
+export { app, analytics, auth, db };
+
