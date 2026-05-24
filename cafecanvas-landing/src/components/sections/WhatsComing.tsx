@@ -2,6 +2,7 @@
 
 import React, { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import Link from "next/link";
 import {
   Paintbrush,
   Users,
@@ -170,13 +171,13 @@ export default function WhatsComing() {
 
           {/* Bottom CTA */}
           <motion.div variants={fadeInUp} className="text-center">
-            <a
-              href="#preregister"
+            <Link
+              href="/register"
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-green-600 hover:bg-green-500 text-white font-semibold text-sm rounded-full shadow-lg shadow-green-900/30 hover:-translate-y-1 transition-all duration-200 cursor-pointer"
             >
               Pre-register Now
               <span className="text-white/60">→</span>
-            </a>
+            </Link>
           </motion.div>
         </motion.div>
       </div>

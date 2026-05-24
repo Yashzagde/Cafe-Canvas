@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, ChevronDown } from "lucide-react";
 
 export default function HeroSection() {
@@ -82,13 +83,13 @@ export default function HeroSection() {
           transition={{ duration: 0.5, delay: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
           className="mt-10"
         >
-          <a
-            href="#preregister"
+          <Link
+            href="/register"
             className="inline-flex items-center gap-2 px-10 py-4 bg-green-600 hover:bg-green-500 text-white font-semibold text-base md:text-lg rounded-full shadow-2xl shadow-green-900/40 hover:shadow-green-800/50 hover:-translate-y-1 transition-all duration-200 cursor-pointer"
           >
             Pre-register Now — Be First to Go Live
             <ArrowRight className="w-5 h-5" />
-          </a>
+          </Link>
         </motion.div>
 
         {/* Micro trust line */}

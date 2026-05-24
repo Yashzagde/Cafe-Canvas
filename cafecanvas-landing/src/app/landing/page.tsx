@@ -6,7 +6,7 @@ import BrandSplash from "@/components/sections/BrandSplash";
 import HeroSection from "@/components/sections/Hero";
 import WhatsComing from "@/components/sections/WhatsComing";
 import FounderStory from "@/components/sections/FounderStory";
-import PreRegForm from "@/components/sections/PreRegForm";
+import FinalCTA from "@/components/sections/FinalCTA";
 import Footer from "@/components/layout/Footer";
 
 export default function LandingPage() {
@@ -34,8 +34,8 @@ export default function LandingPage() {
         {/* 03. Founder story — Photo + narrative */}
         <FounderStory />
 
-        {/* 04. Pre-registration form — The conversion anchor */}
-        <PreRegForm />
+        {/* 04. Final conversion CTA */}
+        <FinalCTA />
       </main>
 
       {/* 05. Footer — Minimal */}

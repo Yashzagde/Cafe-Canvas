@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export default function Navbar() {
@@ -31,13 +32,13 @@ export default function Navbar() {
         >
           <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-end">
             {/* Single CTA */}
-            <a
-              href="#preregister"
+            <Link
+              href="/register"
               className="px-5 py-2 bg-green-600 hover:bg-green-500 text-white rounded-full text-sm font-semibold transition-all duration-200 shadow-lg shadow-green-900/30 hover:shadow-green-800/40 hover:-translate-y-0.5 flex items-center gap-1.5 cursor-pointer"
             >
               Pre-register Now
               <ArrowRight className="w-3.5 h-3.5" />
-            </a>
+            </Link>
           </div>
         </motion.nav>
       )}
