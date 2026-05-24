@@ -140,8 +140,8 @@ export default function OnboardingPage() {
   const progressPercent = (step / stepsTotal) * 100;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-xl mx-auto">
         <div className="flex justify-center mb-4">
           <span className="text-2xl font-black text-gray-950">
             Cafe<span className="text-orange-500">Canvas</span>
@@ -176,8 +176,8 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
-        <div className="bg-white py-8 px-4 shadow-sm border border-gray-100 sm:rounded-xl sm:px-10">
+      <div className="mt-8 w-full max-w-xl mx-auto">
+        <div className="bg-white py-8 px-4 shadow-sm border border-gray-100 rounded-xl sm:px-10">
           {error && (
             <div className="mb-6 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-md">
               {error}
