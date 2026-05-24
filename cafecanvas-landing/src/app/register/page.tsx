@@ -18,9 +18,11 @@ import {
   Phone,
   Lock,
   AlertCircle,
-  MessageSquare
+  MessageSquare,
+  Compass
 } from "lucide-react";
 import CinematicBackground from "@/components/background/CinematicBackground";
+import LocationChooserModal from "@/components/ui/LocationChooserModal";
 
 const indianCities = [
   "Mumbai",
@@ -66,6 +68,9 @@ export default function RegisterPage() {
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [customCities, setCustomCities] = useState<string[]>([]);
 
   // Redirect if already authenticated and profile exists
   useEffect(() => {
@@ -102,6 +107,75 @@ export default function RegisterPage() {
   const isPasswordValid = hasMinLength && hasUppercase && hasNumber;
 
   const isFormValid = isNameValid && isEmailValid && isCityValid && isPhoneValid && isPasswordValid;
+
+  // Detect Current Location using Geolocation and OSM reverse geocoding API
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setFormError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setDetecting(true);
+    setFormError("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`
+          );
+          const data = await response.json();
+          
+          if (data && data.address) {
+            const detectedCity = data.address.city || data.address.town || data.address.village || data.address.state_district || "";
+            
+            // Check if detected city matches any in our list (case-insensitive)
+            const matchedCity = indianCities.find(
+              (c) => c.toLowerCase() === detectedCity.toLowerCase() || detectedCity.toLowerCase().includes(c.toLowerCase())
+            );
+
+            if (matchedCity) {
+              setCity(matchedCity);
+            } else {
+              setCity("Other");
+            }
+            setTouchedCity(true);
+          }
+        } catch (err) {
+          console.error("Reverse geocoding failed:", err);
+          setFormError("Could not retrieve location details from reverse-geocoder.");
+        } finally {
+          setDetecting(false);
+        }
+      },
+      (error) => {
+        console.warn("Geolocation error:", error);
+        setFormError("Unable to access location. Please select your city manually.");
+        setDetecting(false);
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+  };
+
+  const handleLocationConfirm = (details: { address: string; city: string; state?: string }) => {
+    const resolvedCity = details.city || details.address.split(",")[0].trim() || "Other";
+    const inPopular = indianCities.some(
+      (c) => c.toLowerCase() === resolvedCity.toLowerCase()
+    );
+
+    if (!inPopular && resolvedCity !== "Other" && resolvedCity !== "") {
+      setCustomCities((prev) => {
+        if (!prev.includes(resolvedCity)) {
+          return [...prev, resolvedCity];
+        }
+        return prev;
+      });
+    }
+
+    setCity(resolvedCity);
+    setTouchedCity(true);
+  };
 
   // Handles initial form submission: triggers OTP validation screen
   const handleRequestOtp = (e: React.FormEvent) => {
@@ -341,15 +415,18 @@ export default function RegisterPage() {
             {/* City & Phone Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-2 font-semibold">
                   <label htmlFor="city" className="block text-xs font-bold text-white/70 uppercase tracking-wider">
                     City
                   </label>
-                  {touchedCity && (
-                    <span className={`text-[10px] ${isCityValid ? "text-green-400" : "text-red-400"}`}>
-                      {isCityValid ? "✓" : "Required"}
-                    </span>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowLocationModal(true)}
+                    className="text-[9px] font-bold text-green-400 hover:text-green-300 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Compass className="w-3 h-3" />
+                    Choose on Map
+                  </button>
                 </div>
                 <div className="relative">
                   <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
@@ -363,6 +440,11 @@ export default function RegisterPage() {
                   >
                     <option value="" className="text-white/30">Select City</option>
                     {indianCities.map((c) => (
+                      <option key={c} value={c} className="bg-[#0A0F1C] text-white">
+                        {c}
+                      </option>
+                    ))}
+                    {customCities.map((c) => (
                       <option key={c} value={c} className="bg-[#0A0F1C] text-white">
                         {c}
                       </option>
@@ -563,6 +645,13 @@ export default function RegisterPage() {
           </div>
         )}
       </AnimatePresence>
+
+      <LocationChooserModal
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onConfirm={handleLocationConfirm}
+        initialCity={city}
+      />
     </div>
   );
 }

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, OnboardingDetails } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { Compass } from "lucide-react";
+import LocationChooserModal from "@/components/ui/LocationChooserModal";
 
 export default function OnboardingPage() {
   const { user, profile, loading, submitOnboarding } = useAuth();
@@ -12,6 +14,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -54,6 +57,18 @@ export default function OnboardingPage() {
     setFormData((prev) => ({
       ...prev,
       [name]: name === "outletsCount" || name === "staffSize" ? Number(value) : value,
+    }));
+  };
+
+  const handleLocationConfirm = (details: { address: string; city: string; state?: string }) => {
+    const cityStateVal = details.city && details.state 
+      ? `${details.city}, ${details.state}`
+      : details.city || details.state || "";
+
+    setFormData((prev) => ({
+      ...prev,
+      address: details.address,
+      cityState: cityStateVal
     }));
   };
 
@@ -371,9 +386,19 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="address" className="block text-sm font-semibold text-gray-800">
-                    Street Address
-                  </label>
+                  <div className="flex justify-between items-center">
+                    <label htmlFor="address" className="block text-sm font-semibold text-gray-800">
+                      Street Address
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowLocationModal(true)}
+                      className="text-xs font-semibold text-orange-500 hover:text-orange-600 flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Compass className="w-3.5 h-3.5" />
+                      Choose on Map
+                    </button>
+                  </div>
                   <input
                     type="text"
                     id="address"
@@ -430,6 +455,14 @@ export default function OnboardingPage() {
           </AnimatePresence>
         </div>
       </div>
+
+      <LocationChooserModal
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onConfirm={handleLocationConfirm}
+        initialAddress={formData.address}
+        initialCity={formData.cityState ? formData.cityState.split(",")[0].trim() : ""}
+      />
     </div>
   );
 }
