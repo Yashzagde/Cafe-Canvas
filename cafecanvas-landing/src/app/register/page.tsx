@@ -87,16 +87,7 @@ export default function RegisterPage() {
   const [sandboxMode, setSandboxMode] = useState(false);
   const [providerErrorDetails, setProviderErrorDetails] = useState("");
 
-  // Redirect if already authenticated and profile exists
-  useEffect(() => {
-    if (!loading && user && !showOtpModal && !success) {
-      if (profile && profile.onboarded) {
-        router.push("/dashboard");
-      } else {
-        router.push("/onboarding");
-      }
-    }
-  }, [user, profile, loading, router, showOtpModal, success]);
+
 
   // OTP Resend Countdown Timer
   useEffect(() => {
@@ -271,8 +262,8 @@ export default function RegisterPage() {
           }
           setSuccess(true);
           setTimeout(() => {
-            router.push("/onboarding");
-          }, 2500);
+            router.push("/");
+          }, 5000);
           setSubmitting(false);
           return;
         }
@@ -495,8 +486,8 @@ export default function RegisterPage() {
       setShowOtpModal(false);
       setSuccess(true);
       setTimeout(() => {
-        router.push("/onboarding");
-      }, 2500);
+        router.push("/");
+      }, 5000);
     } catch (err: any) {
       console.error(err);
       setOtpError(err.message || "OTP check failed. Please check the code and try again.");
@@ -537,9 +528,9 @@ export default function RegisterPage() {
             <div className="w-16 h-16 bg-green-500/10 border-2 border-green-500/30 rounded-full flex items-center justify-center mx-auto text-green-400">
               <Check className="w-8 h-8" strokeWidth={3} />
             </div>
-            <h3 className="text-xl font-bold text-white">Registration Complete</h3>
+            <h3 className="text-xl font-bold text-white">Pre-Registration Complete!</h3>
             <p className="text-sm text-white/60 max-w-xs mx-auto">
-              A verification link has been sent to your email. Redirecting you to onboarding...
+              Thank you for pre-registering. We have added you to our early access priority list. Redirecting to home...
             </p>
           </div>
         ) : (
