@@ -1,78 +1,59 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import Image from "next/image";
+import { Coffee } from "lucide-react";
+
+const socialLinks = [
+  { name: "Twitter / X", href: "#", icon: "𝕏" },
+  { name: "Instagram", href: "#", icon: "📷" },
+  { name: "LinkedIn", href: "#", icon: "💼" },
+  { name: "WhatsApp", href: "https://wa.me/918408060787", icon: "💬" },
+];
 
 export default function Footer() {
   return (
-    <footer className="relative bg-stone-100/40 backdrop-blur-xl pt-20 pb-10 border-t border-stone-200 shadow-inner">
-      <div className="max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 relative z-10">
-        <div className="col-span-1 md:col-span-2 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-stone-200">
-              <Image
-                src="/images/logo.jpg"
-                alt="CafeCanvas Brand Logo"
-                fill
-                className="object-cover"
-              />
+    <footer className="relative bg-[rgba(10,15,28,0.96)] border-t border-white/[0.06] py-12 z-10">
+      <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2">
+          <Coffee className="w-5 h-5 text-green-500" />
+          <span className="text-lg font-semibold text-white font-sans">
+            Cafe<span className="text-green-500">Canvas</span>
+          </span>
+        </div>
+
+        {/* Tagline */}
+        <p className="text-white/40 text-sm font-sans">
+          The Shopify for restaurants and cafes.
+        </p>
+
+        {/* Social Icons */}
+        <div className="flex items-center justify-center gap-3">
+          {socialLinks.map((link) => (
+            <a
+              key={link.name}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={link.name}
+              className="w-10 h-10 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-white/40 hover:text-white/90 hover:bg-white/[0.12] transition-all duration-200 text-sm"
+            >
+              {link.icon}
+            </a>
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-white/[0.05] pt-6 mt-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/30">
+            <p>© {new Date().getFullYear()} CafeCanvas · Made in India 🇮🇳</p>
+            <div className="flex gap-4">
+              <a href="#" className="hover:text-white/60 transition-colors">Privacy</a>
+              <a href="#" className="hover:text-white/60 transition-colors">Terms</a>
+              <a href="mailto:help@cafecanvas.bar" className="hover:text-white/60 transition-colors">Contact</a>
             </div>
-            <span className="text-xl font-bold tracking-tight text-stone-900 font-sans">
-              Cafe<span className="text-green-600">Canvas</span>
-            </span>
           </div>
-          <p className="text-stone-600 max-w-sm text-base font-light leading-relaxed">
-            The premium restaurant operating system built for modern hospitality brands. Take back control of your operations, menu, and customer lists.
-          </p>
         </div>
-
-        <div>
-          <h4 className="font-bold text-stone-900 mb-6 uppercase tracking-wider text-xs">Product</h4>
-          <ul className="space-y-4 text-stone-600 text-sm font-medium">
-            <li>
-              <a href="#platform" className="hover:text-green-650 transition-colors">POS Billing</a>
-            </li>
-            <li>
-              <a href="#platform" className="hover:text-green-655 transition-colors">QR Table Orders</a>
-            </li>
-            <li>
-              <a href="#platform" className="hover:text-green-650 transition-colors">Inventory Suite</a>
-            </li>
-            <li>
-              <a href="#platform" className="hover:text-green-650 transition-colors">Themes Catalog</a>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 className="font-bold text-stone-900 mb-6 uppercase tracking-wider text-xs">Contact & Info</h4>
-          <ul className="space-y-4 text-stone-600 text-sm font-medium">
-            <li>
-              <span className="block text-stone-500 text-[10px] uppercase font-bold tracking-widest">Support Line</span>
-              <a href="tel:+918408060787" className="hover:text-green-650 transition-colors">
-                +91 8408060787
-              </a>
-            </li>
-            <li>
-              <span className="block text-stone-500 text-[10px] uppercase font-bold tracking-widest">Email</span>
-              <a href="mailto:help@cafecanvas.bar" className="hover:text-orange-655 transition-colors">
-                help@cafecanvas.bar
-              </a>
-            </li>
-            <li>
-              <span className="block text-stone-500 text-[10px] uppercase font-bold tracking-widest">Web Link</span>
-              <a href="https://cafecanvas.bar" target="_blank" rel="noopener noreferrer" className="hover:text-green-650 transition-colors">
-                cafecanvas.bar
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center justify-between pt-8 border-t border-stone-200/60 text-xs text-stone-500 relative z-10">
-        <p>© {new Date().getFullYear()} CafeCanvas. Made in India. All rights reserved.</p>
-        <p className="mt-2 md:mt-0 font-medium text-stone-600">Built for Hospitality by Yash Zagade.</p>
       </div>
     </footer>
   );

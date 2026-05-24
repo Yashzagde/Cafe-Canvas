@@ -16,8 +16,8 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "CafeCanvas | Hospitality Operating System for Restaurants & Bars",
-  description: "CafeCanvas is the premium all-in-one hospitality operating system. Manage billing, real-time analytics, QR menus, inventory, and staff operations from one connected platform.",
+  title: "CafeCanvas | Coming Soon — The Shopify for Restaurants & Cafes",
+  description: "CafeCanvas is launching soon. Pre-register for early access to India's first zero-commission restaurant platform. Own your digital store, your customers, and your revenue.",
   keywords: ["hospitality os", "restaurant billing software", "cafe POS", "bar management", "QR table ordering", "hospitality analytics"],
   authors: [{ name: "Yash Zagade", url: "https://cafecanvas.bar" }]
 };
@@ -32,7 +32,7 @@ export default function RootLayout({
       lang="en"
       className={`${playfair.variable} ${dmSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#F8FAFC]">
+      <body className="min-h-full flex flex-col bg-[#0A0F1C]">
         <AuthProvider>
           {children}
         </AuthProvider>

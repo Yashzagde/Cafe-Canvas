@@ -47,8 +47,8 @@ export default function FinalCTA() {
               className="text-3xl sm:text-5xl md:text-6xl font-black text-stone-900 leading-tight font-serif max-w-4xl"
             >
               Your restaurant deserves better <br className="hidden sm:block" />
-              than a listing on someone else's platform.
-            </h2>
+              than a listing on someone else{"'"}s platform.
+            </motion.h2>
 
             {/* Subhead */}
             <motion.p

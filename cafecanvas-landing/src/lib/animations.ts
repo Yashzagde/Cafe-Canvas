@@ -55,5 +55,17 @@ export const slideRight: Variants = {
   }
 };
 
+export const slideLeft: Variants = {
+  hidden: { opacity: 0, x: -48 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.65,
+      ease: [0.25, 0.1, 0.25, 1]
+    }
+  }
+};
+
 // Alias for backward compatibility
 export const fadeInUp = fadeUp;

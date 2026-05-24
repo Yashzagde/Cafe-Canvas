@@ -1,71 +1,48 @@
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
+import CinematicBackground from "@/components/background/CinematicBackground";
+import BrandSplash from "@/components/sections/BrandSplash";
 import Navbar from "@/components/layout/Navbar";
-import Hero from "@/components/sections/Hero";
-import TrustBar from "@/components/sections/TrustBar";
-import ProblemSection from "@/components/sections/ProblemSection";
-import ValueProposition from "@/components/sections/ValueProposition";
-import HowItWorks from "@/components/sections/HowItWorks";
-import FeaturesGrid from "@/components/sections/FeaturesGrid";
-import ThemeShowcase from "@/components/sections/ThemeShowcase";
-import SocialProof from "@/components/sections/SocialProof";
-import RestaurantImage from "@/components/sections/RestaurantImage";
-import Testimonials from "@/components/sections/Testimonials";
+import HeroSection from "@/components/sections/Hero";
+import WhatsComing from "@/components/sections/WhatsComing";
 import FounderStory from "@/components/sections/FounderStory";
-import FAQ from "@/components/sections/FAQ";
-import FinalCTA from "@/components/sections/FinalCTA";
+import PreRegForm from "@/components/sections/PreRegForm";
 import Footer from "@/components/layout/Footer";
 
 export default function LandingPage() {
+  const [splashDone, setSplashDone] = useState(false);
+
+  const handleSplashComplete = useCallback(() => {
+    setSplashDone(true);
+  }, []);
+
   return (
-    <div className="min-h-screen text-stone-900 bg-stone-50/50 font-sans selection:bg-green-100 selection:text-green-800 overflow-x-hidden relative">
-      
-      {/* 1. Global Sticky Navigation */}
-      <Navbar />
+    <div className="min-h-screen text-white bg-[#0A0F1C] font-sans selection:bg-green-900/50 selection:text-green-200 overflow-x-hidden relative">
+      {/* Full-screen brand reveal splash — plays once */}
+      {!splashDone && <BrandSplash onComplete={handleSplashComplete} />}
+
+      {/* Fixed cinematic hospitality background */}
+      <CinematicBackground />
+
+      {/* Navbar appears after splash */}
+      {splashDone && <Navbar />}
 
       <main>
-        {/* 2. Hero Section with floating phones */}
-        <Hero />
+        {/* 01. Hero — Animated logo + headline + single CTA */}
+        <HeroSection />
 
-        {/* 3. Infinite Client Marquee */}
-        <TrustBar />
+        {/* 02. What's coming — Feature cards with CafeCanvas info */}
+        <WhatsComing />
 
-        {/* 4. Problem & Pain points */}
-        <ProblemSection />
-
-        {/* 5. Asymmetric value props */}
-        <ValueProposition />
-
-        {/* 6. Process Flow */}
-        <HowItWorks />
-
-        {/* 7. Bento grid features */}
-        <FeaturesGrid />
-
-        {/* 8. 52-Themes showcase slider */}
-        <ThemeShowcase />
-
-        {/* 9. Scroll Counters */}
-        <SocialProof />
-
-        {/* 10. Immersive banner banner */}
-        <RestaurantImage />
-
-        {/* 11. Customer feedback cards */}
-        <Testimonials />
-
-        {/* 12. Yash Zagade founder notes */}
+        {/* 03. Founder story — Photo + narrative */}
         <FounderStory />
 
-        {/* 13. Accordion accordion FAQ */}
-        <FAQ />
-
-        {/* 14. Conversion CTA block */}
-        <FinalCTA />
+        {/* 04. Pre-registration form — The conversion anchor */}
+        <PreRegForm />
       </main>
 
-      {/* 15. Standard brand footer links */}
+      {/* 05. Footer — Minimal */}
       <Footer />
     </div>
   );
