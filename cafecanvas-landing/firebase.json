@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "cafe-canvas-yash",
     "public": "out",
     "ignore": [
       "firebase.json",
