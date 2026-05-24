@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
 
@@ -20,6 +20,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const rtdb = getDatabase(app);
+const googleProvider = new GoogleAuthProvider();
 
 // Initialize Analytics only in browser
 let analytics: any = null;
@@ -31,5 +32,5 @@ if (typeof window !== "undefined") {
   });
 }
 
-export { app, analytics, auth, db, rtdb };
+export { app, analytics, auth, db, rtdb, googleProvider };
 

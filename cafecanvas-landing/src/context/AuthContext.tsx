@@ -5,13 +5,14 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
-  GoogleAuthProvider,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
   User as FirebaseUser,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, googleProvider } from "@/lib/firebase";
 
 export interface UserProfile {
   uid: string;
@@ -43,6 +44,7 @@ interface AuthContextType {
   signUpWithEmail: (email: string, password: string, plan: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (plan?: string) => Promise<void>;
+  loginWithGoogleRedirect: (plan?: string) => Promise<void>;
   logout: () => Promise<void>;
   submitOnboarding: (details: OnboardingDetails) => Promise<void>;
 }
@@ -83,6 +85,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Check if we have a redirect result when mounting
+    const handleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          const firebaseUser = result.user;
+          const savedPlan = typeof window !== "undefined" ? localStorage.getItem("pending_membership_plan") || "Starter" : "Starter";
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("pending_membership_plan");
+          }
+
+          const docRef = doc(db, "users", firebaseUser.uid);
+          const docSnap = await getDoc(docRef);
+
+          if (!docSnap.exists()) {
+            const newProfile: UserProfile = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName || null,
+              membershipPlan: savedPlan,
+              onboarded: false,
+              onboardingDetails: null,
+              createdAt: new Date().toISOString(),
+            };
+            await setDoc(docRef, newProfile);
+            setProfile(newProfile);
+          } else {
+            const existingData = docSnap.data();
+            if (savedPlan && existingData.membershipPlan !== savedPlan) {
+              await updateDoc(docRef, { membershipPlan: savedPlan });
+              setProfile({
+                ...existingData,
+                membershipPlan: savedPlan,
+              } as UserProfile);
+            } else {
+              setProfile(existingData as UserProfile);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error handling Google Sign-In redirect:", error);
+      }
+    };
+
+    handleRedirect();
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
@@ -133,8 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithGoogle = async (plan?: string) => {
     setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
+      const userCredential = await signInWithPopup(auth, googleProvider);
       const firebaseUser = userCredential.user;
 
       const docRef = doc(db, "users", firebaseUser.uid);
@@ -165,6 +212,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(existingData as UserProfile);
         }
       }
+    } catch (error: any) {
+      if (error && error.code === "auth/popup-blocked") {
+        console.warn("Google popup blocked. Falling back to redirect sign-in...");
+        await loginWithGoogleRedirect(plan);
+        return;
+      }
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  const loginWithGoogleRedirect = async (plan?: string) => {
+    setLoading(true);
+    try {
+      if (typeof window !== "undefined") {
+        if (plan) {
+          localStorage.setItem("pending_membership_plan", plan);
+        } else {
+          localStorage.removeItem("pending_membership_plan");
+        }
+      }
+      await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       setLoading(false);
       throw error;
@@ -218,6 +287,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUpWithEmail,
         loginWithEmail,
         loginWithGoogle,
+        loginWithGoogleRedirect,
         logout,
         submitOnboarding,
       }}
