@@ -24,46 +24,11 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center py-12 z-10">
       <div className="max-w-3xl mx-auto px-6 text-center">
-        {/* Animated CafeCanvas Logo Banner */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-          className="mx-auto mb-8 relative"
-        >
-          {/* Logo glow effect */}
-          <motion.div
-            className="absolute inset-0 -z-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.2, delay: 0.4 }}
-          >
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] bg-orange-500/10 rounded-full blur-[80px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] bg-green-500/8 rounded-full blur-[60px]" />
-          </motion.div>
-
-          {/* Logo Image */}
-          <motion.div
-            whileHover={{ scale: 1.03, rotate: -1 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="w-[220px] h-[220px] sm:w-[280px] sm:h-[280px] md:w-[320px] md:h-[320px] mx-auto relative"
-          >
-            <Image
-              src="/images/logo-banner.png"
-              alt="Cafe Canvas — Coffee · Creativity · Community"
-              fill
-              className="object-contain drop-shadow-2xl"
-              priority
-              sizes="(min-width: 768px) 320px, (min-width: 640px) 280px, 220px"
-            />
-          </motion.div>
-        </motion.div>
-
         {/* Coming-soon pill badge */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.6 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.08] border border-white/[0.12] text-xs font-medium text-white/70 tracking-widest uppercase mb-8"
         >
           <span className="text-green-400">✦</span>

@@ -1,7 +1,4 @@
-"use client";
-
 import React from "react";
-import { Coffee } from "lucide-react";
 
 const socialLinks = [
   { name: "Twitter / X", href: "#", icon: "𝕏" },
@@ -14,14 +11,6 @@ export default function Footer() {
   return (
     <footer className="relative bg-[rgba(10,15,28,0.96)] border-t border-white/[0.06] py-12 z-10">
       <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-2">
-          <Coffee className="w-5 h-5 text-green-500" />
-          <span className="text-lg font-semibold text-white font-sans">
-            Cafe<span className="text-green-500">Canvas</span>
-          </span>
-        </div>
-
         {/* Tagline */}
         <p className="text-white/40 text-sm font-sans">
           The Shopify for restaurants and cafes.
