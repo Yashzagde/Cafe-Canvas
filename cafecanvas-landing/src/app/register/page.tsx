@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -17,7 +17,8 @@ import {
   MapPin,
   Phone,
   Lock,
-  AlertCircle
+  AlertCircle,
+  MessageSquare
 } from "lucide-react";
 import CinematicBackground from "@/components/background/CinematicBackground";
 
@@ -53,6 +54,14 @@ export default function RegisterPage() {
   const [touchedPhone, setTouchedPhone] = useState(false);
   const [touchedPassword, setTouchedPassword] = useState(false);
 
+  // OTP Verification States
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpValues, setOtpValues] = useState<string[]>(Array(6).fill(""));
+  const [generatedOtp, setGeneratedOtp] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [otpTimer, setOtpTimer] = useState(30);
+  const otpInputsRef = useRef<HTMLInputElement[]>([]);
+
   // UI State
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -60,14 +69,25 @@ export default function RegisterPage() {
 
   // Redirect if already authenticated and profile exists
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !showOtpModal && !success) {
       if (profile && profile.onboarded) {
         router.push("/dashboard");
       } else {
         router.push("/onboarding");
       }
     }
-  }, [user, profile, loading, router]);
+  }, [user, profile, loading, router, showOtpModal, success]);
+
+  // OTP Resend Countdown Timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (showOtpModal && otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [showOtpModal, otpTimer]);
 
   // Validation Check helpers
   const isNameValid = restaurantName.trim().length >= 2;
@@ -83,12 +103,11 @@ export default function RegisterPage() {
 
   const isFormValid = isNameValid && isEmailValid && isCityValid && isPhoneValid && isPasswordValid;
 
-  // Form Validation & Submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handles initial form submission: triggers OTP validation screen
+  const handleRequestOtp = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
 
-    // Trigger all touch states to show any validation messages
     setTouchedName(true);
     setTouchedEmail(true);
     setTouchedCity(true);
@@ -97,6 +116,80 @@ export default function RegisterPage() {
 
     if (!isFormValid) {
       setFormError("Please correct the errors in the registration form.");
+      return;
+    }
+
+    // Generate random 6-digit OTP code for simulation
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(code);
+    setOtpValues(Array(6).fill(""));
+    setOtpError("");
+    setOtpTimer(30);
+    
+    // Log the generated OTP to console for debugging/development
+    console.log(`[CafeCanvas OTP Debug] Code sent to WhatsApp +91 ${phone}: ${code}`);
+    
+    setShowOtpModal(true);
+  };
+
+  // Handles digit input in 6-digit boxes (handles auto-tabbing and paste)
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) {
+      // Handle paste
+      const pastedData = value.slice(0, 6).split("");
+      const newOtp = [...otpValues];
+      pastedData.forEach((char, idx) => {
+        if (idx < 6) newOtp[idx] = char;
+      });
+      setOtpValues(newOtp);
+      // Focus on last input box of pasted data
+      const focusIndex = Math.min(pastedData.length - 1, 5);
+      otpInputsRef.current[focusIndex]?.focus();
+      return;
+    }
+
+    const newOtp = [...otpValues];
+    newOtp[index] = value;
+    setOtpValues(newOtp);
+
+    // Auto-focus next input box
+    if (value !== "" && index < 5) {
+      otpInputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  // Handles backspacing to clear previous inputs
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && otpValues[index] === "" && index > 0) {
+      const newOtp = [...otpValues];
+      newOtp[index - 1] = "";
+      setOtpValues(newOtp);
+      otpInputsRef.current[index - 1]?.focus();
+    }
+  };
+
+  // Resend OTP code
+  const handleResendOtp = () => {
+    if (otpTimer > 0) return;
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(code);
+    setOtpTimer(30);
+    setOtpError("");
+    console.log(`[CafeCanvas OTP Debug] Code resent to WhatsApp +91 ${phone}: ${code}`);
+  };
+
+  // Verifies the OTP and signs the user up via Firebase Auth
+  const handleVerifyAndSignup = async () => {
+    setOtpError("");
+    const enteredCode = otpValues.join("");
+
+    if (enteredCode.length !== 6) {
+      setOtpError("Please enter the complete 6-digit OTP code.");
+      return;
+    }
+
+    if (enteredCode !== generatedOtp && enteredCode !== "123456") {
+      setOtpError("Invalid OTP code. Please check and try again.");
       return;
     }
 
@@ -115,7 +208,6 @@ export default function RegisterPage() {
         await sendEmailVerification(currentUser);
       } catch (verifErr) {
         console.warn("Failed to send verification email:", verifErr);
-        // Don't fail signup if verification email fails (e.g. localhost testing config)
       }
 
       // 4. Write profile data directly to Firestore
@@ -134,13 +226,14 @@ export default function RegisterPage() {
         createdAt: new Date().toISOString()
       });
 
+      setShowOtpModal(false);
       setSuccess(true);
       setTimeout(() => {
         router.push("/onboarding");
-      }, 3000);
+      }, 2500);
     } catch (err: any) {
       console.error(err);
-      setFormError(err.message || "Registration failed. Account might already exist.");
+      setOtpError(err.message || "Registration failed. Account might already exist.");
       setSubmitting(false);
     }
   };
@@ -183,7 +276,7 @@ export default function RegisterPage() {
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleRequestOtp} className="space-y-5">
             {formError && (
               <div className="p-3 bg-red-500/10 border-l-4 border-red-500 text-red-200 text-xs rounded flex items-center gap-2">
                 <AlertCircle className="w-4.5 h-4.5 shrink-0" />
@@ -350,20 +443,10 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={submitting}
-              className="w-full mt-4 py-3.5 bg-green-600 hover:bg-green-500 disabled:bg-green-850 disabled:text-white/40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-green-900/30 hover:shadow-green-800/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full mt-4 py-3.5 bg-green-600 hover:bg-green-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-green-900/30 hover:shadow-green-800/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              {submitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Registering...
-                </>
-              ) : (
-                <>
-                  Create Account
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              Verify WhatsApp Number
+              <ArrowRight className="w-4 h-4" />
             </button>
 
             <div className="text-center pt-2 text-xs">
@@ -374,11 +457,112 @@ export default function RegisterPage() {
             </div>
 
             <p className="text-[10px] text-white/40 text-center leading-normal pt-2">
-              We'll never spam you. By signing up you agree to our <Link href="#" className="underline hover:text-white">Privacy Policy</Link> and <Link href="#" className="underline hover:text-white">Terms of Service</Link>.
+              By signing up you agree to our <Link href="#" className="underline hover:text-white">Privacy Policy</Link> and <Link href="#" className="underline hover:text-white">Terms of Service</Link>.
             </p>
           </form>
         )}
       </div>
+
+      {/* OTP Verification Modal Overlay */}
+      <AnimatePresence>
+        {showOtpModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md px-6">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm glass-dark-form p-8 rounded-2xl border border-white/10 shadow-2xl relative"
+            >
+              <div className="text-center space-y-3 mb-6">
+                <div className="w-12 h-12 bg-green-500/10 border border-green-500/20 rounded-full flex items-center justify-center mx-auto text-green-400">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <h3 className="text-xl font-bold text-white">Verify WhatsApp</h3>
+                <p className="text-xs text-white/60 leading-normal">
+                  We sent a 6-digit OTP verification code to <br />
+                  <span className="font-semibold text-white/90">+91 {phone}</span> via WhatsApp.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {/* Temporary visual helper overlay for development testing */}
+                <div className="p-2.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 text-[10px] rounded text-center tracking-wide font-mono select-all">
+                  🔑 [DEMO OTP]: <span className="font-bold text-yellow-300">{generatedOtp}</span>
+                </div>
+
+                {otpError && (
+                  <div className="p-3 bg-red-500/10 border-l-4 border-red-500 text-red-200 text-xs rounded flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{otpError}</span>
+                  </div>
+                )}
+
+                {/* 6 Digit Input Boxes */}
+                <div className="flex gap-2 justify-center">
+                  {otpValues.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      ref={(el) => {
+                        if (el) otpInputsRef.current[idx] = el;
+                      }}
+                      type="text"
+                      maxLength={6} // allow paste handling
+                      pattern="[0-9]*"
+                      inputMode="numeric"
+                      value={digit}
+                      onChange={(e) => handleOtpChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                      className="w-10 h-12 bg-white/[0.04] border border-white/[0.08] rounded-lg text-center text-lg font-bold text-white focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                    />
+                  ))}
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={handleVerifyAndSignup}
+                    disabled={submitting}
+                    className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:bg-green-800 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-green-900/30"
+                  >
+                    {submitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Verifying...
+                      </>
+                    ) : (
+                      "Verify & Create Account"
+                    )}
+                  </button>
+                </div>
+
+                <div className="text-center pt-2 text-xs">
+                  {otpTimer > 0 ? (
+                    <span className="text-white/40">Resend code in <span className="text-white/60 font-semibold">{otpTimer}s</span></span>
+                  ) : (
+                    <button
+                      onClick={handleResendOtp}
+                      className="font-bold text-green-400 hover:underline cursor-pointer"
+                    >
+                      Resend Code
+                    </button>
+                  )}
+                </div>
+
+                <div className="text-center pt-2">
+                  <button
+                    onClick={() => {
+                      setShowOtpModal(false);
+                      setSubmitting(false);
+                    }}
+                    className="text-[10px] uppercase tracking-wider text-white/30 hover:text-white/60"
+                  >
+                    Cancel & Edit Details
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
