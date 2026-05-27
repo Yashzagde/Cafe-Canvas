@@ -13,6 +13,10 @@ const server = http.createServer((req, res) => {
   if (themeMatch) {
     const num = themeMatch[1];
     urlPath = `/theme-${num}.html`;
+  } else if (urlPath === '/super-admin') {
+    urlPath = '/super-branches-admin.html';
+  } else if (urlPath === '/branch-admin') {
+    urlPath = '/branches-admin.html';
   }
 
   // Default to index.html for root
