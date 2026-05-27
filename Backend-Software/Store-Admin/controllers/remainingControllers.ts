@@ -93,7 +93,7 @@ export class MarketingController {
     try {
       const { code } = req.params;
       const data = await req.txQuery!(async (tx) => {
-        const list = await tx.select().from(coupons).where(eq(coupons.code, code)).limit(1);
+        const list = await tx.select().from(coupons).where(eq(coupons.code, code as string)).limit(1);
         if (list.length === 0) return { valid: false, reason: 'Coupon code not found' };
         
         const coupon = list[0];
@@ -162,7 +162,7 @@ export class CustomerController {
           .orderBy(desc(customers.createdAt));
 
         // Phone numbers masking logic (GDPR compliance)
-        return list.map(c => ({
+        return list.map((c: any) => ({
           ...c,
           phone: c.phone.substring(0, c.phone.length - 4) + 'XXXX'
         }));
@@ -175,10 +175,10 @@ export class CustomerController {
     try {
       const { id } = req.params;
       const data = await req.txQuery!(async (tx) => {
-        const profile = await tx.select().from(customers).where(eq(customers.id, id)).limit(1);
+        const profile = await tx.select().from(customers).where(eq(customers.id, id as string)).limit(1);
         if (profile.length === 0) return null;
 
-        const visits = await tx.select().from(customerVisits).where(eq(customerVisits.customerId, id));
+        const visits = await tx.select().from(customerVisits).where(eq(customerVisits.customerId, id as string));
         return { profile: profile[0], visits };
       });
       if (!data) return res.status(404).json({ success: false, error: 'Customer not found' });
@@ -305,7 +305,7 @@ export class TableController {
       const fields = req.body;
       const data = await req.txQuery!(async (tx) => {
         const [tbl] = await tx.update(tables).set({ ...fields, updatedAt: new Date() })
-          .where(eq(tables.id, id)).returning();
+          .where(eq(tables.id, id as string)).returning();
         return tbl;
       });
       res.json({ success: true, data });
@@ -318,11 +318,11 @@ export class TableController {
       const data = await req.txQuery!(async (tx) => {
         // Soft delete only if no active sessions
         const active = await tx.select().from(tableSessions)
-          .where(and(eq(tableSessions.tableId, id), isNull(tableSessions.checkOutAt))).limit(1);
+          .where(and(eq(tableSessions.tableId, id as string), isNull(tableSessions.checkOutAt))).limit(1);
 
         if (active.length > 0) throw new Error('Cannot delete a table with an active dining session');
 
-        const [tbl] = await tx.update(tables).set({ deletedAt: new Date() }).where(eq(tables.id, id)).returning();
+        const [tbl] = await tx.update(tables).set({ deletedAt: new Date() }).where(eq(tables.id, id as string)).returning();
         return tbl;
       });
       res.json({ success: true, data });

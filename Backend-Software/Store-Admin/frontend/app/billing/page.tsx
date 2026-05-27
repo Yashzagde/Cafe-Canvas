@@ -166,7 +166,7 @@ export default function BillingPage() {
             </div>
           ) : (
             <div className="flex items-center justify-center flex-1 h-64 text-neutral-500 text-xs font-bold text-center">
-              Select an occupied table<br>to generate checkout invoices.
+              Select an occupied table<br />to generate checkout invoices.
             </div>
           )}
         </div>

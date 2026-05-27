@@ -430,36 +430,36 @@ async function setupDatabase() {
     ];
 
     for (const tableName of tablesList) {
-      await sql.file('', { raw: `ALTER TABLE ${tableName} ENABLE ROW LEVEL SECURITY;` });
+      await sql.unsafe(`ALTER TABLE ${tableName} ENABLE ROW LEVEL SECURITY;`);
       
       // Clear legacy
       try {
-        await sql.file('', { raw: `DROP POLICY IF EXISTS "${tableName}_isolation_policy" ON ${tableName};` });
+        await sql.unsafe(`DROP POLICY IF EXISTS "${tableName}_isolation_policy" ON ${tableName};`);
       } catch (_) {}
 
       // Create new tenant isolation policies using Postgres session variables
       if (tableName === 'users') {
-        await sql.file('', { raw: `
+        await sql.unsafe(`
           CREATE POLICY "users_isolation_policy" ON users FOR ALL TO authenticated
           USING (
             tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
             OR NULLIF(current_setting('app.current_role', true), '') = 'PLATFORM_ADMIN'
           );
-        ` });
+        `);
       } else if (tableName === 'modifier_groups' || tableName === 'modifier_options') {
         // Child menu tables join on parent menu items
-        await sql.file('', { raw: `
+        await sql.unsafe(`
           CREATE POLICY "${tableName}_isolation_policy" ON ${tableName} FOR ALL TO authenticated
           USING (true);
-        ` });
+        `);
       } else if (tableName === 'order_items') {
         // Child order tables check parent orders
-        await sql.file('', { raw: `
+        await sql.unsafe(`
           CREATE POLICY "order_items_isolation_policy" ON order_items FOR ALL TO authenticated
           USING (true);
-        ` });
+        `);
       } else {
-        await sql.file('', { raw: `
+        await sql.unsafe(`
           CREATE POLICY "${tableName}_isolation_policy" ON ${tableName} FOR ALL TO authenticated
           USING (
             tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
@@ -469,7 +469,7 @@ async function setupDatabase() {
             tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
             OR NULLIF(current_setting('app.current_role', true), '') = 'PLATFORM_ADMIN'
           );
-        ` });
+        `);
       }
     }
 

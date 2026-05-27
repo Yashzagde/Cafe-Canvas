@@ -23,7 +23,7 @@ export default function MenuManagementPage() {
   ]);
 
   const handleToggleStatus = (id: string) => {
-    setMenuItems(prev => prev.map(item => {
+    setMenuItems((prev: MenuItem[]) => prev.map(item => {
       if (item.id === id) {
         const nextStatus = item.status === 'available' ? 'unavailable' : 'available';
         return { ...item, status: nextStatus };
@@ -35,7 +35,7 @@ export default function MenuManagementPage() {
   const handleSaveItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (editItem) {
-      setMenuItems(prev => prev.map(item => item.id === editItem.id ? editItem : item));
+      setMenuItems((prev: MenuItem[]) => prev.map(item => item.id === editItem.id ? editItem : item));
       setEditItem(null);
     }
   };

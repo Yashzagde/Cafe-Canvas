@@ -8,7 +8,7 @@ export default function DashboardPage() {
   const [discountStatus, setDiscountStatus] = useState<Record<string, string>>({});
 
   const handleApplyDiscount = (itemId: string, percentage: number) => {
-    setDiscountStatus(prev => ({ ...prev, [itemId]: `Applied ${percentage}% discount!` }));
+    setDiscountStatus((prev: Record<string, string>) => ({ ...prev, [itemId]: `Applied ${percentage}% discount!` }));
   };
 
   return (
@@ -23,7 +23,7 @@ export default function DashboardPage() {
         <div className="flex gap-3">
           <select 
             value={period} 
-            onChange={(e) => setPeriod(e.target.value as any)} 
+            onChange={(e: any) => setPeriod(e.target.value as any)} 
             className="glass-input px-4 py-2 text-xs font-semibold"
           >
             <option value="daily">Today (Daily)</option>
