@@ -6,7 +6,7 @@ const PORT = 3000;
 const PUBLIC_DIR = __dirname;
 
 const server = http.createServer((req, res) => {
-  let urlPath = req.url.split('?')[0];
+  let urlPath = (req.url || '/').split('?')[0];
 
   // Map Vercel rewrites: /themes01 -> /theme-01.html, /themes10 -> /theme-10.html, etc.
   const themeMatch = urlPath.match(/^\/themes(\d{2})$/);

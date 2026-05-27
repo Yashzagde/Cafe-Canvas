@@ -55,7 +55,8 @@ async function setup() {
 
     console.log('\n🎉 Setup completed successfully! Your landing page can now save data directly to Supabase.');
   } catch (err) {
-    console.error('❌ Setup failed:', err.message);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error('❌ Setup failed:', errMsg);
   } finally {
     await sql.end();
   }
