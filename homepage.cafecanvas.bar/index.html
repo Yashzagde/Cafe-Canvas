@@ -2934,44 +2934,102 @@ select.form-field option {
     strip.scrollLeft = scrollStart - walk;
   }, { passive: true });
 
-  // ── Form Validation ──
-  const form = document.getElementById('reg-form');
-  const successState = document.getElementById('success-state');
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // ── Pre-Registration Modal JavaScript & Supabase Integration ──
+  const SUPABASE_URL = window.SUPABASE_URL || 'https://nghtchxqsmbcgofpvjxc.supabase.co';
+  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 
-  // Select field colour handling
-  const selectField = document.getElementById('field-type');
-  selectField.addEventListener('change', () => {
-    if (selectField.value) {
-      selectField.classList.add('filled');
+  const preRegModal = document.getElementById('pre-reg-modal');
+  const triggerRegBtn = document.getElementById('trigger-reg-btn');
+  const closePreRegBtn = document.getElementById('close-pre-reg-modal');
+  const supaForm = document.getElementById('supabase-reg-form');
+  const supaSuccessState = document.getElementById('supa-success-state');
+  const registeredEmailSpan = document.getElementById('registered-email');
+
+  function openPreRegModal() {
+    preRegModal.classList.add('open');
+    document.body.style.overflow = 'hidden'; // Prevent background scroll
+  }
+
+  function closePreRegModal() {
+    preRegModal.classList.remove('open');
+    document.body.style.overflow = '';
+    // Reset form states
+    supaForm.style.display = 'block';
+    supaSuccessState.style.display = 'none';
+  }
+
+  if (triggerRegBtn) {
+    triggerRegBtn.addEventListener('click', openPreRegModal);
+  }
+
+  if (closePreRegBtn) {
+    closePreRegBtn.addEventListener('click', closePreRegModal);
+  }
+
+  preRegModal.addEventListener('click', (e) => {
+    if (e.target === preRegModal) {
+      closePreRegModal();
     }
   });
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    let valid = true;
+  // Handle Form Submission
+  if (supaForm) {
+    supaForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    const fields = [
-      { el: document.getElementById('field-name'), check: v => v.trim().length > 0 },
-      { el: document.getElementById('field-email'), check: v => emailRegex.test(v) },
-      { el: document.getElementById('field-city'), check: v => v.trim().length > 0 },
-      { el: document.getElementById('field-type'), check: v => v.length > 0 },
-    ];
+      const nameField = document.getElementById('supa-restaurant');
+      const emailField = document.getElementById('supa-email');
+      const submitBtn = supaForm.querySelector('button[type="submit"]');
 
-    fields.forEach(f => {
-      f.el.classList.remove('shake');
-      if (!f.check(f.el.value)) {
-        valid = false;
-        f.el.classList.add('shake');
-        setTimeout(() => f.el.classList.remove('shake'), 600);
+      const name = nameField.value.trim();
+      const email = emailField.value.trim();
+
+      if (!email) {
+        emailField.style.borderColor = 'red';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Submitting...';
+
+      try {
+        // Fallback check if anon key isn't provided yet
+        if (SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+          console.warn('Supabase Anon Key is not configured yet. Simulating successful submission.');
+          await new Promise(resolve => setTimeout(resolve, 800));
+        } else {
+          // Initialize supabase client dynamically from CDN
+          if (typeof supabase !== 'undefined') {
+            const { createClient } = supabase;
+            const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const { error } = await client
+              .from('pre_registrations')
+              .insert([{ email: email, restaurant_name: name }]);
+            
+            if (error) throw error;
+          } else {
+            throw new Error('Supabase SDK not loaded.');
+          }
+        }
+
+        // Show Success state
+        registeredEmailSpan.innerText = email;
+        supaForm.style.display = 'none';
+        supaSuccessState.style.display = 'block';
+        
+        // Clear fields
+        nameField.value = '';
+        emailField.value = '';
+
+      } catch (err) {
+        console.error('Error submitting registration:', err);
+        alert('Could not submit pre-registration: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Submit Pre-Registration →';
       }
     });
-
-    if (valid) {
-      form.style.display = 'none';
-      successState.classList.add('show');
-    }
-  });
+  }
 
   // ── Theme Preview Modal JavaScript ──
   const themeModal = document.getElementById('theme-modal');
@@ -3263,6 +3321,38 @@ select.form-field option {
   </div>
 </div>
 
+<!-- Pre-Registration Modal HTML -->
+<div id="pre-reg-modal" class="modal-overlay">
+  <div class="modal-content glass-dark" style="max-width: 450px; height: auto; border: 1px solid rgba(255,255,255,0.15); padding: 40px; box-sizing: border-box; background: rgba(26,18,10,0.95);">
+    <div class="modal-header-nav" style="margin-bottom: 24px; border-bottom: none; padding-bottom: 0; background: transparent; backdrop-filter: none; display: flex; justify-content: space-between; align-items: flex-start; padding: 0;">
+      <div class="modal-title-area">
+        <span class="modal-title-name" style="font-family: 'Cormorant Garamond', serif; font-size: 32px; color: #FAF0E6; display: block; margin-bottom: 4px;">Pre-Register</span>
+        <span class="modal-title-desc" style="color: #C9A84C; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; display: block;">Claim your 21-day free trial</span>
+      </div>
+      <button class="modal-close-btn" id="close-pre-reg-modal" style="color: #FAF0E6; font-size: 32px; background: none; border: none; cursor: pointer; padding: 0; line-height: 1; opacity: 0.7; transition: opacity 0.2s;">&times;</button>
+    </div>
+    
+    <form id="supabase-reg-form" novalidate style="display: block;">
+      <div style="margin-bottom: 16px;">
+        <input type="text" class="form-field" id="supa-restaurant" placeholder="Restaurant or café name" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(201,168,76,0.2); color: #FAF0E6; padding: 14px 20px; border-radius: 8px; width: 100%; font-size: 15px; box-sizing: border-box; outline: none; transition: border-color 0.3s;" required>
+      </div>
+      <div style="margin-bottom: 24px;">
+        <input type="email" class="form-field" id="supa-email" placeholder="your@email.com" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(201,168,76,0.2); color: #FAF0E6; padding: 14px 20px; border-radius: 8px; width: 100%; font-size: 15px; box-sizing: border-box; outline: none; transition: border-color 0.3s;" required>
+      </div>
+      <button type="submit" class="submit-btn" style="width: 100%; padding: 16px; font-weight: 600; border-radius: 30px; background: linear-gradient(135deg, #C9A84C, #A8873A); color: #1C1208; border: none; cursor: pointer; font-size: 15px; transition: all 0.3s;">Submit Pre-Registration &rarr;</button>
+    </form>
+    
+    <div class="success-state" id="supa-success-state" style="display: none; text-align: center; padding: 20px 0;">
+      <div class="success-check" style="margin: 0 auto 20px; width: 64px; height: 64px; border: 2px solid #C9A84C; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <svg viewBox="0 0 28 28" fill="none" style="width: 32px; height: 32px;"><path d="M6 14l6 6 10-10" stroke="#C9A84C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 28px; color: #FAF0E6; margin-bottom: 12px;">You're on the founding list!</h3>
+      <p style="color: #A08C75; font-size: 15px; line-height: 1.6; margin: 0;">Your 21-day free trial has been reserved. We will contact you at <strong id="registered-email" style="color:#C9A84C"></strong> prior to public launch.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
 </html>
