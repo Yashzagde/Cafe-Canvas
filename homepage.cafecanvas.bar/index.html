@@ -1221,6 +1221,8 @@ p {
 #themes {
   background: #F8F2E8;
   padding: 120px 24px;
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
 }
 #themes .section-centered { margin-bottom: 48px; }
 .theme-subtext {
@@ -1526,7 +1528,9 @@ p {
    CTA / PRE-REGISTER
    ═══════════════════════════════════════ */
 #cta {
-  background-image: url('https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=1920&q=85&fm=webp');
+  background-image: url('https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=1920&q=80&fm=webp');
+  content-visibility: auto;
+  contain-intrinsic-size: 600px;
 }
 #cta::before {
   background: linear-gradient(
@@ -2945,9 +2949,28 @@ select.form-field option {
   const supaSuccessState = document.getElementById('supa-success-state');
   const registeredEmailSpan = document.getElementById('registered-email');
 
+  let supabaseLoaded = false;
+  async function loadSupabaseSDK() {
+    if (supabaseLoaded || typeof supabase !== 'undefined') return;
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      script.onload = () => {
+        supabaseLoaded = true;
+        resolve();
+      };
+      script.onerror = () => {
+        console.error('Failed to load Supabase SDK');
+        resolve();
+      };
+      document.body.appendChild(script);
+    });
+  }
+
   function openPreRegModal() {
     preRegModal.classList.add('open');
     document.body.style.overflow = 'hidden'; // Prevent background scroll
+    loadSupabaseSDK(); // Load SDK asynchronously in the background
   }
 
   function closePreRegModal() {
@@ -2998,7 +3021,8 @@ select.form-field option {
           console.warn('Supabase Anon Key is not configured yet. Simulating successful submission.');
           await new Promise(resolve => setTimeout(resolve, 800));
         } else {
-          // Initialize supabase client dynamically from CDN
+          // Initialize supabase client dynamically from CDN (ensure SDK is loaded)
+          await loadSupabaseSDK();
           if (typeof supabase !== 'undefined') {
             const { createClient } = supabase;
             const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -3352,7 +3376,6 @@ select.form-field option {
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
 </html>
