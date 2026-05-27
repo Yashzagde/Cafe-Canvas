@@ -1,5 +1,4 @@
 {
-  "cleanUrls": true,
   "rewrites": [
     { "source": "/themes01", "destination": "/theme-01.html" },
     { "source": "/themes02", "destination": "/theme-02.html" },
