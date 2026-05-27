@@ -1,730 +1,1359 @@
+<!-- theme-02.html — CAFE CANVAS THEME · Liquid Glass Basic · Bloom Café -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LUME — Liquid Glass Basic Menu</title>
+  <title>Bloom Café — Liquid Glass Basic Menu</title>
+  
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
   <style>
-    /* Reset & Base */
+    /* ═══════════════════════════════════════
+       RESET & BASE DESIGN SYSTEM
+       ═══════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
     body {
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Inter', sans-serif;
       font-weight: 300;
+      font-size: 15px;
+      line-height: 1.6;
       color: #1A1A2E;
       background: #F8F9FA;
       overflow-x: hidden;
-      line-height: 1.6;
       min-height: 100vh;
+      padding-bottom: 80px;
     }
     a { text-decoration: none; color: inherit; }
-    button { cursor: pointer; border: none; background: none; font-family: inherit; }
-
-    /* Immersive Background */
-    .bg-glow-container {
+    button { cursor: pointer; border: none; background: none; font-family: inherit; transition: all 0.3s cubic-bezier(0.23,1,0.32,1); }
+    
+    /* ═══════════════════════════════════════
+       SECTION A - FIXED TOP NAVIGATION
+       ═══════════════════════════════════════ */
+    #top-nav {
       position: fixed;
-      inset: 0;
-      z-index: -1;
-      background: linear-gradient(160deg, #F8F9FA, #FFF5ED, #FFE8D6);
-      overflow: hidden;
-    }
-    .frosted-shape {
-      position: absolute;
-      top: 30%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 600px;
-      height: 300px;
-      border-radius: 40px;
-      background: rgba(255, 255, 255, 0.4);
-      filter: blur(40px);
-    }
-
-    /* Layout & Styling */
-    .menu-container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 40px 24px 100px;
-    }
-
-    /* Header */
-    header {
+      top: 0; left: 0; right: 0;
+      height: 64px;
+      z-index: 100;
+      padding: 0 24px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding-bottom: 24px;
-      border-bottom: 1px solid rgba(255, 107, 53, 0.15);
-      margin-bottom: 40px;
+      justify-content: space-between;
+      transition: all 0.4s cubic-bezier(0.23,1,0.32,1);
+      border-bottom: 1px solid rgba(0,0,0,0.04);
     }
-    .back-home {
+    #top-nav.scrolled {
+      background: rgba(253,250,245,0.88);
+      backdrop-filter: blur(20px) saturate(140%);
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      border-bottom: 1px solid rgba(255,107,53,0.15);
+    }
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .back-link {
       font-size: 13px;
-      font-weight: 500;
-      color: #FF6B35;
+      color: #6B7280;
+      font-weight: 400;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .back-link:hover { color: #FF6B35; }
+    .restaurant-name {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #1A1A2E;
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .table-id {
+      font-size: 13px;
+      color: #6B7280;
       display: flex;
       align-items: center;
       gap: 6px;
-      transition: color 0.3s;
     }
-    .back-home:hover { color: #1A1A2E; }
-    .restaurant-logo {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 32px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      color: #FF6B35;
-    }
-
-    /* Hero */
-    .menu-hero {
-      text-align: center;
-      margin-bottom: 48px;
-    }
-    .menu-hero h1 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 48px;
-      font-weight: 400;
-      color: #1A1A2E;
-      margin-bottom: 12px;
-    }
-    .menu-hero p {
-      font-size: 15px;
-      color: #4E4E6A;
-      max-width: 600px;
-      margin: 0 auto;
-      font-style: italic;
-    }
-
-    /* Category Filter Strip */
-    .category-strip {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 40px;
-      overflow-x: auto;
-      padding-bottom: 10px;
-      scrollbar-width: none;
-    }
-    .category-strip::-webkit-scrollbar { display: none; }
-    .category-btn {
-      font-size: 13px;
-      font-weight: 500;
-      color: #1A1A2E;
-      border: 1px solid rgba(255, 107, 53, 0.2);
-      background: rgba(255, 255, 255, 0.3);
-      padding: 8px 20px;
-      border-radius: 30px;
-      transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-    }
-    .category-btn:hover, .category-btn.active {
+    .table-dot {
+      width: 7px; height: 7px;
       background: #FF6B35;
-      color: #FFFFFF;
-      border-color: #FF6B35;
-      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.25);
+      border-radius: 50%;
     }
-
-    /* Menu Items Grid */
-    .menu-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 30px;
-    }
-    .menu-card {
-      background: rgba(255, 255, 255, 0.5);
-      border: 1px solid rgba(255, 107, 53, 0.12);
-      border-radius: 20px;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 8px 32px rgba(26, 26, 46, 0.05);
-      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-      position: relative;
-    }
-    .menu-card:hover {
-      transform: translateY(-8px);
-      border-color: rgba(255, 107, 53, 0.35);
-      background: rgba(255, 255, 255, 0.85);
-      box-shadow: 0 20px 40px rgba(26, 26, 46, 0.08);
-    }
-
-    /* Item Details */
-    .item-image-placeholder {
-      height: 180px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, rgba(255, 107, 53, 0.05), rgba(255, 107, 53, 0.12));
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid rgba(255, 107, 53, 0.08);
-      position: relative;
-    }
-    .item-image-placeholder span {
-      font-size: 12px;
-      color: #6E6E8A;
-      font-style: italic;
-    }
-    .item-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 24px;
-      font-weight: 500;
-      color: #1A1A2E;
-      margin-bottom: 6px;
-    }
-    .item-desc {
-      font-size: 14px;
-      color: #5E5E7A;
-      line-height: 1.5;
-      margin-bottom: 20px;
-    }
-    .item-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .item-price {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 24px;
-      font-weight: 600;
-      color: #FF6B35;
-    }
-    .add-to-cart-btn {
+    .call-staff-btn {
       font-size: 12px;
       font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       background: #FF6B35;
       color: #FFFFFF;
       padding: 8px 18px;
-      border-radius: 30px;
-      transition: all 0.3s;
-      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.15);
-    }
-    .add-to-cart-btn:hover {
-      background: #1A1A2E;
-      color: #FFFFFF;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(26, 26, 46, 0.2);
-    }
-
-    /* Floating Cart Indicator */
-    .cart-indicator {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      z-index: 100;
-      background: #FF6B35;
-      color: #FFFFFF;
-      padding: 16px 24px;
       border-radius: 100px;
-      box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 600;
-      font-size: 15px;
-      cursor: pointer;
-      transition: transform 0.3s, background-color 0.3s;
+      border: 1px solid transparent;
     }
-    .cart-indicator:hover {
-      background: #1A1A2E;
-      transform: scale(1.05) translateY(-2px);
+    .call-staff-btn.notified {
+      background: transparent;
+      color: #6B8C5F;
+      border-color: #6B8C5F;
+      animation: greenPulse 2s ease-in-out infinite;
     }
-    .cart-indicator-badge {
-      background: #FFFFFF;
-      color: #FF6B35;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
+    @keyframes greenPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(107,140,95,0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(107,140,95,0); }
+    }
+    
+    /* Mobile nav support */
+    .mobile-nav-row { display: none; }
+    @media (max-width: 768px) {
+      #top-nav {
+        height: auto;
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .nav-row-main {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .mobile-nav-row {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 6px;
+        border-top: 1px solid rgba(0,0,0,0.05);
+      }
+      .nav-right { display: none; }
+    }
+    
+    /* ═══════════════════════════════════════
+       SECTION B - HERO BANNER
+       ═══════════════════════════════════════ */
+    #hero {
+      position: relative;
+      height: 65vh;
+      min-height: 420px;
+      width: 100%;
+      background-image: url('https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1920&q=90&fm=webp');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      overflow: hidden;
     }
-
-    /* Cart Drawer */
-    .cart-drawer-overlay {
-      position: fixed;
+    #hero::before {
+      content: '';
+      position: absolute;
       inset: 0;
-      background: rgba(0,0,0,0.3);
-      backdrop-filter: blur(8px);
-      z-index: 500;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s;
+      background: linear-gradient(to bottom, rgba(248,249,250,0.15) 0%, rgba(248,249,250,0.70) 100%);
+      z-index: 1;
     }
-    .cart-drawer-overlay.open { opacity: 1; pointer-events: auto; }
+    @media (max-width: 768px) {
+      #hero {
+        height: 50vh;
+        min-height: 320px;
+        background-attachment: scroll;
+      }
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 0 24px;
+      color: #1A1A2E;
+    }
+    .hero-content h1 {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(40px, 7vw, 72px);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    .hero-content p {
+      font-size: 18px;
+      color: rgba(26,26,46,0.75);
+      max-width: 520px;
+      margin: 0 auto 20px;
+      font-weight: 300;
+    }
+    .hero-badges {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .badge-pill {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.08);
+      color: #1A1A2E;
+      padding: 4px 12px;
+      border-radius: 100px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pulse-dot {
+      width: 6px; height: 6px;
+      background: #6B8C5F;
+      border-radius: 50%;
+      animation: greenPulse 1.8s infinite;
+    }
     
-    .cart-drawer {
-      position: fixed;
-      top: 0; right: 0; bottom: 0;
-      width: 100%; max-width: 440px;
+    /* Hero Floating Frosted Pills */
+    .pill-container {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .frosted-pill {
+      position: absolute;
+      width: 160px; height: 52px;
+      border-radius: 26px;
+      background: rgba(255,255,255,0.68);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-size: 14px;
+      font-weight: 400;
+      color: #FF6B35;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .pill-1 {
+      left: 10%; top: 25%;
+      animation: floatOscillate 5s infinite alternate ease-in-out;
+    }
+    .pill-2 {
+      right: 12%; top: 35%;
+      animation: floatOscillate 7s infinite alternate-reverse ease-in-out;
+    }
+    .pill-3 {
+      left: 45%; bottom: 20%;
+      animation: floatOscillate 6s infinite alternate ease-in-out;
+    }
+    @keyframes floatOscillate {
+      0% { transform: translateY(0); opacity: 0.55; }
+      100% { transform: translateY(-10px); opacity: 1.0; }
+    }
+    
+    /* ═══════════════════════════════════════
+       SECTION C - LIVE NOTICE STRIP
+       ═══════════════════════════════════════ */
+    #notice-strip {
+      height: 44px;
+      width: 100%;
+      background: rgba(255,107,53,0.10);
+      border-bottom: 1px solid rgba(255,107,53,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .notice-item {
+      position: absolute;
+      font-size: 13px;
+      color: #1A1A2E;
+      font-weight: 400;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.4s cubic-bezier(0.23,1,0.32,1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .notice-item.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .notice-dot {
+      width: 6px; height: 6px;
+      background: #FF6B35;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #FF6B35;
+    }
+    
+    /* ═══════════════════════════════════════
+       SECTION D - CATEGORIES PILLS
+       ═══════════════════════════════════════ */
+    #category-nav {
+      position: sticky;
+      top: 64px;
+      z-index: 90;
+      background: #F8F9FA;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      padding: 14px 24px;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+      display: flex;
+      gap: 10px;
+    }
+    #category-nav::-webkit-scrollbar { display: none; }
+    .cat-pill {
+      font-size: 13px;
+      font-weight: 500;
+      color: #6B7280;
+      background: #F3F4F6;
+      border: 1px solid transparent;
+      padding: 8px 22px;
+      border-radius: 100px;
+    }
+    .cat-pill.active {
+      background: #FF6B35;
+      color: #FFFFFF;
+      box-shadow: 0 4px 15px rgba(255,107,53,0.20);
+    }
+    
+    /* ═══════════════════════════════════════
+       SECTION E - MENU ITEMS
+       ═══════════════════════════════════════ */
+    .menu-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+    .category-section {
+      margin-bottom: 64px;
+      scroll-margin-top: 140px;
+    }
+    .category-title {
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: #1A1A2E;
+      margin-bottom: 28px;
+      border-left: 2px solid #FF6B35;
+      padding-left: 14px;
+    }
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    @media (max-width: 992px) {
+      .items-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .items-grid { grid-template-columns: 1fr; gap: 18px; }
+    }
+    .item-card {
       background: #FFFFFF;
-      border-left: 1px solid rgba(255, 107, 53, 0.15);
-      backdrop-filter: blur(24px);
-      z-index: 501;
-      transform: translateX(100%);
-      transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
       display: flex;
       flex-direction: column;
-      padding: 40px 30px;
-      box-shadow: -20px 0 50px rgba(26,26,46,0.05);
+      height: 100%;
+      transition: all 0.3s cubic-bezier(0.23,1,0.32,1);
     }
-    .cart-drawer-overlay.open .cart-drawer { transform: translateX(0); }
-
-    .drawer-header {
+    .item-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    }
+    .item-photo {
+      height: 220px;
+      width: 100%;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+    @media (max-width: 768px) {
+      .item-photo { height: 180px; }
+    }
+    .item-photo::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.35) 100%);
+    }
+    .item-info {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+    .item-header-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-    }
-    .drawer-header h3 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 28px;
-      color: #FF6B35;
-    }
-    .close-drawer {
-      font-size: 24px;
-      color: #1A1A2E;
-      cursor: pointer;
-    }
-
-    .drawer-items {
-      flex: 1;
-      overflow-y: auto;
-      margin-bottom: 30px;
-    }
-    .drawer-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 0;
-      border-bottom: 1px solid rgba(26,26,46,0.05);
-    }
-    .drawer-item-info h4 {
-      font-size: 15px;
-      margin-bottom: 4px;
-    }
-    .drawer-item-info span {
-      font-size: 13px;
-      color: #FF6B35;
-    }
-    .drawer-item-actions {
-      display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
+      margin-bottom: 8px;
+    }
+    .item-name {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #1A1A2E;
+      line-height: 1.25;
+    }
+    .item-desc {
+      font-size: 13px;
+      color: #6B7280;
+      line-height: 1.55;
+      margin-bottom: 14px;
+      flex-grow: 1;
+    }
+    .item-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+    .badge-item {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 4px;
+    }
+    .badge-item.veg { background: rgba(107,140,95,0.15); color: #6B8C5F; border: 1px solid rgba(107,140,95,0.3); }
+    .badge-item.nonveg { background: rgba(196,112,74,0.15); color: #C4704A; border: 1px solid rgba(196,112,74,0.3); }
+    .badge-item.spicy { background: rgba(255,140,0,0.15); color: #FF8C00; border: 1px solid rgba(255,140,0,0.3); }
+    .badge-item.chefs { background: transparent; color: #FF6B35; border: 1px solid #FF6B35; }
+    
+    .item-footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+    }
+    .item-price {
+      font-family: 'Fraunces', serif;
+      font-size: 19px;
+      font-weight: 700;
+      color: #FF6B35;
+    }
+    
+    /* Quantity morphing button */
+    .button-container {
+      position: relative;
+      height: 38px;
+      width: 110px;
+    }
+    .add-to-cart {
+      position: absolute;
+      inset: 0;
+      background: #FF6B35;
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .add-to-cart:hover {
+      background: #E55B25;
+      box-shadow: 0 4px 15px rgba(255,107,53,0.3);
+    }
+    .qty-selector {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.03);
+      border: 1px solid rgba(255,107,53,0.4);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.9);
+      transition: all 0.3s cubic-bezier(0.23,1,0.32,1);
+    }
+    .qty-selector.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
     }
     .qty-btn {
       width: 24px; height: 24px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 107, 53, 0.3);
-      color: #1A1A2E;
+      border-radius: 4px;
+      background: rgba(255,107,53,0.15);
+      color: #FF6B35;
+      font-size: 15px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
     }
     .qty-btn:hover { background: #FF6B35; color: #FFFFFF; }
-
-    .drawer-footer {
-      border-top: 1px solid rgba(255, 107, 53, 0.15);
-      padding-top: 24px;
-    }
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 24px;
-      font-size: 18px;
+    .qty-val {
+      font-size: 13px;
       font-weight: 500;
+      color: #1A1A2E;
+      user-select: none;
     }
-    .total-price {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 28px;
-      color: #FF6B35;
+    
+    /* ═══════════════════════════════════════
+       SECTION H - ATMOSPHERIC MID-PAGE BANNER
+       ═══════════════════════════════════════ */
+    .mid-banner {
+      width: 100vw;
+      position: relative;
+      left: 50%;
+      right: 50%;
+      margin-left: -50vw;
+      margin-right: -50vw;
+      height: 240px;
+      background-image: url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1920&q=85&fm=webp');
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 48px;
+      margin-bottom: 48px;
     }
-    .checkout-btn {
-      width: 100%;
+    .mid-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(248,249,250,0.42);
+    }
+    @media (max-width: 768px) {
+      .mid-banner { height: 180px; }
+    }
+    .mid-banner-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 0 24px;
+    }
+    .mid-banner-quote {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-size: 24px;
+      color: #1A1A2E;
+      line-height: 1.4;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    
+    /* ═══════════════════════════════════════
+       SECTION F - FLOATING CART PILL
+       ═══════════════════════════════════════ */
+    #cart-pill {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
       background: #FF6B35;
       color: #FFFFFF;
-      padding: 16px 24px;
+      height: 52px;
+      padding: 0 28px;
       border-radius: 100px;
-      font-weight: 600;
-      font-size: 15px;
-      transition: background 0.3s, transform 0.3s;
+      box-shadow: 0 8px 24px rgba(255,107,53,0.35);
+      z-index: 95;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 500;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.23,1,0.32,1);
     }
-    .checkout-btn:hover { background: #1A1A2E; transform: translateY(-2px); }
-
-    /* Success Overlay Modal */
-    .success-overlay {
+    #cart-pill.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    #cart-pill.pulse {
+      transform: translateX(-50%) scale(1.14);
+    }
+    .cart-count-badge {
+      background: #FFFFFF;
+      color: #FF6B35;
+      font-size: 11px;
+      font-weight: 600;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cart-pill-price {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    
+    /* ═══════════════════════════════════════
+       SECTION G - CART DRAWER & OVERLAY
+       ═══════════════════════════════════════ */
+    #drawer-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(26, 26, 46, 0.4);
-      backdrop-filter: blur(12px);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: rgba(0,0,0,0.50);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 105;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.4s;
+      transition: opacity 0.35s ease;
     }
-    .success-overlay.open { opacity: 1; pointer-events: auto; }
-    .success-card {
+    #drawer-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #cart-drawer {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      max-height: 85vh;
       background: #FFFFFF;
-      border: 1px solid rgba(255, 107, 53, 0.3);
-      border-radius: 24px;
-      padding: 40px;
-      max-width: 420px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 30px 60px rgba(26,26,46,0.1);
+      border-top: 1px solid rgba(255,107,53,0.30);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+      z-index: 110;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.23,1,0.32,1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
-    .success-icon {
-      width: 60px; height: 60px;
-      border-radius: 50%;
+    #cart-drawer.active {
+      transform: translateY(0);
+    }
+    .drawer-handle {
+      width: 44px; height: 4px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 2px;
+      margin: 10px auto 4px;
+    }
+    .drawer-header {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .drawer-title {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      color: #1A1A2E;
+      font-weight: 700;
+    }
+    .close-drawer-btn {
+      font-size: 26px;
+      color: #6B7280;
+    }
+    .drawer-scroll-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    .drawer-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+      color: #1A1A2E;
+    }
+    .drawer-item-info h4 {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    .drawer-item-info span {
+      font-size: 13px;
+      color: #6B7280;
+    }
+    .drawer-item-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .drawer-item-price {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: #FF6B35;
+      min-width: 60px;
+      text-align: right;
+    }
+    .drawer-totals {
+      padding-top: 18px;
+      margin-top: 18px;
+      border-top: 1px solid rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 13px;
+      color: #6B7280;
+    }
+    .total-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .total-line.grand {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1A1A2E;
+      margin-top: 4px;
+    }
+    .total-line.grand span:last-child {
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      color: #FF6B35;
+      font-weight: 700;
+    }
+    .drawer-actions {
+      padding: 18px 24px 32px;
+      border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    .pay-btn {
+      width: 100%;
+      height: 52px;
       background: #FF6B35;
       color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
-      margin: 0 auto 20px;
     }
-    .success-card h3 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 32px;
-      color: #FF6B35;
-      margin-bottom: 12px;
-    }
-    .success-card p {
-      font-size: 14px;
-      color: #5E5E7A;
-      margin-bottom: 30px;
-    }
-    .success-close {
-      background: #1A1A2E;
+    .pay-btn.success {
+      background: #6B8C5F;
       color: #FFFFFF;
-      padding: 10px 24px;
-      border-radius: 100px;
-      font-size: 14px;
-      font-weight: 500;
     }
-
-    /* Category Filter Transitions */
-    .menu-card {
-      transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1), border-color 0.4s, opacity 0.4s, scale 0.4s;
+    
+    /* ═══════════════════════════════════════
+       SECTION I - FOOTER
+       ═══════════════════════════════════════ */
+    footer {
+      width: 100%;
+      background: #F3F4F6;
+      padding: 40px 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border-top: 1px solid rgba(0,0,0,0.03);
     }
-    .menu-card.hidden {
-      opacity: 0;
-      scale: 0.9;
-      pointer-events: none;
-      position: absolute;
-      transform: translateY(20px);
-      z-index: -10;
+    .footer-line-1 {
+      font-size: 12px;
+      color: #6B7280;
+    }
+    .footer-line-2 {
+      font-size: 11px;
+      color: rgba(107,114,128,0.50);
+      letter-spacing: 0.02em;
     }
   </style>
 </head>
 <body>
 
-  <!-- Background Effects -->
-  <div class="bg-glow-container">
-    <div class="frosted-shape"></div>
+  <!-- Top Navigation -->
+  <nav id="top-nav">
+    <div class="nav-row-main">
+      <div class="nav-left">
+        <a href="index.html" class="back-link">&larr; Back to Cafe Canvas</a>
+      </div>
+      <span class="restaurant-name">Bloom Café</span>
+      <div class="nav-right">
+        <div class="table-id"><span class="table-dot"></span>Table 07</div>
+        <button class="call-staff-btn" id="call-staff">Call Staff</button>
+      </div>
+    </div>
+    <!-- Mobile Specific Secondary Row -->
+    <div class="mobile-nav-row">
+      <div class="table-id"><span class="table-dot"></span>Table 07</div>
+      <button class="call-staff-btn" id="call-staff-mobile">Call Staff</button>
+    </div>
+  </nav>
+
+  <!-- Hero Banner -->
+  <section id="hero">
+    <div class="pill-container">
+      <div class="frosted-pill pill-1">Fresh Brew</div>
+      <div class="frosted-pill pill-2">Handcrafted</div>
+      <div class="frosted-pill pill-3">Organic</div>
+    </div>
+    <div class="hero-content">
+      <h1>Bloom Café</h1>
+      <p>All-day café for the unhurried mind</p>
+      <div class="hero-badges">
+        <span class="badge-pill">Table 07 · Dine In</span>
+        <span class="badge-pill"><span class="pulse-dot"></span>Kitchen Open</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Notice Strip -->
+  <section id="notice-strip">
+    <div class="notice-item active" id="notice-1">
+      <span class="notice-dot"></span> Happy Hour — ends at 9 PM
+    </div>
+    <div class="notice-item" id="notice-2">
+      <span class="notice-dot"></span> Chef's Special — limited to 8 orders today
+    </div>
+    <div class="notice-item" id="notice-3">
+      <span class="notice-dot"></span> Free dessert on orders above ₹1,200
+    </div>
+  </section>
+
+  <!-- Category Snapping Navigation -->
+  <section id="category-nav">
+    <button class="cat-pill active" onclick="scrollToCategory('breakfast')">Breakfast</button>
+    <button class="cat-pill" onclick="scrollToCategory('salads')">Salads</button>
+    <button class="cat-pill" onclick="scrollToCategory('sandwiches')">Sandwiches</button>
+    <button class="cat-pill" onclick="scrollToCategory('hot-drinks')">Hot Drinks</button>
+    <button class="cat-pill" onclick="scrollToCategory('cold-drinks')">Cold Drinks</button>
+  </section>
+
+  <!-- Main Menu Wrapper -->
+  <div class="menu-wrap">
+    
+    <!-- Breakfast Section -->
+    <section class="category-section" id="breakfast">
+      <h2 class="category-title">Breakfast</h2>
+      <div class="items-grid">
+        <!-- Item 1 -->
+        <div class="item-card">
+          <div class="item-photo" style="background-image: url('https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?w=600&q=85&fm=webp');"></div>
+          <div class="item-info">
+            <div class="item-header-row">
+              <h3 class="item-name">Avocado Toast</h3>
+            </div>
+            <p class="item-desc">Freshly smashed Haas avocado, organic seeds, wild microgreens.</p>
+            <div class="item-badges">
+              <span class="badge-item veg">Veg</span>
+            </div>
+            <div class="item-footer-row">
+              <span class="item-price">₹320</span>
+              <div class="button-container">
+                <button class="add-to-cart" id="add-btn-1" onclick="addToCart(1)">Add</button>
+                <div class="qty-selector" id="qty-sel-1">
+                  <button class="qty-btn" onclick="adjustQty(1, -1)">&minus;</button>
+                  <span class="qty-val" id="qty-val-1">1</span>
+                  <button class="qty-btn" onclick="adjustQty(1, 1)">&plus;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 2 -->
+        <div class="item-card">
+          <div class="item-photo" style="background-image: url('https://images.unsplash.com/photo-1590412200988-a436970781fa?w=600&q=85&fm=webp');"></div>
+          <div class="item-info">
+            <div class="item-header-row">
+              <h3 class="item-name">Shakshuka</h3>
+            </div>
+            <p class="item-desc">Poached eggs in aromatic spiced tomato sauce, bell peppers, fresh herbs.</p>
+            <div class="item-badges">
+              <span class="badge-item veg">Veg</span>
+              <span class="badge-item spicy">Spicy</span>
+            </div>
+            <div class="item-footer-row">
+              <span class="item-price">₹380</span>
+              <div class="button-container">
+                <button class="add-to-cart" id="add-btn-2" onclick="addToCart(2)">Add</button>
+                <div class="qty-selector" id="qty-sel-2">
+                  <button class="qty-btn" onclick="adjustQty(2, -1)">&minus;</button>
+                  <span class="qty-val" id="qty-val-2">1</span>
+                  <button class="qty-btn" onclick="adjustQty(2, 1)">&plus;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 3 -->
+        <div class="item-card">
+          <div class="item-photo" style="background-image: url('https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=600&q=85&fm=webp');"></div>
+          <div class="item-info">
+            <div class="item-header-row">
+              <h3 class="item-name">Banana Walnut Muffin</h3>
+            </div>
+            <p class="item-desc">Moist banana sponge crumb muffin topped with toasted walnuts.</p>
+            <div class="item-badges">
+              <span class="badge-item veg">Veg</span>
+            </div>
+            <div class="item-footer-row">
+              <span class="item-price">₹160</span>
+              <div class="button-container">
+                <button class="add-to-cart" id="add-btn-3" onclick="addToCart(3)">Add</button>
+                <div class="qty-selector" id="qty-sel-3">
+                  <button class="qty-btn" onclick="adjustQty(3, -1)">&minus;</button>
+                  <span class="qty-val" id="qty-val-3">1</span>
+                  <button class="qty-btn" onclick="adjustQty(3, 1)">&plus;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Salads Section -->
+    <section class="category-section" id="salads">
+      <h2 class="category-title">Salads</h2>
+      <div class="items-grid">
+        <!-- Item 4 -->
+        <div class="item-card">
+          <div class="item-photo" style="background-image: url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=85&fm=webp');"></div>
+          <div class="item-info">
+            <div class="item-header-row">
+              <h3 class="item-name">Grilled Halloumi Bowl</h3>
+            </div>
+            <p class="item-desc">Soft warm halloumi cheese slices, mixed summer greens, sweet pomegranate glaze dressing.</p>
+            <div class="item-badges">
+              <span class="badge-item veg">Veg</span>
+              <span class="badge-item chefs">Chef's Pick</span>
+            </div>
+            <div class="item-footer-row">
+              <span class="item-price">₹420</span>
+              <div class="button-container">
+                <button class="add-to-cart" id="add-btn-4" onclick="addToCart(4)">Add</button>
+                <div class="qty-selector" id="qty-sel-4">
+                  <button class="qty-btn" onclick="adjustQty(4, -1)">&minus;</button>
+                  <span class="qty-val" id="qty-val-4">1</span>
+                  <button class="qty-btn" onclick="adjustQty(4, 1)">&plus;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 5 -->
+        <div class="item-card">
+          <div class="item-photo" style="background-image: url('https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=600&q=85&fm=webp');"></div>
+          <div class="item-info">
+            <div class="item-header-row">
+              <h3 class="item-name">Quinoa Tabbouleh</h3>
+            </div>
+            <p class="item-desc">Freshly chopped parsley, organic quinoa, sweet cherry tomatoes, lime juice dressing.</p>
+            <div class="item-badges">
+              <span class="badge-item veg">Veg</span>
+            </div>
+            <div class="item-footer-row">
+              <span class="item-price">₹360</span>
+              <div class="button-container">
+                <button class="add-to-cart" id="add-btn-5" onclick="addToCart(5)">Add</button>
+                <div class="qty-selector" id="qty-sel-5">
+                  <button class="qty-btn" onclick="adjustQty(5, -1)">&minus;</button>
+                  <span class="qty-val" id="qty-val-5">1</span>
+                  <button class="qty-btn" onclick="adjustQty(5, 1)">&plus;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mid-page Atmospheric Banner -->
+    <div class="mid-banner">
+      <div class="mid-banner-content">
+        <p class="mid-banner-quote">"Some mornings deserve to last all day."</p>
+      </div>
+    </div>
+
+    <!-- Sandwiches Section -->
+    <section class="category-section" id="sandwiches">
+      <h2 class="category-title">Sandwiches</h2>
+      <div class="items-grid">
+        <!-- Item 6 -->
+        <div class="item-card">
+          <div class="item-photo" style="background-image: url('https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&q=85&fm=webp');"></div>
+          <div class="item-info">
+            <div class="item-header-row">
+              <h3 class="item-name">BLT Club</h3>
+            </div>
+            <p class="item-desc">Crisp smoked turkey bacon, leaf lettuce, ripe tomatoes, toasted sourdough bread slices.</p>
+            <div class="item-badges">
+              <span class="badge-item nonveg">Non-Veg</span>
+            </div>
+            <div class="item-footer-row">
+              <span class="item-price">₹380</span>
+              <div class="button-container">
+                <button class="add-to-cart" id="add-btn-6" onclick="addToCart(6)">Add</button>
+                <div class="qty-selector" id="qty-sel-6">
+                  <button class="qty-btn" onclick="adjustQty(6, -1)">&minus;</button>
+                  <span class="qty-val" id="qty-val-6">1</span>
+                  <button class="qty-btn" onclick="adjustQty(6, 1)">&plus;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Item 7 -->
+        <div class="item-card">
+          <div class="item-photo" style="background-image: url('https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=600&q=85&fm=webp');"></div>
+          <div class="item-info">
+            <div class="item-header-row">
+              <h3 class="item-name">Caprese Ciabatta</h3>
+            </div>
+            <p class="item-desc">Creamy local buffalo mozzarella, sweet vine-ripened tomatoes, sweet basil pesto paste on warm ciabatta bread rolls.</p>
+            <div class="item-badges">
+              <span class="badge-item veg">Veg</span>
+            </div>
+            <div class="item-footer-row">
+              <span class="item-price">₹320</span>
+              <div class="button-container">
+                <button class="add-to-cart" id="add-btn-7" onclick="addToCart(7)">Add</button>
+                <div class="qty-selector" id="qty-sel-7">
+                  <button class="qty-btn" onclick="adjustQty(7, -1)">&minus;</button>
+                  <span class="qty-val" id="qty-val-7">1</span>
+                  <button class="qty-btn" onclick="adjustQty(7, 1)">&plus;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hot Drinks Section -->
+    <section class="category-section" id="hot-drinks">
+      <h2 class="category-title">Hot Drinks</h2>
+      <div class="items-grid">
+        <!-- Item 8 -->
+        <div class="item-card">
+          <div class="item-photo" style="background-image: url('https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&q=85&fm=webp');"></div>
+          <div class="item-info">
+            <div class="item-header-row">
+              <h3 class="item-name">Flat White</h3>
+            </div>
+            <p class="item-desc">Premium double espresso shot, thin microfoamed dairy milk pour.</p>
+            <div class="item-badges">
+              <span class="badge-item veg">Veg</span>
+            </div>
+            <div class="item-footer-row">
+              <span class="item-price">₹180</span>
+              <div class="button-container">
+                <button class="add-to-cart" id="add-btn-8" onclick="addToCart(8)">Add</button>
+                <div class="qty-selector" id="qty-sel-8">
+                  <button class="qty-btn" onclick="adjustQty(8, -1)">&minus;</button>
+                  <span class="qty-val" id="qty-val-8">1</span>
+                  <button class="qty-btn" onclick="adjustQty(8, 1)">&plus;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cold Drinks Section -->
+    <section class="category-section" id="cold-drinks">
+      <h2 class="category-title">Cold Drinks</h2>
+      <div class="items-grid">
+        <!-- Item 9 -->
+        <div class="item-card">
+          <div class="item-photo" style="background-image: url('https://images.unsplash.com/photo-1587080266227-677cc2a4e76e?w=600&q=85&fm=webp');"></div>
+          <div class="item-info">
+            <div class="item-header-row">
+              <h3 class="item-name">Cold Brew Float</h3>
+            </div>
+            <p class="item-desc">Steeped craft black cold brew coffee, slow melting sweet vanilla bean gelato scoop scoop.</p>
+            <div class="item-badges">
+              <span class="badge-item veg">Veg</span>
+              <span class="badge-item chefs">Chef's Pick</span>
+            </div>
+            <div class="item-footer-row">
+              <span class="item-price">₹220</span>
+              <div class="button-container">
+                <button class="add-to-cart" id="add-btn-9" onclick="addToCart(9)">Add</button>
+                <div class="qty-selector" id="qty-sel-9">
+                  <button class="qty-btn" onclick="adjustQty(9, -1)">&minus;</button>
+                  <span class="qty-val" id="qty-val-9">1</span>
+                  <button class="qty-btn" onclick="adjustQty(9, 1)">&plus;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
 
-  <div class="menu-container">
-    <!-- Header -->
-    <header>
-      <a href="index.html" class="back-home">&larr; Back to Home</a>
-      <span class="restaurant-logo">LUME</span>
-    </header>
-
-    <!-- Hero -->
-    <div class="menu-hero">
-      <h1>All-Day Minimalist Café</h1>
-      <p>Clean tastes, organic local grains, cold-pressed fruit elixirs, and fresh pastries baked at sunrise.</p>
-    </div>
-
-    <!-- Category Filter Strip -->
-    <div class="category-strip">
-      <button class="category-btn active" data-category="all">All Items</button>
-      <button class="category-btn" data-category="all-day">All-Day</button>
-      <button class="category-btn" data-category="elixirs">Elixirs</button>
-      <button class="category-btn" data-category="desserts">Desserts</button>
-    </div>
-
-    <!-- Menu Grid -->
-    <div class="menu-grid" id="menu-grid">
-      <!-- Item 1 -->
-      <div class="menu-card" data-item-id="1" data-item-category="all-day">
-        <div>
-          <div class="item-image-placeholder">
-            <span>Avocado Sourdough Image</span>
-          </div>
-          <h3 class="item-title">Avocado Sourdough</h3>
-          <p class="item-desc">Freshly smashed Haas avocado, organic sunflower seeds, wild clover microgreens, served over thick-sliced artisan sourdough toast.</p>
-        </div>
-        <div class="item-footer">
-          <span class="item-price">₹480</span>
-          <button class="add-to-cart-btn">Add to Order</button>
-        </div>
-      </div>
-
-      <!-- Item 2 -->
-      <div class="menu-card" data-item-id="2" data-item-category="elixirs">
-        <div>
-          <div class="item-image-placeholder">
-            <span>Matcha Rose Latte Image</span>
-          </div>
-          <h3 class="item-title">Matcha Rose Latte</h3>
-          <p class="item-desc">Ceremonial grade pure Uji matcha, natural distilled rosewater, unsweetened organic oat milk.</p>
-        </div>
-        <div class="item-footer">
-          <span class="item-price">₹320</span>
-          <button class="add-to-cart-btn">Add to Order</button>
-        </div>
-      </div>
-
-      <!-- Item 3 -->
-      <div class="menu-card" data-item-id="3" data-item-category="all-day">
-        <div>
-          <div class="item-image-placeholder">
-            <span>Peach Ricotta Toast Image</span>
-          </div>
-          <h3 class="item-title">Peach Ricotta Toast</h3>
-          <p class="item-desc">Whipped local fresh milk ricotta, caramelized summer peaches, wildflower thyme-infused organic honey on multi-grain bread.</p>
-        </div>
-        <div class="item-footer">
-          <span class="item-price">₹440</span>
-          <button class="add-to-cart-btn">Add to Order</button>
-        </div>
-      </div>
-
-      <!-- Item 4 -->
-      <div class="menu-card" data-item-id="4" data-item-category="elixirs">
-        <div>
-          <div class="item-image-placeholder">
-            <span>Cold Brew Orange Tonic Image</span>
-          </div>
-          <h3 class="item-title">Cold Brew Orange Tonic</h3>
-          <p class="item-desc">18-hour slow cold brew coffee, fresh squeezed orange juice, premium craft tonic water, fresh mint leaves sprig.</p>
-        </div>
-        <div class="item-footer">
-          <span class="item-price">₹360</span>
-          <button class="add-to-cart-btn">Add to Order</button>
-        </div>
-      </div>
-
-      <!-- Item 5 -->
-      <div class="menu-card" data-item-id="5" data-item-category="desserts">
-        <div>
-          <div class="item-image-placeholder">
-            <span>Citrus Vanilla Tart Image</span>
-          </div>
-          <h3 class="item-title">Citrus Vanilla Tart</h3>
-          <p class="item-desc">Sweet tart shell, citrus blood-orange curd, organic Madagascar vanilla bean whipped cream, edible organic flower decoration.</p>
-        </div>
-        <div class="item-footer">
-          <span class="item-price">₹390</span>
-          <button class="add-to-cart-btn">Add to Order</button>
-        </div>
-      </div>
-
-      <!-- Item 6 -->
-      <div class="menu-card" data-item-id="6" data-item-category="desserts">
-        <div>
-          <div class="item-image-placeholder">
-            <span>Gluten-Free Almond Cake Image</span>
-          </div>
-          <h3 class="item-title">Almond Polenta Slice</h3>
-          <p class="item-desc">Fragrant light polenta cake made with sweet almond flour, soaked in cold-pressed blood orange syrup.</p>
-        </div>
-        <div class="item-footer">
-          <span class="item-price">₹380</span>
-          <button class="add-to-cart-btn">Add to Order</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Floating Cart Indicator -->
-  <div class="cart-indicator" id="cart-indicator" style="display: none;">
-    <div class="cart-indicator-badge" id="cart-count">0</div>
+  <!-- Floating Cart Pill -->
+  <div id="cart-pill" onclick="openDrawer()">
+    <span class="cart-count-badge" id="cart-count">0</span>
     <span>View Order</span>
+    <span class="cart-pill-price" id="cart-total-price">₹0</span>
   </div>
 
-  <!-- Cart Side Drawer Overlay -->
-  <div class="cart-drawer-overlay" id="cart-drawer-overlay">
-    <div class="cart-drawer">
-      <div class="drawer-header">
-        <h3>Your Order</h3>
-        <button class="close-drawer" id="close-drawer">&times;</button>
+  <!-- Cart Drawer Overlay & Panel -->
+  <div id="drawer-overlay" onclick="closeDrawer()"></div>
+  <div id="cart-drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-header">
+      <span class="drawer-title">Your Order</span>
+      <button class="close-drawer-btn" onclick="closeDrawer()">&times;</button>
+    </div>
+    <div class="drawer-scroll-body">
+      <div id="drawer-items-list">
+        <!-- Rendered dynamically -->
       </div>
-      <div class="drawer-items" id="drawer-items">
-        <!-- Rendered items go here -->
-      </div>
-      <div class="drawer-footer">
-        <div class="total-row">
+      <div class="drawer-totals">
+        <div class="total-line">
           <span>Subtotal</span>
-          <span class="total-price" id="total-price">₹0</span>
+          <span id="subtotal-val">₹0</span>
         </div>
-        <button class="checkout-btn" id="checkout-btn">Proceed to Pay via UPI &rarr;</button>
+        <div class="total-line">
+          <span>GST (5%)</span>
+          <span id="gst-val">₹0</span>
+        </div>
+        <div class="total-line grand">
+          <span>Grand Total</span>
+          <span id="grand-total-val">₹0</span>
+        </div>
       </div>
+    </div>
+    <div class="drawer-actions">
+      <button class="pay-btn" id="pay-btn" onclick="triggerCheckout()">Pay at Table</button>
     </div>
   </div>
 
-  <!-- Success Modal Overlay -->
-  <div class="success-overlay" id="success-overlay">
-    <div class="success-card">
-      <div class="success-icon">✓</div>
-      <h3>Order Placed</h3>
-      <p>Your order was sent directly to our barista team. Your table bill is updated. Sit back and enjoy your fresh coffee and pastries!</p>
-      <button class="success-close" id="success-close">Return to Menu</button>
-    </div>
-  </div>
+  <footer>
+    <div class="footer-line-1">Table 07 · 4 guests · Session started: 7:34 PM</div>
+    <div class="footer-line-2">Digital menu powered by Cafe Canvas</div>
+  </footer>
 
   <script>
-    // Categories filtering
-    const categoryBtns = document.querySelectorAll('.category-btn');
-    const menuCards = document.querySelectorAll('.menu-card');
-
-    categoryBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        categoryBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        const cat = btn.getAttribute('data-category');
-        
-        menuCards.forEach(card => {
-          const itemCat = card.getAttribute('data-item-category');
-          if (cat === 'all' || itemCat === cat) {
-            card.classList.remove('hidden');
-            card.style.display = 'flex';
-          } else {
-            card.classList.add('hidden');
-            setTimeout(() => {
-              if (card.classList.contains('hidden')) {
-                card.style.display = 'none';
-              }
-            }, 400);
-          }
-        });
-      });
-    });
-
-    // Cart system state
+    // ═══════════════════════════════════════
+    // CORE GLOBAL CART STATE ENGINE
+    // ═══════════════════════════════════════
     let cart = {};
-
-    const itemsDb = {
-      '1': { name: 'Avocado Sourdough', price: 480 },
-      '2': { name: 'Matcha Rose Latte', price: 320 },
-      '3': { name: 'Peach Ricotta Toast', price: 440 },
-      '4': { name: 'Cold Brew Orange Tonic', price: 360 },
-      '5': { name: 'Citrus Vanilla Tart', price: 390 },
-      '6': { name: 'Almond Polenta Slice', price: 380 }
+    const itemDb = {
+      1: { name: 'Avocado Toast', price: 320 },
+      2: { name: 'Shakshuka', price: 380 },
+      3: { name: 'Banana Walnut Muffin', price: 160 },
+      4: { name: 'Grilled Halloumi Bowl', price: 420 },
+      5: { name: 'Quinoa Tabbouleh', price: 360 },
+      6: { name: 'BLT Club', price: 380 },
+      7: { name: 'Caprese Ciabatta', price: 320 },
+      8: { name: 'Flat White', price: 180 },
+      9: { name: 'Cold Brew Float', price: 220 }
     };
 
-    const addButtons = document.querySelectorAll('.add-to-cart-btn');
-    const cartIndicator = document.getElementById('cart-indicator');
-    const cartCount = document.getElementById('cart-count');
-    const cartOverlay = document.getElementById('cart-drawer-overlay');
-    const closeDrawerBtn = document.getElementById('close-drawer');
-    const drawerItemsContainer = document.getElementById('drawer-items');
-    const totalPriceEl = document.getElementById('total-price');
+    function addToCart(id) {
+      cart[id] = 1;
+      updateState();
+    }
 
-    addButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const card = e.target.closest('.menu-card');
-        const id = card.getAttribute('data-item-id');
-        
-        if (cart[id]) {
-          cart[id].qty++;
-        } else {
-          cart[id] = {
-            name: itemsDb[id].name,
-            price: itemsDb[id].price,
-            qty: 1
-          };
+    function adjustQty(id, delta) {
+      if (cart[id]) {
+        cart[id] += delta;
+        if (cart[id] <= 0) {
+          delete cart[id];
         }
-        updateCartUi();
-      });
-    });
+        updateState();
+      }
+    }
 
-    function updateCartUi() {
-      let totalQty = 0;
-      let totalPrice = 0;
-      let drawerHtml = '';
+    function updateState() {
+      let totalCount = 0;
+      let subtotal = 0;
+      
+      // Update morphing item button states on the page
+      for (let i = 1; i <= 9; i++) {
+        const addBtn = document.getElementById(`add-btn-${i}`);
+        const qtySel = document.getElementById(`qty-sel-${i}`);
+        const qtyVal = document.getElementById(`qty-val-${i}`);
+        
+        if (cart[i] && cart[i] > 0) {
+          addBtn.style.display = 'none';
+          qtySel.classList.add('active');
+          qtyVal.innerText = cart[i];
+          totalCount += cart[i];
+          subtotal += itemDb[i].price * cart[i];
+        } else {
+          addBtn.style.display = 'flex';
+          qtySel.classList.remove('active');
+        }
+      }
 
+      // Update Floating Cart Pill
+      const cartPill = document.getElementById('cart-pill');
+      const cartCount = document.getElementById('cart-count');
+      const cartPrice = document.getElementById('cart-total-price');
+      
+      if (totalCount > 0) {
+        cartPill.classList.add('visible');
+        cartCount.innerText = totalCount;
+        cartPrice.innerText = '₹' + subtotal.toLocaleString();
+        
+        // Cart bounce animation
+        cartPill.classList.add('pulse');
+        setTimeout(() => cartPill.classList.remove('pulse'), 200);
+      } else {
+        cartPill.classList.remove('visible');
+      }
+
+      // Update Cart Drawer Items List
+      const itemsList = document.getElementById('drawer-items-list');
+      let itemsHtml = '';
       for (let id in cart) {
-        totalQty += cart[id].qty;
-        totalPrice += cart[id].price * cart[id].qty;
-
-        drawerHtml += `
-          <div class="drawer-item">
+        const item = itemDb[id];
+        const qty = cart[id];
+        itemsHtml += `
+          <div class="drawer-item-row">
             <div class="drawer-item-info">
-              <h4>${cart[id].name}</h4>
-              <span>₹${cart[id].price * cart[id].qty}</span>
+              <h4>${item.name}</h4>
+              <span>₹${item.price} &times; ${qty}</span>
             </div>
-            <div class="drawer-item-actions">
-              <button class="qty-btn" onclick="adjustQty('${id}', -1)">&minus;</button>
-              <span>${cart[id].qty}</span>
-              <button class="qty-btn" onclick="adjustQty('${id}', 1)">&plus;</button>
+            <div class="drawer-item-right">
+              <div class="qty-selector active" style="position:static; opacity:1; pointer-events:auto; transform:none; width:auto; height:auto; border:none; background:none; padding:0; gap:8px;">
+                <button class="qty-btn" onclick="adjustQty(${id}, -1)">&minus;</button>
+                <span class="qty-val">${qty}</span>
+                <button class="qty-btn" onclick="adjustQty(${id}, 1)">&plus;</button>
+              </div>
+              <span class="drawer-item-price">₹${(item.price * qty).toLocaleString()}</span>
             </div>
           </div>
         `;
       }
+      itemsList.innerHTML = itemsHtml || '<p style="text-align:center; padding:32px 0; color:rgba(0,0,0,0.3);">Your cart is currently empty.</p>';
 
-      cartCount.innerText = totalQty;
-      totalPriceEl.innerText = '₹' + totalPrice;
-      drawerItemsContainer.innerHTML = drawerHtml;
-
-      if (totalQty > 0) {
-        cartIndicator.style.display = 'flex';
-      } else {
-        cartIndicator.style.display = 'none';
-        cartOverlay.classList.remove('open');
-      }
+      // Update subtotal, tax, grand total
+      const gst = Math.round(subtotal * 0.05);
+      const grandTotal = subtotal + gst;
+      
+      document.getElementById('subtotal-val').innerText = '₹' + subtotal.toLocaleString();
+      document.getElementById('gst-val').innerText = '₹' + gst.toLocaleString();
+      document.getElementById('grand-total-val').innerText = '₹' + grandTotal.toLocaleString();
     }
 
-    window.adjustQty = function(id, val) {
-      if (cart[id]) {
-        cart[id].qty += val;
-        if (cart[id].qty <= 0) {
-          delete cart[id];
-        }
-        updateCartUi();
+    // ═══════════════════════════════════════
+    // NAVIGATION SCROLL CLASS
+    // ═══════════════════════════════════════
+    window.addEventListener('scroll', () => {
+      const topNav = document.getElementById('top-nav');
+      if (window.scrollY > 40) {
+        topNav.classList.add('scrolled');
+      } else {
+        topNav.classList.remove('scrolled');
       }
+    });
+
+    // ═══════════════════════════════════════
+    // CALL STAFF BUTTON LOGIC
+    // ═══════════════════════════════════════
+    const staffBtn = document.getElementById('call-staff');
+    const staffMobile = document.getElementById('call-staff-mobile');
+    
+    function callStaffTrigger(btn) {
+      const originalText = btn.innerText;
+      btn.innerText = "Staff notified ✓";
+      btn.classList.add('notified');
+      setTimeout(() => {
+        btn.innerText = originalText;
+        btn.classList.remove('notified');
+      }, 2000);
+    }
+    staffBtn.addEventListener('click', () => callStaffTrigger(staffBtn));
+    staffMobile.addEventListener('click', () => callStaffTrigger(staffMobile));
+
+    // ═══════════════════════════════════════
+    // ROTATING NOTICE TICKER
+    // ═══════════════════════════════════════
+    let currentNotice = 1;
+    setInterval(() => {
+      document.getElementById(`notice-${currentNotice}`).classList.remove('active');
+      currentNotice = (currentNotice % 3) + 1;
+      document.getElementById(`notice-${currentNotice}`).classList.add('active');
+    }, 4000);
+
+    // ═══════════════════════════════════════
+    // CATEGORY ANCHORS & SCROLL SNAPPING
+    // ═══════════════════════════════════════
+    function scrollToCategory(id) {
+      const element = document.getElementById(id);
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Category tracking IntersectionObserver
+    const sections = document.querySelectorAll('.category-section');
+    const navPills = document.querySelectorAll('.cat-pill');
+    const observerOptions = {
+      root: null,
+      rootMargin: '-10% 0px -60% 0px',
+      threshold: 0
     };
 
-    // Open/Close Cart Side Drawer
-    cartIndicator.addEventListener('click', () => {
-      cartOverlay.classList.add('open');
-    });
-    closeDrawerBtn.addEventListener('click', () => {
-      cartOverlay.classList.remove('open');
-    });
-    cartOverlay.addEventListener('click', (e) => {
-      if (e.target === cartOverlay) {
-        cartOverlay.classList.remove('open');
-      }
-    });
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          navPills.forEach(pill => {
+            const onclickText = pill.getAttribute('onclick');
+            if (onclickText && onclickText.includes(id)) {
+              pill.classList.add('active');
+              // Auto-scroll pill strip
+              pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            } else {
+              pill.classList.remove('active');
+            }
+          });
+        }
+      });
+    }, observerOptions);
 
-    // Checkout Simulated Modal
-    const checkoutBtn = document.getElementById('checkout-btn');
-    const successOverlay = document.getElementById('success-overlay');
-    const successClose = document.getElementById('success-close');
+    sections.forEach(section => observer.observe(section));
 
-    checkoutBtn.addEventListener('click', () => {
-      cartOverlay.classList.remove('open');
-      successOverlay.classList.add('open');
-    });
+    // ═══════════════════════════════════════
+    // DRAWER TOGGLE ENGINE
+    // ═══════════════════════════════════════
+    function openDrawer() {
+      document.getElementById('drawer-overlay').classList.add('active');
+      document.getElementById('cart-drawer').classList.add('active');
+    }
+    function closeDrawer() {
+      document.getElementById('drawer-overlay').classList.remove('active');
+      document.getElementById('cart-drawer').classList.remove('active');
+    }
 
-    successClose.addEventListener('click', () => {
-      successOverlay.classList.remove('open');
-      cart = {};
-      updateCartUi();
-    });
+    // ═══════════════════════════════════════
+    // CHECKOUT ORDER SIMULATION
+    // ═══════════════════════════════════════
+    function triggerCheckout() {
+      const payBtn = document.getElementById('pay-btn');
+      payBtn.innerText = "Order Sent to Kitchen ✓";
+      payBtn.classList.add('success');
+      
+      setTimeout(() => {
+        closeDrawer();
+        cart = {};
+        updateState();
+        payBtn.innerText = "Pay at Table";
+        payBtn.classList.remove('success');
+      }, 2500);
+    }
   </script>
 </body>
 </html>
