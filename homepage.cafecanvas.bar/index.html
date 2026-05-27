@@ -287,6 +287,61 @@ p {
   z-index: 0;
 }
 
+/* Centerpiece Content */
+.hero-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 3;
+  max-width: 740px;
+  width: 90%;
+  color: #FAF6F0;
+}
+.hero-content h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(38px, 5.5vw, 64px);
+  font-weight: 400;
+  line-height: 1.12;
+  color: #FAF6F0;
+  margin-bottom: 22px;
+}
+.hero-content h1 i {
+  font-style: italic;
+  font-weight: 300;
+  color: #C9A84C;
+}
+.hero-content p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(15px, 1.8vw, 19px);
+  font-weight: 300;
+  color: rgba(250,246,240,0.85);
+  line-height: 1.62;
+  margin-bottom: 34px;
+}
+.hero-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #C9A84C;
+  color: #1A120A;
+  border-radius: 100px;
+  padding: 14px 38px;
+  transition: all 0.3s cubic-bezier(0.23,1,0.32,1);
+  display: inline-block;
+  box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  pointer-events: auto;
+}
+.hero-btn:hover {
+  background: #FAF6F0;
+  color: #1A120A;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(250,246,240,0.4);
+}
+
 /* Hero Floating Cards */
 .hero-cards {
   position: absolute;
@@ -1622,9 +1677,27 @@ select.form-field option {
 }
 
 @media (max-width: 640px) {
-  #hero { height: 70svh; }
+  #hero { height: 78svh; }
   .hero-card-revenue, .hero-card-menu { display: none; }
-  .hero-card-table { left: 50%; transform: translateX(-50%); bottom: 80px; }
+  .hero-card-table { left: 50%; transform: translateX(-50%); bottom: 64px; }
+  
+  .hero-content {
+    top: 44%;
+    width: 92%;
+  }
+  .hero-content h1 {
+    font-size: 32px;
+    margin-bottom: 16px;
+  }
+  .hero-content p {
+    font-size: 14px;
+    margin-bottom: 24px;
+    padding: 0 8px;
+  }
+  .hero-btn {
+    padding: 12px 30px;
+    font-size: 12px;
+  }
   
   .photo-section {
     background-attachment: scroll;
@@ -1669,6 +1742,14 @@ select.form-field option {
      HERO SECTION
      ═══════════════════════════════════════ -->
 <section id="hero">
+  
+  <!-- Hero Centerpiece Content -->
+  <div class="hero-content" data-reveal>
+    <span class="tag-label" style="color: #C9A84C; margin-bottom: 12px;">Now in Early Access</span>
+    <h1>The Operating System for <br><i>Modern Hospitality</i></h1>
+    <p>Every part of running your restaurant, bar, or café — connected in one clean, premium platform.</p>
+    <a href="#cta" class="hero-btn">Get Started Free</a>
+  </div>
   
   <div class="hero-cards">
     <!-- Card 1: Table Status -->
