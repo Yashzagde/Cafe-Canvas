@@ -1242,6 +1242,22 @@ p {
 }
 .theme-strip::-webkit-scrollbar { display: none; }
 .theme-strip.grabbing { cursor: grabbing; }
+/* Staggered entry and float animations */
+@keyframes themeCardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
 .theme-card {
   flex: 0 0 220px;
   height: 300px;
@@ -1249,9 +1265,220 @@ p {
   overflow: hidden;
   scroll-snap-align: start;
   position: relative;
-  transition: transform 0.4s cubic-bezier(0.23,1,0.32,1);
+  transition: transform 0.4s cubic-bezier(0.23,1,0.32,1), scale 0.4s cubic-bezier(0.23,1,0.32,1), box-shadow 0.4s cubic-bezier(0.23,1,0.32,1);
+  cursor: pointer;
+  opacity: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-.theme-card:hover { transform: translateY(-6px); }
+
+.theme-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transform: skewX(-20deg);
+}
+
+.theme-card:hover::after {
+  left: 150%;
+  transition: left 0.5s ease-out;
+}
+
+.theme-card:hover {
+  transform: translateY(-16px) !important;
+  scale: 1.04;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.22);
+}
+
+.theme-card:hover .theme-info {
+  background: rgba(253,250,245,0.95);
+}
+
+.theme-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 18, 10, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.theme-card:hover .theme-card-overlay {
+  opacity: 1;
+}
+
+.preview-badge {
+  background: rgba(20, 14, 8, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #FAF6F0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 100px;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  letter-spacing: 0.05em;
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.23,1,0.32,1);
+}
+
+.theme-card:hover .preview-badge {
+  transform: scale(1);
+}
+
+/* Staggered entrance and float delays */
+.theme-card:nth-child(1) { animation: themeCardEntrance 0.6s ease-out forwards, cardFloat 6s ease-in-out infinite; animation-delay: 0s, 0s; }
+.theme-card:nth-child(2) { animation: themeCardEntrance 0.6s ease-out forwards, cardFloat 6s ease-in-out infinite; animation-delay: 0.08s, 0.6s; }
+.theme-card:nth-child(3) { animation: themeCardEntrance 0.6s ease-out forwards, cardFloat 6s ease-in-out infinite; animation-delay: 0.16s, 1.2s; }
+.theme-card:nth-child(4) { animation: themeCardEntrance 0.6s ease-out forwards, cardFloat 6s ease-in-out infinite; animation-delay: 0.24s, 1.8s; }
+.theme-card:nth-child(5) { animation: themeCardEntrance 0.6s ease-out forwards, cardFloat 6s ease-in-out infinite; animation-delay: 0.32s, 2.4s; }
+.theme-card:nth-child(6) { animation: themeCardEntrance 0.6s ease-out forwards, cardFloat 6s ease-in-out infinite; animation-delay: 0.40s, 3.0s; }
+.theme-card:nth-child(7) { animation: themeCardEntrance 0.6s ease-out forwards, cardFloat 6s ease-in-out infinite; animation-delay: 0.48s, 3.6s; }
+.theme-card:nth-child(8) { animation: themeCardEntrance 0.6s ease-out forwards, cardFloat 6s ease-in-out infinite; animation-delay: 0.56s, 4.2s; }
+.theme-card:nth-child(9) { animation: themeCardEntrance 0.6s ease-out forwards, cardFloat 6s ease-in-out infinite; animation-delay: 0.64s, 4.8s; }
+.theme-card:nth-child(10) { animation: themeCardEntrance 0.6s ease-out forwards, cardFloat 6s ease-in-out infinite; animation-delay: 0.72s, 5.4s; }
+
+/* ── Modal Styles ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 8, 5, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-content {
+  width: 90%;
+  max-width: 1100px;
+  height: 88%;
+  overflow: hidden;
+  border-radius: 24px;
+  position: relative;
+  transform: translateY(60px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  background: #FDFAF5;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+.modal-overlay.open .modal-content {
+  transform: translateY(0);
+  opacity: 1;
+}
+.modal-header-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+  background: rgba(253, 250, 245, 0.8);
+  backdrop-filter: blur(12px);
+  z-index: 10;
+}
+.modal-title-area {
+  display: flex;
+  flex-direction: column;
+}
+.modal-title-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: #1C1208;
+}
+.modal-title-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: #8B7355;
+}
+.modal-header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.modal-btn-demo {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  background: #C9A84C;
+  color: #1A120A;
+  border-radius: 100px;
+  padding: 8px 18px;
+  transition: background 0.3s;
+}
+.modal-btn-demo:hover {
+  background: #A8873A;
+}
+.modal-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(20, 14, 8, 0.1);
+  color: #1C1208;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+}
+.modal-close-btn:hover {
+  background: rgba(20, 14, 8, 0.8);
+  color: #FAF6F0;
+}
+.modal-body-viewport {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+.modal-footer-cta {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(201, 168, 76, 0.15);
+  background: rgba(253, 250, 245, 0.8);
+  backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+}
+.modal-btn-cta {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  background: #C9A84C;
+  color: #1A120A;
+  border-radius: 100px;
+  padding: 12px 30px;
+  transition: background 0.3s, transform 0.3s;
+}
+.modal-btn-cta:hover {
+  background: #A8873A;
+  transform: translateY(-2px);
+}
 .theme-gradient {
   width: 100%;
   height: 70%;
@@ -2749,7 +2976,301 @@ select.form-field option {
       successState.classList.add('show');
     }
   });
+
+  // ── Theme Preview Modal JavaScript ──
+  const themeModal = document.getElementById('theme-modal');
+  const modalBodyContent = document.getElementById('modal-body-content');
+  const modalThemeTitle = document.getElementById('modal-theme-title');
+  const modalThemeDesc = document.getElementById('modal-theme-desc');
+  const modalDemoLink = document.getElementById('modal-demo-link');
+  const modalCloseX = document.getElementById('modal-close-x');
+  const modalCtaBtn = document.getElementById('modal-cta-btn');
+
+  // Theme definition dictionary for dynamic preview inside modal
+  const themeDefinitions = {
+    '1': {
+      name: 'Liquid Glass Premium',
+      bestFor: 'Rooftop bars, fine dining',
+      demoUrl: 'theme-01.html',
+      bg: 'linear-gradient(160deg, #0A0A1A, #2D2040)',
+      accent: '#D4AF37',
+      text: '#FAF6F0',
+      logo: 'LUMINA',
+      tagline: 'Elevated dining, starlit hospitality',
+      items: [
+        { name: 'Truffle Arancini', desc: 'Wild mushroom, black truffle, gold leaf, aged parmesan paste.', price: '₹960' },
+        { name: 'Wagyu Sliders', desc: 'Double wagyu beef, aged cheddar, caramelized shallots, brioche.', price: '₹920' },
+        { name: 'Golden Craft Cocktail', desc: 'Single malt whisky, gold leaf flakes, saffron syrup, orange peel.', price: '₹580' }
+      ]
+    },
+    '2': {
+      name: 'Liquid Glass Basic',
+      bestFor: 'Minimalist cafés, all-day dining',
+      demoUrl: 'theme-02.html',
+      bg: 'linear-gradient(160deg, #F8F9FA, #FFE8D6)',
+      accent: '#FF6B35',
+      text: '#1A1A2E',
+      logo: 'LUME',
+      tagline: 'Simple, pure, essential ingredients',
+      items: [
+        { name: 'Avocado Sourdough', desc: 'Freshly smashed Haas avocado, organic seeds, wild microgreens.', price: '₹480' },
+        { name: 'Matcha Rose Latte', desc: 'Ceremonial grade matcha, organic rosewater, oat milk.', price: '₹320' },
+        { name: 'Peach Ricotta Toast', desc: 'Whipped fresh ricotta, caramelized summer peaches, local thyme honey.', price: '₹440' }
+      ]
+    },
+    '3': {
+      name: 'Classic Cafe Brown',
+      bestFor: 'Traditional coffee houses, chai',
+      demoUrl: 'theme-03.html',
+      bg: 'linear-gradient(160deg, #3D1C02, #A0522D)',
+      accent: '#D2691E',
+      text: '#FFF3E0',
+      logo: 'CHAI & CO',
+      tagline: 'A warm mug, a quiet page, a perfect blend',
+      items: [
+        { name: 'Classic Bun Maska', desc: 'Toasted bun, premium hand-churned white butter, cardamon.', price: '₹140' },
+        { name: 'Signature Elaichi Chai', desc: 'Slow-brewed Assam leaves, fresh cardamom, whole organic milk.', price: '₹120' },
+        { name: 'Saffron Pistachio Cake', desc: 'Moist semolina sponge, saffron milk soak, sliced pistachios.', price: '₹280' }
+      ]
+    },
+    '4': {
+      name: 'Matcha Zen',
+      bestFor: 'Japanese cafés, wellness brands',
+      demoUrl: 'theme-04.html',
+      bg: 'linear-gradient(160deg, #F5F0E8, #D8EAC8)',
+      accent: '#4A7C24',
+      text: '#2D5016',
+      logo: '緑 MIDORI',
+      tagline: 'Purity, quietness, and ritual in every sip',
+      items: [
+        { name: 'Ceremonial Matcha Tea', desc: 'Whisked ceremonial Uji matcha, pure hot spring water.', price: '₹340' },
+        { name: 'Mochi Ice Cream Duo', desc: 'Sweet glutinous rice cake shells filled with matcha & sakura cream.', price: '₹220' },
+        { name: 'Zen Garden Toast', desc: 'Toasted brioche, sweet red bean paste, fresh sliced strawberries.', price: '₹380' }
+      ]
+    },
+    '5': {
+      name: 'Rajasthani Royal',
+      bestFor: 'Thali restaurants, royal dining',
+      demoUrl: 'theme-05.html',
+      bg: 'linear-gradient(160deg, #8B0000, #4B0082)',
+      accent: '#D4AF37',
+      text: '#FAF6F0',
+      logo: 'MANWAR',
+      tagline: 'A royal feast, ancient heritage, unforgettable flavours',
+      items: [
+        { name: 'Kesari Bati & Dal Thali', desc: 'Rich slow-cooked lentils, ghee-drenched wheat balls, saffron dessert.', price: '₹750' },
+        { name: 'Shahi Laal Maas', desc: 'Tender lamb slow-simmered in a fiery Mathania red chili gravy.', price: '₹680' },
+        { name: 'Mawa Kachori Royal', desc: 'Sweet golden pastry filled with dry fruits, soaked in saffron syrup.', price: '₹240' }
+      ]
+    },
+    '6': {
+      name: 'Maharashtrian Heritage',
+      bestFor: 'Street food, Mumbai and Pune',
+      demoUrl: 'theme-06.html',
+      bg: 'linear-gradient(160deg, #FFF5EE, #FFD4A8)',
+      accent: '#FF8C00',
+      text: '#3D1C00',
+      logo: 'SWAD',
+      tagline: 'Vibrant spices, busy streets, nostalgic recipes',
+      items: [
+        { name: 'Special Vada Pav', desc: 'Golden-fried spiced potato batata vada in a butter-toasted bun.', price: '₹90' },
+        { name: 'Kothimbir Vadi Plate', desc: 'Crispy pan-fried steamed coriander and gram flour cakes.', price: '₹140' },
+        { name: 'Aamras Puri (Seasonal)', desc: 'Pure fresh Alphonso mango pulp served with hot puffy purises.', price: '₹280' }
+      ]
+    },
+    '7': {
+      name: 'Mughal Garden',
+      bestFor: 'Mughlai cuisine, biryani houses',
+      demoUrl: 'theme-07.html',
+      bg: 'linear-gradient(160deg, #1B4332, #2D6A4F)',
+      accent: '#D4AF37',
+      text: '#FAF6F0',
+      logo: 'DAAWAT',
+      tagline: 'Fragrant grains, rich gravies, recipes of the emperors',
+      items: [
+        { name: 'Lucknowi Dum Biryani', desc: 'Basmati rice and tender chicken dum-cooked with rosewater, saffron.', price: '₹550' },
+        { name: 'Murgh Makhani Jahangiri', desc: 'Charcoal-grilled chicken tikka in a silky rich tomato-cashew butter sauce.', price: '₹480' },
+        { name: 'Shahi Tukda Mughal', desc: 'Golden-fried ghee toast soaked in cardamom milk, loaded with rabdi.', price: '₹200' }
+      ]
+    },
+    '8': {
+      name: 'Gujarat Mithai Gold',
+      bestFor: 'Mithai shops, Gujarati thali',
+      demoUrl: 'theme-08.html',
+      bg: 'linear-gradient(160deg, #FFFAF0, #FFE566)',
+      accent: '#FF8C00',
+      text: '#3D1C00',
+      logo: 'UPEHAA',
+      tagline: 'A celebration of sweetness, hospitality, and joy',
+      items: [
+        { name: 'Premium Kesar Pista Shrikhand', desc: 'Thick strained organic sweet yogurt flavored with saffron & pistachios.', price: '₹180' },
+        { name: 'Khandvi & Dhokla Combo', desc: 'Soft tempered chickpea flour rolls and light spongy steamed savory cakes.', price: '₹160' },
+        { name: 'Dryfruit Mohanthal', desc: 'Traditional rich roasted gram flour fudge loaded with dry fruits.', price: '₹220' }
+      ]
+    },
+    '9': {
+      name: 'Japanese Sakura',
+      bestFor: 'Sushi bars, Japanese dessert cafés',
+      demoUrl: 'theme-09.html',
+      bg: 'linear-gradient(160deg, #FFF0F5, #FFD6E4)',
+      accent: '#EC4899',
+      text: '#1C1C1C',
+      logo: '桜 SAKURA',
+      tagline: 'Soft flavours, pink petals, a quiet afternoon tea',
+      items: [
+        { name: 'Sakura Blossom Tea', desc: 'Salt-pickled cherry blossom petals steeped in hot light spring water.', price: '₹260' },
+        { name: 'Pink Salmon Nigiri Duo', desc: 'Premium sliced fresh Atlantic salmon over lightly vinegared sushi rice.', price: '₹480' },
+        { name: 'Sakura Macaron Trio', desc: 'Delicate pink macarons filled with sakura-scented white chocolate ganache.', price: '₹320' }
+      ]
+    },
+    '10': {
+      name: 'Italian Trattoria',
+      bestFor: 'Pizzerias, pasta bars, trattorias',
+      demoUrl: 'theme-10.html',
+      bg: 'linear-gradient(160deg, #F5F0E0, #DEB887)',
+      accent: '#009246',
+      text: '#5C4033',
+      logo: 'TRATTORIA BELLA',
+      tagline: 'Stone ovens, hand-rolled pasta, olive grove memories',
+      items: [
+        { name: 'Margherita DOC Pizza', desc: 'Wood-fired sourdough crust, San Marzano tomatoes, buffalo mozzarella, fresh basil.', price: '₹590' },
+        { name: 'Hand-Rolled Pesto Gnocchi', desc: 'Soft potato gnocchi tossed in fresh Ligurian basil pesto and pine nuts.', price: '₹540' },
+        { name: 'Classic Espresso Tiramisu', desc: 'Ladyfinger biscuits soaked in strong espresso, layered with whipped mascarpone cream.', price: '₹340' }
+      ]
+    }
+  };
+
+  function openThemeModal(themeId) {
+    const def = themeDefinitions[themeId];
+    if (!def) return;
+
+    modalThemeTitle.innerText = def.name;
+    modalThemeDesc.innerText = def.bestFor;
+    modalDemoLink.setAttribute('href', def.demoUrl);
+
+    // Build realistic sample digital menu page inside modal
+    let menuHtml = `
+      <div class="mock-menu-app" style="background: ${def.bg}; color: ${def.text}; min-height: 100%; padding: 40px 24px; font-family: 'DM Sans', sans-serif; position: relative;">
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 24px; border-bottom: 1px solid rgba(201,168,76,0.20);">
+          <span style="font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; color: ${def.accent};">${def.logo}</span>
+          <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: ${def.accent}; border: 1px solid ${def.accent}; padding: 4px 12px; border-radius: 20px;">Dine-In Menu</span>
+        </div>
+        
+        <!-- Hero Tagline -->
+        <div style="text-align: center; padding: 48px 0 24px;">
+          <h2 style="font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 400; margin-bottom: 8px; line-height: 1.2; color: ${def.text};">${def.name}</h2>
+          <p style="font-size: 14px; font-style: italic; opacity: 0.8; max-width: 500px; margin: 0 auto;">"${def.tagline}"</p>
+        </div>
+
+        <!-- Categories -->
+        <div style="display: flex; gap: 8px; justify-content: center; overflow-x: auto; padding-bottom: 32px;">
+          <span style="background: ${def.accent}; color: ${def.bg.includes('#FFF') || def.bg.includes('#F8') || def.bg.includes('#FFFAF0') || def.bg.includes('#F5') ? '#1C1208' : '#FAF6F0'}; font-size: 12px; font-weight: 500; padding: 6px 16px; border-radius: 20px; cursor: pointer;">Today's Specials</span>
+          <span style="border: 1px solid rgba(201,168,76,0.3); font-size: 12px; opacity: 0.7; padding: 6px 16px; border-radius: 20px;">Mains</span>
+          <span style="border: 1px solid rgba(201,168,76,0.3); font-size: 12px; opacity: 0.7; padding: 6px 16px; border-radius: 20px;">Desserts</span>
+        </div>
+
+        <!-- Menu Item Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 900px; margin: 0 auto;">
+    `;
+
+    def.items.forEach(item => {
+      menuHtml += `
+          <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(201,168,76,0.15); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; backdrop-filter: blur(10px);">
+            <div>
+              <div style="height: 140px; border-radius: 12px; background: linear-gradient(135deg, ${def.accent}33, ${def.accent}66); margin-bottom: 16px; display: flex; align-items: center; justify-content: center; font-size: 12px; opacity: 0.8; font-style: italic;">Dish Image Placeholder</div>
+              <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; margin-bottom: 6px; color: ${def.text};">${item.name}</h4>
+              <p style="font-size: 13px; opacity: 0.7; line-height: 1.5; margin-bottom: 16px;">${item.desc}</p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: ${def.accent};">${item.price}</span>
+              <button style="background: ${def.accent}; color: ${def.bg.includes('#FFF') || def.bg.includes('#F8') || def.bg.includes('#FFFAF0') || def.bg.includes('#F5') ? '#1C1208' : '#FAF6F0'}; border: none; padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 500;">Add to Order</button>
+            </div>
+          </div>
+      `;
+    });
+
+    menuHtml += `
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 48px; padding-top: 24px; border-top: 1px solid rgba(201,168,76,0.15); opacity: 0.6; font-size: 11px;">
+          <p>Powered by <strong>Cafe Canvas</strong></p>
+          <p style="font-size: 9px; margin-top: 4px;">Table 04 · Live Digital Menu Demo</p>
+        </div>
+      </div>
+    `;
+
+    modalBodyContent.innerHTML = menuHtml;
+    themeModal.classList.add('open');
+    document.body.style.overflow = 'hidden'; // Lock background scroll
+  }
+
+  function closeThemeModal() {
+    themeModal.classList.remove('open');
+    document.body.style.overflow = ''; // Restore background scroll
+  }
+
+  // Hook theme card clicks
+  const themeCards = document.querySelectorAll('.theme-card');
+  themeCards.forEach((card, index) => {
+    // Add overlays dynamically
+    const overlay = document.createElement('div');
+    overlay.className = 'theme-card-overlay';
+    overlay.innerHTML = '<span class="preview-badge">Preview &rarr;</span>';
+    card.appendChild(overlay);
+
+    card.addEventListener('click', () => {
+      openThemeModal(String(index + 1));
+    });
+  });
+
+  // Modal event listeners
+  modalCloseX.addEventListener('click', closeThemeModal);
+  themeModal.addEventListener('click', (e) => {
+    if (e.target === themeModal) {
+      closeThemeModal();
+    }
+  });
+
+  modalCtaBtn.addEventListener('click', () => {
+    closeThemeModal();
+    const ctaSection = document.getElementById('cta');
+    if (ctaSection) {
+      ctaSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
+  // Close on Escape key
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && themeModal.classList.contains('open')) {
+      closeThemeModal();
+    }
+  });
 </script>
+
+<!-- Theme Preview Modal HTML -->
+<div id="theme-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header-nav">
+      <div class="modal-title-area">
+        <span class="modal-title-name" id="modal-theme-title">Theme Preview</span>
+        <span class="modal-title-desc" id="modal-theme-desc">Custom restaurant theme</span>
+      </div>
+      <div class="modal-header-actions">
+        <a id="modal-demo-link" href="#" class="modal-btn-demo" target="_blank">Open Fullscreen Demo &rarr;</a>
+        <button class="modal-close-btn" id="modal-close-x">&times;</button>
+      </div>
+    </div>
+    <div class="modal-body-viewport" id="modal-body-content">
+      <!-- Dynamic interactive digital menu preview goes here -->
+    </div>
+    <div class="modal-footer-cta">
+      <button class="modal-btn-cta" id="modal-cta-btn">Pre-Register to Get All 50+ Themes &rarr;</button>
+    </div>
+  </div>
+</div>
+
 <script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
 </html>

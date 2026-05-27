@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LUME — Liquid Glass Basic Menu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    /* Reset & Base */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      color: #1A1A2E;
+      background: #F8F9FA;
+      overflow-x: hidden;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* Immersive Background */
+    .bg-glow-container {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(160deg, #F8F9FA, #FFF5ED, #FFE8D6);
+      overflow: hidden;
+    }
+    .frosted-shape {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 300px;
+      border-radius: 40px;
+      background: rgba(255, 255, 255, 0.4);
+      filter: blur(40px);
+    }
+
+    /* Layout & Styling */
+    .menu-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 24px 100px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 107, 53, 0.15);
+      margin-bottom: 40px;
+    }
+    .back-home {
+      font-size: 13px;
+      font-weight: 500;
+      color: #FF6B35;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.3s;
+    }
+    .back-home:hover { color: #1A1A2E; }
+    .restaurant-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #FF6B35;
+    }
+
+    /* Hero */
+    .menu-hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .menu-hero h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 48px;
+      font-weight: 400;
+      color: #1A1A2E;
+      margin-bottom: 12px;
+    }
+    .menu-hero p {
+      font-size: 15px;
+      color: #4E4E6A;
+      max-width: 600px;
+      margin: 0 auto;
+      font-style: italic;
+    }
+
+    /* Category Filter Strip */
+    .category-strip {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 40px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      scrollbar-width: none;
+    }
+    .category-strip::-webkit-scrollbar { display: none; }
+    .category-btn {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1A1A2E;
+      border: 1px solid rgba(255, 107, 53, 0.2);
+      background: rgba(255, 255, 255, 0.3);
+      padding: 8px 20px;
+      border-radius: 30px;
+      transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .category-btn:hover, .category-btn.active {
+      background: #FF6B35;
+      color: #FFFFFF;
+      border-color: #FF6B35;
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.25);
+    }
+
+    /* Menu Items Grid */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+    }
+    .menu-card {
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 107, 53, 0.12);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(26, 26, 46, 0.05);
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      position: relative;
+    }
+    .menu-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(255, 107, 53, 0.35);
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 20px 40px rgba(26, 26, 46, 0.08);
+    }
+
+    /* Item Details */
+    .item-image-placeholder {
+      height: 180px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(255, 107, 53, 0.05), rgba(255, 107, 53, 0.12));
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 107, 53, 0.08);
+      position: relative;
+    }
+    .item-image-placeholder span {
+      font-size: 12px;
+      color: #6E6E8A;
+      font-style: italic;
+    }
+    .item-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 500;
+      color: #1A1A2E;
+      margin-bottom: 6px;
+    }
+    .item-desc {
+      font-size: 14px;
+      color: #5E5E7A;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .item-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item-price {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: #FF6B35;
+    }
+    .add-to-cart-btn {
+      font-size: 12px;
+      font-weight: 500;
+      background: #FF6B35;
+      color: #FFFFFF;
+      padding: 8px 18px;
+      border-radius: 30px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.15);
+    }
+    .add-to-cart-btn:hover {
+      background: #1A1A2E;
+      color: #FFFFFF;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(26, 26, 46, 0.2);
+    }
+
+    /* Floating Cart Indicator */
+    .cart-indicator {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 100;
+      background: #FF6B35;
+      color: #FFFFFF;
+      padding: 16px 24px;
+      border-radius: 100px;
+      box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 0.3s, background-color 0.3s;
+    }
+    .cart-indicator:hover {
+      background: #1A1A2E;
+      transform: scale(1.05) translateY(-2px);
+    }
+    .cart-indicator-badge {
+      background: #FFFFFF;
+      color: #FF6B35;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    /* Cart Drawer */
+    .cart-drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(8px);
+      z-index: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+    .cart-drawer-overlay.open { opacity: 1; pointer-events: auto; }
+    
+    .cart-drawer {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: 100%; max-width: 440px;
+      background: #FFFFFF;
+      border-left: 1px solid rgba(255, 107, 53, 0.15);
+      backdrop-filter: blur(24px);
+      z-index: 501;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      display: flex;
+      flex-direction: column;
+      padding: 40px 30px;
+      box-shadow: -20px 0 50px rgba(26,26,46,0.05);
+    }
+    .cart-drawer-overlay.open .cart-drawer { transform: translateX(0); }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    .drawer-header h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      color: #FF6B35;
+    }
+    .close-drawer {
+      font-size: 24px;
+      color: #1A1A2E;
+      cursor: pointer;
+    }
+
+    .drawer-items {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 30px;
+    }
+    .drawer-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(26,26,46,0.05);
+    }
+    .drawer-item-info h4 {
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    .drawer-item-info span {
+      font-size: 13px;
+      color: #FF6B35;
+    }
+    .drawer-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .qty-btn {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 107, 53, 0.3);
+      color: #1A1A2E;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .qty-btn:hover { background: #FF6B35; color: #FFFFFF; }
+
+    .drawer-footer {
+      border-top: 1px solid rgba(255, 107, 53, 0.15);
+      padding-top: 24px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .total-price {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      color: #FF6B35;
+    }
+    .checkout-btn {
+      width: 100%;
+      background: #FF6B35;
+      color: #FFFFFF;
+      padding: 16px 24px;
+      border-radius: 100px;
+      font-weight: 600;
+      font-size: 15px;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .checkout-btn:hover { background: #1A1A2E; transform: translateY(-2px); }
+
+    /* Success Overlay Modal */
+    .success-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 46, 0.4);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+    .success-overlay.open { opacity: 1; pointer-events: auto; }
+    .success-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(255, 107, 53, 0.3);
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 30px 60px rgba(26,26,46,0.1);
+    }
+    .success-icon {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: #FF6B35;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 20px;
+    }
+    .success-card h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      color: #FF6B35;
+      margin-bottom: 12px;
+    }
+    .success-card p {
+      font-size: 14px;
+      color: #5E5E7A;
+      margin-bottom: 30px;
+    }
+    .success-close {
+      background: #1A1A2E;
+      color: #FFFFFF;
+      padding: 10px 24px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Category Filter Transitions */
+    .menu-card {
+      transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1), border-color 0.4s, opacity 0.4s, scale 0.4s;
+    }
+    .menu-card.hidden {
+      opacity: 0;
+      scale: 0.9;
+      pointer-events: none;
+      position: absolute;
+      transform: translateY(20px);
+      z-index: -10;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Effects -->
+  <div class="bg-glow-container">
+    <div class="frosted-shape"></div>
+  </div>
+
+  <div class="menu-container">
+    <!-- Header -->
+    <header>
+      <a href="index.html" class="back-home">&larr; Back to Home</a>
+      <span class="restaurant-logo">LUME</span>
+    </header>
+
+    <!-- Hero -->
+    <div class="menu-hero">
+      <h1>All-Day Minimalist Café</h1>
+      <p>Clean tastes, organic local grains, cold-pressed fruit elixirs, and fresh pastries baked at sunrise.</p>
+    </div>
+
+    <!-- Category Filter Strip -->
+    <div class="category-strip">
+      <button class="category-btn active" data-category="all">All Items</button>
+      <button class="category-btn" data-category="all-day">All-Day</button>
+      <button class="category-btn" data-category="elixirs">Elixirs</button>
+      <button class="category-btn" data-category="desserts">Desserts</button>
+    </div>
+
+    <!-- Menu Grid -->
+    <div class="menu-grid" id="menu-grid">
+      <!-- Item 1 -->
+      <div class="menu-card" data-item-id="1" data-item-category="all-day">
+        <div>
+          <div class="item-image-placeholder">
+            <span>Avocado Sourdough Image</span>
+          </div>
+          <h3 class="item-title">Avocado Sourdough</h3>
+          <p class="item-desc">Freshly smashed Haas avocado, organic sunflower seeds, wild clover microgreens, served over thick-sliced artisan sourdough toast.</p>
+        </div>
+        <div class="item-footer">
+          <span class="item-price">₹480</span>
+          <button class="add-to-cart-btn">Add to Order</button>
+        </div>
+      </div>
+
+      <!-- Item 2 -->
+      <div class="menu-card" data-item-id="2" data-item-category="elixirs">
+        <div>
+          <div class="item-image-placeholder">
+            <span>Matcha Rose Latte Image</span>
+          </div>
+          <h3 class="item-title">Matcha Rose Latte</h3>
+          <p class="item-desc">Ceremonial grade pure Uji matcha, natural distilled rosewater, unsweetened organic oat milk.</p>
+        </div>
+        <div class="item-footer">
+          <span class="item-price">₹320</span>
+          <button class="add-to-cart-btn">Add to Order</button>
+        </div>
+      </div>
+
+      <!-- Item 3 -->
+      <div class="menu-card" data-item-id="3" data-item-category="all-day">
+        <div>
+          <div class="item-image-placeholder">
+            <span>Peach Ricotta Toast Image</span>
+          </div>
+          <h3 class="item-title">Peach Ricotta Toast</h3>
+          <p class="item-desc">Whipped local fresh milk ricotta, caramelized summer peaches, wildflower thyme-infused organic honey on multi-grain bread.</p>
+        </div>
+        <div class="item-footer">
+          <span class="item-price">₹440</span>
+          <button class="add-to-cart-btn">Add to Order</button>
+        </div>
+      </div>
+
+      <!-- Item 4 -->
+      <div class="menu-card" data-item-id="4" data-item-category="elixirs">
+        <div>
+          <div class="item-image-placeholder">
+            <span>Cold Brew Orange Tonic Image</span>
+          </div>
+          <h3 class="item-title">Cold Brew Orange Tonic</h3>
+          <p class="item-desc">18-hour slow cold brew coffee, fresh squeezed orange juice, premium craft tonic water, fresh mint leaves sprig.</p>
+        </div>
+        <div class="item-footer">
+          <span class="item-price">₹360</span>
+          <button class="add-to-cart-btn">Add to Order</button>
+        </div>
+      </div>
+
+      <!-- Item 5 -->
+      <div class="menu-card" data-item-id="5" data-item-category="desserts">
+        <div>
+          <div class="item-image-placeholder">
+            <span>Citrus Vanilla Tart Image</span>
+          </div>
+          <h3 class="item-title">Citrus Vanilla Tart</h3>
+          <p class="item-desc">Sweet tart shell, citrus blood-orange curd, organic Madagascar vanilla bean whipped cream, edible organic flower decoration.</p>
+        </div>
+        <div class="item-footer">
+          <span class="item-price">₹390</span>
+          <button class="add-to-cart-btn">Add to Order</button>
+        </div>
+      </div>
+
+      <!-- Item 6 -->
+      <div class="menu-card" data-item-id="6" data-item-category="desserts">
+        <div>
+          <div class="item-image-placeholder">
+            <span>Gluten-Free Almond Cake Image</span>
+          </div>
+          <h3 class="item-title">Almond Polenta Slice</h3>
+          <p class="item-desc">Fragrant light polenta cake made with sweet almond flour, soaked in cold-pressed blood orange syrup.</p>
+        </div>
+        <div class="item-footer">
+          <span class="item-price">₹380</span>
+          <button class="add-to-cart-btn">Add to Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Cart Indicator -->
+  <div class="cart-indicator" id="cart-indicator" style="display: none;">
+    <div class="cart-indicator-badge" id="cart-count">0</div>
+    <span>View Order</span>
+  </div>
+
+  <!-- Cart Side Drawer Overlay -->
+  <div class="cart-drawer-overlay" id="cart-drawer-overlay">
+    <div class="cart-drawer">
+      <div class="drawer-header">
+        <h3>Your Order</h3>
+        <button class="close-drawer" id="close-drawer">&times;</button>
+      </div>
+      <div class="drawer-items" id="drawer-items">
+        <!-- Rendered items go here -->
+      </div>
+      <div class="drawer-footer">
+        <div class="total-row">
+          <span>Subtotal</span>
+          <span class="total-price" id="total-price">₹0</span>
+        </div>
+        <button class="checkout-btn" id="checkout-btn">Proceed to Pay via UPI &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal Overlay -->
+  <div class="success-overlay" id="success-overlay">
+    <div class="success-card">
+      <div class="success-icon">✓</div>
+      <h3>Order Placed</h3>
+      <p>Your order was sent directly to our barista team. Your table bill is updated. Sit back and enjoy your fresh coffee and pastries!</p>
+      <button class="success-close" id="success-close">Return to Menu</button>
+    </div>
+  </div>
+
+  <script>
+    // Categories filtering
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    const menuCards = document.querySelectorAll('.menu-card');
+
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const cat = btn.getAttribute('data-category');
+        
+        menuCards.forEach(card => {
+          const itemCat = card.getAttribute('data-item-category');
+          if (cat === 'all' || itemCat === cat) {
+            card.classList.remove('hidden');
+            card.style.display = 'flex';
+          } else {
+            card.classList.add('hidden');
+            setTimeout(() => {
+              if (card.classList.contains('hidden')) {
+                card.style.display = 'none';
+              }
+            }, 400);
+          }
+        });
+      });
+    });
+
+    // Cart system state
+    let cart = {};
+
+    const itemsDb = {
+      '1': { name: 'Avocado Sourdough', price: 480 },
+      '2': { name: 'Matcha Rose Latte', price: 320 },
+      '3': { name: 'Peach Ricotta Toast', price: 440 },
+      '4': { name: 'Cold Brew Orange Tonic', price: 360 },
+      '5': { name: 'Citrus Vanilla Tart', price: 390 },
+      '6': { name: 'Almond Polenta Slice', price: 380 }
+    };
+
+    const addButtons = document.querySelectorAll('.add-to-cart-btn');
+    const cartIndicator = document.getElementById('cart-indicator');
+    const cartCount = document.getElementById('cart-count');
+    const cartOverlay = document.getElementById('cart-drawer-overlay');
+    const closeDrawerBtn = document.getElementById('close-drawer');
+    const drawerItemsContainer = document.getElementById('drawer-items');
+    const totalPriceEl = document.getElementById('total-price');
+
+    addButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const card = e.target.closest('.menu-card');
+        const id = card.getAttribute('data-item-id');
+        
+        if (cart[id]) {
+          cart[id].qty++;
+        } else {
+          cart[id] = {
+            name: itemsDb[id].name,
+            price: itemsDb[id].price,
+            qty: 1
+          };
+        }
+        updateCartUi();
+      });
+    });
+
+    function updateCartUi() {
+      let totalQty = 0;
+      let totalPrice = 0;
+      let drawerHtml = '';
+
+      for (let id in cart) {
+        totalQty += cart[id].qty;
+        totalPrice += cart[id].price * cart[id].qty;
+
+        drawerHtml += `
+          <div class="drawer-item">
+            <div class="drawer-item-info">
+              <h4>${cart[id].name}</h4>
+              <span>₹${cart[id].price * cart[id].qty}</span>
+            </div>
+            <div class="drawer-item-actions">
+              <button class="qty-btn" onclick="adjustQty('${id}', -1)">&minus;</button>
+              <span>${cart[id].qty}</span>
+              <button class="qty-btn" onclick="adjustQty('${id}', 1)">&plus;</button>
+            </div>
+          </div>
+        `;
+      }
+
+      cartCount.innerText = totalQty;
+      totalPriceEl.innerText = '₹' + totalPrice;
+      drawerItemsContainer.innerHTML = drawerHtml;
+
+      if (totalQty > 0) {
+        cartIndicator.style.display = 'flex';
+      } else {
+        cartIndicator.style.display = 'none';
+        cartOverlay.classList.remove('open');
+      }
+    }
+
+    window.adjustQty = function(id, val) {
+      if (cart[id]) {
+        cart[id].qty += val;
+        if (cart[id].qty <= 0) {
+          delete cart[id];
+        }
+        updateCartUi();
+      }
+    };
+
+    // Open/Close Cart Side Drawer
+    cartIndicator.addEventListener('click', () => {
+      cartOverlay.classList.add('open');
+    });
+    closeDrawerBtn.addEventListener('click', () => {
+      cartOverlay.classList.remove('open');
+    });
+    cartOverlay.addEventListener('click', (e) => {
+      if (e.target === cartOverlay) {
+        cartOverlay.classList.remove('open');
+      }
+    });
+
+    // Checkout Simulated Modal
+    const checkoutBtn = document.getElementById('checkout-btn');
+    const successOverlay = document.getElementById('success-overlay');
+    const successClose = document.getElementById('success-close');
+
+    checkoutBtn.addEventListener('click', () => {
+      cartOverlay.classList.remove('open');
+      successOverlay.classList.add('open');
+    });
+
+    successClose.addEventListener('click', () => {
+      successOverlay.classList.remove('open');
+      cart = {};
+      updateCartUi();
+    });
+  </script>
+</body>
+</html>
