@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cafe Canvas — The Operating System for Modern Hospitality</title>
 <meta name="description" content="Cafe Canvas is a multi-tenant hospitality operating system for cafés, restaurants, bars, and clubs across India. Pre-register for early access and a 21-day free trial.">
-<script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.27/build/spline-viewer.js"></script>
+<script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
@@ -269,7 +270,23 @@ p {
   height: 100svh;
   background: #1A120A;
   overflow: hidden;
+  background-image: url('https://images.unsplash.com/photo-1481833761820-0509d3217039?w=1920&q=85&fm=webp');
+  background-size: cover;
+  background-position: center;
 }
+#hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(15,9,4,0.62) 0%,
+    rgba(15,9,4,0.55) 50%,
+    rgba(15,9,4,0.70) 100%
+  );
+  z-index: 0;
+}
+
 #spline-wrapper {
   position: absolute;
   inset: 0;
@@ -277,12 +294,23 @@ p {
   height: 100%;
   overflow: hidden;
 }
+#spline-watermark-cover {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 180px;
+  height: 48px;
+  background: transparent;
+  z-index: 9999;
+  pointer-events: none;
+}
 #spline-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
+  background: transparent !important;
 }
 #spline-loading {
   position: absolute;
@@ -308,23 +336,6 @@ p {
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-#hero.fallback {
-  background-image: url('https://images.unsplash.com/photo-1481833761820-0509d3217039?w=1920&q=85&fm=webp');
-  background-size: cover;
-  background-position: center;
-}
-#hero.fallback::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(15,9,4,0.62) 0%,
-    rgba(15,9,4,0.55) 50%,
-    rgba(15,9,4,0.70) 100%
-  );
-  z-index: 0;
 }
 #hero.fallback #spline-wrapper { display: none; }
 #hero.fallback #spline-loading { display: none; }
@@ -371,7 +382,7 @@ p {
 
 /* Card 1 - Table Status */
 .hero-card-table {
-  bottom: 14%;
+  bottom: 10%;
   left: 6%;
   width: 200px;
 }
@@ -445,7 +456,7 @@ p {
 
 /* Card 3 - Menu Changes */
 .hero-card-menu {
-  top: 42%;
+  top: 18%;
   left: 4%;
   width: 240px;
 }
@@ -510,17 +521,7 @@ p {
   animation: pulse 2s ease-in-out infinite;
 }
 
-/* Hero Gradient Fade */
-.hero-fade {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 140px;
-  background: linear-gradient(to bottom, transparent, #FDFAF5);
-  z-index: 6;
-  pointer-events: none;
-}
+
 
 /* ═══════════════════════════════════════
    CONTENT SECTIONS
@@ -1722,7 +1723,8 @@ select.form-field option {
      ═══════════════════════════════════════ -->
 <section id="hero">
   <div id="spline-wrapper">
-    <spline-viewer url="https://prod.spline.design/zFfEmV5og1jYm4KX/scene.splinecode" id="spline-canvas"></spline-viewer>
+    <spline-viewer url="https://prod.spline.design/gsCtEfxtnUDMj9s9/scene.splinecode" id="spline-canvas" loading-anim-type="none" events-target="global"></spline-viewer>
+    <div id="spline-watermark-cover"></div>
   </div>
   
   <div id="spline-loading">
@@ -1786,7 +1788,7 @@ select.form-field option {
     </div>
   </div>
   
-  <div class="hero-fade"></div>
+
 </section>
 
 <!-- ═══════════════════════════════════════
@@ -2608,33 +2610,6 @@ select.form-field option {
 <!-- ═══════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════ -->
-<script>
-  // ── Spline 3D Loader ──
-  (function() {
-    const viewer = document.getElementById('spline-canvas');
-    const loader = document.getElementById('spline-loading');
-    const hero = document.getElementById('hero');
-    
-    // Hide watermark via style
-    const style = document.createElement('style');
-    style.textContent = '#spline-canvas::part(logo) { display: none !important; }';
-    document.head.appendChild(style);
-    
-    // Wait for spline-viewer to load the scene
-    viewer.addEventListener('load', function() {
-      loader.classList.add('fade-out');
-      setTimeout(function() { loader.style.display = 'none'; }, 800);
-    });
-    
-    // Fallback if it takes too long (15s)
-    setTimeout(function() {
-      if (loader && loader.style.display !== 'none') {
-        console.warn('Spline took too long, using fallback');
-        hero.classList.add('fallback');
-      }
-    }, 15000);
-  })();
-</script>
 
 <script>
   // ── Navigation Scroll ──
@@ -2762,6 +2737,100 @@ select.form-field option {
       successState.classList.add('show');
     }
   });
+
+  // ── Spline 3D Loader ──
+  (function() {
+    const viewer = document.getElementById('spline-canvas');
+    const loader = document.getElementById('spline-loading');
+    const hero = document.getElementById('hero');
+    let loaded = false;
+    
+    // Hide "Built with Spline" watermark
+    const style = document.createElement('style');
+    style.textContent = 'spline-viewer#spline-canvas::part(logo) { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; height: 0 !important; width: 0 !important; overflow: hidden !important; }';
+    document.head.appendChild(style);
+    
+    function hideSplineWatermark() {
+      const shadow = viewer.shadowRoot;
+      if (!shadow) return;
+      // Inject aggressive hide-all style into shadow DOM
+      let shadowStyle = shadow.querySelector('#hide-watermark');
+      if (!shadowStyle) {
+        shadowStyle = document.createElement('style');
+        shadowStyle.id = 'hide-watermark';
+        shadowStyle.textContent = '#logo, [id*="logo"], a[href*="spline"], a[target="_blank"], div[class*="logo"], div[class*="watermark"], [style*="bottom"][style*="right"] a, [style*="z-index"] a { display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; overflow: hidden !important; position: absolute !important; pointer-events: none !important; clip: rect(0,0,0,0) !important; }';
+        shadow.appendChild(shadowStyle);
+      }
+      // Remove elements directly
+      shadow.querySelectorAll('#logo, [id*="logo"], a[href*="spline"], a[target="_blank"]').forEach(function(el) { el.remove(); });
+      
+      // Make canvas background transparent as requested
+      const canvas = shadow.querySelector('canvas');
+      if (canvas) {
+        canvas.style.background = 'transparent';
+      }
+    }
+    
+    // Use MutationObserver to catch watermark and apply transparency whenever it appears
+    function watchForWatermark() {
+      const shadow = viewer.shadowRoot;
+      if (!shadow) { setTimeout(watchForWatermark, 200); return; }
+      hideSplineWatermark();
+      const observer = new MutationObserver(function() { hideSplineWatermark(); });
+      observer.observe(shadow, { childList: true, subtree: true });
+    }
+    watchForWatermark();
+    
+    function onSplineLoaded() {
+      if (loaded) return;
+      loaded = true;
+      loader.classList.add('fade-out');
+      setTimeout(function() { loader.style.display = 'none'; }, 800);
+      hideSplineWatermark();
+      setTimeout(hideSplineWatermark, 500);
+      setTimeout(hideSplineWatermark, 1500);
+      setTimeout(hideSplineWatermark, 3000);
+    }
+    
+    // Listen for the load event
+    viewer.addEventListener('load', onSplineLoaded);
+    
+    // Also listen for the spline-viewer custom 'scene-loaded' event
+    viewer.addEventListener('scene-loaded', onSplineLoaded);
+    
+    // Poll for the shadow DOM canvas as a backup detection
+    let pollCount = 0;
+    const pollInterval = setInterval(function() {
+      pollCount++;
+      if (loaded || pollCount > 60) {
+        clearInterval(pollInterval);
+        return;
+      }
+      const shadow = viewer.shadowRoot;
+      if (shadow) {
+        const canvas = shadow.querySelector('canvas');
+        if (canvas) {
+          onSplineLoaded();
+          clearInterval(pollInterval);
+        }
+      }
+    }, 500);
+    
+    // Fallback if it takes too long (20s)
+    setTimeout(function() {
+      if (!loaded) {
+        console.warn('Spline took too long, using fallback background');
+        hero.classList.add('fallback');
+        clearInterval(pollInterval);
+      }
+    }, 20000);
+    
+    // Handle errors
+    viewer.addEventListener('error', function() {
+      console.warn('Spline viewer error, using fallback');
+      hero.classList.add('fallback');
+    });
+  })();
 </script>
 </body>
 </html>

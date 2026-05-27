@@ -19,6 +19,8 @@
   },
   "homepage": "https://github.com/Yashzagde/Cafe-Canva#readme",
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.9"
   },
