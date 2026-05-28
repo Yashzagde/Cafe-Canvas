@@ -1,4 +1,8 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/store-admin/dashboard/page": "app/store-admin/dashboard/page.js",
-  "/page": "app/page.js"
+  "/store-admin/billing/page": "app/store-admin/billing/page.js",
+  "/store-admin/tables/page": "app/store-admin/tables/page.js",
+  "/page": "app/page.js",
+  "/store-admin/menu/page": "app/store-admin/menu/page.js"
 }

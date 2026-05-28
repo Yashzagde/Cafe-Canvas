@@ -4,7 +4,7 @@ require('dotenv').config();
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString || connectionString.includes('[YOUR-PASSWORD]')) {
-  console.error('Error: Please configure DATABASE_URL in your .env file with your actual Supabase database password first.');
+  console.error('Error: Please configure DATABASE_URL in your .env file.');
   process.exit(1);
 }
 
@@ -65,9 +65,9 @@ async function seedDatabase() {
 
     console.log('Inserting seed categories...');
     const categories = [
-      { id: '11111111-1111-1111-1111-111111111111', name: 'Coffee', sort: 1 },
-      { id: '22222222-2222-2222-2222-222222222222', name: 'Snacks', sort: 2 },
-      { id: '33333333-3333-3333-3333-333333333333', name: 'Cold Drinks', sort: 3 }
+      { id: 'c1111111-1111-1111-1111-111111111111', name: 'Coffee', sort: 1 },
+      { id: 'c2222222-2222-2222-2222-222222222222', name: 'Desserts', sort: 2 },
+      { id: 'c3333333-3333-3333-3333-333333333333', name: 'Snacks', sort: 3 }
     ];
 
     for (const cat of categories) {
@@ -78,19 +78,17 @@ async function seedDatabase() {
       `);
     }
 
-    console.log('Inserting seed menu items...');
+    console.log('Inserting seed items...');
     const items = [
-      { id: 'a1111111-1111-1111-1111-111111111111', catId: '11111111-1111-1111-1111-111111111111', name: 'Classic Cappuccino', price: 24000, desc: 'Espresso with steamed milk and thick foam', status: 'available' },
-      { id: 'a2222222-2222-2222-2222-222222222222', catId: '11111111-1111-1111-1111-111111111111', name: 'Espresso Shot', price: 18000, desc: 'Rich and intense single shot of espresso', status: 'available' },
-      { id: 'a3333333-3333-3333-3333-333333333333', catId: '22222222-2222-2222-2222-222222222222', name: 'Avocado Sourdough Toast', price: 39000, desc: 'Fresh avocado mash on toasted sourdough bread', status: 'available' },
-      { id: 'a4444444-4444-4444-4444-444444444444', catId: '22222222-2222-2222-2222-222222222222', name: 'Vegan Blueberry Muffin', price: 16000, desc: 'Healthy muffin loaded with fresh organic blueberries', status: 'available' },
-      { id: 'a5555555-5555-5555-5555-555555555555', catId: '33333333-3333-3333-3333-333333333333', name: 'Aether Specialty Cold Brew', price: 28000, desc: 'Smooth 18-hour slow steeped specialty cold brew', status: 'available' }
+      { id: 'a1111111-1111-1111-1111-111111111111', catId: 'c1111111-1111-1111-1111-111111111111', name: 'Classic Cappuccino', price: 24000, desc: 'Rich espresso with steamed milk foam' },
+      { id: 'a2222222-2222-2222-2222-222222222222', catId: 'c2222222-2222-2222-2222-222222222222', name: 'Blueberry Muffin', price: 18000, desc: 'Freshly baked muffin with organic berries' },
+      { id: 'a3333333-3333-3333-3333-333333333333', catId: 'c3333333-3333-3333-3333-333333333333', name: 'Avocado Sourdough Toast', price: 29000, desc: 'Toasted sourdough with mashed avocado and sea salt' }
     ];
 
     for (const item of items) {
       await sql.unsafe(`
         INSERT INTO menu_items (id, tenant_id, branch_id, category_id, name, price, description, status)
-        VALUES ('${item.id}', '${tenantId}', '${branchId}', '${item.catId}', '${item.name}', ${item.price}, '${item.desc}', '${item.status}')
+        VALUES ('${item.id}', '${tenantId}', '${branchId}', '${item.catId}', '${item.name}', ${item.price}, '${item.desc}', 'available')
         ON CONFLICT (id) DO NOTHING;
       `);
     }
@@ -112,10 +110,10 @@ async function seedDatabase() {
     }
 
     console.log('Inserting seed customers...');
-    const customerId = 'c1111111-1111-1111-1111-111111111111';
+    const customerId = 'c7777777-7777-7777-7777-777777777777';
     await sql.unsafe(`
-      INSERT INTO customers (id, tenant_id, branch_id, name, phone, notes)
-      VALUES ('${customerId}', '${tenantId}', '${branchId}', 'Rohan Sharma', '+919876543210', 'Prefers outdoor seating')
+      INSERT INTO customers (id, tenant_id, branch_id, name, phone)
+      VALUES ('${customerId}', '${tenantId}', '${branchId}', 'Aditya Sharma', '+919876543210')
       ON CONFLICT (id) DO NOTHING;
     `);
 

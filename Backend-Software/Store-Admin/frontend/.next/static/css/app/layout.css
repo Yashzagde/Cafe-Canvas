@@ -938,6 +938,9 @@ video {
 .border-white\/\[0\.04\] {
   border-color: rgb(255 255 255 / 0.04);
 }
+.border-white\/\[0\.02\] {
+  border-color: rgb(255 255 255 / 0.02);
+}
 .border-t-transparent {
   border-top-color: transparent;
 }
