@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "backend:dev": "tsx Backend-Software/src/server.ts"
+    "backend:dev": "tsx Backend-Software/src/server.ts",
+    "store-admin:dev": "npm run dev --prefix Backend-Software/Store-Admin/frontend -- -p 3005"
   },
   "repository": {
     "type": "git",
