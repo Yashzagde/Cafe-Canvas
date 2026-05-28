@@ -6,3 +6,6 @@ dist/
 .vercel/
 .vercel-backup/
 *.log
+
+.vercel
+.env*
