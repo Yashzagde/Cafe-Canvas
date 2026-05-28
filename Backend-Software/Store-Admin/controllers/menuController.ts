@@ -76,7 +76,7 @@ export class MenuController {
           })
           .where(
             and(
-              eq(menuCategories.id, id),
+              eq(menuCategories.id, id as string),
               eq(menuCategories.tenantId, req.user!.tenant_id)
             )
           )
@@ -104,7 +104,7 @@ export class MenuController {
           .set({ deletedAt: new Date() })
           .where(
             and(
-              eq(menuCategories.id, id),
+              eq(menuCategories.id, id as string),
               eq(menuCategories.tenantId, req.user!.tenant_id)
             )
           )
@@ -205,7 +205,7 @@ export class MenuController {
           })
           .where(
             and(
-              eq(menuItems.id, id),
+              eq(menuItems.id, id as string),
               eq(menuItems.tenantId, req.user!.tenant_id)
             )
           )
@@ -240,7 +240,7 @@ export class MenuController {
           .set({ status, updatedAt: new Date() })
           .where(
             and(
-              eq(menuItems.id, id),
+              eq(menuItems.id, id as string),
               eq(menuItems.tenantId, req.user!.tenant_id)
             )
           )
@@ -268,7 +268,7 @@ export class MenuController {
           .set({ deletedAt: new Date() })
           .where(
             and(
-              eq(menuItems.id, id),
+              eq(menuItems.id, id as string),
               eq(menuItems.tenantId, req.user!.tenant_id)
             )
           )
@@ -303,7 +303,7 @@ export class MenuController {
           .set({ imageUrl, updatedAt: new Date() })
           .where(
             and(
-              eq(menuItems.id, id),
+              eq(menuItems.id, id as string),
               eq(menuItems.tenantId, req.user!.tenant_id)
             )
           )
@@ -335,7 +335,7 @@ export class MenuController {
         // Fetch groups
         const groups = await tx.select()
           .from(modifierGroups)
-          .where(eq(modifierGroups.itemId, id));
+          .where(eq(modifierGroups.itemId, id as string));
 
         // Fetch options for each group
         const result = [];
@@ -411,7 +411,7 @@ export class MenuController {
             ...(maxSelect !== undefined && { maxSelect }),
             updatedAt: new Date()
           })
-          .where(eq(modifierGroups.id, groupId))
+          .where(eq(modifierGroups.id, groupId as string))
           .returning();
         return group;
       });
@@ -433,7 +433,7 @@ export class MenuController {
       const { groupId } = req.params;
       const data = await req.txQuery!(async (tx) => {
         const [group] = await tx.delete(modifierGroups)
-          .where(eq(modifierGroups.id, groupId))
+          .where(eq(modifierGroups.id, groupId as string))
           .returning();
         return group;
       });

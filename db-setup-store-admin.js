@@ -16,7 +16,7 @@ async function setupDatabase() {
   try {
     // 1. Create Core Tables
     console.log('Creating Core SaaS tables...');
-    await sql.unsafe`
+    await sql.unsafe(`
       CREATE TABLE IF NOT EXISTS tenants (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         name text NOT NULL,
@@ -25,9 +25,9 @@ async function setupDatabase() {
         status text NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
         created_at timestamptz DEFAULT now() NOT NULL
       );
-    `;
+    `);
     
-    await sql.unsafe`
+    await sql.unsafe(`
       CREATE TABLE IF NOT EXISTS branches (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -35,11 +35,11 @@ async function setupDatabase() {
         status text NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
         created_at timestamptz DEFAULT now() NOT NULL
       );
-    `;
+    `);
 
     // Drop and recreate user table if it exists as serial id to uuid to support auth linking
     console.log('Upgrading users table to link to auth.users...');
-    await sql.unsafe`
+    await sql.unsafe(`
       CREATE TABLE IF NOT EXISTS users (
         id uuid PRIMARY KEY,
         tenant_id uuid REFERENCES tenants(id) ON DELETE CASCADE,
@@ -52,11 +52,11 @@ async function setupDatabase() {
         pin_hash text,
         created_at timestamptz DEFAULT now() NOT NULL
       );
-    `;
+    `);
 
     // 2. Create Modular Store-Admin Tables
     console.log('Creating Modular Menu & Tables schemas...');
-    await sql.unsafe`
+    await sql.unsafe(`
       CREATE TABLE IF NOT EXISTS menu_categories (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -121,10 +121,10 @@ async function setupDatabase() {
         created_at timestamptz DEFAULT now() NOT NULL,
         updated_at timestamptz DEFAULT now() NOT NULL
       );
-    `;
+    `);
 
     console.log('Creating Orders, Invoicing & Marketing tables...');
-    await sql.unsafe`
+    await sql.unsafe(`
       CREATE TABLE IF NOT EXISTS customers (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -287,10 +287,10 @@ async function setupDatabase() {
         created_at timestamptz DEFAULT now() NOT NULL,
         updated_at timestamptz DEFAULT now() NOT NULL
       );
-    `;
+    `);
 
     console.log('Creating Settings, Branding, Integrations & Blogs...');
-    await sql.unsafe`
+    await sql.unsafe(`
       CREATE TABLE IF NOT EXISTS store_settings (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -350,11 +350,11 @@ async function setupDatabase() {
         created_at timestamptz DEFAULT now() NOT NULL,
         updated_at timestamptz DEFAULT now() NOT NULL
       );
-    `;
+    `);
 
     // 3. Create PL/pgSQL Triggers & Functions
     console.log('Registering PostgreSQL PL/pgSQL limits & triggers...');
-    await sql.unsafe`
+    await sql.unsafe(`
       -- Function to enforce 50 subaccounts total per tenant
       CREATE OR REPLACE FUNCTION check_tenant_subaccounts_limit() RETURNS TRIGGER AS $$
       DECLARE
@@ -376,19 +376,19 @@ async function setupDatabase() {
         RETURN NEW;
       END;
       $$ LANGUAGE plpgsql;
-    `;
+    `);
 
     try {
-      await sql.unsafe`
+      await sql.unsafe(`
         CREATE TRIGGER enforce_tenant_subaccounts_limit 
         BEFORE INSERT ON users 
         FOR EACH ROW EXECUTE FUNCTION check_tenant_subaccounts_limit();
-      `;
+      `);
     } catch (_) {
       console.log('• Subaccounts limit trigger already exists.');
     }
 
-    await sql.unsafe`
+    await sql.unsafe(`
       -- Function to enforce 1 branch maximum for SINGLE_STORE mode
       CREATE OR REPLACE FUNCTION check_tenant_branch_limit() RETURNS TRIGGER AS $$
       DECLARE
@@ -406,14 +406,14 @@ async function setupDatabase() {
         RETURN NEW;
       END;
       $$ LANGUAGE plpgsql;
-    `;
+    `);
 
     try {
-      await sql.unsafe`
+      await sql.unsafe(`
         CREATE TRIGGER enforce_tenant_branch_limit
         BEFORE INSERT ON branches
         FOR EACH ROW EXECUTE FUNCTION check_tenant_branch_limit();
-      `;
+      `);
     } catch (_) {
       console.log('• Branch limit trigger already exists.');
     }

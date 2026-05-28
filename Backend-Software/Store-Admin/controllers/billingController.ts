@@ -30,11 +30,11 @@ export class BillingController {
       const { id } = req.params;
 
       const data = await req.txQuery!(async (tx) => {
-        const orderList = await tx.select().from(orders).where(eq(orders.id, id)).limit(1);
+        const orderList = await tx.select().from(orders).where(eq(orders.id, id as string)).limit(1);
         if (orderList.length === 0) return null;
 
         const order = orderList[0];
-        const items = await tx.select().from(orderItems).where(eq(orderItems.orderId, id));
+        const items = await tx.select().from(orderItems).where(eq(orderItems.orderId, id as string));
 
         return { ...order, items };
       });
@@ -61,7 +61,7 @@ export class BillingController {
           .from(orders)
           .where(
             and(
-              eq(orders.tableId, tableId),
+              eq(orders.tableId, tableId as string),
               sql`status != 'cancelled' AND status != 'paid'`
             )
           );
@@ -156,7 +156,7 @@ export class BillingController {
         const total = subtotal - discountAmount + additionalFee;
 
         // Create the bill entry
-        const orderIds = activeOrders.map(o => o.id);
+        const orderIds = activeOrders.map((o: any) => o.id);
         const [bill] = await tx.insert(bills).values({
           tenantId,
           branchId,
@@ -194,7 +194,7 @@ export class BillingController {
       const { id } = req.params;
 
       const html = await req.txQuery!(async (tx) => {
-        const billList = await tx.select().from(bills).where(eq(bills.id, id)).limit(1);
+        const billList = await tx.select().from(bills).where(eq(bills.id, id as string)).limit(1);
         if (billList.length === 0) return null;
 
         const bill = billList[0];
@@ -322,7 +322,7 @@ export class BillingController {
       }
 
       const success = await req.txQuery!(async (tx) => {
-        const billList = await tx.select().from(bills).where(eq(bills.id, id)).limit(1);
+        const billList = await tx.select().from(bills).where(eq(bills.id, id as string)).limit(1);
         if (billList.length === 0) return false;
 
         const bill = billList[0];
@@ -353,7 +353,7 @@ export class BillingController {
       }
 
       const data = await req.txQuery!(async (tx) => {
-        const billList = await tx.select().from(bills).where(eq(bills.id, id)).limit(1);
+        const billList = await tx.select().from(bills).where(eq(bills.id, id as string)).limit(1);
         if (billList.length === 0) return null;
 
         const bill = billList[0];
@@ -366,7 +366,7 @@ export class BillingController {
             paidAt: new Date(),
             updatedAt: new Date()
           })
-          .where(eq(bills.id, id))
+          .where(eq(bills.id, id as string))
           .returning();
 
         // 2. Set all associated orders to 'paid'
