@@ -2446,19 +2446,25 @@
     @media (max-width: 640px) {
       #hero {
         height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-top: 60px;
       }
 
       .hero-cards {
+        position: relative;
         width: 100%;
         overflow-x: auto;
         justify-content: flex-start;
-        padding: 0 20px 16px;
-        bottom: 4.5%;
+        padding: 0 20px 24px;
+        bottom: auto;
         gap: 16px;
         transform: none;
-        left: 0;
+        left: auto;
         display: flex !important;
         -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
       }
 
       .hero-cards::-webkit-scrollbar {
@@ -2466,8 +2472,10 @@
       }
 
       .hero-card {
-        width: 250px;
+        width: 270px;
         flex-shrink: 0;
+        scroll-snap-align: center;
+        border-radius: 16px;
       }
 
       .hero-card-table,
@@ -2477,17 +2485,22 @@
       }
 
       .hero-content {
-        top: 26%;
-        left: 50%;
-        transform: translate(-50%, -26%);
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
         text-align: center;
         width: 92%;
+        margin: 0 auto 32px;
       }
 
-
-      .photo-section {
+      .photo-section, .cream-section {
         background-attachment: scroll;
-        padding: 80px 20px;
+        padding: 60px 20px;
+      }
+
+      .theme-strip {
+        scroll-snap-type: x mandatory;
       }
 
       h2 {
@@ -2500,8 +2513,9 @@
       }
 
       .theme-card {
-        flex: 0 0 180px;
-        height: 260px;
+        flex: 0 0 220px;
+        height: 280px;
+        scroll-snap-align: center;
       }
 
       .cta-grid {
