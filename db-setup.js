@@ -19,10 +19,19 @@ async function setup() {
         id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         email text NOT NULL UNIQUE,
         restaurant_name text,
+        phone text,
+        city text,
+        venue_type text,
         created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
       );
     `;
-    console.log('✔ Table "pre_registrations" created successfully.');
+    
+    // Add columns in case the table already exists but doesn't have them
+    await sql`ALTER TABLE pre_registrations ADD COLUMN IF NOT EXISTS phone text;`;
+    await sql`ALTER TABLE pre_registrations ADD COLUMN IF NOT EXISTS city text;`;
+    await sql`ALTER TABLE pre_registrations ADD COLUMN IF NOT EXISTS venue_type text;`;
+
+    console.log('✔ Table "pre_registrations" created/migrated successfully.');
     
     // 2. Enable Row Level Security (RLS)
     await sql`ALTER TABLE pre_registrations ENABLE ROW LEVEL SECURITY;`;

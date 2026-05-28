@@ -3477,6 +3477,7 @@
           <form id="reg-form" novalidate>
             <input type="text" class="form-field" id="field-name" placeholder="Full restaurant or café name" required>
             <input type="email" class="form-field" id="field-email" placeholder="your@email.com" required>
+            <input type="tel" class="form-field" id="field-phone" placeholder="Phone number" required>
             <input type="text" class="form-field" id="field-city" placeholder="City or town" required>
             <select class="form-field" id="field-type" required>
               <option value="" disabled selected>Type of venue</option>
@@ -3752,8 +3753,8 @@
     }, { passive: true });
 
     // ── Pre-Registration Modal JavaScript & Supabase Integration ──
-    const SUPABASE_URL = window.SUPABASE_URL || 'https://nghtchxqsmbcgofpvjxc.supabase.co';
-    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+    const SUPABASE_URL = window.SUPABASE_URL || 'https://oeringgdbxmmihgvuyfa.supabase.co';
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'sb_publishable_laWLW3mZrK5wdSh115u2Dw_7K0BIjYU';
 
     const preRegModal = document.getElementById('pre-reg-modal');
     const triggerRegBtn = document.getElementById('trigger-reg-btn');
@@ -3808,16 +3809,18 @@
       }
     });
 
-    // Handle Form Submission
+    // Handle Form Submission for Modal Form
     if (supaForm) {
       supaForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const nameField = document.getElementById('supa-restaurant');
+        const phoneField = document.getElementById('supa-phone');
         const emailField = document.getElementById('supa-email');
         const submitBtn = supaForm.querySelector('button[type="submit"]');
 
         const name = nameField.value.trim();
+        const phone = phoneField.value.trim();
         const email = emailField.value.trim();
 
         if (!email) {
@@ -3841,7 +3844,7 @@
               const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
               const { error } = await client
                 .from('pre_registrations')
-                .insert([{ email: email, restaurant_name: name }]);
+                .insert([{ email: email, restaurant_name: name, phone: phone }]);
 
               if (error) throw error;
             } else {
@@ -3856,6 +3859,7 @@
 
           // Clear fields
           nameField.value = '';
+          phoneField.value = '';
           emailField.value = '';
 
         } catch (err) {
@@ -3864,6 +3868,82 @@
         } finally {
           submitBtn.disabled = false;
           submitBtn.innerText = 'Submit Pre-Registration →';
+        }
+      });
+    }
+
+    // Handle Form Submission for Inline Form
+    const inlineForm = document.getElementById('reg-form');
+    if (inlineForm) {
+      inlineForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const nameField = document.getElementById('field-name');
+        const emailField = document.getElementById('field-email');
+        const phoneField = document.getElementById('field-phone');
+        const cityField = document.getElementById('field-city');
+        const typeField = document.getElementById('field-type');
+        const submitBtn = inlineForm.querySelector('button[type="submit"]');
+
+        const name = nameField.value.trim();
+        const email = emailField.value.trim();
+        const phone = phoneField.value.trim();
+        const city = cityField.value.trim();
+        const type = typeField.value;
+
+        if (!email) {
+          emailField.style.borderColor = 'red';
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Submitting...';
+
+        try {
+          if (SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+            console.warn('Supabase Anon Key is not configured yet. Simulating successful submission.');
+            await new Promise(resolve => setTimeout(resolve, 800));
+          } else {
+            await loadSupabaseSDK();
+            if (typeof supabase !== 'undefined') {
+              const { createClient } = supabase;
+              const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+              const { error } = await client
+                .from('pre_registrations')
+                .insert([{
+                  email: email,
+                  restaurant_name: name,
+                  phone: phone,
+                  city: city,
+                  venue_type: type
+                }]);
+
+              if (error) throw error;
+            } else {
+              throw new Error('Supabase SDK not loaded.');
+            }
+          }
+
+          // Show Success state
+          const successState = document.getElementById('success-state');
+          if (successState) {
+            inlineForm.style.display = 'none';
+            successState.style.display = 'block';
+          }
+
+          // Clear fields
+          nameField.value = '';
+          emailField.value = '';
+          phoneField.value = '';
+          cityField.value = '';
+          typeField.value = '';
+
+        } catch (err) {
+          console.error('Error submitting registration:', err);
+          alert('Could not submit pre-registration: ' + err.message);
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerText = 'Pre-Register — Claim 21-Day Free Trial →';
         }
       });
     }
@@ -4178,6 +4258,11 @@
       <form id="supabase-reg-form" novalidate style="display: block;">
         <div style="margin-bottom: 16px;">
           <input type="text" class="form-field" id="supa-restaurant" placeholder="Restaurant or café name"
+            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(201,168,76,0.2); color: #FAF0E6; padding: 14px 20px; border-radius: 8px; width: 100%; font-size: 15px; box-sizing: border-box; outline: none; transition: border-color 0.3s;"
+            required>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <input type="tel" class="form-field" id="supa-phone" placeholder="Phone number"
             style="background: rgba(255,255,255,0.05); border: 1px solid rgba(201,168,76,0.2); color: #FAF0E6; padding: 14px 20px; border-radius: 8px; width: 100%; font-size: 15px; box-sizing: border-box; outline: none; transition: border-color 0.3s;"
             required>
         </div>
