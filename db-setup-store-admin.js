@@ -16,7 +16,7 @@ async function setupDatabase() {
   try {
     // 1. Create Core Tables
     console.log('Creating Core SaaS tables...');
-    await sql`
+    await sql.unsafe`
       CREATE TABLE IF NOT EXISTS tenants (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         name text NOT NULL,
@@ -27,7 +27,7 @@ async function setupDatabase() {
       );
     `;
     
-    await sql`
+    await sql.unsafe`
       CREATE TABLE IF NOT EXISTS branches (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -39,7 +39,7 @@ async function setupDatabase() {
 
     // Drop and recreate user table if it exists as serial id to uuid to support auth linking
     console.log('Upgrading users table to link to auth.users...');
-    await sql`
+    await sql.unsafe`
       CREATE TABLE IF NOT EXISTS users (
         id uuid PRIMARY KEY,
         tenant_id uuid REFERENCES tenants(id) ON DELETE CASCADE,
@@ -56,7 +56,7 @@ async function setupDatabase() {
 
     // 2. Create Modular Store-Admin Tables
     console.log('Creating Modular Menu & Tables schemas...');
-    await sql`
+    await sql.unsafe`
       CREATE TABLE IF NOT EXISTS menu_categories (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -124,7 +124,7 @@ async function setupDatabase() {
     `;
 
     console.log('Creating Orders, Invoicing & Marketing tables...');
-    await sql`
+    await sql.unsafe`
       CREATE TABLE IF NOT EXISTS customers (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -290,7 +290,7 @@ async function setupDatabase() {
     `;
 
     console.log('Creating Settings, Branding, Integrations & Blogs...');
-    await sql`
+    await sql.unsafe`
       CREATE TABLE IF NOT EXISTS store_settings (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -354,7 +354,7 @@ async function setupDatabase() {
 
     // 3. Create PL/pgSQL Triggers & Functions
     console.log('Registering PostgreSQL PL/pgSQL limits & triggers...');
-    await sql`
+    await sql.unsafe`
       -- Function to enforce 50 subaccounts total per tenant
       CREATE OR REPLACE FUNCTION check_tenant_subaccounts_limit() RETURNS TRIGGER AS $$
       DECLARE
@@ -379,7 +379,7 @@ async function setupDatabase() {
     `;
 
     try {
-      await sql`
+      await sql.unsafe`
         CREATE TRIGGER enforce_tenant_subaccounts_limit 
         BEFORE INSERT ON users 
         FOR EACH ROW EXECUTE FUNCTION check_tenant_subaccounts_limit();
@@ -388,7 +388,7 @@ async function setupDatabase() {
       console.log('• Subaccounts limit trigger already exists.');
     }
 
-    await sql`
+    await sql.unsafe`
       -- Function to enforce 1 branch maximum for SINGLE_STORE mode
       CREATE OR REPLACE FUNCTION check_tenant_branch_limit() RETURNS TRIGGER AS $$
       DECLARE
@@ -409,7 +409,7 @@ async function setupDatabase() {
     `;
 
     try {
-      await sql`
+      await sql.unsafe`
         CREATE TRIGGER enforce_tenant_branch_limit
         BEFORE INSERT ON branches
         FOR EACH ROW EXECUTE FUNCTION check_tenant_branch_limit();
@@ -446,8 +446,8 @@ async function setupDatabase() {
             OR NULLIF(current_setting('app.current_role', true), '') = 'PLATFORM_ADMIN'
           );
         `);
-      } else if (tableName === 'modifier_groups' || tableName === 'modifier_options') {
-        // Child menu tables join on parent menu items
+      } else if (tableName === 'modifier_groups' || tableName === 'modifier_options' || tableName === 'customer_visits' || tableName === 'coupon_uses') {
+        // Child menu/transaction tables join on parents transitively
         await sql.unsafe(`
           CREATE POLICY "${tableName}_isolation_policy" ON ${tableName} FOR ALL TO authenticated
           USING (true);
