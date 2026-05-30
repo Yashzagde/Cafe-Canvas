@@ -876,6 +876,32 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
   const [addItemQty, setAddItemQty] = useState(1);
   const [billCounter, setBillCounter] = useState(42);
 
+  // Editable Tax & Billing Settings
+  const [billingSettings, setBillingSettings] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("cafe_canva_billing_settings");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {}
+      }
+    }
+    return {
+      cgstPercent: 2.5,
+      sgstPercent: 2.5,
+      serviceChargeType: "percent" as "percent" | "flat",
+      serviceChargeValue: 5,
+    };
+  });
+  const [billingSettingsOpen, setBillingSettingsOpen] = useState(false);
+
+  const saveBillingSettings = (newSettings: typeof billingSettings) => {
+    setBillingSettings(newSettings);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cafe_canva_billing_settings", JSON.stringify(newSettings));
+    }
+  };
+
   const selectTable = (tbl: Table) => {
     if (tbl.status !== "occupied") { toast("Only occupied tables can be billed", "error"); return; }
     setSelectedTable(tbl);
@@ -889,8 +915,19 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
   };
 
   const subtotal = billItems.reduce((s, i) => s + (i.qty * i.price), 0);
-  const gstAmt = gstOn ? Math.round(subtotal * 0.05) : 0;
-  const svcAmt = svcOn ? Math.round(subtotal * 0.05) : 0;
+  
+  // Tax breakdown: CGST and SGST
+  const cgstAmt = gstOn ? Math.round(subtotal * (billingSettings.cgstPercent / 100)) : 0;
+  const sgstAmt = gstOn ? Math.round(subtotal * (billingSettings.sgstPercent / 100)) : 0;
+  const gstAmt = cgstAmt + sgstAmt;
+
+  // Service charge: flat vs percent
+  const svcAmt = svcOn
+    ? (billingSettings.serviceChargeType === "flat"
+        ? billingSettings.serviceChargeValue
+        : Math.round(subtotal * (billingSettings.serviceChargeValue / 100)))
+    : 0;
+
   const totalAfterCharges = subtotal + gstAmt + svcAmt;
   const discountAmt = discount > 0 ? Math.round(totalAfterCharges * (discount / 100)) : 0;
   const grandTotal = totalAfterCharges - discountAmt;
@@ -929,7 +966,25 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
     toast(`${mi.name} added to active bill`, "success");
   };
 
-  const buildReceiptData = (billId: string, tbl: Table | { name: string; section: string }, items: BillItem[], payM: string, sub: number, gst: number, svc: number, disc: number, total: number, cashRec?: number): ReceiptData => {
+  const buildReceiptData = (
+    billId: string,
+    tbl: Table | { name: string; section: string },
+    items: BillItem[],
+    payM: string,
+    sub: number,
+    gst: number,
+    svc: number,
+    disc: number,
+    total: number,
+    cashRec?: number,
+    cgstVal?: number,
+    sgstVal?: number
+  ): ReceiptData => {
+    const cgstAmount = cgstVal !== undefined ? cgstVal : (gstOn ? Math.round(gst / 2) : 0);
+    const sgstAmount = sgstVal !== undefined ? sgstVal : (gstOn ? (gst - cgstAmount) : 0);
+    const cgstP = gstOn ? (cgstVal !== undefined ? billingSettings.cgstPercent : 2.5) : 0;
+    const sgstP = gstOn ? (sgstVal !== undefined ? billingSettings.sgstPercent : 2.5) : 0;
+
     return {
       billId,
       storeName: DEFAULT_STORE_INFO.storeName,
@@ -948,9 +1003,14 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
       customCharges: [],
       subtotal: sub,
       gstAmount: gst,
-      gstPercent: 5,
+      gstPercent: cgstP + sgstP,
+      cgstPercent: cgstP,
+      cgstAmount: cgstAmount,
+      sgstPercent: sgstP,
+      sgstAmount: sgstAmount,
       serviceCharge: svc,
-      servicePercent: 5,
+      servicePercent: billingSettings.serviceChargeType === 'percent' ? billingSettings.serviceChargeValue : 0,
+      serviceChargeType: billingSettings.serviceChargeType,
       discountPercent: disc,
       discountAmount: disc > 0 ? Math.round((sub + gst + svc) * (disc / 100)) : 0,
       couponCode: disc > 0 ? (disc === 20 ? 'AETHER20' : 'PROMO') : '',
@@ -1010,12 +1070,18 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
       svcAmt,
       discount,
       grandTotal,
-      payMethod === 'cash' ? Number(cashReceived) : undefined
+      payMethod === 'cash' ? Number(cashReceived) : undefined,
+      cgstAmt,
+      sgstAmt
     );
     triggerReceipt(rData);
   };
 
   const handleHistoryPrint = (entry: BillHistoryEntry) => {
+    // Reconstruct CGST & SGST based on typical 50-50 split for historical records
+    const historicalCgst = gstOn ? Math.round(entry.gst / 2) : 0;
+    const historicalSgst = gstOn ? (entry.gst - historicalCgst) : 0;
+
     const rData = buildReceiptData(
       entry.id,
       { name: entry.table, section: entry.section },
@@ -1026,7 +1092,9 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
       entry.svc,
       entry.discount,
       entry.total,
-      entry.method === 'CASH' ? entry.total : undefined
+      entry.method === 'CASH' ? entry.total : undefined,
+      historicalCgst,
+      historicalSgst
     );
     triggerReceipt(rData);
   };
@@ -1046,7 +1114,10 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
           <h2 style={{ fontSize: "20px", fontWeight: 800, color: T.tx, letterSpacing: "-0.02em", fontFamily: ff }}>POS Billing System</h2>
           <p style={{ fontSize: "12px", color: T.mu2, marginTop: "4px" }}>Full-cycle POS — table management · direct printing · payment capture</p>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <Btn onClick={() => setBillingSettingsOpen(true)} variant="ghost" size="sm" style={{ border: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: "6px" }}>
+            ⚙️ Settings-Billing
+          </Btn>
           {[{ v: "floor", l: "Floor View" }, { v: "session", l: "Bill Builder" }, { v: "history", l: "Bill History" }].map(tab => (
             <Btn key={tab.v} onClick={() => setView(tab.v as any)} variant={view === tab.v ? "primary" : "ghost"} size="sm">
               {tab.l}
@@ -1191,15 +1262,29 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
                     <div style={{ display: "flex", justifyContent: "space-between", color: T.mu2 }}>
                       <span>Subtotal</span><span style={{ color: T.tx, fontWeight: 600, fontFamily: fm }}>₹{subtotal.toLocaleString()}</span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", color: T.mu2 }}>
-                      <span className="flex items-center gap-1">
-                        <input type="checkbox" checked={gstOn} onChange={e => setGstOn(e.target.checked)} /> GST (5%)
-                      </span>
-                      <span style={{ color: T.tx, fontFamily: fm }}>₹{gstAmt.toLocaleString()}</span>
+                     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", color: T.mu2 }}>
+                        <span className="flex items-center gap-1" style={{ fontWeight: 600 }}>
+                          <input type="checkbox" checked={gstOn} onChange={e => setGstOn(e.target.checked)} /> Taxes ({(billingSettings.cgstPercent + billingSettings.sgstPercent)}%)
+                        </span>
+                        <span style={{ color: T.tx, fontFamily: fm, fontWeight: 600 }}>₹{gstAmt.toLocaleString()}</span>
+                      </div>
+                      {gstOn && (
+                        <div style={{ paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: T.mu2 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>CGST ({billingSettings.cgstPercent}%)</span>
+                            <span style={{ fontFamily: fm }}>₹{cgstAmt.toLocaleString()}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>SGST ({billingSettings.sgstPercent}%)</span>
+                            <span style={{ fontFamily: fm }}>₹{sgstAmt.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", color: T.mu2 }}>
                       <span className="flex items-center gap-1">
-                        <input type="checkbox" checked={svcOn} onChange={e => setSvcOn(e.target.checked)} /> Service (5%)
+                        <input type="checkbox" checked={svcOn} onChange={e => setSvcOn(e.target.checked)} /> Service Charge ({billingSettings.serviceChargeType === 'percent' ? `${billingSettings.serviceChargeValue}%` : `₹${billingSettings.serviceChargeValue}`})
                       </span>
                       <span style={{ color: T.tx, fontFamily: fm }}>₹{svcAmt.toLocaleString()}</span>
                     </div>
@@ -1299,6 +1384,62 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
           <div style={{ display: "flex", gap: "10px" }}>
             <Btn onClick={addMenuItemToBill} fullWidth>Add to Bill</Btn>
             <Btn variant="ghost" onClick={() => setMenuAddOpen(false)} fullWidth>Cancel</Btn>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Billing Settings Modal */}
+      <Modal show={billingSettingsOpen} onClose={() => setBillingSettingsOpen(false)} title="Settings — Billing & Taxes">
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <Input
+              label="CGST Rate (%)"
+              type="number"
+              step="0.01"
+              value={billingSettings.cgstPercent}
+              onChange={e => saveBillingSettings({ ...billingSettings, cgstPercent: parseFloat(e.target.value) || 0 })}
+            />
+            <Input
+              label="SGST Rate (%)"
+              type="number"
+              step="0.01"
+              value={billingSettings.sgstPercent}
+              onChange={e => saveBillingSettings({ ...billingSettings, sgstPercent: parseFloat(e.target.value) || 0 })}
+            />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.06em" }}>Service Charge Type</span>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <Btn
+                size="sm"
+                variant={billingSettings.serviceChargeType === 'percent' ? 'primary' : 'ghost'}
+                onClick={() => saveBillingSettings({ ...billingSettings, serviceChargeType: 'percent' })}
+                style={{ flex: 1 }}
+              >
+                Percentage (%)
+              </Btn>
+              <Btn
+                size="sm"
+                variant={billingSettings.serviceChargeType === 'flat' ? 'primary' : 'ghost'}
+                onClick={() => saveBillingSettings({ ...billingSettings, serviceChargeType: 'flat' })}
+                style={{ flex: 1 }}
+              >
+                Flat Amount (₹)
+              </Btn>
+            </div>
+          </div>
+
+          <Input
+            label={billingSettings.serviceChargeType === 'percent' ? "Service Charge Rate (%)" : "Service Charge Flat Amount (₹)"}
+            type="number"
+            step="0.01"
+            value={billingSettings.serviceChargeValue}
+            onChange={e => saveBillingSettings({ ...billingSettings, serviceChargeValue: parseFloat(e.target.value) || 0 })}
+          />
+
+          <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+            <Btn onClick={() => setBillingSettingsOpen(false)} fullWidth>Save & Apply</Btn>
           </div>
         </div>
       </Modal>

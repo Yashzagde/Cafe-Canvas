@@ -93,11 +93,25 @@ const ReceiptTemplate = forwardRef<HTMLDivElement, { data: ReceiptData }>(
         {/* ─── TOTALS ─── */}
         <div style={{ fontSize: '11px' }}>
           <TotalRow label="Subtotal" value={data.subtotal} />
-          {data.gstAmount > 0 && (
-            <TotalRow label={`GST (${data.gstPercent}%)`} value={data.gstAmount} />
+          {data.cgstAmount != null && data.cgstAmount > 0 ? (
+            <>
+              <TotalRow label={`CGST (${data.cgstPercent || 0}%)`} value={data.cgstAmount} />
+              <TotalRow label={`SGST (${data.sgstPercent || 0}%)`} value={data.sgstAmount || 0} />
+            </>
+          ) : (
+            data.gstAmount > 0 && (
+              <TotalRow label={`GST (${data.gstPercent}%)`} value={data.gstAmount} />
+            )
           )}
           {data.serviceCharge > 0 && (
-            <TotalRow label={`Service (${data.servicePercent}%)`} value={data.serviceCharge} />
+            <TotalRow
+              label={
+                data.serviceChargeType === 'flat'
+                  ? 'Service Charge'
+                  : `Service (${data.servicePercent || 0}%)`
+              }
+              value={data.serviceCharge}
+            />
           )}
           {data.customCharges?.map((c, i) => (
             <TotalRow key={i} label={c.label} value={c.amount} />

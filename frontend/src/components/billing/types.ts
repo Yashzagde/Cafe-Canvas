@@ -25,8 +25,13 @@ export interface ReceiptData {
   subtotal: number;
   gstAmount: number;
   gstPercent: number;
+  cgstPercent?: number;
+  cgstAmount?: number;
+  sgstPercent?: number;
+  sgstAmount?: number;
   serviceCharge: number;
   servicePercent: number;
+  serviceChargeType?: 'percent' | 'flat';
   discountPercent: number;
   discountAmount: number;
   couponCode: string;

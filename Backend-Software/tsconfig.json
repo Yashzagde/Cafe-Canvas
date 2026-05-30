@@ -9,8 +9,15 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "../",
     "resolveJsonModule": true
   },
-  "include": ["**/*"]
+  "include": ["**/*"],
+  "exclude": [
+    "**/frontend/**/*",
+    "**/store-front/**/*",
+    "**/node_modules/**/*",
+    "**/.next/**/*",
+    "dist/**/*"
+  ]
 }

@@ -40,12 +40,40 @@ export default function StaffPOS() {
   const [showReceipt, setShowReceipt] = useState(false);
   const [billCounter, setBillCounter] = useState(96);
 
+  // Editable Tax & Billing Settings
+  const [billingSettings, setBillingSettings] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("cafe_canva_billing_settings");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {}
+      }
+    }
+    return {
+      cgstPercent: 2.5,
+      sgstPercent: 2.5,
+      serviceChargeType: "percent" as "percent" | "flat",
+      serviceChargeValue: 5,
+    };
+  });
+  const [billingSettingsOpen, setBillingSettingsOpen] = useState(false);
+
+  const saveBillingSettings = (newSettings: typeof billingSettings) => {
+    setBillingSettings(newSettings);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cafe_canva_billing_settings", JSON.stringify(newSettings));
+    }
+  };
+
   // ─── Cart Calculations ───
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const gstPercent = 5;
-  const svcPercent = 5;
-  const gstAmt = Math.round(subtotal * (gstPercent / 100));
-  const svcAmt = Math.round(subtotal * (svcPercent / 100));
+  const cgstAmt = Math.round(subtotal * (billingSettings.cgstPercent / 100));
+  const sgstAmt = Math.round(subtotal * (billingSettings.sgstPercent / 100));
+  const gstAmt = cgstAmt + sgstAmt;
+  const svcAmt = billingSettings.serviceChargeType === 'flat'
+    ? billingSettings.serviceChargeValue
+    : Math.round(subtotal * (billingSettings.serviceChargeValue / 100));
   const grandTotal = subtotal + gstAmt + svcAmt;
   const changeDue = cashReceived ? Math.max(0, Number(cashReceived) - grandTotal) : 0;
 
@@ -109,9 +137,14 @@ export default function StaffPOS() {
       customCharges: [],
       subtotal,
       gstAmount: gstAmt,
-      gstPercent,
+      gstPercent: billingSettings.cgstPercent + billingSettings.sgstPercent,
+      cgstPercent: billingSettings.cgstPercent,
+      cgstAmount: cgstAmt,
+      sgstPercent: billingSettings.sgstPercent,
+      sgstAmount: sgstAmt,
       serviceCharge: svcAmt,
-      servicePercent: svcPercent,
+      servicePercent: billingSettings.serviceChargeType === 'percent' ? billingSettings.serviceChargeValue : 0,
+      serviceChargeType: billingSettings.serviceChargeType,
       discountPercent: 0,
       discountAmount: 0,
       couponCode: '',
@@ -125,7 +158,7 @@ export default function StaffPOS() {
       }),
       footerMessage: DEFAULT_STORE_INFO.footerMessage,
     };
-  }, [cart, subtotal, gstAmt, svcAmt, grandTotal, payMethod, cashReceived, changeDue, billCounter]);
+  }, [cart, subtotal, gstAmt, cgstAmt, sgstAmt, svcAmt, grandTotal, payMethod, cashReceived, changeDue, billCounter, billingSettings]);
 
   // ─── Filter Menu ───
   const filteredMenu = menuItems.filter(i => {
@@ -140,7 +173,7 @@ export default function StaffPOS() {
       {/* ═══ LEFT: MENU GRID ═══ */}
       <div className="flex-1 flex flex-col h-full bg-white">
         {/* Header */}
-        <div className="p-4 border-b flex items-center justify-between">
+        <div className="p-4 border-b flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 bg-zinc-100 px-4 py-2 rounded-full flex-1 max-w-md">
             <Search className="text-zinc-500" size={20} />
             <input
@@ -151,7 +184,13 @@ export default function StaffPOS() {
               className="bg-transparent border-none outline-none w-full font-medium"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setBillingSettingsOpen(true)}
+              className="px-4 py-2 rounded-xl text-zinc-600 hover:bg-zinc-100 font-bold border-2 border-zinc-100 hover:border-zinc-200 text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              ⚙️ Settings-Billing
+            </button>
             <button className="p-2 rounded-lg bg-zinc-100 text-zinc-600 hover:bg-zinc-200"><Grid2x2 size={20} /></button>
             <button className="p-2 rounded-lg text-zinc-400 hover:bg-zinc-100"><List size={20} /></button>
           </div>
@@ -330,12 +369,24 @@ export default function StaffPOS() {
                   <span>Subtotal</span>
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-zinc-500 font-medium">
-                  <span>GST ({gstPercent}%)</span>
-                  <span>₹{gstAmt.toLocaleString()}</span>
+                <div className="flex flex-col gap-1 text-sm border-t border-zinc-200/60 pt-2 mt-2">
+                  <div className="flex justify-between text-zinc-500 font-medium">
+                    <span className="font-bold text-zinc-600">Taxes ({(billingSettings.cgstPercent + billingSettings.sgstPercent)}%)</span>
+                    <span className="font-bold text-zinc-800">₹{gstAmt.toLocaleString()}</span>
+                  </div>
+                  <div className="pl-3 flex flex-col gap-0.5 text-xs text-zinc-400">
+                    <div className="flex justify-between">
+                      <span>CGST ({billingSettings.cgstPercent}%)</span>
+                      <span>₹{cgstAmt.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>SGST ({billingSettings.sgstPercent}%)</span>
+                      <span>₹{sgstAmt.toLocaleString()}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between text-zinc-500 font-medium">
-                  <span>Service ({svcPercent}%)</span>
+                <div className="flex justify-between text-zinc-500 font-medium pt-2">
+                  <span>Service Charge ({billingSettings.serviceChargeType === 'percent' ? `${billingSettings.serviceChargeValue}%` : `₹${billingSettings.serviceChargeValue}`})</span>
                   <span>₹{svcAmt.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-2xl font-black mt-4 pt-4 border-t">
@@ -362,6 +413,94 @@ export default function StaffPOS() {
         onClose={() => setShowReceipt(false)}
         data={buildReceiptData()}
       />
+
+      {/* ═══ BILLING SETTINGS MODAL ═══ */}
+      {billingSettingsOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-zinc-100 flex flex-col gap-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b pb-4">
+              <h3 className="text-xl font-black text-zinc-900">Settings — Billing & Taxes</h3>
+              <button
+                onClick={() => setBillingSettingsOpen(false)}
+                className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-500 font-bold transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-zinc-500 uppercase tracking-wider mb-2">CGST Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={billingSettings.cgstPercent}
+                    onChange={e => saveBillingSettings({ ...billingSettings, cgstPercent: parseFloat(e.target.value) || 0 })}
+                    className="w-full border-2 border-zinc-100 focus:border-[#ff6b35] rounded-xl px-4 py-2.5 font-bold outline-none transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-zinc-500 uppercase tracking-wider mb-2">SGST Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={billingSettings.sgstPercent}
+                    onChange={e => saveBillingSettings({ ...billingSettings, sgstPercent: parseFloat(e.target.value) || 0 })}
+                    className="w-full border-2 border-zinc-100 focus:border-[#ff6b35] rounded-xl px-4 py-2.5 font-bold outline-none transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-zinc-500 uppercase tracking-wider mb-2">Service Charge Type</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => saveBillingSettings({ ...billingSettings, serviceChargeType: 'percent' })}
+                    className={`flex-1 py-3 rounded-xl font-bold border-2 transition-all cursor-pointer ${
+                      billingSettings.serviceChargeType === 'percent'
+                        ? 'border-[#ff6b35] bg-orange-50 text-[#ff6b35]'
+                        : 'border-zinc-100 text-zinc-500 hover:border-zinc-200'
+                    }`}
+                  >
+                    Percentage (%)
+                  </button>
+                  <button
+                    onClick={() => saveBillingSettings({ ...billingSettings, serviceChargeType: 'flat' })}
+                    className={`flex-1 py-3 rounded-xl font-bold border-2 transition-all cursor-pointer ${
+                      billingSettings.serviceChargeType === 'flat'
+                        ? 'border-[#ff6b35] bg-orange-50 text-[#ff6b35]'
+                        : 'border-zinc-100 text-zinc-500 hover:border-zinc-200'
+                    }`}
+                  >
+                    Flat Amount (₹)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-zinc-500 uppercase tracking-wider mb-2">
+                  {billingSettings.serviceChargeType === 'percent' ? 'Service Charge Rate (%)' : 'Service Charge Flat Amount (₹)'}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={billingSettings.serviceChargeValue}
+                  onChange={e => saveBillingSettings({ ...billingSettings, serviceChargeValue: parseFloat(e.target.value) || 0 })}
+                  className="w-full border-2 border-zinc-100 focus:border-[#ff6b35] rounded-xl px-4 py-2.5 font-bold outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => setBillingSettingsOpen(false)}
+              className="w-full bg-[#ff6b35] hover:bg-[#e85b24] text-white py-4 rounded-2xl font-black transition-colors shadow-lg shadow-orange-500/20 active:scale-95 cursor-pointer"
+            >
+              Save & Apply Settings
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
