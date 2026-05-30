@@ -1,0 +1,1269 @@
+/* ═══════════════════════════════════════════════════
+   CAFE CANAVA — Dynamic Themes Specification
+   52 CSS Themes runtime mappings scoped by class selectors.
+   Seamless instant runtime switching without rebuild.
+   ═══════════════════════════════════════════════════ */
+
+/* ==================== TIER 1 — PREMIUM (01-03) ==================== */
+
+/* ---------- 01: Liquid Glass Premium ---------- */
+.theme-01 {
+  --color-primary-50: #FFFDF5;
+  --color-primary-500: #D4AF37; /* Gold */
+  --color-primary-600: #C5A028;
+  --color-secondary-500: #FF6B35; /* Ember */
+  --color-bg: #0A0A1A; /* Space Dark */
+  --color-surface: rgba(255, 255, 255, 0.12); /* Glass */
+  --color-surface-warm: rgba(255, 255, 255, 0.18);
+  --color-text: #F5F5F5;
+  --color-text-muted: #A8A29E;
+  --color-border: rgba(255, 255, 255, 0.15);
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --shadow-sm: 0 4px 30px rgba(0, 0, 0, 0.2);
+  --radius-lg: 24px;
+  /* Call Staff Styles */
+  --call-staff-bg: rgba(255, 255, 255, 0.12);
+  --call-staff-border: #D4AF37;
+  --call-staff-text: #F5F5F5;
+  --call-staff-pulse: rgba(212, 175, 55, 0.35);
+  --call-staff-font: 'Cinzel', serif;
+}
+
+/* ---------- 02: Liquid Glass Basic ---------- */
+.theme-02 {
+  --color-primary-50: #FFF7ED;
+  --color-primary-500: #FF6B35; /* Orange */
+  --color-primary-600: #EA580C;
+  --color-secondary-500: #1A1A2E;
+  --color-bg: #F8F9FA; /* Off-White Kinfolk */
+  --color-surface: rgba(255, 255, 255, 0.70);
+  --color-surface-warm: #F1F3F5;
+  --color-text: #1A1A2E;
+  --color-text-muted: #6C757D;
+  --color-border: #E9ECEF;
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Inter', sans-serif;
+  --shadow-sm: 0 2px 12px rgba(26, 26, 46, 0.04);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: rgba(255, 255, 255, 0.85);
+  --call-staff-border: #FF6B35;
+  --call-staff-text: #1A1A2E;
+  --call-staff-pulse: rgba(255, 107, 53, 0.25);
+  --call-staff-font: 'Inter', sans-serif;
+}
+
+/* ---------- 03: Onyx Luxury Dark ---------- */
+.theme-03 {
+  --color-primary-50: #FCF9F2;
+  --color-primary-500: #C9A84C; /* Champagne Gold */
+  --color-primary-600: #B8973B;
+  --color-secondary-500: #1C1C1C;
+  --color-bg: #0D0D0D; /* Jet Black */
+  --color-surface: #1C1C1C;
+  --color-surface-warm: #262626;
+  --color-text: #F5F5F5;
+  --color-text-muted: #8E8E8E;
+  --color-border: #2C2C2C;
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Libre Baskerville', serif;
+  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --radius-lg: 12px;
+  /* Call Staff Styles */
+  --call-staff-bg: #1C1C1C;
+  --call-staff-border: #C9A84C;
+  --call-staff-text: #F5F5F5;
+  --call-staff-pulse: rgba(201, 168, 76, 0.35);
+  --call-staff-font: 'Playfair Display', serif;
+}
+
+/* ==================== TIER 2 — CAFE (04-07) ==================== */
+
+/* ---------- 04: Classic Cafe Brown ---------- */
+.theme-04 {
+  --color-primary-50: #FFFBF0;
+  --color-primary-500: #A0522D; /* Sienna */
+  --color-primary-600: #8B3E1F;
+  --color-secondary-500: #D2691E; /* Chocolate */
+  --color-bg: #FFF3E0; /* Linen paper */
+  --color-surface: #FFE0B2;
+  --color-surface-warm: #FAD49E;
+  --color-text: #3D1C02;
+  --color-text-muted: #5D4037;
+  --color-border: #FFE0B2;
+  --font-display: 'Abril Fatface', serif;
+  --font-body: 'Merriweather', serif;
+  --shadow-sm: 0 4px 10px rgba(61, 28, 2, 0.05);
+  --radius-lg: 8px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFF3E0;
+  --call-staff-border: #A0522D;
+  --call-staff-text: #3D1C02;
+  --call-staff-pulse: rgba(160, 82, 45, 0.25);
+  --call-staff-font: 'Josefin Sans', sans-serif;
+}
+
+/* ---------- 05: Artisan Roastery ---------- */
+.theme-05 {
+  --color-primary-50: #FFF7ED;
+  --color-primary-500: #F97316; /* Amber Roast */
+  --color-primary-600: #EA580C;
+  --color-secondary-500: #4A3728;
+  --color-bg: #1B1B1B; /* Charcoal dark */
+  --color-surface: #2C2C2C;
+  --color-surface-warm: #383838;
+  --color-text: #E8DCC8;
+  --color-text-muted: #A89B85;
+  --color-border: #383838;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --radius-lg: 6px;
+  /* Call Staff Styles */
+  --call-staff-bg: #E8DCC8;
+  --call-staff-border: #F97316;
+  --call-staff-text: #1B1B1B;
+  --call-staff-pulse: rgba(249, 115, 22, 0.3);
+  --call-staff-font: 'Space Grotesk', sans-serif;
+}
+
+/* ---------- 06: Chocolate Indulgence ---------- */
+.theme-06 {
+  --color-primary-50: #FFF0F5;
+  --color-primary-500: #E91E8C; /* Pink Sparkle */
+  --color-primary-600: #C2185B;
+  --color-secondary-500: #7B3F00; /* Cocoa */
+  --color-bg: #3B1D0E; /* Dark Chocolate */
+  --color-surface: #5D2E17;
+  --color-surface-warm: #703B20;
+  --color-text: #FFF0E6;
+  --color-text-muted: #D2A679;
+  --color-border: #5D2E17;
+  --font-display: 'Bodoni Moda', serif;
+  --font-body: 'Lato', sans-serif;
+  --shadow-sm: 0 4px 16px rgba(59, 29, 14, 0.4);
+  --radius-lg: 18px;
+  /* Call Staff Styles */
+  --call-staff-bg: #3B1D0E;
+  --call-staff-border: #D2A679;
+  --call-staff-text: #FFF0E6;
+  --call-staff-pulse: rgba(233, 30, 140, 0.35);
+  --call-staff-font: 'Bodoni Moda', serif;
+}
+
+/* ---------- 07: Matcha Zen ---------- */
+.theme-07 {
+  --color-primary-50: #F1F7EC;
+  --color-primary-500: #4A7C24; /* Matcha Green */
+  --color-primary-600: #3D691C;
+  --color-secondary-500: #C8A882;
+  --color-bg: #F5F0E8; /* Washi Paper */
+  --color-surface: #E8D5B7;
+  --color-surface-warm: #DFCBAB;
+  --color-text: #2D5016;
+  --color-text-muted: #5B6D4F;
+  --color-border: #DFCBAB;
+  --font-display: 'Noto Serif JP', serif;
+  --font-body: 'Poppins', sans-serif;
+  --shadow-sm: 0 2px 10px rgba(74, 124, 36, 0.02);
+  --radius-lg: 0px; /* Minimalist raw edges */
+  /* Call Staff Styles */
+  --call-staff-bg: #E8D5B7;
+  --call-staff-border: #4A7C24;
+  --call-staff-text: #2D5016;
+  --call-staff-pulse: rgba(74, 124, 36, 0.2);
+  --call-staff-font: 'Noto Serif JP', serif;
+}
+
+/* ==================== TIER 3 — REGIONAL INDIAN (08-14) ==================== */
+
+/* ---------- 08: Rajasthani Royal ---------- */
+.theme-08 {
+  --color-primary-50: #FFF5EE;
+  --color-primary-500: #FF6B00; /* Saffron */
+  --color-primary-600: #E66000;
+  --color-secondary-500: #D4AF37; /* Gold */
+  --color-bg: #FFF8DC; /* Cornsilk Palace */
+  --color-surface: #F5F5DC;
+  --color-surface-warm: #EFEFD0;
+  --color-text: #8B0000; /* Maroon */
+  --color-text-muted: #7E4B1C;
+  --color-border: #D4AF37;
+  --font-display: 'Rozha One', serif;
+  --font-body: 'Hind', sans-serif;
+  --shadow-sm: 0 4px 15px rgba(139, 0, 0, 0.06);
+  --radius-lg: 20px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFF8DC;
+  --call-staff-border: #D4AF37;
+  --call-staff-text: #8B0000;
+  --call-staff-pulse: rgba(212, 175, 55, 0.35);
+  --call-staff-font: 'Rozha One', serif;
+}
+
+/* ---------- 09: Maharashtrian Heritage ---------- */
+.theme-09 {
+  --color-primary-50: #FFF7ED;
+  --color-primary-500: #FF8C00; /* Marigold Orange */
+  --color-primary-600: #EA580C;
+  --color-secondary-500: #006400; /* Shahi Green */
+  --color-bg: #FFF5EE; /* Seashell Warm */
+  --color-surface: #FFE4E1; /* Soft Rose */
+  --color-surface-warm: #F8D7DA;
+  --color-text: #8B4513; /* Saddle Brown */
+  --color-text-muted: #7A3F00;
+  --color-border: #FF8C00;
+  --font-display: 'Tiro Devanagari Marathi', serif;
+  --font-body: 'Mukta', sans-serif;
+  --shadow-sm: 0 4px 10px rgba(139, 69, 19, 0.05);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFF5EE;
+  --call-staff-border: #FF8C00;
+  --call-staff-text: #8B4513;
+  --call-staff-pulse: rgba(255, 140, 0, 0.3);
+  --call-staff-font: 'Tiro Devanagari Marathi', serif;
+}
+
+/* ---------- 10: Mughal Garden ---------- */
+.theme-10 {
+  --color-primary-50: #F3FBF7;
+  --color-primary-500: #D4AF37; /* Gold Royal */
+  --color-primary-600: #BCA030;
+  --color-secondary-500: #8B0000;
+  --color-bg: #1B4332; /* Deep Garden Green */
+  --color-surface: #2D6A4F;
+  --color-surface-warm: #40916C;
+  --color-text: #F5F0E0; /* Ivory */
+  --color-text-muted: #A3C9B8;
+  --color-border: #D4AF37;
+  --font-display: 'Amiri', serif;
+  --font-body: 'Hind', sans-serif;
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --radius-lg: 12px;
+  /* Call Staff Styles */
+  --call-staff-bg: #2D6A4F;
+  --call-staff-border: #D4AF37;
+  --call-staff-text: #F5F0E0;
+  --call-staff-pulse: rgba(212, 175, 55, 0.4);
+  --call-staff-font: 'Amiri', serif;
+}
+
+/* ---------- 11: Punjabi Dhaba Bold ---------- */
+.theme-11 {
+  --color-primary-50: #FFF5F5;
+  --color-primary-500: #FF4500; /* Dhaba Orange-Red */
+  --color-primary-600: #DD3C00;
+  --color-secondary-500: #FFD700; /* Bold Yellow */
+  --color-bg: #FFFACD; /* Butter Milk Cream */
+  --color-surface: #FCE38A;
+  --color-surface-warm: #EAD068;
+  --color-text: #8B4513;
+  --color-text-muted: #5D370A;
+  --color-border: #FF4500;
+  --font-display: 'Baloo Paaji 2', sans-serif;
+  --font-body: 'Mukta', sans-serif;
+  --shadow-sm: 0 6px 12px rgba(139, 69, 19, 0.1);
+  --radius-lg: 24px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FCE38A;
+  --call-staff-border: #FF4500;
+  --call-staff-text: #8B4513;
+  --call-staff-pulse: rgba(255, 69, 0, 0.4);
+  --call-staff-font: 'Baloo Paaji 2', sans-serif;
+}
+
+/* ---------- 12: South Indian Temple ---------- */
+.theme-12 {
+  --color-primary-50: #FFFDF0;
+  --color-primary-500: #B8860B; /* Golden Bronze */
+  --color-primary-600: #996F08;
+  --color-secondary-500: #006400;
+  --color-bg: #FFFDD0; /* Warm Rice Cream */
+  --color-surface: #F5F5DC;
+  --color-surface-warm: #E6E6B8;
+  --color-text: #8B0000; /* Temple Red */
+  --color-text-muted: #5B4037;
+  --color-border: #B8860B;
+  --font-display: 'Noto Serif Tamil', serif;
+  --font-body: 'Mukta', sans-serif;
+  --shadow-sm: 0 4px 10px rgba(139, 0, 0, 0.05);
+  --radius-lg: 8px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFFDD0;
+  --call-staff-border: #B8860B;
+  --call-staff-text: #8B0000;
+  --call-staff-pulse: rgba(184, 134, 11, 0.3);
+  --call-staff-font: 'Noto Serif Tamil', serif;
+}
+
+/* ---------- 13: Gujarat Mithai Gold ---------- */
+.theme-13 {
+  --color-primary-50: #FFFDF0;
+  --color-primary-500: #FFD700; /* Saffron Yellow */
+  --color-primary-600: #E6C300;
+  --color-secondary-500: #FF8C00;
+  --color-bg: #FFFAF0; /* Pure White Floral */
+  --color-surface: #FFF3E0;
+  --color-surface-warm: #FFE0B2;
+  --color-text: #8B0000;
+  --color-text-muted: #A0522D;
+  --color-border: #FFD700;
+  --font-display: 'Noto Serif Gujarati', serif;
+  --font-body: 'Hind Vadodara', sans-serif;
+  --shadow-sm: 0 4px 10px rgba(139, 0, 0, 0.04);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFF3E0;
+  --call-staff-border: #FFD700;
+  --call-staff-text: #8B0000;
+  --call-staff-pulse: rgba(255, 215, 0, 0.4);
+  --call-staff-font: 'Noto Serif Gujarati', serif;
+}
+
+/* ---------- 14: Kashmiri Winter ---------- */
+.theme-14 {
+  --color-primary-50: #F0F4F8;
+  --color-primary-500: #8B0000; /* Chili Red */
+  --color-primary-600: #700000;
+  --color-secondary-500: #C0C0C0; /* Silver paisley */
+  --color-bg: #1E3A5F; /* Kashmiri Blue */
+  --color-surface: #2A4E7A;
+  --color-surface-warm: #345D8C;
+  --color-text: #F5F5F5;
+  --color-text-muted: #A5C0E4;
+  --color-border: #C0C0C0;
+  --font-display: 'Noto Nastaliq Urdu', serif;
+  --font-body: 'Hind', sans-serif;
+  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --radius-lg: 20px;
+  /* Call Staff Styles */
+  --call-staff-bg: #2A4E7A;
+  --call-staff-border: #C0C0C0;
+  --call-staff-text: #F5F5F5;
+  --call-staff-pulse: rgba(192, 192, 192, 0.35);
+  --call-staff-font: 'Noto Nastaliq Urdu', serif;
+}
+
+/* ==================== TIER 4 — INTERNATIONAL (15-25) ==================== */
+
+/* ---------- 15: Italian Trattoria ---------- */
+.theme-15 {
+  --color-primary-50: #FFFDF0;
+  --color-primary-500: #CE2B37; /* Italian Red */
+  --color-primary-600: #B2222D;
+  --color-secondary-500: #009246; /* Italian Green */
+  --color-bg: #F5F0DC; /* Parchment paper */
+  --color-surface: #EADFCE;
+  --color-surface-warm: #DECDB6;
+  --color-text: #8B4513; /* Terracotta text */
+  --color-text-muted: #5C3D2E;
+  --color-border: #DECDB6;
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Lora', serif;
+  --shadow-sm: 0 2px 12px rgba(139, 69, 19, 0.05);
+  --radius-lg: 12px;
+  /* Call Staff Styles */
+  --call-staff-bg: #EADFCE;
+  --call-staff-border: #CE2B37;
+  --call-staff-text: #8B4513;
+  --call-staff-pulse: rgba(206, 43, 55, 0.3);
+  --call-staff-font: 'Playfair Display', serif;
+}
+
+/* ---------- 16: Chinese Dynasty Red ---------- */
+.theme-16 {
+  --color-primary-50: #FFF0F0;
+  --color-primary-500: #DC143C; /* Dynasty Red */
+  --color-primary-600: #BD1033;
+  --color-secondary-500: #FFD700; /* Imperial Gold */
+  --color-bg: #1C1C1C; /* Dark Lacquer */
+  --color-surface: #2D2D2D;
+  --color-surface-warm: #3E3E3E;
+  --color-text: #FFF8DC; /* Lantern Cream */
+  --color-text-muted: #C0C0C0;
+  --color-border: #FFD700;
+  --font-display: 'Noto Serif SC', serif;
+  --font-body: 'Source Han Sans SC', sans-serif;
+  --shadow-sm: 0 4px 18px rgba(0, 0, 0, 0.6);
+  --radius-lg: 4px;
+  /* Call Staff Styles */
+  --call-staff-bg: #2D2D2D;
+  --call-staff-border: #FFD700;
+  --call-staff-text: #FFF8DC;
+  --call-staff-pulse: rgba(220, 20, 60, 0.4);
+  --call-staff-font: 'Noto Serif SC', serif;
+}
+
+/* ---------- 17: Japanese Sakura ---------- */
+.theme-17 {
+  --color-primary-50: #FFF0F2;
+  --color-primary-500: #FFB7C5; /* Sakura Pink */
+  --color-primary-600: #FFA2B3;
+  --color-secondary-500: #1C1C1C;
+  --color-bg: #F5F0E0; /* Cream Washi */
+  --color-surface: #FFFFFF;
+  --color-surface-warm: #FAF5E6;
+  --color-text: #1C1C1C;
+  --color-text-muted: #7E7E7E;
+  --color-border: #FFB7C5;
+  --font-display: 'Noto Serif JP', serif;
+  --font-body: 'Zen Kaku Gothic New', sans-serif;
+  --shadow-sm: 0 2px 15px rgba(255, 183, 197, 0.15);
+  --radius-lg: 4px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFFFFF;
+  --call-staff-border: #FFB7C5;
+  --call-staff-text: #1C1C1C;
+  --call-staff-pulse: rgba(255, 183, 197, 0.35);
+  --call-staff-font: 'Noto Serif JP', serif;
+}
+
+/* ---------- 18: Mediterranean Blue ---------- */
+.theme-18 {
+  --color-primary-50: #E6F2FF;
+  --color-primary-500: #1E90FF; /* Santorini Blue */
+  --color-primary-600: #107BE4;
+  --color-secondary-500: #3CB371;
+  --color-bg: #FFFFFF;
+  --color-surface: #E6F2FF;
+  --color-surface-warm: #D4E8FC;
+  --color-text: #1E3A8A; /* Navy Sky */
+  --color-text-muted: #64748B;
+  --color-border: #1E90FF;
+  --font-display: 'Philosopher', serif;
+  --font-body: 'Open Sans', sans-serif;
+  --shadow-sm: 0 2px 10px rgba(30, 144, 255, 0.05);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: #E6F2FF;
+  --call-staff-border: #1E90FF;
+  --call-staff-text: #1E3A8A;
+  --call-staff-pulse: rgba(30, 144, 255, 0.3);
+  --call-staff-font: 'Philosopher', serif;
+}
+
+/* ---------- 19: Mexican Fiesta ---------- */
+.theme-19 {
+  --color-primary-50: #FFFDE6;
+  --color-primary-500: #FF0000; /* Chili Red */
+  --color-primary-600: #DD0000;
+  --color-secondary-500: #006400; /* Cactus Green */
+  --color-bg: #FFFACD; /* Corn Yellow */
+  --color-surface: #FCE38A;
+  --color-surface-warm: #EAD068;
+  --color-text: #3E2723;
+  --color-text-muted: #795548;
+  --color-border: #006400;
+  --font-display: 'Pacifico', cursive;
+  --font-body: 'Nunito', sans-serif;
+  --shadow-sm: 0 4px 10px rgba(255, 0, 0, 0.08);
+  --radius-lg: 12px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FCE38A;
+  --call-staff-border: #006400;
+  --call-staff-text: #3E2723;
+  --call-staff-pulse: rgba(255, 0, 0, 0.4);
+  --call-staff-font: 'Pacifico', cursive;
+}
+
+/* ---------- 20: Thai Tropical ---------- */
+.theme-20 {
+  --color-primary-50: #FFF2ED;
+  --color-primary-500: #FF4500; /* Spicy Orange */
+  --color-primary-600: #DD3C00;
+  --color-secondary-500: #006400;
+  --color-bg: #F5F5F5;
+  --color-surface: #E2E8F0;
+  --color-surface-warm: #CBD5E1;
+  --color-text: #8B4513; /* Teak wood */
+  --color-text-muted: #5C3D2E;
+  --color-border: #006400;
+  --font-display: 'Mitr', sans-serif;
+  --font-body: 'Sarabun', sans-serif;
+  --shadow-sm: 0 2px 10px rgba(0, 100, 0, 0.04);
+  --radius-lg: 20px;
+  /* Call Staff Styles */
+  --call-staff-bg: #E2E8F0;
+  --call-staff-border: #006400;
+  --call-staff-text: #8B4513;
+  --call-staff-pulse: rgba(255, 69, 0, 0.3);
+  --call-staff-font: 'Mitr', sans-serif;
+}
+
+/* ---------- 21: American Diner Chrome ---------- */
+.theme-21 {
+  --color-primary-50: #FFF0F0;
+  --color-primary-500: #FF0000; /* Neon Red */
+  --color-primary-600: #DD0000;
+  --color-secondary-500: #C0C0C0; /* Chrome Silver */
+  --color-bg: #1C1C1C; /* Jukebox Black */
+  --color-surface: #2D2D2D;
+  --color-surface-warm: #3E3E3E;
+  --color-text: #FFFFFF;
+  --color-text-muted: #B3B3B3;
+  --color-border: #C0C0C0;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Roboto', sans-serif;
+  --shadow-sm: 0 0 15px rgba(255, 0, 0, 0.3);
+  --radius-lg: 0px; /* Checkerboard sharp */
+  /* Call Staff Styles */
+  --call-staff-bg: #2D2D2D;
+  --call-staff-border: #C0C0C0;
+  --call-staff-text: #FFFFFF;
+  --call-staff-pulse: rgba(255, 0, 0, 0.45);
+  --call-staff-font: 'Bebas Neue', sans-serif;
+}
+
+/* ---------- 22: Korean Bento ---------- */
+.theme-22 {
+  --color-primary-50: #FFF0F1;
+  --color-primary-500: #E8002D; /* K-Red */
+  --color-primary-600: #C80025;
+  --color-secondary-500: #003478; /* K-Navy */
+  --color-bg: #F5F5DC;
+  --color-surface: #EAE5C9;
+  --color-surface-warm: #DDD8B7;
+  --color-text: #1A1A1A;
+  --color-text-muted: #5E5E5E;
+  --color-border: #003478;
+  --font-display: 'Noto Sans KR', sans-serif;
+  --font-body: 'Nanum Gothic', sans-serif;
+  --shadow-sm: 0 4px 12px rgba(0, 52, 120, 0.06);
+  --radius-lg: 10px;
+  /* Call Staff Styles */
+  --call-staff-bg: #EAE5C9;
+  --call-staff-border: #003478;
+  --call-staff-text: #1A1A1A;
+  --call-staff-pulse: rgba(232, 0, 45, 0.35);
+  --call-staff-font: 'Noto Sans KR', sans-serif;
+}
+
+/* ---------- 23: French Patisserie ---------- */
+.theme-23 {
+  --color-primary-50: #FAF5FA;
+  --color-primary-500: #C8A2C8; /* Lilac */
+  --color-primary-600: #B28AB2;
+  --color-secondary-500: #D4AF37; /* Gold */
+  --color-bg: #F5F0E0; /* Champagne Room */
+  --color-surface: #FFFFFF;
+  --color-surface-warm: #F4F1EA;
+  --color-text: #36454F; /* Charcoal */
+  --color-text-muted: #708090;
+  --color-border: #C8A2C8;
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'EB Garamond', serif;
+  --shadow-sm: 0 2px 15px rgba(200, 162, 200, 0.12);
+  --radius-lg: 32px; /* Perfect curves */
+  /* Call Staff Styles */
+  --call-staff-bg: #FFFFFF;
+  --call-staff-border: #C8A2C8;
+  --call-staff-text: #36454F;
+  --call-staff-pulse: rgba(200, 162, 200, 0.3);
+  --call-staff-font: 'Cormorant Garamond', serif;
+}
+
+/* ---------- 24: Middle Eastern Souk ---------- */
+.theme-24 {
+  --color-primary-50: #FAF1E4;
+  --color-primary-500: #8B0000; /* Burgundy */
+  --color-primary-600: #700000;
+  --color-secondary-500: #D4AF37;
+  --color-bg: #F5E6C8; /* Souk Sand */
+  --color-surface: #E9D2A9;
+  --color-surface-warm: #DFBFA0;
+  --color-text: #1C4E80; /* Lapis blue */
+  --color-text-muted: #547192;
+  --color-border: #D4AF37;
+  --font-display: 'Amiri', serif;
+  --font-body: 'Cairo', sans-serif;
+  --shadow-sm: 0 4px 15px rgba(139, 0, 0, 0.12);
+  --radius-lg: 12px;
+  /* Call Staff Styles */
+  --call-staff-bg: #E9D2A9;
+  --call-staff-border: #D4AF37;
+  --call-staff-text: #1C4E80;
+  --call-staff-pulse: rgba(139, 0, 0, 0.35);
+  --call-staff-font: 'Amiri', serif;
+}
+
+/* ---------- 25: Spanish Tapas ---------- */
+.theme-25 {
+  --color-primary-50: #FFF0F0;
+  --color-primary-500: #CC0000; /* Spanish Red */
+  --color-primary-600: #AB0000;
+  --color-secondary-500: #FF6600; /* Orange Sunset */
+  --color-bg: #FFFAF0; /* Floral White */
+  --color-surface: #FFE5D9;
+  --color-surface-warm: #FFD4C2;
+  --color-text: #1E5631; /* Olive */
+  --color-text-muted: #3F704D;
+  --color-border: #CC0000;
+  --font-display: 'Lobster Two', serif;
+  --font-body: 'Raleway', sans-serif;
+  --shadow-sm: 0 4px 12px rgba(204, 0, 0, 0.08);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFE5D9;
+  --call-staff-border: #CC0000;
+  --call-staff-text: #1E5631;
+  --call-staff-pulse: rgba(204, 0, 0, 0.35);
+  --call-staff-font: 'Lobster Two', serif;
+}
+
+/* ==================== TIER 5 — REGIONAL INDIAN (26-30) ==================== */
+
+/* ---------- 26: Bengali Fish Curry ---------- */
+.theme-26 {
+  --color-primary-50: #F0F9FF;
+  --color-primary-500: #006994; /* Bengali Blue */
+  --color-primary-600: #025577;
+  --color-secondary-500: #F5F5DC; /* Mustard Yellow */
+  --color-bg: #FFFFFF;
+  --color-surface: #E0F2FE;
+  --color-surface-warm: #BAE6FD;
+  --color-text: #8B0000;
+  --color-text-muted: #5F6368;
+  --color-border: #006994;
+  --font-display: 'Noto Serif Bengali', serif;
+  --font-body: 'Hind Siliguri', sans-serif;
+  --shadow-sm: 0 2px 10px rgba(0, 105, 148, 0.05);
+  --radius-lg: 12px;
+  /* Call Staff Styles */
+  --call-staff-bg: #E0F2FE;
+  --call-staff-border: #006994;
+  --call-staff-text: #8B0000;
+  --call-staff-pulse: rgba(0, 105, 148, 0.3);
+  --call-staff-font: 'Noto Serif Bengali', serif;
+}
+
+/* ---------- 27: Kerala Backwater ---------- */
+.theme-27 {
+  --color-primary-50: #F0FDF4;
+  --color-primary-500: #006400; /* Kerala Green */
+  --color-primary-600: #004D00;
+  --color-secondary-500: #FF8C00;
+  --color-bg: #FFFDD0; /* Coconut cream */
+  --color-surface: #E6F4EA;
+  --color-surface-warm: #CEEAD6;
+  --color-text: #8B4513; /* Coir brown */
+  --color-text-muted: #5C3A21;
+  --color-border: #006400;
+  --font-display: 'Noto Serif Malayalam', serif;
+  --font-body: 'Mandali', sans-serif;
+  --shadow-sm: 0 4px 10px rgba(0, 100, 0, 0.04);
+  --radius-lg: 14px;
+  /* Call Staff Styles */
+  --call-staff-bg: #E6F4EA;
+  --call-staff-border: #006400;
+  --call-staff-text: #8B4513;
+  --call-staff-pulse: rgba(0, 100, 0, 0.3);
+  --call-staff-font: 'Noto Serif Malayalam', serif;
+}
+
+/* ---------- 28: Goan Beach Shack ---------- */
+.theme-28 {
+  --color-primary-50: #FFF7ED;
+  --color-primary-500: #FF8C00; /* Sunset Orange */
+  --color-primary-600: #EA580C;
+  --color-secondary-500: #1E90FF; /* Ocean Blue */
+  --color-bg: #F5DEB3; /* Sand Beach */
+  --color-surface: #FFF3E0;
+  --color-surface-warm: #FFE0B2;
+  --color-text: #DC143C;
+  --color-text-muted: #8E6B4A;
+  --color-border: #1E90FF;
+  --font-display: 'Lobster', serif;
+  --font-body: 'Nunito', sans-serif;
+  --shadow-sm: 0 4px 12px rgba(255, 140, 0, 0.1);
+  --radius-lg: 20px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFF3E0;
+  --call-staff-border: #1E90FF;
+  --call-staff-text: #DC143C;
+  --call-staff-pulse: rgba(255, 140, 0, 0.35);
+  --call-staff-font: 'Pacifico', cursive;
+}
+
+/* ---------- 29: Chettinad Spice ---------- */
+.theme-29 {
+  --color-primary-50: #FFF5F5;
+  --color-primary-500: #8B0000; /* Deep Red */
+  --color-primary-600: #700000;
+  --color-secondary-500: #D4AF37;
+  --color-bg: #FFF5DC;
+  --color-surface: #F2E3C6;
+  --color-surface-warm: #E4D1B0;
+  --color-text: #4A235A;
+  --color-text-muted: #644B68;
+  --color-border: #8B0000;
+  --font-display: 'Noto Serif Tamil', serif;
+  --font-body: 'Catamaran', sans-serif;
+  --shadow-sm: 0 4px 15px rgba(139, 0, 0, 0.08);
+  --radius-lg: 6px;
+  /* Call Staff Styles */
+  --call-staff-bg: #F2E3C6;
+  --call-staff-border: #8B0000;
+  --call-staff-text: #4A235A;
+  --call-staff-pulse: rgba(139, 0, 0, 0.35);
+  --call-staff-font: 'Noto Serif Tamil', serif;
+}
+
+/* ---------- 30: Hyderabadi Nawabi ---------- */
+.theme-30 {
+  --color-primary-50: #F4F9F6;
+  --color-primary-500: #1B4332; /* Nizam Green */
+  --color-primary-600: #112A1F;
+  --color-secondary-500: #D4AF37; /* Royal Gold */
+  --color-bg: #F5F0E0;
+  --color-surface: #E9DFCE;
+  --color-surface-warm: #DDD1B8;
+  --color-text: #8B0000;
+  --color-text-muted: #5D543A;
+  --color-border: #D4AF37;
+  --font-display: 'Amiri', serif;
+  --font-body: 'Hind', sans-serif;
+  --shadow-sm: 0 4px 18px rgba(27, 67, 50, 0.15);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: #E9DFCE;
+  --call-staff-border: #D4AF37;
+  --call-staff-text: #8B0000;
+  --call-staff-pulse: rgba(27, 67, 50, 0.35);
+  --call-staff-font: 'Amiri', serif;
+}
+
+/* ==================== TIER 6 — MODERN (31-36) ==================== */
+
+/* ---------- 31: Neon Street Food ---------- */
+.theme-31 {
+  --color-primary-50: #FFF0FF;
+  --color-primary-500: #FF00FF; /* Magenta Neon */
+  --color-primary-600: #E600E6;
+  --color-secondary-500: #00FFFF; /* Cyan Neon */
+  --color-bg: #0D0D0D; /* Cyber Dark */
+  --color-surface: #1A1A2E;
+  --color-surface-warm: #25254A;
+  --color-text: #FFFFFF;
+  --color-text-muted: #A0A0C0;
+  --color-border: #FF00FF;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Barlow Condensed', sans-serif;
+  --shadow-sm: 0 0 15px rgba(255, 0, 255, 0.25);
+  --radius-lg: 10px;
+  /* Call Staff Styles */
+  --call-staff-bg: #1A1A2E;
+  --call-staff-border: #FF00FF;
+  --call-staff-text: #FFFFFF;
+  --call-staff-pulse: rgba(255, 0, 255, 0.45);
+  --call-staff-font: 'Bebas Neue', sans-serif;
+}
+
+/* ---------- 32: Y2K Retro Pop ---------- */
+.theme-32 {
+  --color-primary-50: #FFF0FF;
+  --color-primary-500: #FF6EFF; /* Y2K Pink */
+  --color-primary-600: #E55BE5;
+  --color-secondary-500: #6EE7FF; /* Y2K Blue */
+  --color-bg: #0D0D0D;
+  --color-surface: #222222;
+  --color-surface-warm: #333333;
+  --color-text: #FFFFFF;
+  --color-text-muted: #A0A0A0;
+  --color-border: #FF6EFF;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Cabinet Grotesk', sans-serif;
+  --shadow-sm: 0 0 20px rgba(110, 231, 255, 0.2);
+  --radius-lg: 30px; /* Bubbly pill shape */
+  /* Call Staff Styles */
+  --call-staff-bg: #222222;
+  --call-staff-border: #FF6EFF;
+  --call-staff-text: #FFFFFF;
+  --call-staff-pulse: rgba(255, 110, 255, 0.4);
+  --call-staff-font: 'Space Grotesk', sans-serif;
+}
+
+/* ---------- 33: Botanical Garden ---------- */
+.theme-33 {
+  --color-primary-50: #F3FAF6;
+  --color-primary-500: #2D6A4F; /* Forest Green */
+  --color-primary-600: #204E37;
+  --color-secondary-500: #52B788;
+  --color-bg: #F1FAEE; /* Mint White */
+  --color-surface: #D8F3DC;
+  --color-surface-warm: #B7E4C7;
+  --color-text: #2D6A4F;
+  --color-text-muted: #52B788;
+  --color-border: #2D6A4F;
+  --font-display: 'Fraunces', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --shadow-sm: 0 4px 12px rgba(45, 106, 79, 0.05);
+  --radius-lg: 20px;
+  /* Call Staff Styles */
+  --call-staff-bg: #D8F3DC;
+  --call-staff-border: #2D6A4F;
+  --call-staff-text: #2D6A4F;
+  --call-staff-pulse: rgba(45, 106, 79, 0.25);
+  --call-staff-font: 'Fraunces', serif;
+}
+
+/* ---------- 34: Industrial Craft ---------- */
+.theme-34 {
+  --color-primary-50: #FFF7ED;
+  --color-primary-500: #FF6B35; /* Industrial Flame */
+  --color-primary-600: #EA580C;
+  --color-secondary-500: #8B6914; /* Brass */
+  --color-bg: #1C1C1C;
+  --color-surface: #333333;
+  --color-surface-warm: #444444;
+  --color-text: #F5F5F5;
+  --color-text-muted: #8E8E8E;
+  --color-border: #8B6914;
+  --font-display: 'Oswald', sans-serif;
+  --font-body: 'Roboto', sans-serif;
+  --shadow-sm: 0 4px 15px rgba(0, 0, 0, 0.4);
+  --radius-lg: 2px; /* Rigid industrial edges */
+  /* Call Staff Styles */
+  --call-staff-bg: #333333;
+  --call-staff-border: #8B6914;
+  --call-staff-text: #F5F5F5;
+  --call-staff-pulse: rgba(139, 105, 20, 0.35);
+  --call-staff-font: 'Oswald', sans-serif;
+}
+
+/* ---------- 35: Pastel Kawaii ---------- */
+.theme-35 {
+  --color-primary-50: #FFF5F7;
+  --color-primary-500: #FFB3C6; /* Soft Pastel Pink */
+  --color-primary-600: #FFA0B7;
+  --color-secondary-500: #B5EAD7; /* Pastel Mint */
+  --color-bg: #FFFFF0; /* Ivory Cream */
+  --color-surface: #FFDAC1;
+  --color-surface-warm: #FFC4A1;
+  --color-text: #795548; /* Brown Bear */
+  --color-text-muted: #A1887F;
+  --color-border: #FFB3C6;
+  --font-display: 'Nunito', sans-serif;
+  --font-body: 'Quicksand', sans-serif;
+  --shadow-sm: 0 4px 10px rgba(255, 179, 198, 0.05);
+  --radius-lg: 24px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFDAC1;
+  --call-staff-border: #FFB3C6;
+  --call-staff-text: #795548;
+  --call-staff-pulse: rgba(255, 179, 198, 0.3);
+  --call-staff-font: 'Nunito', sans-serif;
+}
+
+/* ---------- 36: Farm Fresh ---------- */
+.theme-36 {
+  --color-primary-50: #F0FDF4;
+  --color-primary-500: #4CAF50; /* Fresh Green */
+  --color-primary-600: #3E8E41;
+  --color-secondary-500: #FF7043;
+  --color-bg: #FFFFFF;
+  --color-surface: #FFF9C4;
+  --color-surface-warm: #FFF59D;
+  --color-text: #795548;
+  --color-text-muted: #8D6E63;
+  --color-border: #4CAF50;
+  --font-display: 'Nunito Sans', sans-serif;
+  --font-body: 'Source Sans Pro', sans-serif;
+  --shadow-sm: 0 2px 8px rgba(76, 175, 80, 0.04);
+  --radius-lg: 12px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFF9C4;
+  --call-staff-border: #4CAF50;
+  --call-staff-text: #795548;
+  --call-staff-pulse: rgba(76, 175, 80, 0.3);
+  --call-staff-font: 'Nunito Sans', sans-serif;
+}
+
+/* ==================== TIER 7 — SEASONAL (37-44) ==================== */
+
+/* ---------- 37: Diwali Glow ---------- */
+.theme-37 {
+  --color-primary-50: #FFF8E7;
+  --color-primary-500: #FF8C00; /* Orange Diya */
+  --color-primary-600: #E67E00;
+  --color-secondary-500: #D4AF37; /* Gold */
+  --color-bg: #1A1A2E; /* Midnight Sky */
+  --color-surface: #2D1A4A; /* Indigo Temple */
+  --color-surface-warm: #3D2960;
+  --color-text: #FFF8DC;
+  --color-text-muted: #DAA520;
+  --color-border: #D4AF37;
+  --font-display: 'Rozha One', serif;
+  --font-body: 'Hind', sans-serif;
+  --shadow-sm: 0 4px 20px rgba(255, 140, 0, 0.2);
+  --radius-lg: 32px;
+  /* Call Staff Styles */
+  --call-staff-bg: #2D1A4A;
+  --call-staff-border: #D4AF37;
+  --call-staff-text: #FFF8DC;
+  --call-staff-pulse: rgba(255, 140, 0, 0.4);
+  --call-staff-font: 'Rozha One', serif;
+}
+
+/* ---------- 38: Holi Splash ---------- */
+.theme-38 {
+  --color-primary-50: #FFF0F0;
+  --color-primary-500: #FF6B6B; /* Coral powder */
+  --color-primary-600: #EE5B5B;
+  --color-secondary-500: #4ECDC4;
+  --color-bg: #FFFFFF;
+  --color-surface: #FFE66D;
+  --color-surface-warm: #FFDB4D;
+  --color-text: #333333;
+  --color-text-muted: #64748B;
+  --color-border: #4ECDC4;
+  --font-display: 'Boogaloo', cursive;
+  --font-body: 'Nunito', sans-serif;
+  --shadow-sm: 0 4px 15px rgba(255, 107, 107, 0.12);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFE66D;
+  --call-staff-border: #4ECDC4;
+  --call-staff-text: #333333;
+  --call-staff-pulse: rgba(255, 107, 107, 0.45);
+  --call-staff-font: 'Boogaloo', cursive;
+}
+
+/* ---------- 39: Christmas Cosy ---------- */
+.theme-39 {
+  --color-primary-50: #FFF5F5;
+  --color-primary-500: #CC0000; /* Christmas Red */
+  --color-primary-600: #B20000;
+  --color-secondary-500: #006400; /* Fir Green */
+  --color-bg: #FFFAF0; /* Snow White */
+  --color-surface: #E6F4EA;
+  --color-surface-warm: #CEEAD6;
+  --color-text: #8B4513; /* Gingerbread Brown */
+  --color-text-muted: #5C3717;
+  --color-border: #CC0000;
+  --font-display: 'Mountains of Christmas', cursive;
+  --font-body: 'Lato', sans-serif;
+  --shadow-sm: 0 4px 12px rgba(204, 0, 0, 0.06);
+  --radius-lg: 18px;
+  /* Call Staff Styles */
+  --call-staff-bg: #E6F4EA;
+  --call-staff-border: #CC0000;
+  --call-staff-text: #8B4513;
+  --call-staff-pulse: rgba(204, 0, 0, 0.35);
+  --call-staff-font: 'Mountains of Christmas', cursive;
+}
+
+/* ---------- 40: Eid Crescent ---------- */
+.theme-40 {
+  --color-primary-50: #F0FAF5;
+  --color-primary-500: #006400; /* Lantern Green */
+  --color-primary-600: #005000;
+  --color-secondary-500: #D4AF37; /* Crescent Gold */
+  --color-bg: #1A1A2E; /* Starry Night */
+  --color-surface: #2C2C4E;
+  --color-surface-warm: #3F3F70;
+  --color-text: #FFFDD0; /* Warm ivory */
+  --color-text-muted: #B3B3D9;
+  --color-border: #D4AF37;
+  --font-display: 'Amiri', serif;
+  --font-body: 'Cairo', sans-serif;
+  --shadow-sm: 0 4px 20px rgba(0, 100, 0, 0.3);
+  --radius-lg: 12px;
+  /* Call Staff Styles */
+  --call-staff-bg: #2C2C4E;
+  --call-staff-border: #D4AF37;
+  --call-staff-text: #FFFDD0;
+  --call-staff-pulse: rgba(0, 100, 0, 0.4);
+  --call-staff-font: 'Amiri', serif;
+}
+
+/* ---------- 41: Monsoon Cafe ---------- */
+.theme-41 {
+  --color-primary-50: #F3F7F9;
+  --color-primary-500: #C39B62; /* Chai Gold */
+  --color-primary-600: #AF8851;
+  --color-secondary-500: #5C6B73; /* Rain Slate */
+  --color-bg: #F5F0E0; /* Warm clay adda */
+  --color-surface: #EADFCE;
+  --color-surface-warm: #DFD3BF;
+  --color-text: #6D4C41; /* Wet earth */
+  --color-text-muted: #8E7060;
+  --color-border: #5C6B73;
+  --font-display: 'Bitter', serif;
+  --font-body: 'Source Serif Pro', serif;
+  --shadow-sm: 0 2px 10px rgba(109, 76, 65, 0.05);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: #EADFCE;
+  --call-staff-border: #5C6B73;
+  --call-staff-text: #6D4C41;
+  --call-staff-pulse: rgba(92, 107, 115, 0.3);
+  --call-staff-font: 'Bitter', serif;
+}
+
+/* ---------- 42: Summer Burst ---------- */
+.theme-42 {
+  --color-primary-50: #FFFBE6;
+  --color-primary-500: #FF9E00; /* Mango Yellow */
+  --color-primary-600: #E68E00;
+  --color-secondary-500: #00B4D8; /* Pool Blue */
+  --color-bg: #FFFFFF;
+  --color-surface: #FFF9C4;
+  --color-surface-warm: #FFF59D;
+  --color-text: #795548;
+  --color-text-muted: #9E7D70;
+  --color-border: #FF9E00;
+  --font-display: 'Fredoka One', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+  --shadow-sm: 0 4px 12px rgba(255, 158, 0, 0.08);
+  --radius-lg: 24px;
+  /* Call Staff Styles */
+  --call-staff-bg: #FFF9C4;
+  --call-staff-border: #FF9E00;
+  --call-staff-text: #795548;
+  --call-staff-pulse: rgba(255, 158, 0, 0.4);
+  --call-staff-font: 'Fredoka One', sans-serif;
+}
+
+/* ---------- 43: Valentine Blush ---------- */
+.theme-43 {
+  --color-primary-50: #FFF0F2;
+  --color-primary-500: #D90429; /* Velvet Red */
+  --color-primary-600: #BD0322;
+  --color-secondary-500: #F7CAD0; /* Soft Blush */
+  --color-bg: #2B2D42; /* Night Date */
+  --color-surface: #3D405B;
+  --color-surface-warm: #4E5275;
+  --color-text: #EDF2F4;
+  --color-text-muted: #A2A7B5;
+  --color-border: #D90429;
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Lato', sans-serif;
+  --shadow-sm: 0 4px 20px rgba(217, 4, 41, 0.25);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: #3D405B;
+  --call-staff-border: #D90429;
+  --call-staff-text: #EDF2F4;
+  --call-staff-pulse: rgba(217, 4, 41, 0.4);
+  --call-staff-font: 'Playfair Display', serif;
+}
+
+/* ---------- 44: New Year Noir ---------- */
+.theme-44 {
+  --color-primary-50: #FFFBEB;
+  --color-primary-500: #E2C07D; /* Champagne Gold */
+  --color-primary-600: #D0AD67;
+  --color-secondary-500: #E5E5E5; /* Platinum Silver */
+  --color-bg: #1A1A2E; /* Countdown Night */
+  --color-surface: #2A2A2A;
+  --color-surface-warm: #3A3A3A;
+  --color-text: #FFFFFF;
+  --color-text-muted: #CCCCCC;
+  --color-border: #E2C07D;
+  --font-display: 'Montserrat', sans-serif;
+  --font-body: 'Open Sans', sans-serif;
+  --shadow-sm: 0 4px 25px rgba(226, 192, 125, 0.35);
+  --radius-lg: 8px;
+  /* Call Staff Styles */
+  --call-staff-bg: #2A2A2A;
+  --call-staff-border: #E2C07D;
+  --call-staff-text: #FFFFFF;
+  --call-staff-pulse: rgba(226, 192, 125, 0.4);
+  --call-staff-font: 'Montserrat', sans-serif;
+}
+
+/* ==================== TIER 8 — SPECIAL (45-52) ==================== */
+
+/* ---------- 45: Dark Mode Espresso ---------- */
+.theme-45 {
+  --color-primary-50: #FFF5EE;
+  --color-primary-500: #FF6B35; /* Orange Ember */
+  --color-primary-600: #EA580C;
+  --color-secondary-500: #1E1E1E;
+  --color-bg: #121212; /* True Black AMOLED */
+  --color-surface: #1E1E1E;
+  --color-surface-warm: #2C2C2C;
+  --color-text: #E0E0E0;
+  --color-text-muted: #8E8E8E;
+  --color-border: #2C2C2C;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Roboto', sans-serif;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.6);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: #2C2C2C;
+  --call-staff-border: #FF6B35;
+  --call-staff-text: #E0E0E0;
+  --call-staff-pulse: rgba(255, 107, 53, 0.3);
+  --call-staff-font: 'Inter', sans-serif;
+}
+
+/* ---------- 46: High Contrast Accessible ---------- */
+.theme-46 {
+  --color-primary-50: #FFFFD0;
+  --color-primary-500: #FFFF00; /* Accessible Yellow link */
+  --color-primary-600: #CCCC00;
+  --color-secondary-500: #0000EE; /* Clear link blue */
+  --color-bg: #000000; /* WCAG AAA black */
+  --color-surface: #000000;
+  --color-surface-warm: #111111;
+  --color-text: #FFFFFF; /* High readable white */
+  --color-text-muted: #EEEEEE;
+  --color-border: #FFFFFF;
+  --font-display: 'Atkinson Hyperlegible', sans-serif;
+  --font-body: 'Atkinson Hyperlegible', sans-serif;
+  --shadow-sm: none;
+  --radius-lg: 0px; /* Rigid blocky borders */
+  /* Call Staff Styles */
+  --call-staff-bg: #000000;
+  --call-staff-border: #FFFFFF;
+  --call-staff-text: #FFFFFF;
+  --call-staff-pulse: rgba(255, 255, 255, 0.5);
+  --call-staff-font: 'Atkinson Hyperlegible', sans-serif;
+}
+
+/* ---------- 47: Print-Ready Menu ---------- */
+.theme-47 {
+  --color-primary-50: #F9F9F9;
+  --color-primary-500: #000000; /* Flat solid ink black */
+  --color-primary-600: #1C1C1C;
+  --color-secondary-500: #4A5568;
+  --color-bg: #FFFFFF; /* True paper white */
+  --color-surface: #F4F1DE; /* Linen overlay */
+  --color-surface-warm: #EAE6DB;
+  --color-text: #1A1A1A;
+  --color-text-muted: #4A5568;
+  --color-border: #000000;
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Times New Roman', serif;
+  --shadow-sm: none;
+  --radius-lg: 0px;
+  /* Call Staff Styles */
+  --call-staff-bg: #F4F1DE;
+  --call-staff-border: #000000;
+  --call-staff-text: #1A1A1A;
+  --call-staff-pulse: rgba(0, 0, 0, 0.2);
+  --call-staff-font: 'Times New Roman', serif;
+}
+
+/* ---------- 48: Kiosk Display ---------- */
+.theme-48 {
+  --color-primary-50: #ECFEFF;
+  --color-primary-500: #06B6D4; /* Touch Cyan */
+  --color-primary-600: #0891B2;
+  --color-secondary-500: #64748B;
+  --color-bg: #0F172A; /* Dark Space */
+  --color-surface: #1E293B;
+  --color-surface-warm: #334155;
+  --color-text: #F8FAFC; /* Crisp touch letters */
+  --color-text-muted: #94A3B8;
+  --color-border: #06B6D4;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --shadow-sm: 0 10px 30px rgba(6, 182, 212, 0.25);
+  --radius-lg: 32px; /* Smooth touch corners */
+  /* Call Staff Styles */
+  --call-staff-bg: #1E293B;
+  --call-staff-border: #06B6D4;
+  --call-staff-text: #F8FAFC;
+  --call-staff-pulse: rgba(6, 182, 212, 0.45);
+  --call-staff-font: 'Inter', sans-serif;
+}
+
+/* ---------- 49: Delivery-First ---------- */
+.theme-49 {
+  --color-primary-50: #FFF5F0;
+  --color-primary-500: #FF5A09; /* Courier Orange */
+  --color-primary-600: #E04E07;
+  --color-secondary-500: #343A40;
+  --color-bg: #F8F9FA;
+  --color-surface: #EAEAEA;
+  --color-surface-warm: #DFDFDF;
+  --color-text: #212529;
+  --color-text-muted: #6C757D;
+  --color-border: #FF5A09;
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --shadow-sm: 0 2px 10px rgba(255, 90, 9, 0.1);
+  --radius-lg: 16px;
+  /* Call Staff Styles */
+  --call-staff-bg: #EAEAEA;
+  --call-staff-border: #FF5A09;
+  --call-staff-text: #212529;
+  --call-staff-pulse: rgba(255, 90, 9, 0.35);
+  --call-staff-font: 'Outfit', sans-serif;
+}
+
+/* ---------- 50: Royal Awadhi ---------- */
+.theme-50 {
+  --color-primary-50: #FFFDF0;
+  --color-primary-500: #FFB703; /* Royal Gold */
+  --color-primary-600: #E0A000;
+  --color-secondary-500: #600000; /* Palace Maroon */
+  --color-bg: #0D1B2A; /* Awadh Dark Blue */
+  --color-surface: #153243;
+  --color-surface-warm: #284B63;
+  --color-text: #E0E1DD;
+  --color-text-muted: #859B74;
+  --color-border: #FFB703;
+  --font-display: 'Rozha One', serif;
+  --font-body: 'Lora', serif;
+  --shadow-sm: 0 6px 20px rgba(255, 183, 3, 0.2);
+  --radius-lg: 24px;
+  /* Call Staff Styles */
+  --call-staff-bg: #153243;
+  --call-staff-border: #FFB703;
+  --call-staff-text: #E0E1DD;
+  --call-staff-pulse: rgba(255, 183, 3, 0.4);
+  --call-staff-font: 'Rozha One', serif;
+}
+
+/* ---------- 51: Coastal Konkan ---------- */
+.theme-51 {
+  --color-primary-50: #FAF6F0;
+  --color-primary-500: #0077B6; /* Konkan Marine Blue */
+  --color-primary-600: #005A8B;
+  --color-secondary-500: #03045E;
+  --color-bg: #E5D5C5; /* Beach Shell Sand */
+  --color-surface: #CAF0F8;
+  --color-surface-warm: #ADE8F4;
+  --color-text: #03045E;
+  --color-text-muted: #0077B6;
+  --color-border: #0077B6;
+  --font-display: 'Pacifico', cursive;
+  --font-body: 'Mukta', sans-serif;
+  --shadow-sm: 0 4px 10px rgba(0, 119, 182, 0.08);
+  --radius-lg: 20px;
+  /* Call Staff Styles */
+  --call-staff-bg: #CAF0F8;
+  --call-staff-border: #0077B6;
+  --call-staff-text: #03045E;
+  --call-staff-pulse: rgba(0, 119, 182, 0.3);
+  --call-staff-font: 'Mukta', sans-serif;
+}
+
+/* ---------- 52: White Orchid High Contrast ---------- */
+.theme-52 {
+  --color-primary-50: #FAF5FF;
+  --color-primary-500: #A855F7; /* High contrast orchid purple */
+  --color-primary-600: #9333EA;
+  --color-secondary-500: #86EFAC;
+  --color-bg: #FFFFFF;
+  --color-surface: #E9D5FF; /* Lavender tint */
+  --color-surface-warm: #DDD6FE;
+  --color-text: #1C1917; /* Charcoal stone black */
+  --color-text-muted: #57534E;
+  --color-border: #A855F7;
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --shadow-sm: 0 4px 30px rgba(168, 85, 247, 0.08);
+  --radius-lg: 0px; /* Sharp outlines */
+  /* Call Staff Styles */
+  --call-staff-bg: #E9D5FF;
+  --call-staff-border: #A855F7;
+  --call-staff-text: #1C1917;
+  --call-staff-pulse: rgba(168, 85, 247, 0.4);
+  --call-staff-font: 'Outfit', sans-serif;
+}
