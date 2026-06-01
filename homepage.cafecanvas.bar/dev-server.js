@@ -17,6 +17,11 @@ const server = http.createServer((req, res) => {
     urlPath = '/super-branches-admin.html';
   } else if (urlPath === '/branch-admin') {
     urlPath = '/branches-admin.html';
+  } else if (urlPath === '/store-admin') {
+    res.statusCode = 307;
+    res.setHeader('Location', 'http://localhost:3000/login');
+    res.end();
+    return;
   }
 
   // Default to index.html for root
