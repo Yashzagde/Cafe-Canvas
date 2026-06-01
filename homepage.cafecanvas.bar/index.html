@@ -1246,6 +1246,12 @@
     .dl-mac:hover { background: var(--text-primary); transform: translateY(-2px); }
     .dl-browser { border: 2px solid var(--latte); color: var(--coffee); background: transparent; }
     .dl-browser:hover { background: var(--latte); color: var(--warm-white); transform: translateY(-2px); }
+    .dl-playstore { background: #0F0F10; color: var(--warm-white); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .dl-playstore:hover { background: #1A1A1C; transform: translateY(-2px); }
+    .dl-appstore { background: #0F0F10; color: var(--warm-white); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .dl-appstore:hover { background: #1A1A1C; transform: translateY(-2px); }
+    .dl-apk { border: 2px solid var(--latte); color: var(--coffee); background: transparent; }
+    .dl-apk:hover { background: var(--latte); color: var(--warm-white); transform: translateY(-2px); }
 
     .support-badges {
       display: flex;
@@ -2033,8 +2039,8 @@
           <div class="product-actions">
             <span class="dl-file-info">Install Flutter App:</span>
             <div class="app-badge-row">
-              <a href="#" class="app-badge"><i data-lucide="smartphone"></i> Android</a>
-              <a href="#" class="app-badge"><i data-lucide="tablet"></i> iOS App</a>
+              <a href="#downloads" class="app-badge"><i data-lucide="smartphone"></i> Android</a>
+              <a href="#downloads" class="app-badge"><i data-lucide="tablet"></i> iOS App</a>
             </div>
           </div>
         </div>
@@ -2309,11 +2315,14 @@
             The fast, mobile-first POS for your floor team. Available for Android phones and tablets, and iPhone/iPad.
           </p>
           <div class="download-btn-col">
-            <a href="#" class="download-pill dl-windows" style="background: var(--sage);">
+            <a href="#" class="download-pill dl-playstore">
               <i data-lucide="play"></i> Get on Google Play Store
             </a>
-            <a href="#" class="download-pill dl-mac" style="background: var(--espresso);">
-              <i data-lucide="smartphone"></i> Download on App Store
+            <a href="#" class="download-pill dl-appstore">
+              <i data-lucide="apple"></i> Download on App Store
+            </a>
+            <a href="/CafeCanvas-Staff-POS.apk" class="download-pill dl-apk">
+              <i data-lucide="download"></i> Download Android APK (.apk)
             </a>
           </div>
           <div class="support-badges">
@@ -2599,15 +2608,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
 
   <!-- Lenis Smooth Scroll -->
-  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <script src="https://unpkg.com/lenis@1.1.5/dist/lenis.min.js"></script>
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
   <!-- Custom Scripts -->
   <script>
-    // Initialize Lucide Icons
-    lucide.createIcons();
+    // Initialize Lucide Icons on DOM Load
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
 
     // 1. Register GSAP Plugins
     gsap.registerPlugin(ScrollTrigger, TextPlugin);
@@ -2635,6 +2646,19 @@
       lenis.raf(time * 1000);
     });
     gsap.ticker.lagSmoothing(0);
+
+    // Smooth scroll for anchor links using Lenis
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        const targetId = this.getAttribute('href');
+        if (targetId === '#') return;
+        const target = document.querySelector(targetId);
+        if (target) {
+          e.preventDefault();
+          lenis.scrollTo(target);
+        }
+      });
+    });
 
     // 3. Custom Cursor Logic (Desktop only)
     if (window.matchMedia('(pointer: fine)').matches) {
@@ -2703,7 +2727,11 @@
     loaderTl.to('.loader', {
       yPercent: -100,
       duration: 0.8,
-      ease: 'power3.inOut'
+      ease: 'power3.inOut',
+      onComplete: () => {
+        const loader = document.querySelector('.loader');
+        if (loader) loader.style.display = 'none';
+      }
     });
 
     // 5. Hero Animations (Plays after loading completes)
