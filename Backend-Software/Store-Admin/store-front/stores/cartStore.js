@@ -84,7 +84,42 @@ const useCartStore = create(
         return get().items.some((i) => i.id === id);
       },
     }),
-    { name: "cafe-canva-cart" }
+    {
+      name: "cafe-canva-cart",
+      storage: {
+        getItem: (name) => {
+          if (typeof window === "undefined") return null;
+          const host = window.location.host;
+          const pathname = window.location.pathname;
+          const parts = pathname.split("/").filter(Boolean);
+          const pathSlug = parts[0] || "";
+          const reserved = ["blog", "cart", "dine-in", "item", "items", "api"];
+          const tenant = (pathSlug && !reserved.includes(pathSlug)) ? `${host}-${pathSlug}` : host;
+          const val = localStorage.getItem(`cafe-cart-${tenant}`);
+          return val ? JSON.parse(val) : null;
+        },
+        setItem: (name, value) => {
+          if (typeof window === "undefined") return;
+          const host = window.location.host;
+          const pathname = window.location.pathname;
+          const parts = pathname.split("/").filter(Boolean);
+          const pathSlug = parts[0] || "";
+          const reserved = ["blog", "cart", "dine-in", "item", "items", "api"];
+          const tenant = (pathSlug && !reserved.includes(pathSlug)) ? `${host}-${pathSlug}` : host;
+          localStorage.setItem(`cafe-cart-${tenant}`, JSON.stringify(value));
+        },
+        removeItem: (name) => {
+          if (typeof window === "undefined") return;
+          const host = window.location.host;
+          const pathname = window.location.pathname;
+          const parts = pathname.split("/").filter(Boolean);
+          const pathSlug = parts[0] || "";
+          const reserved = ["blog", "cart", "dine-in", "item", "items", "api"];
+          const tenant = (pathSlug && !reserved.includes(pathSlug)) ? `${host}-${pathSlug}` : host;
+          localStorage.removeItem(`cafe-cart-${tenant}`);
+        }
+      }
+    }
   )
 );
 

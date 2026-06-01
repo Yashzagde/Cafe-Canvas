@@ -11,6 +11,8 @@
     { "source": "/themes09", "destination": "/theme-09.html" },
     { "source": "/themes10", "destination": "/theme-10.html" },
     { "source": "/super-admin", "destination": "/super-branches-admin.html" },
-    { "source": "/branch-admin", "destination": "/branches-admin.html" }
+    { "source": "/branch-admin", "destination": "/branches-admin.html" },
+    { "source": "/store-admin-downloding", "destination": "/store-admin-downloding.html" },
+    { "source": "/store-admin-downloading", "destination": "/store-admin-downloding.html" }
   ]
 }

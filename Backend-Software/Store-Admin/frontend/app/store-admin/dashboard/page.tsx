@@ -1,332 +1,355 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSyncContext } from '@/app/context/SyncContext';
+
+/* ─── Mock Dashboard Data ─── */
+const MOCK_METRICS = {
+  revenue_today: 48250,
+  revenue_yesterday: 44600,
+  orders_today: 124,
+  orders_yesterday: 109,
+  active_tables: 6,
+  total_tables: 10,
+  avg_bill_value: 389,
+  avg_bill_yesterday: 409,
+};
+
+const MOCK_REVENUE_TREND = [
+  { date: 'Mon', revenue: 32400 },
+  { date: 'Tue', revenue: 38100 },
+  { date: 'Wed', revenue: 41200 },
+  { date: 'Thu', revenue: 35800 },
+  { date: 'Fri', revenue: 52600 },
+  { date: 'Sat', revenue: 61400 },
+  { date: 'Sun', revenue: 48250 },
+];
+
+const MOCK_TOP_ITEMS = [
+  { name: 'Classic Cappuccino', category: 'Hot Coffee', qty: 84, revenue: 24360 },
+  { name: 'Avocado Toast', category: 'Gourmet Bites', qty: 56, revenue: 21840 },
+  { name: 'Specialty Cold Brew', category: 'Cold Brews', qty: 48, revenue: 16800 },
+  { name: 'Almond Croissant', category: 'Bakery & Sweets', qty: 42, revenue: 10080 },
+  { name: 'Matcha Latte', category: 'Cold Brews', qty: 38, revenue: 12160 },
+];
+
+const MOCK_RECENT_BILLS = [
+  { id: 'CC-2026-0142', table: 'Table 04', staff: 'Rohan K.', amount: 1450, time: '2:15 PM', method: 'UPI' },
+  { id: 'CC-2026-0141', table: 'Patio 01', staff: 'Anjali P.', amount: 890, time: '1:48 PM', method: 'Cash' },
+  { id: 'CC-2026-0140', table: 'Table 02', staff: 'Rohan K.', amount: 2840, time: '1:22 PM', method: 'Card' },
+  { id: 'CC-2026-0139', table: 'Bar Seat 2', staff: 'Vikram S.', amount: 650, time: '12:55 PM', method: 'UPI' },
+  { id: 'CC-2026-0138', table: 'Table 05', staff: 'Anjali P.', amount: 1920, time: '12:30 PM', method: 'Cash' },
+];
+
+const MOCK_HOURLY = [
+  { hour: 8, orders: 8 }, { hour: 9, orders: 15 }, { hour: 10, orders: 12 },
+  { hour: 11, orders: 18 }, { hour: 12, orders: 28 }, { hour: 13, orders: 22 },
+  { hour: 14, orders: 14 }, { hour: 15, orders: 10 }, { hour: 16, orders: 8 },
+  { hour: 17, orders: 12 }, { hour: 18, orders: 24 }, { hour: 19, orders: 32 },
+  { hour: 20, orders: 28 }, { hour: 21, orders: 18 }, { hour: 22, orders: 6 },
+];
 
 export default function DashboardPage() {
-  const [chartToggle, setChartToggle] = useState<'line' | 'bar'>('line');
-  const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-  const [discountStatus, setDiscountStatus] = useState<Record<string, string>>({});
+  const { effectivelyOnline, lastSyncedAt } = useSyncContext();
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-  const handleApplyDiscount = (itemId: string, percentage: number) => {
-    setDiscountStatus((prev: Record<string, string>) => ({ ...prev, [itemId]: `Applied ${percentage}% discount!` }));
-  };
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const m = MOCK_METRICS;
+  const revDelta = ((m.revenue_today - m.revenue_yesterday) / m.revenue_yesterday * 100).toFixed(1);
+  const orderDelta = ((m.orders_today - m.orders_yesterday) / m.orders_yesterday * 100).toFixed(1);
+  const avgDelta = ((m.avg_bill_value - m.avg_bill_yesterday) / m.avg_bill_yesterday * 100).toFixed(1);
+  const maxRevenue = Math.max(...MOCK_REVENUE_TREND.map(r => r.revenue));
+  const maxHourly = Math.max(...MOCK_HOURLY.map(h => h.orders));
 
   return (
-    <div className="space-y-8">
-      
-      {/* 1. Header & Quick Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-display font-extrabold text-2xl tracking-tight text-white">Dashboard Overview</h2>
-          <p className="text-sm text-neutral-400 mt-1">Real-time performance ledger and store health indicators.</p>
-        </div>
-        <div className="flex gap-3">
-          <select 
-            value={period} 
-            onChange={(e: any) => setPeriod(e.target.value as any)} 
-            className="glass-input px-4 py-2 text-xs font-semibold"
-          >
-            <option value="daily">Today (Daily)</option>
-            <option value="weekly">This Week (Weekly)</option>
-            <option value="monthly">This Month (Monthly)</option>
-          </select>
+          <h2 className="font-heading font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
+            Dashboard Overview
+          </h2>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+            Real-time performance and store health indicators.
+            {!effectivelyOnline && lastSyncedAt && (
+              <span className="ml-2" style={{ color: 'var(--accent-amber)' }}>
+                (Cached — last updated {lastSyncedAt.toLocaleTimeString()})
+              </span>
+            )}
+          </p>
         </div>
       </div>
 
-      {/* 2. Top Metric Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        
-        {/* Total Orders */}
-        <div className="glass-card p-6 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">Orders Today</span>
-            <span className="font-display font-extrabold text-3xl text-white block mt-2">124</span>
-            <span className="text-[10px] text-accent-emerald font-bold mt-1 block">▲ +14% from yesterday</span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-accent-indigo/10 border border-accent-indigo/20 flex items-center justify-center text-accent-indigo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          </div>
-        </div>
-
-        {/* Total Revenue */}
-        <div className="glass-card p-6 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">Revenue Today</span>
-            <span className="font-display font-extrabold text-3xl text-white block mt-2">₹48,250</span>
-            <span className="text-[10px] text-accent-emerald font-bold mt-1 block">▲ +8.2% from yesterday</span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-accent-emerald/10 border border-accent-emerald/20 flex items-center justify-center text-accent-emerald">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-        </div>
-
-        {/* Avg Bill Value */}
-        <div className="glass-card p-6 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">Average Order</span>
-            <span className="font-display font-extrabold text-3xl text-white block mt-2">₹389</span>
-            <span className="text-[10px] text-accent-rose font-bold mt-1 block">▼ -2.5% from last week</span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-accent-amber/10 border border-accent-amber/20 flex items-center justify-center text-accent-amber">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-        </div>
-
-        {/* Occupancy */}
-        <div className="glass-card p-6 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">Live Occupancy</span>
-            <span className="font-display font-extrabold text-3xl text-white block mt-2">68%</span>
-            <span className="text-[10px] text-neutral-500 mt-1 block">Active dining covers: 18/25</span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-accent-indigo/10 border border-accent-indigo/20 flex items-center justify-center text-accent-indigo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-        </div>
-
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard
+          label="Revenue Today"
+          value={`₹${m.revenue_today.toLocaleString()}`}
+          delta={Number(revDelta)}
+          icon={<CurrencyIcon />}
+          color="var(--accent-emerald)"
+        />
+        <KPICard
+          label="Orders Today"
+          value={m.orders_today.toString()}
+          delta={Number(orderDelta)}
+          icon={<OrdersIcon />}
+          color="var(--accent-sapphire)"
+        />
+        <KPICard
+          label="Active Tables"
+          value={`${m.active_tables}/${m.total_tables}`}
+          subtitle={`${Math.round(m.active_tables / m.total_tables * 100)}% occupancy`}
+          icon={<TablesIcon />}
+          color="var(--accent-violet)"
+        />
+        <KPICard
+          label="Avg Bill Value"
+          value={`₹${m.avg_bill_value}`}
+          delta={Number(avgDelta)}
+          icon={<AvgBillIcon />}
+          color="var(--accent-amber)"
+        />
       </div>
 
-      {/* 3. Main Area: Chart & Top Selling */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left: Revenue Time-Series Chart */}
-        <div className="glass-card p-6 lg:col-span-2 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Revenue Trend */}
+        <div className="lg:col-span-2 glass-card p-5">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <span className="text-sm font-bold text-white tracking-tight">Revenue Analytics</span>
-              <span className="text-xs text-neutral-400 block mt-1">Comparing live storefront vs. physical dining sales.</span>
-            </div>
-            
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setChartToggle('line')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${chartToggle === 'line' ? 'bg-accent-indigo text-white shadow' : 'bg-white/5 text-neutral-400'}`}
-              >
-                Line
-              </button>
-              <button 
-                onClick={() => setChartToggle('bar')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${chartToggle === 'bar' ? 'bg-accent-indigo text-white shadow' : 'bg-white/5 text-neutral-400'}`}
-              >
-                Bar
-              </button>
+              <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Revenue Trend</h3>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Last 7 days performance</p>
             </div>
           </div>
-
-          {/* Graphic Mockup of a gorgeous dashboard chart */}
-          <div className="h-64 mt-6 bg-white/[0.02] border border-white/[0.04] rounded-2xl flex items-end p-4 relative overflow-hidden">
-            <div className="absolute inset-x-4 top-4 flex justify-between text-[10px] text-neutral-500 font-bold uppercase tracking-wider">
-              <span>Peak: ₹14,200</span>
-              <span>Average: ₹8,400</span>
-            </div>
-            
-            {/* Visual bars/lines */}
-            <div className="flex-1 flex items-end justify-between h-3/4 gap-4 px-2">
-              <div className="flex-1 flex flex-col items-center gap-1.5">
-                <div className="w-full bg-gradient-to-t from-accent-indigo/25 to-accent-indigo rounded-t-lg transition-all" style={{ height: '35%' }}></div>
-                <span className="text-[10px] text-neutral-500 font-medium">9 AM</span>
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-1.5">
-                <div className="w-full bg-gradient-to-t from-accent-indigo/25 to-accent-indigo rounded-t-lg transition-all animate-pulse" style={{ height: '60%' }}></div>
-                <span className="text-[10px] text-neutral-500 font-medium">12 PM</span>
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-1.5">
-                <div className="w-full bg-gradient-to-t from-accent-indigo/25 to-accent-indigo rounded-t-lg transition-all" style={{ height: '40%' }}></div>
-                <span className="text-[10px] text-neutral-500 font-medium">3 PM</span>
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-1.5">
-                <div className="w-full bg-gradient-to-t from-accent-indigo/25 to-accent-indigo rounded-t-lg transition-all" style={{ height: '90%' }}></div>
-                <span className="text-[10px] text-neutral-500 font-medium">6 PM</span>
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-1.5">
-                <div className="w-full bg-gradient-to-t from-accent-indigo/25 to-accent-indigo rounded-t-lg transition-all" style={{ height: '75%' }}></div>
-                <span className="text-[10px] text-neutral-500 font-medium">9 PM</span>
-              </div>
-            </div>
+          <div className="flex items-end gap-3 h-[200px] pt-4">
+            {MOCK_REVENUE_TREND.map((point, i) => {
+              const height = (point.revenue / maxRevenue) * 100;
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
+                  <div className="relative w-full flex justify-center">
+                    <span className="absolute -top-6 text-[10px] font-mono font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ color: 'var(--accent-sapphire)' }}>
+                      ₹{(point.revenue / 1000).toFixed(1)}k
+                    </span>
+                    <div
+                      className="w-full max-w-[40px] rounded-t-lg transition-all duration-300 group-hover:opacity-90"
+                      style={{
+                        height: `${height}%`,
+                        background: `linear-gradient(180deg, var(--accent-sapphire), rgba(77, 124, 254, 0.3))`,
+                        minHeight: '8px',
+                      }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                    {point.date}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Right: Top Selling Items */}
-        <div className="glass-card p-6 flex flex-col justify-between">
-          <div>
-            <span className="text-sm font-bold text-white tracking-tight">Top-Selling Menu Items</span>
-            <span className="text-xs text-neutral-400 block mt-1">Ranked by order count and sales volume.</span>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            
-            {/* Top Item 1 */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-extrabold text-accent-emerald">#01</span>
-                <div>
-                  <span className="text-xs font-bold text-white block">Classic Cappuccino</span>
-                  <span className="text-[10px] text-neutral-400">Coffee / Hot Beverages</span>
+        {/* Top Selling Items */}
+        <div className="glass-card p-5">
+          <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Top Selling Items</h3>
+          <p className="text-[11px] mt-0.5 mb-4" style={{ color: 'var(--text-muted)' }}>By quantity sold this week</p>
+          <div className="space-y-3">
+            {MOCK_TOP_ITEMS.map((item, i) => (
+              <div key={i} className="flex items-center justify-between p-2.5 rounded-xl" style={{
+                background: i === 0 ? 'rgba(77, 124, 254, 0.06)' : 'transparent',
+                border: `1px solid ${i === 0 ? 'rgba(77, 124, 254, 0.1)' : 'transparent'}`,
+              }}>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-extrabold font-mono w-6" style={{
+                    color: i === 0 ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                  }}>
+                    #{String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <span className="text-xs font-semibold block" style={{ color: 'var(--text-primary)' }}>{item.name}</span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{item.category}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold block" style={{ color: 'var(--text-primary)' }}>{item.qty} sold</span>
+                  <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>₹{item.revenue.toLocaleString()}</span>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="text-xs font-bold text-white block">84 sold</span>
-                <span className="text-[10px] text-neutral-500">₹24,360</span>
-              </div>
-            </div>
-
-            {/* Top Item 2 */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.02]">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-extrabold text-neutral-400">#02</span>
-                <div>
-                  <span className="text-xs font-bold text-white block">Avocado Sourdough Toast</span>
-                  <span className="text-[10px] text-neutral-400">Snacks / Breads</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-xs font-bold text-white block">56 sold</span>
-                <span className="text-[10px] text-neutral-500">₹21,840</span>
-              </div>
-            </div>
-
-            {/* Top Item 3 */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.02]">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-extrabold text-neutral-400">#03</span>
-                <div>
-                  <span className="text-xs font-bold text-white block">Aether Specialty Cold Brew</span>
-                  <span className="text-[10px] text-neutral-400">Coffee / Cold Drinks</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-xs font-bold text-white block">48 sold</span>
-                <span className="text-[10px] text-neutral-500">₹16,800</span>
-              </div>
-            </div>
-
+            ))}
           </div>
         </div>
-
       </div>
 
-      {/* 4. Bottom Area: Recent Transactions Feed + Marketing Smart Suggestions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Recent Orders List */}
-        <div className="glass-card p-6 lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
+      {/* Bottom Row: Recent Bills + Hourly Heatmap */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Recent Bills */}
+        <div className="lg:col-span-2 glass-card p-5">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <span className="text-sm font-bold text-white tracking-tight">Recent Active Transactions</span>
-              <span className="text-xs text-neutral-400 block mt-1">Live order tracking from all tables.</span>
+              <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Recent Settlements</h3>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Last 5 settled bills</p>
             </div>
-            <a href="/store-admin/orders" className="text-xs text-accent-indigo font-bold hover:underline">View All Orders</a>
+            <a href="/store-admin/orders" className="text-[11px] font-bold" style={{ color: 'var(--accent-sapphire)' }}>
+              View All →
+            </a>
           </div>
-
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border text-[10px] font-bold text-neutral-500 uppercase text-left tracking-wider">
-                  <th className="pb-3">Order ID</th>
-                  <th className="pb-3">Table</th>
-                  <th className="pb-3">Staff</th>
-                  <th className="pb-3">Amount</th>
-                  <th className="pb-3 text-right">Status</th>
+                <tr className="text-[10px] font-bold uppercase tracking-wider text-left" style={{ color: 'var(--text-muted)' }}>
+                  <th className="pb-3 pr-4">Bill #</th>
+                  <th className="pb-3 pr-4">Table</th>
+                  <th className="pb-3 pr-4">Staff</th>
+                  <th className="pb-3 pr-4">Amount</th>
+                  <th className="pb-3 pr-4">Time</th>
+                  <th className="pb-3">Method</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border text-xs">
-                <tr>
-                  <td className="py-4 font-bold text-white">#9281-A</td>
-                  <td className="py-4">Table 04</td>
-                  <td className="py-4">Rohan K.</td>
-                  <td className="py-4">₹1,450</td>
-                  <td className="py-4 text-right">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-accent-amber bg-accent-amber/10 border border-accent-amber/20">preparing</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-4 font-bold text-white">#9280-B</td>
-                  <td className="py-4">Table 12</td>
-                  <td className="py-4">Anjali P.</td>
-                  <td className="py-4">₹890</td>
-                  <td className="py-4 text-right">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-accent-indigo bg-accent-indigo/10 border border-accent-indigo/20">billed</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-4 font-bold text-white">#9279-C</td>
-                  <td className="py-4">Table 02</td>
-                  <td className="py-4">Rohan K.</td>
-                  <td className="py-4">₹2,840</td>
-                  <td className="py-4 text-right">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-accent-emerald bg-accent-emerald/10 border border-accent-emerald/20">paid</span>
-                  </td>
-                </tr>
+              <tbody>
+                {MOCK_RECENT_BILLS.map((bill) => (
+                  <tr key={bill.id} className="text-xs border-t" style={{ borderColor: 'var(--canvas-border)' }}>
+                    <td className="py-3 pr-4 font-mono font-bold" style={{ color: 'var(--text-primary)' }}>{bill.id}</td>
+                    <td className="py-3 pr-4" style={{ color: 'var(--text-secondary)' }}>{bill.table}</td>
+                    <td className="py-3 pr-4" style={{ color: 'var(--text-secondary)' }}>{bill.staff}</td>
+                    <td className="py-3 pr-4 font-mono font-bold" style={{ color: 'var(--accent-emerald)' }}>₹{bill.amount.toLocaleString()}</td>
+                    <td className="py-3 pr-4" style={{ color: 'var(--text-muted)' }}>{bill.time}</td>
+                    <td className="py-3">
+                      <span className="status-badge" style={{
+                        background: bill.method === 'UPI' ? 'rgba(77, 124, 254, 0.1)' : bill.method === 'Card' ? 'rgba(155, 89, 182, 0.1)' : 'rgba(255, 255, 255, 0.04)',
+                        color: bill.method === 'UPI' ? 'var(--accent-sapphire)' : bill.method === 'Card' ? 'var(--accent-violet)' : 'var(--text-secondary)',
+                        border: 'none',
+                      }}>
+                        {bill.method}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Low-Selling Marketing Smart Suggestions */}
-        <div className="glass-card p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-accent-rose animate-ping"></span>
-              <span className="text-sm font-bold text-white tracking-tight">Smart Marketing suggestions</span>
-            </div>
-            <span className="text-xs text-neutral-400 block mt-1">We found low-selling menu items. Boost them with a quick discount!</span>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            
-            {/* Suggested Item 1 */}
-            <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-xs font-bold text-white block">Special Matcha Latte</span>
-                  <span className="text-[10px] text-neutral-400">Only 2 orders in 7 days</span>
+        {/* Hourly Heatmap */}
+        <div className="glass-card p-5">
+          <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Hourly Rush</h3>
+          <p className="text-[11px] mt-0.5 mb-4" style={{ color: 'var(--text-muted)' }}>Order volume by hour today</p>
+          <div className="space-y-1.5">
+            {MOCK_HOURLY.map((h) => {
+              const pct = (h.orders / maxHourly) * 100;
+              const isHot = pct > 70;
+              const isMed = pct > 40;
+              return (
+                <div key={h.hour} className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono w-8 text-right" style={{ color: 'var(--text-muted)' }}>
+                    {h.hour > 12 ? `${h.hour - 12}p` : h.hour === 12 ? '12p' : `${h.hour}a`}
+                  </span>
+                  <div className="flex-1 h-4 rounded-md overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                    <div
+                      className="h-full rounded-md transition-all duration-500"
+                      style={{
+                        width: `${pct}%`,
+                        background: isHot
+                          ? 'linear-gradient(90deg, var(--accent-crimson), var(--accent-amber))'
+                          : isMed
+                          ? 'linear-gradient(90deg, var(--accent-sapphire), var(--accent-emerald))'
+                          : 'var(--canvas-muted)',
+                      }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono w-5 text-right font-bold" style={{
+                    color: isHot ? 'var(--accent-crimson)' : isMed ? 'var(--accent-sapphire)' : 'var(--text-muted)',
+                  }}>
+                    {h.orders}
+                  </span>
                 </div>
-                <span className="text-xs font-bold text-accent-rose bg-accent-rose/10 border border-accent-rose/20 px-2 py-0.5 rounded-lg">-15% Suggested</span>
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-accent-emerald font-bold">
-                  {discountStatus['matcha'] || ''}
-                </span>
-                {!discountStatus['matcha'] && (
-                  <button 
-                    onClick={() => handleApplyDiscount('matcha', 15)}
-                    className="px-3 py-1.5 bg-accent-indigo hover:bg-accent-indigo/90 text-white rounded-lg text-[10px] font-bold transition shadow-lg shadow-accent-indigo/20"
-                  >
-                    Apply Flash Discount
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Suggested Item 2 */}
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.02]">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-xs font-bold text-white block">Vegan Blueberry Muffin</span>
-                  <span className="text-[10px] text-neutral-400 font-medium">Only 1 order in 7 days</span>
-                </div>
-                <span className="text-xs font-bold text-accent-rose bg-accent-rose/10 border border-accent-rose/20 px-2 py-0.5 rounded-lg">-20% Suggested</span>
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-accent-emerald font-bold">
-                  {discountStatus['muffin'] || ''}
-                </span>
-                {!discountStatus['muffin'] && (
-                  <button 
-                    onClick={() => handleApplyDiscount('muffin', 20)}
-                    className="px-3 py-1.5 bg-accent-indigo hover:bg-accent-indigo/90 text-white rounded-lg text-[10px] font-bold transition"
-                  >
-                    Apply Flash Discount
-                  </button>
-                )}
-              </div>
-            </div>
-
+              );
+            })}
           </div>
         </div>
-
       </div>
-
     </div>
+  );
+}
+
+/* ─── KPI Card Component ─── */
+
+function KPICard({ label, value, delta, subtitle, icon, color }: {
+  label: string;
+  value: string;
+  delta?: number;
+  subtitle?: string;
+  icon: React.ReactNode;
+  color: string;
+}) {
+  const isPositive = delta !== undefined && delta >= 0;
+  return (
+    <div className="glass-card p-5 flex items-start justify-between">
+      <div>
+        <span className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
+          {label}
+        </span>
+        <span className="font-heading font-extrabold text-2xl block mt-2" style={{ color: 'var(--text-primary)' }}>
+          {value}
+        </span>
+        {delta !== undefined && (
+          <span className="text-[10px] font-bold mt-1 block" style={{
+            color: isPositive ? 'var(--accent-emerald)' : 'var(--accent-crimson)',
+          }}>
+            {isPositive ? '▲' : '▼'} {Math.abs(delta)}% vs yesterday
+          </span>
+        )}
+        {subtitle && (
+          <span className="text-[10px] mt-1 block" style={{ color: 'var(--text-muted)' }}>
+            {subtitle}
+          </span>
+        )}
+      </div>
+      <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{
+        background: `${color}15`,
+        border: `1px solid ${color}25`,
+        color,
+      }}>
+        {icon}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Inline Icons ─── */
+
+function CurrencyIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  );
+}
+
+function OrdersIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" />
+    </svg>
+  );
+}
+
+function TablesIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="4" rx="1" /><path d="M4 11v8" /><path d="M20 11v8" /><path d="M9 4h6" /><path d="M12 4v3" />
+    </svg>
+  );
+}
+
+function AvgBillIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /><path d="M8 10h8" /><path d="M8 14h4" />
+    </svg>
   );
 }

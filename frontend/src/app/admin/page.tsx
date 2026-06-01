@@ -18,28 +18,26 @@ import { DEFAULT_STORE_INFO } from '@/components/billing/types';
    DESIGN TOKENS
 ═══════════════════════════════════════════════════════════ */
 const T = {
-  bg:    "#09090b",
-  card:  "rgba(16,16,21,0.88)",
-  card2: "rgba(22,22,30,0.6)",
-  bdr:   "rgba(255,255,255,0.07)",
-  bdrH:  "rgba(255,255,255,0.14)",
-  ind:   "#6366f1",
-  em:    "#10b981",
-  rose:  "#f43f5e",
-  amb:   "#f59e0b",
-  tx:    "#f1f1f3",
-  mu:    "#6b7280",
-  mu2:   "#9ca3af",
-  iA: (o: number) => `rgba(99,102,241,${o})`,
-  eA: (o: number) => `rgba(16,185,129,${o})`,
-  rA: (o: number) => `rgba(244,63,94,${o})`,
-  aA: (o: number) => `rgba(245,158,11,${o})`,
+  bg:    "#fbfbf9",
+  card:  "#ffffff",
+  card2: "#fafaf9",
+  bdr:   "#e7e5e4",
+  bdrH:  "#d6d3d1",
+  ind:   "#d97706",
+  em:    "#16a34a",
+  rose:  "#dc2626",
+  amb:   "#ca8a04",
+  tx:    "#1c1917",
+  mu:    "#78716c",
+  mu2:   "#57534e",
+  iA: (o: number) => `rgba(217,119,6,${o})`,
+  eA: (o: number) => `rgba(22,163,74,${o})`,
+  rA: (o: number) => `rgba(220,38,38,${o})`,
+  aA: (o: number) => `rgba(202,138,4,${o})`,
 };
 
 const G = {
-  background: T.card,
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
+  background: "#ffffff",
   border: `1px solid ${T.bdr}`,
   borderRadius: "12px",
 };
@@ -337,7 +335,7 @@ function Card({ children, style, onClick, active, hover = false }: CardProps) {
       style={{
         ...G, cursor: onClick ? "pointer" : "default", transition: "all 0.15s",
         ...(active ? { border: `1px solid ${T.iA(0.5)}`, background: T.iA(0.08) } : {}),
-        ...(hover && hov && !active ? { border: `1px solid ${T.bdrH}`, background: "rgba(22,22,30,0.92)" } : {}),
+        ...(hover && hov && !active ? { border: `1px solid ${T.bdrH}`, background: "#fafaf9" } : {}),
         ...style
       }}
     >{children}</div>
@@ -351,16 +349,17 @@ interface InputProps {
   placeholder?: string;
   type?: string;
   style?: React.CSSProperties;
+  step?: string;
 }
 
-function Input({ label, value, onChange, placeholder, type = "text", style }: InputProps) {
+function Input({ label, value, onChange, placeholder, type = "text", style, step }: InputProps) {
   const [foc, setFoc] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "5px", ...style }}>
       {label && <label style={{ fontSize: "10px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</label>}
-      <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+      <input type={type} value={value} onChange={onChange} placeholder={placeholder} step={step}
         style={{
-          background: "rgba(255,255,255,0.04)", border: `1px solid ${foc ? T.ind : T.bdr}`, borderRadius: "8px",
+          background: "#ffffff", border: `1px solid ${foc ? T.ind : T.bdr}`, borderRadius: "8px",
           padding: "8px 11px", color: T.tx, fontSize: "12px", fontFamily: ff, outline: "none", width: "100%",
           transition: "border-color 0.15s", boxSizing: "border-box"
         }}
@@ -384,7 +383,7 @@ function Sel({ label, value, onChange, children, style }: SelProps) {
       {label && <label style={{ fontSize: "10px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</label>}
       <select value={value} onChange={onChange}
         style={{
-          background: "rgba(255,255,255,0.04)", border: `1px solid ${T.bdr}`, borderRadius: "8px",
+          background: "#ffffff", border: `1px solid ${T.bdr}`, borderRadius: "8px",
           padding: "8px 11px", color: T.tx, fontSize: "12px", fontFamily: ff, outline: "none", width: "100%", cursor: "pointer"
         }}
       >{children}</select>
@@ -404,14 +403,14 @@ function Modal({ show, onClose, title, children, width = 440 }: ModalProps) {
   if (!show) return null;
   return (
     <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)",
+      position: "fixed", inset: 0, background: "rgba(41,37,36,0.40)", backdropFilter: "blur(6px)",
       zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px"
     }}
       onClick={onClose}>
       <div onClick={e => e.stopPropagation()}
         style={{
           ...G, width: "100%", maxWidth: `${width}px`, maxHeight: "90vh", overflowY: "auto",
-          background: "rgba(12,12,16,0.97)", border: "1px solid rgba(255,255,255,0.12)"
+          background: "#ffffff", border: "1px solid #e7e5e4"
         }}>
         <div style={{
           padding: "16px 20px", borderBottom: `1px solid ${T.bdr}`, display: "flex",
@@ -434,9 +433,9 @@ function Toast({ msg, type = "success", onClose }: { msg: string; type?: "succes
   return (
     <div style={{
       position: "fixed", bottom: "24px", right: "24px", zIndex: 999,
-      background: "rgba(12,12,16,0.97)", border: `1px solid ${col}40`, borderRadius: "10px",
+      background: "#ffffff", border: `1px solid ${col}25`, borderRadius: "10px",
       padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", minWidth: "280px",
-      boxShadow: `0 4px 24px rgba(0,0,0,0.5)`
+      boxShadow: `0 4px 24px rgba(120,113,108,0.08)`
     }}>
       <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: col, flexShrink: 0 }} />
       <span style={{ fontSize: "12px", color: T.tx, fontWeight: 500, flex: 1 }}>{msg}</span>
@@ -505,7 +504,7 @@ function DashboardPage({ toast, discounts, setDiscounts }: PageProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ background: "rgba(12,12,16,0.96)", border: `1px solid ${T.bdr}`, borderRadius: "8px", padding: "8px 12px" }}>
+      <div style={{ background: "#ffffff", border: `1px solid ${T.bdr}`, borderRadius: "8px", padding: "8px 12px", boxShadow: "0 4px 12px rgba(120,113,108,0.06)" }}>
         <div style={{ fontSize: "10px", color: T.mu, marginBottom: "2px" }}>{label}</div>
         <div style={{ fontSize: "13px", fontWeight: 700, color: T.tx }}>₹{payload[0].value.toLocaleString()}</div>
       </div>

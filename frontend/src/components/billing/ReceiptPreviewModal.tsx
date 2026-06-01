@@ -140,7 +140,7 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.80)',
+        position: 'fixed', inset: 0, background: 'rgba(41,37,36,0.40)',
         backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
         zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '20px',
@@ -150,30 +150,30 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: '#0c0c10', border: '1px solid rgba(255,255,255,0.12)',
+          background: '#ffffff', border: '1px solid #e7e5e4',
           borderRadius: '16px', width: '100%', maxWidth: '480px',
           maxHeight: '95vh', display: 'flex', flexDirection: 'column',
-          overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+          overflow: 'hidden', boxShadow: '0 24px 80px rgba(120,113,108,0.15)',
         }}
       >
         {/* ─── HEADER ─── */}
         <div style={{
-          padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)',
+          padding: '16px 20px', borderBottom: '1px solid #f5f5f4',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
               width: '32px', height: '32px', borderRadius: '8px',
-              background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+              background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Printer size={16} color="#6366f1" />
+              <Printer size={16} color="#b45309" />
             </div>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#f1f1f3' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1c1917' }}>
                 Receipt Preview
               </div>
-              <div style={{ fontSize: '10px', color: '#6b7280' }}>
+              <div style={{ fontSize: '10px', color: '#78716c' }}>
                 {data.billId} · {data.tableName}
               </div>
             </div>
@@ -182,24 +182,24 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
             <button
               onClick={() => setShowSettings(!showSettings)}
               style={{
-                background: showSettings ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
+                background: showSettings ? 'rgba(217,119,6,0.08)' : '#f5f5f4',
+                border: '1px solid #e7e5e4', borderRadius: '8px',
                 padding: '6px', cursor: 'pointer', display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <Settings size={16} color={showSettings ? '#6366f1' : '#6b7280'} />
+              <Settings size={16} color={showSettings ? '#b45309' : '#78716c'} />
             </button>
             <button
               onClick={onClose}
               style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
+                background: '#f5f5f4',
+                border: '1px solid #e7e5e4', borderRadius: '8px',
                 padding: '6px', cursor: 'pointer', display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <X size={16} color="#6b7280" />
+              <X size={16} color="#78716c" />
             </button>
           </div>
         </div>
@@ -207,18 +207,18 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
         {/* ─── SETTINGS PANEL ─── */}
         {showSettings && (
           <div style={{
-            padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)',
-            background: 'rgba(255,255,255,0.02)',
+            padding: '14px 20px', borderBottom: '1px solid #f5f5f4',
+            background: '#fafaf9',
           }}>
             <div style={{
-              fontSize: '10px', fontWeight: 700, color: '#6b7280',
+              fontSize: '10px', fontWeight: 700, color: '#78716c',
               textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px',
             }}>
               Print Settings
             </div>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '10px', color: '#57534e', display: 'block', marginBottom: '4px' }}>
                   Paper Width
                 </label>
                 <div style={{ display: 'flex', gap: '6px' }}>
@@ -229,9 +229,9 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
                       style={{
                         padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
                         cursor: 'pointer', border: '1px solid',
-                        background: settings.paperWidth === w ? 'rgba(99,102,241,0.15)' : 'transparent',
-                        color: settings.paperWidth === w ? '#6366f1' : '#9ca3af',
-                        borderColor: settings.paperWidth === w ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.1)',
+                        background: settings.paperWidth === w ? 'rgba(217,119,6,0.08)' : 'transparent',
+                        color: settings.paperWidth === w ? '#b45309' : '#57534e',
+                        borderColor: settings.paperWidth === w ? 'rgba(217,119,6,0.3)' : '#e7e5e4',
                       }}
                     >
                       {w}mm
@@ -240,15 +240,15 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
                 </div>
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '10px', color: '#57534e', display: 'block', marginBottom: '4px' }}>
                   Print Method
                 </label>
                 <select
                   value={settings.method}
                   onChange={(e) => setSettings((p) => ({ ...p, method: e.target.value as PrintSettings['method'] }))}
                   style={{
-                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '6px', padding: '5px 8px', color: '#f1f1f3', fontSize: '11px',
+                    background: '#ffffff', border: '1px solid #e7e5e4',
+                    borderRadius: '6px', padding: '5px 8px', color: '#1c1917', fontSize: '11px',
                     outline: 'none', width: '100%', cursor: 'pointer',
                   }}
                 >
@@ -264,11 +264,11 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
         {/* ─── RECEIPT CONTENT (scrollable) ─── */}
         <div style={{
           flex: 1, overflowY: 'auto', padding: '20px',
-          background: 'linear-gradient(145deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005))',
+          background: '#fafaf9',
           display: 'flex', justifyContent: 'center',
         }}>
           <div style={{
-            boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+            boxShadow: '0 8px 40px rgba(120,113,108,0.08)',
             borderRadius: '4px',
             overflow: 'hidden',
           }}>
@@ -278,8 +278,8 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
 
         {/* ─── ACTION BUTTONS ─── */}
         <div style={{
-          padding: '16px 20px', borderTop: '1px solid rgba(255,255,255,0.07)',
-          display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.3)',
+          padding: '16px 20px', borderTop: '1px solid #f5f5f4',
+          display: 'flex', gap: '8px', background: '#fafaf9',
         }}>
           <ActionButton
             icon={printing ? <Spinner /> : <Printer size={16} />}
@@ -329,9 +329,9 @@ function ActionButton({
         opacity: disabled ? 0.5 : 1,
         transition: 'all 0.15s',
         background: primary
-          ? (hov ? '#5254cc' : '#6366f1')
-          : (hov ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)'),
-        color: primary ? '#fff' : '#9ca3af',
+          ? (hov ? '#b45309' : '#d97706')
+          : (hov ? '#e7e5e4' : '#f5f5f4'),
+        color: primary ? '#fff' : '#57534e',
       }}
     >
       {icon}

@@ -1,1 +1,12 @@
-{}
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js",
+  "/store-admin/billing/page": "app/store-admin/billing/page.js",
+  "/store-admin/settings/page": "app/store-admin/settings/page.js",
+  "/store-admin/dashboard/page": "app/store-admin/dashboard/page.js",
+  "/store-admin/storefront/page": "app/store-admin/storefront/page.js",
+  "/store-admin/menu/page": "app/store-admin/menu/page.js",
+  "/store-admin/tables/page": "app/store-admin/tables/page.js",
+  "/store-admin/staff/page": "app/store-admin/staff/page.js",
+  "/store-admin/kds/page": "app/store-admin/kds/page.js"
+}

@@ -14,11 +14,7 @@ export function createMainWindow(): BrowserWindow {
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
-    show: false, // Prevent flicker
-  });
-
-  win.once('ready-to-show', () => {
-    win.show();
+    show: true,
   });
 
   return win;

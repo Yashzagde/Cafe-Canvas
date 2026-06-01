@@ -1,0 +1,56 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+
+  "regions": ["bom1"],
+
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options",     "value": "nosniff" },
+        { "key": "X-Frame-Options",             "value": "SAMEORIGIN" },
+        { "key": "X-XSS-Protection",            "value": "1; mode=block" },
+        { "key": "Referrer-Policy",             "value": "strict-origin-when-cross-origin" },
+        { "key": "Strict-Transport-Security",   "value": "max-age=63072000; includeSubDomains; preload" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    }
+  ],
+
+  "rewrites": [
+    {
+      "source": "/:slug/menu",
+      "destination": "/storefront/:slug/menu"
+    },
+    {
+      "source": "/:slug/cart",
+      "destination": "/storefront/:slug/cart"
+    },
+    {
+      "source": "/:slug/checkout",
+      "destination": "/storefront/:slug/checkout"
+    },
+    {
+      "source": "/:slug",
+      "destination": "/storefront/:slug"
+    }
+  ],
+
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/not-found",
+      "permanent": false
+    }
+  ]
+}

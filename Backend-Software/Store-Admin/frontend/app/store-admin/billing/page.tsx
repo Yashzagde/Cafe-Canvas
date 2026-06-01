@@ -1,720 +1,753 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { Printer, Trash2, Plus, Check, Search, CreditCard, Banknote, Smartphone, Receipt } from 'lucide-react';
-import { ReceiptPreviewModal } from '@/components/billing';
-import type { ReceiptData } from '@/components/billing/types';
-import { DEFAULT_STORE_INFO } from '@/components/billing/types';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSyncContext } from '@/app/context/SyncContext';
+import type { FloorTable, MenuItem, MenuCategory, OrderItem as OrderItemType, TableStatus } from '@/app/types';
+import { db, enqueueOperation, addToLocalCache, updateLocalCache } from '@/app/utils/offline-sync';
 
-interface ModalProps {
-  show: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-  width?: number;
-}
+/* ═══════════════════════════════════════════════════════
+   DEMO DATA — replaced by Dexie cache / API in production
+   ═══════════════════════════════════════════════════════ */
 
-function Modal({ show, onClose, title, children, width = 440 }: ModalProps) {
-  if (!show) return null;
-  return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)",
-      zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px"
-    }}
-      onClick={onClose}>
-      <div onClick={e => e.stopPropagation()}
-        style={{
-          width: "100%", maxWidth: `${width}px`, maxHeight: "90vh", overflowY: "auto",
-          background: "rgba(12,12,16,0.97)", border: "1px solid rgba(255,255,255,0.12)",
-          borderRadius: "12px",
-        }}>
-        <div style={{
-          padding: "16px 20px", borderBottom: `1px solid rgba(255,255,255,0.07)`, display: "flex",
-          justifyContent: "space-between", alignItems: "center"
-        }}>
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "#f1f1f3" }}>{title}</span>
-          <button onClick={onClose} style={{
-            background: "none", border: "none", color: "#6b7280", cursor: "pointer",
-            fontSize: "20px", lineHeight: 1, padding: "0 4px"
-          }}>×</button>
-        </div>
-        <div style={{ padding: "20px" }}>{children}</div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Mock Menu Items ─── */
-const MENU_ITEMS = [
-  { id: 'm1', name: 'Classic Cappuccino', price: 290 },
-  { id: 'm2', name: 'Specialty Cold Brew', price: 350 },
-  { id: 'm3', name: 'Matcha Latte Special', price: 320 },
-  { id: 'm4', name: 'Avocado Sourdough Toast', price: 390 },
-  { id: 'm5', name: 'Almond Butter Croissant', price: 240 },
-  { id: 'm6', name: 'Green Tea Mint Infusion', price: 210 },
-  { id: 'm7', name: 'Chocolate Truffle Pastry', price: 180 },
-  { id: 'm8', name: 'Vegan Blueberry Muffin', price: 160 },
-  { id: 'm9', name: 'Aether Loaded Burrito', price: 420 },
-  { id: 'm10', name: 'Hibiscus Rose Cooler', price: 230 },
+const DEMO_SECTIONS = [
+  { id: 'all', name: 'All Sections' },
+  { id: 'b0000000-0000-0000-0000-000000000001', name: 'Indoor' },
+  { id: 'b0000000-0000-0000-0000-000000000002', name: 'Outdoor' },
+  { id: 'b0000000-0000-0000-0000-000000000003', name: 'Bar' },
 ];
 
-/* ─── Interfaces ─── */
+const DEMO_TABLES: FloorTable[] = [
+  { id: 'c001', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000001', name: 'Table 01', capacity: 2, status: 'free', position_x: 0, position_y: 0, shape: 'square', created_at: '', updated_at: '' },
+  { id: 'c002', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000001', name: 'Table 02', capacity: 4, status: 'free', position_x: 1, position_y: 0, shape: 'square', created_at: '', updated_at: '' },
+  { id: 'c003', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000001', name: 'Table 03', capacity: 2, status: 'reserved', position_x: 2, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
+  { id: 'c004', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000001', name: 'Table 04', capacity: 6, status: 'occupied', position_x: 0, position_y: 1, shape: 'long', created_at: '', updated_at: '' },
+  { id: 'c005', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000001', name: 'Table 05', capacity: 2, status: 'free', position_x: 1, position_y: 1, shape: 'square', created_at: '', updated_at: '' },
+  { id: 'c006', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000002', name: 'Patio 01', capacity: 4, status: 'occupied', position_x: 0, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
+  { id: 'c007', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000002', name: 'Patio 02', capacity: 2, status: 'free', position_x: 1, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
+  { id: 'c008', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000003', name: 'Bar Seat 1', capacity: 1, status: 'free', position_x: 0, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
+  { id: 'c009', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000003', name: 'Bar Seat 2', capacity: 1, status: 'occupied', position_x: 1, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
+  { id: 'c010', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000003', name: 'Bar Seat 3', capacity: 1, status: 'cleaning', position_x: 2, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
+];
+
+const DEMO_CATEGORIES: MenuCategory[] = [
+  { id: 'd001', tenant_id: 'demo', name: 'Hot Coffee', icon: '☕', sort_order: 0, visible: true },
+  { id: 'd002', tenant_id: 'demo', name: 'Cold Brews', icon: '🧊', sort_order: 1, visible: true },
+  { id: 'd003', tenant_id: 'demo', name: 'Teas', icon: '🍵', sort_order: 2, visible: true },
+  { id: 'd004', tenant_id: 'demo', name: 'Bakery', icon: '🥐', sort_order: 3, visible: true },
+  { id: 'd005', tenant_id: 'demo', name: 'Bites', icon: '🍽️', sort_order: 4, visible: true },
+  { id: 'd006', tenant_id: 'demo', name: 'Coolers', icon: '🍹', sort_order: 5, visible: true },
+];
+
+const DEMO_MENU: MenuItem[] = [
+  { id: 'e001', tenant_id: 'demo', category_id: 'd001', name: 'Classic Cappuccino', description: 'Double espresso with silky steamed milk', price: 290, image_url: null, available: true, featured: true, tags: ['bestseller'], prep_time_min: 5, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e002', tenant_id: 'demo', category_id: 'd001', name: 'Flat White', description: 'Velvety micro-foam espresso', price: 310, image_url: null, available: true, featured: false, tags: [], prep_time_min: 5, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'e003', tenant_id: 'demo', category_id: 'd001', name: 'Caramel Macchiato', description: 'Espresso with vanilla and caramel drizzle', price: 350, image_url: null, available: true, featured: false, tags: ['sweet'], prep_time_min: 6, sort_order: 2, created_at: '', updated_at: '' },
+  { id: 'e004', tenant_id: 'demo', category_id: 'd002', name: 'Specialty Cold Brew', description: '24-hour slow-dripped single origin', price: 350, image_url: null, available: true, featured: true, tags: ['bestseller'], prep_time_min: 1, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e005', tenant_id: 'demo', category_id: 'd002', name: 'Iced Mocha Shake', description: 'Chocolate blended with espresso over ice', price: 380, image_url: null, available: true, featured: false, tags: ['sweet'], prep_time_min: 4, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'e006', tenant_id: 'demo', category_id: 'd003', name: 'Green Tea Mint', description: 'Premium green tea with fresh mint', price: 210, image_url: null, available: true, featured: false, tags: ['veg'], prep_time_min: 4, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e007', tenant_id: 'demo', category_id: 'd004', name: 'Almond Croissant', description: 'Buttery pastry with almond cream', price: 240, image_url: null, available: true, featured: true, tags: ['bestseller'], prep_time_min: 2, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e008', tenant_id: 'demo', category_id: 'd004', name: 'Chocolate Truffle', description: 'Dark chocolate ganache pastry', price: 180, image_url: null, available: true, featured: false, tags: [], prep_time_min: 2, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'e009', tenant_id: 'demo', category_id: 'd005', name: 'Avocado Toast', description: 'Organic avocado on sourdough', price: 390, image_url: null, available: true, featured: true, tags: ['bestseller','veg'], prep_time_min: 8, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e010', tenant_id: 'demo', category_id: 'd005', name: 'Loaded Burrito', description: 'Grilled chicken, guac, salsa wrap', price: 420, image_url: null, available: true, featured: false, tags: ['spicy'], prep_time_min: 12, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'e011', tenant_id: 'demo', category_id: 'd006', name: 'Hibiscus Cooler', description: 'Hibiscus tea with rose syrup and lime', price: 230, image_url: null, available: true, featured: false, tags: ['cold'], prep_time_min: 3, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e012', tenant_id: 'demo', category_id: 'd006', name: 'Matcha Latte', description: 'Ceremonial matcha with oat milk', price: 320, image_url: null, available: true, featured: false, tags: ['cold'], prep_time_min: 4, sort_order: 1, created_at: '', updated_at: '' },
+];
+
+// Pre-fill Table 04 with demo order
+const DEMO_INITIAL_ORDERS: Record<string, CartItem[]> = {
+  'c004': [
+    { menuItemId: 'e001', name: 'Classic Cappuccino', price: 290, quantity: 2, modifiers: [] },
+    { menuItemId: 'e009', name: 'Avocado Toast', price: 390, quantity: 2, modifiers: [] },
+    { menuItemId: 'e008', name: 'Chocolate Truffle', price: 180, quantity: 1, modifiers: [] },
+  ],
+  'c006': [
+    { menuItemId: 'e004', name: 'Specialty Cold Brew', price: 350, quantity: 2, modifiers: [] },
+    { menuItemId: 'e007', name: 'Almond Croissant', price: 240, quantity: 1, modifiers: [] },
+  ],
+  'c009': [
+    { menuItemId: 'e012', name: 'Matcha Latte', price: 320, quantity: 1, modifiers: [] },
+  ],
+};
+
+/* ═══════════════════════════════════════════════════════ */
+
 interface CartItem {
-  id: string;
+  menuItemId: string;
   name: string;
   price: number;
-  qty: number;
+  quantity: number;
+  modifiers: Array<{ label: string; price_delta: number }>;
 }
 
-interface TableState {
-  id: string;
-  name: string;
-  status: 'available' | 'occupied' | 'reserved' | 'cleaning';
-  size: number;
-  orders: CartItem[];
-}
+type PayMethod = 'cash' | 'card' | 'upi' | 'split' | 'complimentary';
+type BillingStep = 'order' | 'settle' | 'success';
 
-interface BillHistoryEntry {
-  id: string;
-  tableId: string;
-  tableName: string;
-  subtotal: number;
-  gstAmount: number;
-  serviceCharge: number;
-  discountAmount: number;
-  grandTotal: number;
-  paymentMethod: string;
-  dateTime: string;
-  items: CartItem[];
-}
+export default function BillingPage() {
+  const { effectivelyOnline, queueAction } = useSyncContext();
 
-export default function StoreAdminBilling() {
-  // Floor Tables State
-  const [tables, setTables] = useState<TableState[]>([
-    { id: '1', name: 'Table 01', status: 'available', size: 2, orders: [] },
-    { id: '2', name: 'Table 02', status: 'cleaning', size: 4, orders: [] },
-    { id: '3', name: 'Table 03', status: 'reserved', size: 2, orders: [] },
-    {
-      id: '4', name: 'Table 04', status: 'occupied', size: 6, orders: [
-        { id: 'm1', name: 'Classic Cappuccino', price: 290, qty: 2 },
-        { id: 'm4', name: 'Avocado Sourdough Toast', price: 390, qty: 2 },
-        { id: 'm7', name: 'Chocolate Truffle Pastry', price: 180, qty: 1 },
-      ]
-    },
-    { id: '5', name: 'Table 05', status: 'available', size: 2, orders: [] },
-    {
-      id: '6', name: 'Table 06', status: 'occupied', size: 4, orders: [
-        { id: 'm2', name: 'Specialty Cold Brew', price: 350, qty: 2 },
-        { id: 'm5', name: 'Almond Butter Croissant', price: 240, qty: 1 },
-      ]
-    },
-    {
-      id: '7', name: 'Table 07', status: 'occupied', size: 2, orders: [
-        { id: 'm3', name: 'Matcha Latte Special', price: 320, qty: 1 },
-      ]
-    },
-    { id: '8', name: 'Table 08', status: 'available', size: 4, orders: [] },
-  ]);
+  // Floor state
+  const [tables, setTables] = useState<FloorTable[]>(DEMO_TABLES);
+  const [sectionFilter, setSectionFilter] = useState('all');
+  const [selectedTableId, setSelectedTableId] = useState<string | null>('c004');
 
-  const [selectedTableId, setSelectedTableId] = useState<string | null>('4');
-  const [billHistory, setBillHistory] = useState<BillHistoryEntry[]>([
-    {
-      id: 'B-0088', tableId: '3', tableName: 'Table 03', subtotal: 930, gstAmount: 47, serviceCharge: 47, discountAmount: 0, grandTotal: 1024, paymentMethod: 'UPI', dateTime: '28 May 2026, 08:30 PM',
-      items: [{ id: 'm1', name: 'Classic Cappuccino', price: 290, qty: 2 }, { id: 'm2', name: 'Specialty Cold Brew', price: 350, qty: 1 }]
-    }
-  ]);
+  // Order state
+  const [tableOrders, setTableOrders] = useState<Record<string, CartItem[]>>(DEMO_INITIAL_ORDERS);
+  const [occupiedTimers, setOccupiedTimers] = useState<Record<string, number>>({ c004: 1800, c006: 900, c009: 420 });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [catFilter, setCatFilter] = useState<string | null>(null);
 
-  // POS State
-  const [subView, setSubView] = useState<'checkout' | 'history'>('checkout');
-  const [gstOn, setGstOn] = useState(true);
-  const [svcOn, setSvcOn] = useState(true);
-  const [couponCode, setCouponCode] = useState('');
-  const [discount, setDiscount] = useState(0); // percent
-  const [payMethod, setPayMethod] = useState<'cash' | 'card' | 'upi'>('cash');
+  // Billing state
+  const [billingStep, setBillingStep] = useState<BillingStep>('order');
+  const [payMethod, setPayMethod] = useState<PayMethod>('cash');
   const [cashReceived, setCashReceived] = useState('');
-  const [payStep, setPayStep] = useState<'review' | 'success'>('review');
-  const [histSearch, setHistSearch] = useState('');
+  const [billCounter, setBillCounter] = useState(142);
+  const [customerName, setCustomerName] = useState('');
 
-  // Add menu item popover state
-  const [addItemOpen, setAddItemOpen] = useState(false);
-  const [addItemId, setAddItemId] = useState('m1');
-  const [addItemQty, setAddItemQty] = useState(1);
-
-  // Thermal Receipt Modal State
-  const [showReceipt, setShowReceipt] = useState(false);
-  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
-  const [billCounter, setBillCounter] = useState(89);
-
-  // Active Selected Table Helper
+  // Derived
   const selectedTable = tables.find(t => t.id === selectedTableId);
-  const cartItems = selectedTable?.orders || [];
+  const cartItems = selectedTableId ? (tableOrders[selectedTableId] || []) : [];
+  const subtotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
+  const taxRate = 0.05;
+  const taxAmount = Math.round(subtotal * taxRate);
+  const grandTotal = subtotal + taxAmount;
 
-  // Cart Calculations
-  const subtotal = cartItems.reduce((s, i) => s + (i.qty * i.price), 0);
-  const gstAmt = gstOn ? Math.round(subtotal * 0.05) : 0;
-  const svcAmt = svcOn ? Math.round(subtotal * 0.05) : 0;
-  const totalBeforeDiscount = subtotal + gstAmt + svcAmt;
-  const discountAmt = discount > 0 ? Math.round(totalBeforeDiscount * (discount / 100)) : 0;
-  const grandTotal = totalBeforeDiscount - discountAmt;
-  const changeDue = cashReceived ? (Number(cashReceived) - grandTotal) : 0;
+  // Elapsed timers
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setOccupiedTimers(prev => {
+        const next = { ...prev };
+        for (const key of Object.keys(next)) {
+          next[key] = prev[key] + 1;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  // Cart Handlers
-  const updateQty = (itemId: string, delta: number) => {
-    if (!selectedTableId) return;
-    setTables(prev => prev.map(t => {
-      if (t.id !== selectedTableId) return t;
-      const updatedOrders = t.orders.map(o => {
-        if (o.id !== itemId) return o;
-        const newQty = o.qty + delta;
-        return newQty <= 0 ? null : { ...o, qty: newQty };
-      }).filter(Boolean) as CartItem[];
-      return { ...t, orders: updatedOrders };
-    }));
+  // Filtered tables
+  const filteredTables = useMemo(() => {
+    if (sectionFilter === 'all') return tables;
+    return tables.filter(t => t.section_id === sectionFilter);
+  }, [tables, sectionFilter]);
+
+  // Filtered menu items
+  const filteredMenu = useMemo(() => {
+    let items = DEMO_MENU.filter(m => m.available);
+    if (catFilter) items = items.filter(m => m.category_id === catFilter);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter(m => m.name.toLowerCase().includes(q) || (m.description || '').toLowerCase().includes(q));
+    }
+    return items;
+  }, [catFilter, searchQuery]);
+
+  // Format elapsed time
+  const formatElapsed = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
   };
 
-  const removeItem = (itemId: string) => {
-    if (!selectedTableId) return;
-    setTables(prev => prev.map(t => {
-      if (t.id !== selectedTableId) return t;
-      return { ...t, orders: t.orders.filter(o => o.id !== itemId) };
-    }));
-  };
+  // ─── Cart Handlers ──────────────────────────────
 
-  const handleAddItem = () => {
+  const addItemToCart = (item: MenuItem) => {
     if (!selectedTableId) return;
-    const mi = MENU_ITEMS.find(m => m.id === addItemId);
-    if (!mi) return;
-
-    setTables(prev => prev.map(t => {
-      if (t.id !== selectedTableId) return t;
-      const existing = t.orders.find(o => o.id === addItemId);
-      let updatedOrders;
-      if (existing) {
-        updatedOrders = t.orders.map(o => o.id === addItemId ? { ...o, qty: o.qty + addItemQty } : o);
-      } else {
-        updatedOrders = [...t.orders, { id: mi.id, name: mi.name, price: mi.price, qty: addItemQty }];
+    setTableOrders(prev => {
+      const existing = prev[selectedTableId] || [];
+      const found = existing.find(c => c.menuItemId === item.id);
+      if (found) {
+        return { ...prev, [selectedTableId]: existing.map(c => c.menuItemId === item.id ? { ...c, quantity: c.quantity + 1 } : c) };
       }
-      return { ...t, orders: updatedOrders };
-    }));
-
-    setAddItemOpen(false);
-    setAddItemQty(1);
-  };
-
-  // Coupons
-  const handleApplyCoupon = () => {
-    if (couponCode.toUpperCase() === 'AETHER20') {
-      setDiscount(20);
-      alert('Coupon AETHER20 applied! 20% discount set.');
-    } else {
-      alert('Invalid coupon code.');
+      return { ...prev, [selectedTableId]: [...existing, { menuItemId: item.id, name: item.name, price: item.price, quantity: 1, modifiers: [] }] };
+    });
+    // Mark table as occupied
+    setTables(prev => prev.map(t => t.id === selectedTableId && t.status === 'free' ? { ...t, status: 'occupied' as TableStatus } : t));
+    if (!occupiedTimers[selectedTableId]) {
+      setOccupiedTimers(prev => ({ ...prev, [selectedTableId]: 0 }));
     }
   };
 
-  // Receipt builder
-  const buildReceiptDataObj = (billId: string, tbl: TableState | { name: string; section: string }, items: CartItem[], payM: string, sub: number, gst: number, svc: number, disc: number, total: number, cashRec?: number): ReceiptData => {
-    return {
-      billId,
-      storeName: DEFAULT_STORE_INFO.storeName,
-      storeAddress: DEFAULT_STORE_INFO.storeAddress,
-      storePhone: DEFAULT_STORE_INFO.storePhone,
-      gstNumber: DEFAULT_STORE_INFO.gstNumber,
-      fssaiNumber: DEFAULT_STORE_INFO.fssaiNumber,
-      tableName: tbl.name,
-      tableSection: 'section' in tbl ? tbl.section : 'Indoor',
-      items: items.map(i => ({
-        name: i.name,
-        qty: i.qty,
-        price: i.price,
-        total: i.qty * i.price,
-      })),
-      customCharges: [],
-      subtotal: sub,
-      gstAmount: gst,
-      gstPercent: 5,
-      serviceCharge: svc,
-      servicePercent: 5,
-      discountPercent: disc,
-      discountAmount: disc > 0 ? Math.round((sub + gst + svc) * (disc / 100)) : 0,
-      couponCode: disc > 0 ? 'AETHER20' : '',
-      grandTotal: total,
-      paymentMethod: payM,
-      cashReceived: cashRec,
-      changeDue: cashRec ? (cashRec - total) : undefined,
-      dateTime: new Date().toLocaleString('en-IN', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: true,
-      }),
-      footerMessage: DEFAULT_STORE_INFO.footerMessage,
-    };
+  const updateQty = (menuItemId: string, delta: number) => {
+    if (!selectedTableId) return;
+    setTableOrders(prev => {
+      const existing = prev[selectedTableId] || [];
+      return {
+        ...prev,
+        [selectedTableId]: existing.map(c => {
+          if (c.menuItemId !== menuItemId) return c;
+          const newQ = c.quantity + delta;
+          return newQ <= 0 ? null! : { ...c, quantity: newQ };
+        }).filter(Boolean),
+      };
+    });
   };
 
-  // Payment Settlement
-  const handleCheckoutPayment = () => {
+  const removeItem = (menuItemId: string) => {
+    if (!selectedTableId) return;
+    setTableOrders(prev => ({
+      ...prev,
+      [selectedTableId]: (prev[selectedTableId] || []).filter(c => c.menuItemId !== menuItemId),
+    }));
+  };
+
+  // ─── Settlement ─────────────────────────────────
+
+  const handleSettleBill = async () => {
     if (payMethod === 'cash' && (!cashReceived || Number(cashReceived) < grandTotal)) {
-      alert('Cash received must be ≥ grand total');
       return;
     }
-    if (!selectedTable) return;
+    if (!selectedTableId || !selectedTable) return;
 
     const nextId = billCounter + 1;
     setBillCounter(nextId);
-    const billId = `B-00${nextId}`;
+    const billNumber = `CC-2026-${String(nextId).padStart(4, '0')}`;
+    const localRef = effectivelyOnline ? undefined : `LOCAL-${Date.now()}`;
 
-    const newBill: BillHistoryEntry = {
-      id: billId,
-      tableId: selectedTable.id,
-      tableName: selectedTable.name,
+    const billData = {
+      table_id: selectedTableId,
+      bill_number: billNumber,
       subtotal,
-      gstAmount: gstAmt,
-      serviceCharge: svcAmt,
-      discountAmount: discountAmt,
-      grandTotal,
-      paymentMethod: payMethod.toUpperCase(),
-      dateTime: new Date().toLocaleString('en-IN', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: true,
-      }),
-      items: [...cartItems]
+      tax_amount: taxAmount,
+      discount_amount: 0,
+      total: grandTotal,
+      payment_method: payMethod,
+      customer_name: customerName || null,
+      items: cartItems,
+      local_ref: localRef,
     };
 
-    setBillHistory(p => [newBill, ...p]);
-    setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, status: 'available', orders: [] } : t));
-    setPayStep('success');
+    if (!effectivelyOnline) {
+      // Offline: save locally and queue
+      await queueAction({
+        operation: 'SETTLE_BILL',
+        endpoint: '/api/store-admin/billing/bills/settle',
+        method: 'POST',
+        payload: billData as Record<string, unknown>,
+      });
+    }
+
+    // Update table to free
+    setTables(prev => prev.map(t => t.id === selectedTableId ? { ...t, status: 'free' as TableStatus } : t));
+    setTableOrders(prev => ({ ...prev, [selectedTableId]: [] }));
+    setOccupiedTimers(prev => {
+      const next = { ...prev };
+      delete next[selectedTableId];
+      return next;
+    });
+    setBillingStep('success');
   };
 
-  const triggerLivePrint = () => {
-    if (!selectedTable) return;
-    const rData = buildReceiptDataObj(
-      `B-00${billCounter}`,
-      selectedTable,
-      cartItems,
-      payMethod.toUpperCase(),
+  const handleSendToKitchen = async () => {
+    if (!selectedTableId || cartItems.length === 0) return;
+
+    const payload = {
+      table_id: selectedTableId,
+      items: cartItems,
+    };
+
+    if (!effectivelyOnline) {
+      await queueAction({
+        operation: 'SEND_TO_KDS',
+        endpoint: '/api/store-admin/billing/orders/kds',
+        method: 'POST',
+        payload: payload as Record<string, unknown>,
+      });
+    }
+    // Visual feedback could be added here
+  };
+
+  const handlePrintReceipt = () => {
+    const receiptData = {
+      storeName: 'AETHER Café & Roastery',
+      storeAddress: '42 Bandra West, Mumbai 400050',
+      billNumber: `CC-2026-${String(billCounter).padStart(4, '0')}`,
+      tableNumber: selectedTable?.name || '',
+      items: cartItems.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
       subtotal,
-      gstAmt,
-      svcAmt,
-      discount,
-      grandTotal,
-      payMethod === 'cash' ? Number(cashReceived) : undefined
-    );
-    setReceiptData(rData);
-    setShowReceipt(true);
+      tax: taxAmount,
+      discount: 0,
+      total: grandTotal,
+      paymentMethod: payMethod.toUpperCase(),
+      settledAt: new Date().toLocaleString(),
+      thankYouMessage: 'Thank you for visiting AETHER! ☕',
+    };
+
+    if (typeof window !== 'undefined' && (window as any).electronAPI) {
+      (window as any).electronAPI.printReceipt(receiptData);
+    } else {
+      window.print();
+    }
   };
 
-  const triggerHistoryPrint = (entry: BillHistoryEntry) => {
-    const rData = buildReceiptDataObj(
-      entry.id,
-      { name: entry.tableName, section: 'Indoor' },
-      entry.items,
-      entry.paymentMethod,
-      entry.subtotal,
-      entry.gstAmount,
-      entry.serviceCharge,
-      entry.discountAmount > 0 ? 20 : 0,
-      entry.grandTotal,
-      entry.paymentMethod === 'CASH' ? entry.grandTotal : undefined
-    );
-    setReceiptData(rData);
-    setShowReceipt(true);
-  };
-
-  const resetPOSSession = () => {
+  const resetSession = () => {
     setSelectedTableId(null);
-    setPayStep('review');
-    setDiscount(0);
-    setCouponCode('');
+    setBillingStep('order');
     setCashReceived('');
+    setCustomerName('');
   };
+
+  // ─── Render ─────────────────────────────────────
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="font-display font-extrabold text-2xl tracking-tight text-white">POS Billing terminal</h2>
-          <p className="text-sm text-neutral-400 mt-1">Manage physical tables, customize items, apply coupons, and print receipts.</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setSubView('checkout')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold tracking-tight transition ${subView === 'checkout' ? 'bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20' : 'bg-white/5 text-neutral-400 hover:bg-white/10'}`}
-          >
-            Floor POS
-          </button>
-          <button
-            onClick={() => setSubView('history')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold tracking-tight transition ${subView === 'history' ? 'bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20' : 'bg-white/5 text-neutral-400 hover:bg-white/10'}`}
-          >
-            Bill History Log
-          </button>
-        </div>
+      <div>
+        <h2 className="font-heading font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
+          Billing & Floor
+        </h2>
+        <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+          Manage tables, create orders, settle bills, and print receipts.
+        </p>
       </div>
 
-      {/* POS FLOOR CHECKOUT VIEW */}
-      {subView === 'checkout' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Tables layout */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="glass-card p-6">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-xs font-bold text-white uppercase tracking-wider block">Floor Layout Selector</span>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {[
-                    { label: "Occupied", color: "bg-accent-rose" },
-                    { label: "Available", color: "bg-accent-emerald" },
-                    { label: "Cleaning", color: "bg-accent-amber" },
-                    { label: "Reserved", color: "bg-neutral-500" },
-                  ].map((leg, i) => (
-                    <div key={i} className="flex items-center gap-1 text-[10px] text-neutral-400">
-                      <span className={`w-2 h-2 rounded-full ${leg.color}`} />
-                      <span>{leg.label}</span>
-                    </div>
-                  ))}
-                </div>
+      {/* Split Layout */}
+      <div className="flex gap-5" style={{ minHeight: 'calc(100vh - 180px)' }}>
+        {/* ─── LEFT: Floor Map (65%) ──────────────── */}
+        <div className="flex-[65] space-y-4">
+          {/* Section Tabs */}
+          <div className="glass-card p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex gap-1.5">
+                {DEMO_SECTIONS.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setSectionFilter(s.id)}
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200"
+                    style={{
+                      background: sectionFilter === s.id ? 'var(--accent-sapphire)' : 'rgba(255,255,255,0.04)',
+                      color: sectionFilter === s.id ? '#fff' : 'var(--text-secondary)',
+                      boxShadow: sectionFilter === s.id ? '0 2px 8px rgba(77,124,254,0.3)' : 'none',
+                    }}
+                  >
+                    {s.name}
+                  </button>
+                ))}
               </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {tables.map(tbl => {
-                  const isSelected = selectedTableId === tbl.id;
-                  const isOccupied = tbl.status === 'occupied';
-                  const tblTotal = tbl.orders.reduce((s, o) => s + (o.qty * o.price), 0);
-                  return (
-                    <button
-                      key={tbl.id}
-                      onClick={() => {
-                        if (tbl.status !== 'occupied') {
-                          // Allow admin to open/occupy a vacant table
-                          setTables(prev => prev.map(t => t.id === tbl.id ? { ...t, status: 'occupied' } : t));
-                        }
-                        setSelectedTableId(tbl.id);
-                        setPayStep('review');
-                      }}
-                      className={`p-4 rounded-xl border flex flex-col justify-between text-left h-28 transition ${isSelected ? 'bg-accent-indigo/10 border-accent-indigo' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}
-                    >
-                      <div className="flex justify-between items-start w-full">
-                        <span className="text-xs font-bold text-white">{tbl.name}</span>
-                        <span className={`w-2.5 h-2.5 rounded-full ${tbl.status === 'available' ? 'bg-accent-emerald' : tbl.status === 'occupied' ? 'bg-accent-rose animate-pulse' : tbl.status === 'cleaning' ? 'bg-accent-amber' : 'bg-neutral-500'}`}></span>
-                      </div>
-                      <div>
-                        {tblTotal > 0 ? (
-                          <span className="font-display font-extrabold text-sm text-white block">₹{tblTotal.toLocaleString()}</span>
-                        ) : (
-                          <span className="text-[10px] text-neutral-500 block">Vacant ({tbl.size} pax)</span>
-                        )}
-                        <span className="text-[9px] uppercase font-semibold text-neutral-400 mt-1 block">{tbl.status}</span>
-                      </div>
-                    </button>
-                  );
-                })}
+              {/* Legend */}
+              <div className="flex gap-3">
+                {[
+                  { label: 'Free', color: 'var(--canvas-muted)' },
+                  { label: 'Occupied', color: 'var(--accent-sapphire)' },
+                  { label: 'Reserved', color: 'var(--accent-amber)' },
+                  { label: 'Cleaning', color: 'var(--text-muted)' },
+                ].map(l => (
+                  <div key={l.label} className="flex items-center gap-1.5 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                    <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />
+                    {l.label}
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
 
-          {/* Checkout Cart Summary Panel */}
-          <div className="glass-card p-6 flex flex-col min-h-[480px]">
-            {selectedTableId ? (
-              payStep === 'success' ? (
-                /* Payment Success View */
-                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="w-14 h-14 rounded-full bg-accent-emerald/20 border border-accent-emerald/30 flex items-center justify-center mb-2">
-                    <Check size={28} className="text-accent-emerald" />
-                  </div>
-                  <h3 className="font-display font-extrabold text-lg text-white">Invoice Settled</h3>
-                  <p className="text-xs text-neutral-400">{selectedTable?.name} vacated successfully.</p>
-                  <div className="text-2xl font-black text-white py-2">₹{grandTotal.toLocaleString()}</div>
-                  {payMethod === 'cash' && changeDue > 0 && (
-                    <div className="p-3 bg-accent-amber/10 border border-accent-amber/20 rounded-xl text-accent-amber text-xs font-bold">
-                      Change Due: ₹{changeDue.toLocaleString()}
-                    </div>
-                  )}
-                  <div className="pt-6 w-full space-y-2">
-                    <button
-                      onClick={triggerLivePrint}
-                      className="w-full py-3 bg-accent-indigo text-white font-bold text-xs rounded-xl hover:bg-accent-indigo/90 transition shadow-lg shadow-accent-indigo/25 flex items-center justify-center gap-2"
-                    >
-                      <Printer size={14} /> Print Receipt
-                    </button>
-                    <button
-                      onClick={resetPOSSession}
-                      className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-neutral-300 font-bold text-xs rounded-lg transition"
-                    >
-                      VACATE TABLE
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* Checkout Settle View */
-                <div className="flex-1 flex flex-col justify-between h-full space-y-6">
-                  {/* Cart List */}
-                  <div>
-                    <div className="flex items-center justify-between pb-4 border-b border-white/5">
-                      <div>
-                        <span className="text-sm font-bold text-white block">Active Order Summary</span>
-                        <span className="text-xs text-neutral-400">Reviewing {selectedTable?.name}</span>
-                      </div>
-                      <button
-                        onClick={() => setAddItemOpen(true)}
-                        className="text-xs font-bold text-accent-indigo hover:text-accent-indigo/80"
-                      >
-                        + Add Item
-                      </button>
-                    </div>
+            {/* Table Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {filteredTables.map(tbl => {
+                const isSelected = selectedTableId === tbl.id;
+                const orders = tableOrders[tbl.id] || [];
+                const tblTotal = orders.reduce((s, o) => s + o.price * o.quantity, 0);
+                const elapsed = occupiedTimers[tbl.id];
+                const isOverdue = elapsed > 2700; // 45 min
 
-                    {cartItems.length === 0 ? (
-                      <div className="text-center py-12 text-neutral-500 text-xs">
-                        No active items on this table. Add some below to bill!
-                      </div>
-                    ) : (
-                      <div className="mt-4 space-y-3 max-h-[160px] overflow-y-auto pr-1">
-                        {cartItems.map(item => (
-                          <div key={item.id} className="flex items-center justify-between group">
-                            <div className="flex-1 min-w-0 pr-2">
-                              <span className="text-xs text-neutral-300 block truncate">{item.name}</span>
-                              <div className="flex items-center gap-2 mt-1">
-                                <button
-                                  onClick={() => updateQty(item.id, -1)}
-                                  className="w-5 h-5 rounded bg-white/5 text-neutral-300 text-xs font-bold flex items-center justify-center hover:bg-white/10 transition"
-                                >
-                                  -
-                                </button>
-                                <span className="text-xs font-bold text-white">{item.qty}</span>
-                                <button
-                                  onClick={() => updateQty(item.id, 1)}
-                                  className="w-5 h-5 rounded bg-white/5 text-neutral-300 text-xs font-bold flex items-center justify-center hover:bg-white/10 transition"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs font-bold text-white font-mono">₹{(item.qty * item.price).toLocaleString()}</span>
-                              <button
-                                onClick={() => removeItem(item.id)}
-                                className="text-neutral-500 hover:text-accent-rose p-1 transition opacity-0 group-hover:opacity-100"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Charge settings */}
-                  <div className="border-t border-white/5 pt-4 space-y-3">
-                    <div className="flex items-center justify-between text-xs text-neutral-300">
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={gstOn} onChange={e => setGstOn(e.target.checked)} className="rounded border-white/10 bg-white/5 text-accent-indigo" /> CGST + SGST (5%)
-                      </label>
-                      <span className="font-mono">₹{gstAmt}</span>
+                return (
+                  <button
+                    key={tbl.id}
+                    onClick={() => {
+                      setSelectedTableId(tbl.id);
+                      setBillingStep('order');
+                    }}
+                    className={`glass-card-interactive p-3.5 flex flex-col justify-between text-left h-[110px] ${isSelected ? 'active' : ''} table-${tbl.status}`}
+                  >
+                    <div className="flex justify-between items-start w-full">
+                      <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{tbl.name}</span>
+                      <span className="w-2.5 h-2.5 rounded-full" style={{
+                        background: tbl.status === 'free' ? 'var(--accent-emerald)' :
+                                    tbl.status === 'occupied' ? 'var(--accent-sapphire)' :
+                                    tbl.status === 'reserved' ? 'var(--accent-amber)' : 'var(--canvas-muted)',
+                        animation: tbl.status === 'occupied' ? 'pulse 2s infinite' : 'none',
+                      }} />
                     </div>
-                    <div className="flex items-center justify-between text-xs text-neutral-300">
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={svcOn} onChange={e => setSvcOn(e.target.checked)} className="rounded border-white/10 bg-white/5 text-accent-indigo" /> Service Charge (5%)
-                      </label>
-                      <span className="font-mono">₹{svcAmt}</span>
-                    </div>
-
-                    {/* Coupons */}
-                    <div className="flex gap-2 pt-1">
-                      <input
-                        type="text"
-                        placeholder="Coupon Code"
-                        value={couponCode}
-                        onChange={e => setCouponCode(e.target.value)}
-                        className="bg-white/5 border border-white/5 focus:border-accent-indigo rounded-lg px-3 py-1.5 text-xs text-white placeholder-neutral-500 outline-none flex-1 font-bold"
-                      />
-                      <button
-                        onClick={handleApplyCoupon}
-                        className="px-3 bg-white/10 hover:bg-white/15 text-white rounded-lg text-xs font-bold transition"
-                      >
-                        Apply
-                      </button>
-                    </div>
-
-                    {/* Grand totals */}
-                    <div className="p-4 rounded-xl bg-white/5 space-y-2 mt-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-neutral-400">Subtotal</span>
-                        <span className="text-white font-mono">₹{subtotal.toLocaleString()}</span>
-                      </div>
-                      {discount > 0 && (
-                        <div className="flex justify-between text-xs text-accent-rose">
-                          <span>Discount ({discount}%)</span>
-                          <span className="font-mono">-₹{discountAmt.toLocaleString()}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between font-display font-extrabold text-sm border-t border-white/5 pt-2 text-white">
-                        <span>GRAND TOTAL</span>
-                        <span className="text-accent-indigo font-mono">₹{grandTotal.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Payment selector */}
-                  <div className="space-y-4 pt-2">
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-neutral-500 block mb-2">Collect Payment Method</span>
-                      <div className="grid grid-cols-3 gap-2">
-                        {(['cash', 'card', 'upi'] as const).map(m => (
-                          <button
-                            key={m}
-                            onClick={() => setPayMethod(m)}
-                            className={`py-2 rounded-lg text-[10px] font-bold border transition ${payMethod === m ? 'border-accent-indigo bg-accent-indigo/10 text-white' : 'border-white/5 text-neutral-400 hover:bg-white/5'}`}
-                          >
-                            {m.toUpperCase()}
-                          </button>
-                        ))}
-                      </div>
+                      {tbl.status === 'occupied' && tblTotal > 0 ? (
+                        <>
+                          <span className="font-heading font-extrabold text-sm block" style={{ color: 'var(--text-primary)' }}>
+                            ₹{tblTotal.toLocaleString()}
+                          </span>
+                          <div className="flex items-center justify-between mt-0.5">
+                            <span className="text-[9px] uppercase font-semibold" style={{ color: 'var(--text-muted)' }}>
+                              {orders.length} items
+                            </span>
+                            {elapsed !== undefined && (
+                              <span className="text-[9px] font-mono font-bold" style={{
+                                color: isOverdue ? 'var(--accent-crimson)' : 'var(--accent-sapphire)',
+                              }}>
+                                {formatElapsed(elapsed)}
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-[10px] block" style={{ color: 'var(--text-muted)' }}>
+                            {tbl.capacity} pax · {tbl.shape}
+                          </span>
+                          <span className="text-[9px] uppercase font-semibold mt-0.5 block" style={{ color: 'var(--text-muted)' }}>
+                            {tbl.status}
+                          </span>
+                        </>
+                      )}
                     </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-                    {payMethod === 'cash' && (
-                      <div className="space-y-1">
-                        <label className="text-[10px] uppercase font-bold text-neutral-500 block">Cash Tendered (₹)</label>
-                        <input
-                          type="number"
-                          value={cashReceived}
-                          onChange={e => setCashReceived(e.target.value)}
-                          placeholder="0"
-                          className="w-full bg-white/5 border border-white/5 focus:border-accent-indigo rounded-xl px-4 py-2.5 text-center text-lg font-bold text-white outline-none font-mono"
-                        />
-                      </div>
-                    )}
+          {/* Menu Search & Item Grid (visible when a table is selected) */}
+          {selectedTableId && billingStep === 'order' && (
+            <div className="glass-card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>Add Items to Order</span>
+              </div>
 
-                    <button
-                      onClick={handleCheckoutPayment}
-                      disabled={cartItems.length === 0}
-                      className="w-full py-3 bg-accent-emerald hover:bg-accent-emerald/90 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition shadow-lg shadow-accent-emerald/20"
-                    >
-                      Settle Bill — ₹{grandTotal.toLocaleString()}
-                    </button>
+              {/* Search + Category Pills */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-2 flex-1 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--canvas-border)' }}>
+                  <SearchIcon size={14} />
+                  <input
+                    type="text"
+                    placeholder="Search menu items…"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="bg-transparent border-none outline-none w-full text-xs"
+                    style={{ color: 'var(--text-primary)' }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-1.5 mb-3 flex-wrap">
+                <button
+                  onClick={() => setCatFilter(null)}
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all"
+                  style={{
+                    background: !catFilter ? 'var(--accent-sapphire)' : 'rgba(255,255,255,0.04)',
+                    color: !catFilter ? '#fff' : 'var(--text-secondary)',
+                  }}
+                >
+                  All
+                </button>
+                {DEMO_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setCatFilter(cat.id)}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all"
+                    style={{
+                      background: catFilter === cat.id ? 'var(--accent-sapphire)' : 'rgba(255,255,255,0.04)',
+                      color: catFilter === cat.id ? '#fff' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {cat.icon} {cat.name}
+                  </button>
+                ))}
+              </div>
+
+              {/* Menu Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[280px] overflow-y-auto pr-1">
+                {filteredMenu.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => addItemToCart(item)}
+                    className="p-3 rounded-xl text-left transition-all duration-200"
+                    style={{
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid var(--canvas-border)',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-sapphire)'; e.currentTarget.style.background = 'rgba(77,124,254,0.04)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--canvas-border)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                  >
+                    <span className="text-[11px] font-semibold block truncate" style={{ color: 'var(--text-primary)' }}>{item.name}</span>
+                    <span className="text-[10px] block truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.description}</span>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs font-bold font-mono" style={{ color: 'var(--accent-emerald)' }}>₹{item.price}</span>
+                      {item.featured && (
+                        <span className="text-[8px] px-1.5 py-0.5 rounded font-bold" style={{
+                          background: 'rgba(77,124,254,0.1)', color: 'var(--accent-sapphire)',
+                        }}>★ BEST</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ─── RIGHT: Order Panel (35%) ──────────── */}
+        <div className="flex-[35] glass-card p-5 flex flex-col">
+          {!selectedTableId ? (
+            <div className="flex-1 flex items-center justify-center text-center">
+              <div>
+                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  <ReceiptLineIcon size={24} color="var(--text-muted)" />
+                </div>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                  Select a table to<br />start an order
+                </p>
+              </div>
+            </div>
+          ) : billingStep === 'success' ? (
+            /* Success View */
+            <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{
+                background: 'rgba(0,214,143,0.1)', border: '2px solid rgba(0,214,143,0.2)',
+              }}>
+                <CheckmarkIcon size={32} color="var(--accent-emerald)" />
+              </div>
+              <h3 className="font-heading font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Bill Settled</h3>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                {selectedTable?.name} is now free.
+                {!effectivelyOnline && (
+                  <span style={{ color: 'var(--accent-amber)' }}><br />Queued for sync when online.</span>
+                )}
+              </p>
+              <div className="text-3xl font-heading font-extrabold py-2" style={{ color: 'var(--text-primary)' }}>
+                ₹{grandTotal.toLocaleString()}
+              </div>
+
+              {payMethod === 'cash' && Number(cashReceived) > grandTotal && (
+                <div className="px-4 py-2 rounded-xl text-xs font-bold" style={{
+                  background: 'rgba(255,201,77,0.08)', border: '1px solid rgba(255,201,77,0.15)', color: 'var(--accent-amber)',
+                }}>
+                  Change Due: ₹{(Number(cashReceived) - grandTotal).toLocaleString()}
+                </div>
+              )}
+
+              <div className="w-full space-y-2 pt-4">
+                <button onClick={handlePrintReceipt} className="btn-primary w-full flex items-center justify-center gap-2">
+                  <PrinterIcon size={14} /> Print Receipt
+                </button>
+                <button onClick={resetSession} className="btn-ghost w-full">
+                  New Session
+                </button>
+              </div>
+            </div>
+          ) : billingStep === 'settle' ? (
+            /* Settle View */
+            <div className="flex-1 flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--canvas-border)' }}>
+                  <div>
+                    <span className="text-sm font-bold block" style={{ color: 'var(--text-primary)' }}>Settle Bill</span>
+                    <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{selectedTable?.name}</span>
+                  </div>
+                  <button onClick={() => setBillingStep('order')} className="btn-ghost text-[10px]">← Back</button>
+                </div>
+
+                {/* Payment Method */}
+                <div className="mt-4">
+                  <span className="text-[10px] uppercase font-bold block mb-2" style={{ color: 'var(--text-muted)' }}>Payment Method</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['cash', 'card', 'upi'] as PayMethod[]).map(m => (
+                      <button
+                        key={m}
+                        onClick={() => setPayMethod(m)}
+                        className="py-2.5 rounded-xl text-[11px] font-bold transition-all"
+                        style={{
+                          border: `1px solid ${payMethod === m ? 'var(--accent-sapphire)' : 'var(--canvas-border)'}`,
+                          background: payMethod === m ? 'rgba(77,124,254,0.08)' : 'transparent',
+                          color: payMethod === m ? 'var(--accent-sapphire)' : 'var(--text-secondary)',
+                        }}
+                      >
+                        {m === 'cash' ? '💵' : m === 'card' ? '💳' : '📱'} {m.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {(['split', 'complimentary'] as PayMethod[]).map(m => (
+                      <button
+                        key={m}
+                        onClick={() => setPayMethod(m)}
+                        className="py-2 rounded-xl text-[10px] font-bold transition-all"
+                        style={{
+                          border: `1px solid ${payMethod === m ? 'var(--accent-sapphire)' : 'var(--canvas-border)'}`,
+                          background: payMethod === m ? 'rgba(77,124,254,0.08)' : 'transparent',
+                          color: payMethod === m ? 'var(--accent-sapphire)' : 'var(--text-muted)',
+                        }}
+                      >
+                        {m === 'split' ? '✂️ Split' : '🎁 Comp'}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              )
-            ) : (
-              <div className="flex items-center justify-center flex-1 h-64 text-neutral-500 text-xs font-bold text-center">
-                Select an occupied table<br />to generate checkout invoices.
+
+                {/* Cash Input */}
+                {payMethod === 'cash' && (
+                  <div className="mt-4">
+                    <label className="text-[10px] uppercase font-bold block mb-2" style={{ color: 'var(--text-muted)' }}>Cash Tendered (₹)</label>
+                    <input
+                      type="number"
+                      value={cashReceived}
+                      onChange={e => setCashReceived(e.target.value)}
+                      placeholder="0"
+                      className="glass-input w-full px-4 py-3 text-center text-xl font-bold font-mono"
+                    />
+                    {cashReceived && Number(cashReceived) >= grandTotal && (
+                      <div className="text-center mt-2 text-xs font-bold" style={{ color: 'var(--accent-emerald)' }}>
+                        Change: ₹{(Number(cashReceived) - grandTotal).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* BILL HISTORY LOGS VIEW */}
-      {subView === 'history' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center gap-4">
-            <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl flex-1 max-w-md">
-              <Search className="text-neutral-500" size={16} />
-              <input
-                type="text"
-                placeholder="Search bills by ID or table..."
-                value={histSearch}
-                onChange={e => setHistSearch(e.target.value)}
-                className="bg-transparent border-none outline-none w-full text-xs text-white placeholder-neutral-500"
-              />
+              {/* Totals */}
+              <div>
+                <div className="p-4 rounded-xl space-y-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                  <div className="flex justify-between text-xs">
+                    <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
+                    <span className="font-mono" style={{ color: 'var(--text-primary)' }}>₹{subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span style={{ color: 'var(--text-secondary)' }}>GST (5%)</span>
+                    <span className="font-mono" style={{ color: 'var(--text-primary)' }}>₹{taxAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between font-heading font-bold text-sm pt-2 border-t" style={{ borderColor: 'var(--canvas-border)' }}>
+                    <span style={{ color: 'var(--text-primary)' }}>TOTAL</span>
+                    <span className="font-mono" style={{ color: 'var(--accent-sapphire)' }}>₹{grandTotal.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSettleBill}
+                  disabled={cartItems.length === 0 || (payMethod === 'cash' && (!cashReceived || Number(cashReceived) < grandTotal))}
+                  className="btn-success w-full mt-3"
+                >
+                  Settle — ₹{grandTotal.toLocaleString()}
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Order View */
+            <div className="flex-1 flex flex-col justify-between space-y-4">
+              {/* Cart Header */}
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--canvas-border)' }}>
+                  <div>
+                    <span className="text-sm font-bold block" style={{ color: 'var(--text-primary)' }}>
+                      {selectedTable?.name}
+                    </span>
+                    <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                      {selectedTable?.status === 'occupied' ? `${cartItems.length} items` : 'No active order'}
+                    </span>
+                  </div>
+                  {cartItems.length > 0 && (
+                    <button onClick={handleSendToKitchen} className="btn-ghost text-[10px] flex items-center gap-1.5">
+                      🔥 Send to Kitchen
+                    </button>
+                  )}
+                </div>
 
-          <div className="glass-card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-neutral-300">
-                <thead>
-                  <tr className="bg-white/5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-b border-white/5">
-                    <th className="p-4">Bill ID</th>
-                    <th className="p-4">Table</th>
-                    <th className="p-4">Time</th>
-                    <th className="p-4">Subtotal</th>
-                    <th className="p-4">GST (5%)</th>
-                    <th className="p-4">Service</th>
-                    <th className="p-4">Total</th>
-                    <th className="p-4">Method</th>
-                    <th className="p-4 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 text-xs">
-                  {billHistory.filter(b => !histSearch || b.id.toLowerCase().includes(histSearch.toLowerCase()) || b.tableName.toLowerCase().includes(histSearch.toLowerCase())).map(b => (
-                    <tr key={b.id} className="hover:bg-white/5 transition-colors">
-                      <td className="p-4 font-bold text-white font-mono">{b.id}</td>
-                      <td className="p-4">{b.tableName}</td>
-                      <td className="p-4 text-neutral-400">{b.dateTime}</td>
-                      <td className="p-4 font-mono">₹{b.subtotal.toLocaleString()}</td>
-                      <td className="p-4 font-mono">₹{b.gstAmount.toLocaleString()}</td>
-                      <td className="p-4 font-mono">₹{b.serviceCharge.toLocaleString()}</td>
-                      <td className="p-4 font-bold text-accent-emerald font-mono">₹{b.grandTotal.toLocaleString()}</td>
-                      <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${b.paymentMethod === 'UPI' ? 'bg-accent-indigo/10 text-accent-indigo' : b.paymentMethod === 'CARD' ? 'bg-accent-blue/10 text-accent-blue' : 'bg-neutral-500/10 text-neutral-400'}`}>
-                          {b.paymentMethod}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
-                        <button
-                          onClick={() => triggerHistoryPrint(b)}
-                          className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white rounded text-[10px] font-bold transition flex items-center gap-1 mx-auto"
-                        >
-                          <Printer size={10} /> Print Receipt
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                {/* Customer Name */}
+                <div className="mt-3">
+                  <input
+                    type="text"
+                    placeholder="Customer name (optional)"
+                    value={customerName}
+                    onChange={e => setCustomerName(e.target.value)}
+                    className="glass-input w-full px-3 py-2 text-xs"
+                  />
+                </div>
+
+                {/* Cart Items */}
+                {cartItems.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      No items yet.<br />Click items from the menu grid to add.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-3 space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    {cartItems.map(item => (
+                      <div key={item.menuItemId} className="flex items-center justify-between group p-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                        <div className="flex-1 min-w-0 pr-2">
+                          <span className="text-xs font-medium block truncate" style={{ color: 'var(--text-primary)' }}>{item.name}</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <button onClick={() => updateQty(item.menuItemId, -1)}
+                              className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold transition-colors"
+                              style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>−</button>
+                            <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{item.quantity}</span>
+                            <button onClick={() => updateQty(item.menuItemId, 1)}
+                              className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold transition-colors"
+                              style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>+</button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold font-mono" style={{ color: 'var(--text-primary)' }}>
+                            ₹{(item.price * item.quantity).toLocaleString()}
+                          </span>
+                          <button onClick={() => removeItem(item.menuItemId)}
+                            className="opacity-0 group-hover:opacity-100 p-1 transition-opacity"
+                            style={{ color: 'var(--accent-crimson)' }}>
+                            <TrashIcon size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer: Totals + Actions */}
+              <div className="space-y-3">
+                <div className="p-4 rounded-xl space-y-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                  <div className="flex justify-between text-xs">
+                    <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
+                    <span className="font-mono" style={{ color: 'var(--text-primary)' }}>₹{subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span style={{ color: 'var(--text-secondary)' }}>GST (5%)</span>
+                    <span className="font-mono" style={{ color: 'var(--text-primary)' }}>₹{taxAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between font-heading font-bold text-sm pt-2 border-t" style={{ borderColor: 'var(--canvas-border)' }}>
+                    <span style={{ color: 'var(--text-primary)' }}>TOTAL</span>
+                    <span className="font-mono" style={{ color: 'var(--accent-sapphire)' }}>₹{grandTotal.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setBillingStep('settle')}
+                  disabled={cartItems.length === 0}
+                  className="btn-primary w-full"
+                >
+                  Generate Bill — ₹{grandTotal.toLocaleString()}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
-
-      {/* Add Item Modal */}
-      <Modal show={addItemOpen} onClose={() => setAddItemOpen(false)} title="Add Item to Table Bill">
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold text-neutral-500 block">Select Menu Item</label>
-            <select
-              value={addItemId}
-              onChange={e => setAddItemId(e.target.value)}
-              className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2 text-xs text-white cursor-pointer outline-none"
-            >
-              {MENU_ITEMS.map(mi => (
-                <option key={mi.id} value={mi.id} className="bg-neutral-900">{mi.name} — ₹{mi.price}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold text-neutral-500 block">Quantity</label>
-            <input
-              type="number"
-              value={addItemQty}
-              onChange={e => setAddItemQty(Number(e.target.value))}
-              min="1"
-              className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2 text-xs text-white outline-none"
-            />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={() => setAddItemOpen(false)}
-              className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-neutral-300 rounded-xl text-xs font-bold transition"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAddItem}
-              className="flex-1 py-2.5 bg-accent-indigo text-white rounded-xl text-xs font-bold transition"
-            >
-              Add to Bill
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Receipts Preview Popup Modal */}
-      {receiptData && (
-        <ReceiptPreviewModal
-          show={showReceipt}
-          onClose={() => setShowReceipt(false)}
-          data={receiptData}
-        />
-      )}
+      </div>
     </div>
   );
+}
+
+/* ─── Inline SVG Icons ─── */
+
+function SearchIcon({ size = 16 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
+}
+
+function TrashIcon({ size = 16 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>;
+}
+
+function ReceiptLineIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 10h8"/><path d="M8 14h4"/></svg>;
+}
+
+function CheckmarkIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
+}
+
+function PrinterIcon({ size = 16 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>;
 }

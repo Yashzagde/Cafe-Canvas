@@ -1,0 +1,44 @@
+{
+  "appId": "com.cafecanvas.storeadmin",
+  "productName": "CafeCanvas Store Admin",
+  "electronDist": "node_modules/electron/dist",
+  "directories": {
+    "output": "dist-desktop"
+  },
+  "files": [
+    "package.json",
+    "Backend-Software/dist/Store-Admin/electron/**/*",
+    "Backend-Software/Store-Admin/frontend/out/**/*",
+    "Backend-Software/Store-Admin/frontend/public/**/*",
+    "Backend-Software/Store-Admin/frontend/package.json"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ]
+  },
+  "mac": {
+    "target": [
+      "dmg"
+    ],
+    "category": "public.app-category.business"
+  },
+  "linux": {
+    "target": [
+      "AppImage",
+      "deb"
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "CafeCanvas Store Admin"
+  }
+}

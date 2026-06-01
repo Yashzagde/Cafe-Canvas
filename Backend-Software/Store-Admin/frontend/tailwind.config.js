@@ -7,24 +7,51 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "#0c0c0e",
-        foreground: "#f4f4f6",
-        card: "rgba(20, 20, 23, 0.65)",
-        border: "rgba(255, 255, 255, 0.08)",
+        canvas: {
+          bg:      '#0f0f13',
+          surface: '#1a1a24',
+          border:  '#2a2a38',
+          muted:   '#3a3a50',
+        },
         accent: {
-          emerald: "#10b981",
-          rose: "#f43f5e",
-          indigo: "#6366f1",
-          amber: "#f59e0b",
-        }
+          emerald:  '#00d68f',
+          amber:    '#ffc94d',
+          crimson:  '#e94560',
+          sapphire: '#4d7cfe',
+          violet:   '#9b59b6',
+        },
+        text: {
+          primary:   '#f0f0f7',
+          secondary: '#8888aa',
+          muted:     '#55557a',
+        },
+        // Legacy compat (existing pages reference these)
+        background: '#0f0f13',
+        foreground: '#f0f0f7',
+        card: '#1a1a24',
+        border: '#2a2a38',
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        display: ["Outfit", "sans-serif"],
+        sans:    ['DM Sans', 'Inter', 'system-ui', 'sans-serif'],
+        heading: ['Sora', 'DM Sans', 'system-ui', 'sans-serif'],
+        display: ['Sora', 'DM Sans', 'system-ui', 'sans-serif'],
+        mono:    ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
       },
-      backdropBlur: {
-        md: "12px",
-      }
+      borderRadius: {
+        'xl':  '12px',
+        '2xl': '16px',
+        '3xl': '20px',
+      },
+      animation: {
+        'spin-slow': 'spin 2s linear infinite',
+        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+      },
+      keyframes: {
+        'pulse-glow': {
+          '0%, 100%': { opacity: 1 },
+          '50%': { opacity: 0.5 },
+        },
+      },
     },
   },
   plugins: [],

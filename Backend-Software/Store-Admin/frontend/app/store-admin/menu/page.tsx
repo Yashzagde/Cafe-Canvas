@@ -1,231 +1,364 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSyncContext } from '@/app/context/SyncContext';
+import type { MenuItem, MenuCategory } from '@/app/types';
+import { enqueueOperation, getPendingSyncItemIds } from '@/app/utils/offline-sync';
 
-interface MenuItem {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  status: 'available' | 'unavailable' | 'hidden';
-  description: string;
-}
+/* ─── Demo Data ─── */
+
+const DEMO_CATEGORIES: MenuCategory[] = [
+  { id: 'd001', tenant_id: 'demo', name: 'Hot Coffee', icon: '☕', sort_order: 0, visible: true },
+  { id: 'd002', tenant_id: 'demo', name: 'Cold Brews', icon: '🧊', sort_order: 1, visible: true },
+  { id: 'd003', tenant_id: 'demo', name: 'Organic Teas', icon: '🍵', sort_order: 2, visible: true },
+  { id: 'd004', tenant_id: 'demo', name: 'Bakery & Sweets', icon: '🥐', sort_order: 3, visible: true },
+  { id: 'd005', tenant_id: 'demo', name: 'Gourmet Bites', icon: '🍽️', sort_order: 4, visible: true },
+  { id: 'd006', tenant_id: 'demo', name: 'Fresh Coolers', icon: '🍹', sort_order: 5, visible: true },
+];
+
+const DEMO_ITEMS: MenuItem[] = [
+  { id: 'e001', tenant_id: 'demo', category_id: 'd001', name: 'Classic Cappuccino', description: 'Double espresso with silky steamed milk and delicate foam art.', price: 290, image_url: null, available: true, featured: true, tags: ['bestseller','hot'], prep_time_min: 5, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e002', tenant_id: 'demo', category_id: 'd001', name: 'Flat White', description: 'Velvety micro-foam espresso with full-cream milk.', price: 310, image_url: null, available: true, featured: false, tags: ['hot'], prep_time_min: 5, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'e003', tenant_id: 'demo', category_id: 'd001', name: 'Caramel Macchiato', description: 'Espresso layered with vanilla syrup, steamed milk, and caramel drizzle.', price: 350, image_url: null, available: true, featured: false, tags: ['hot','sweet'], prep_time_min: 6, sort_order: 2, created_at: '', updated_at: '' },
+  { id: 'e004', tenant_id: 'demo', category_id: 'd002', name: 'Specialty Cold Brew', description: '24-hour slow-dripped single-origin cold brew.', price: 350, image_url: null, available: true, featured: true, tags: ['bestseller','cold'], prep_time_min: 1, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e005', tenant_id: 'demo', category_id: 'd002', name: 'Iced Mocha Shake', description: 'Rich chocolate blended with espresso shots over crushed ice.', price: 380, image_url: null, available: true, featured: false, tags: ['cold','sweet'], prep_time_min: 4, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'e006', tenant_id: 'demo', category_id: 'd003', name: 'Green Tea Mint Infusion', description: 'Premium loose-leaf green tea with fresh mint leaves.', price: 210, image_url: null, available: true, featured: false, tags: ['veg','healthy'], prep_time_min: 4, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e007', tenant_id: 'demo', category_id: 'd003', name: 'Chamomile Honey Soothe', description: 'Warm chamomile infusion with wildflower honey.', price: 230, image_url: null, available: true, featured: false, tags: ['veg','healthy'], prep_time_min: 4, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'e008', tenant_id: 'demo', category_id: 'd004', name: 'Almond Butter Croissant', description: 'Buttery flaky pastry filled with house-roasted almond cream.', price: 240, image_url: null, available: true, featured: true, tags: ['bestseller','bakery'], prep_time_min: 2, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e009', tenant_id: 'demo', category_id: 'd004', name: 'Chocolate Truffle Pastry', description: 'Belgian dark chocolate ganache in a buttery shell.', price: 180, image_url: null, available: true, featured: false, tags: ['sweet','bakery'], prep_time_min: 2, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'e010', tenant_id: 'demo', category_id: 'd004', name: 'Vegan Blueberry Muffin', description: 'Oat-flour muffin packed with organic blueberries.', price: 160, image_url: null, available: false, featured: false, tags: ['veg','healthy'], prep_time_min: 2, sort_order: 2, created_at: '', updated_at: '' },
+  { id: 'e011', tenant_id: 'demo', category_id: 'd005', name: 'Avocado Sourdough Toast', description: 'Mashed organic avocado on house-baked sourdough with chili flakes.', price: 390, image_url: null, available: true, featured: true, tags: ['bestseller','veg'], prep_time_min: 8, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e012', tenant_id: 'demo', category_id: 'd005', name: 'Aether Loaded Burrito', description: 'Grilled chicken, black beans, guac, salsa in a toasted wrap.', price: 420, image_url: null, available: true, featured: false, tags: ['spicy'], prep_time_min: 12, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'e013', tenant_id: 'demo', category_id: 'd006', name: 'Hibiscus Rose Cooler', description: 'Chilled hibiscus flower tea with rose syrup and lime.', price: 230, image_url: null, available: true, featured: false, tags: ['cold','healthy'], prep_time_min: 3, sort_order: 0, created_at: '', updated_at: '' },
+  { id: 'e014', tenant_id: 'demo', category_id: 'd006', name: 'Matcha Latte Special', description: 'Ceremonial-grade matcha whisked with oat milk over ice.', price: 320, image_url: null, available: true, featured: false, tags: ['cold','healthy'], prep_time_min: 4, sort_order: 1, created_at: '', updated_at: '' },
+];
+
+/* ─── Sidebar Filters ─── */
+
+type SideFilter = 'all' | 'unavailable' | string;
 
 export default function MenuManagementPage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const { effectivelyOnline, queueAction } = useSyncContext();
+
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(DEMO_ITEMS);
+  const [selectedFilter, setSelectedFilter] = useState<SideFilter>('all');
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([
-    { id: '1', name: 'Classic Cappuccino', price: 290, category: 'coffee', status: 'available', description: 'Double espresso with silky steamed milk.' },
-    { id: '2', name: 'Specialty Cold Brew', price: 350, category: 'coffee', status: 'available', description: '24-hour slow dripped single origin cold brew.' },
-    { id: '3', name: 'Green Tea Mint Infusion', price: 210, category: 'tea', status: 'available', description: 'Premium loose leaf green tea with fresh mint.' },
-    { id: '4', name: 'Almond Butter Croissant', price: 240, category: 'bakery', status: 'available', description: 'Buttery flaky pastry filled with house almond cream.' },
-    { id: '5', name: 'Avocado Sourdough Toast', price: 390, category: 'snacks', status: 'available', description: 'Mashed organic avocados on toasted sourdough.' },
-  ]);
+  const [pendingSyncIds, setPendingSyncIds] = useState<Set<string>>(new Set());
 
-  const handleToggleStatus = (id: string) => {
-    setMenuItems((prev: MenuItem[]) => prev.map(item => {
-      if (item.id === id) {
-        const nextStatus = item.status === 'available' ? 'unavailable' : 'available';
-        return { ...item, status: nextStatus };
+  // Check pending sync status
+  useEffect(() => {
+    const checkPending = async () => {
+      const ids = await getPendingSyncItemIds('TOGGLE_AVAILABILITY');
+      setPendingSyncIds(ids);
+    };
+    checkPending();
+    const interval = setInterval(checkPending, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of menuItems) {
+      if (item.category_id) {
+        counts[item.category_id] = (counts[item.category_id] || 0) + 1;
       }
-      return item;
-    }));
-  };
+    }
+    return counts;
+  }, [menuItems]);
 
-  const handleSaveItem = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editItem) {
-      setMenuItems((prev: MenuItem[]) => prev.map(item => item.id === editItem.id ? editItem : item));
-      setEditItem(null);
+  const unavailableCount = menuItems.filter(m => !m.available).length;
+
+  // Filtered items
+  const filteredItems = useMemo(() => {
+    if (selectedFilter === 'all') return menuItems;
+    if (selectedFilter === 'unavailable') return menuItems.filter(m => !m.available);
+    return menuItems.filter(m => m.category_id === selectedFilter);
+  }, [menuItems, selectedFilter]);
+
+  // Toggle availability
+  const handleToggleAvailability = async (id: string) => {
+    const item = menuItems.find(m => m.id === id);
+    if (!item) return;
+
+    const newAvailable = !item.available;
+
+    // Optimistic local update
+    setMenuItems(prev => prev.map(m => m.id === id ? { ...m, available: newAvailable } : m));
+
+    if (!effectivelyOnline) {
+      await queueAction({
+        operation: 'TOGGLE_AVAILABILITY',
+        endpoint: `/api/store-admin/menu/items/${id}`,
+        method: 'PATCH',
+        payload: { available: newAvailable, id },
+      });
+      setPendingSyncIds(prev => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
     }
   };
 
-  const filteredItems = selectedCategory === 'all' 
-    ? menuItems 
-    : menuItems.filter(item => item.category === selectedCategory);
+  // Save edited item
+  const handleSaveItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editItem) return;
+    setMenuItems(prev => prev.map(m => m.id === editItem.id ? editItem : m));
+
+    if (!effectivelyOnline) {
+      queueAction({
+        operation: 'UPDATE_MENU_ITEM',
+        endpoint: `/api/store-admin/menu/items/${editItem.id}`,
+        method: 'PATCH',
+        payload: editItem as unknown as Record<string, unknown>,
+      });
+    }
+    setEditItem(null);
+  };
 
   return (
-    <div className="space-y-8 relative">
-      
+    <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-display font-extrabold text-2xl tracking-tight text-white">Menu Management</h2>
-          <p className="text-sm text-neutral-400 mt-1">Configure categories, items, and customize modifiers.</p>
+          <h2 className="font-heading font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Menu Manager</h2>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+            Configure categories, items, modifiers, and availability.
+          </p>
         </div>
-        <button className="px-5 py-2.5 bg-accent-indigo hover:bg-accent-indigo/90 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-accent-indigo/20 flex items-center gap-2">
-          <span>+ Add Menu Item</span>
+        <button className="btn-primary flex items-center gap-2">
+          <span>+</span> Add Menu Item
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
-        {/* Left Sidebar: Categories list */}
-        <div className="glass-card p-6 h-fit">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-white uppercase tracking-wider">Categories</span>
-            <button className="text-[10px] text-accent-indigo font-bold hover:underline">+ Add</button>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        {/* Left: Category Sidebar */}
+        <div className="glass-card p-4 h-fit">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Categories</span>
+            <button className="text-[10px] font-bold" style={{ color: 'var(--accent-sapphire)' }}>+ Add</button>
           </div>
 
-          <div className="space-y-1.5">
-            {[
-              { id: 'all', label: 'All Categories' },
-              { id: 'coffee', label: 'Coffee Brews' },
-              { id: 'tea', label: 'Organic Teas' },
-              { id: 'bakery', label: 'Bakery & Sweets' },
-              { id: 'snacks', label: 'Gourmet Snacks' },
-            ].map(cat => (
+          <div className="space-y-1">
+            <button
+              onClick={() => setSelectedFilter('all')}
+              className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-between"
+              style={{
+                background: selectedFilter === 'all' ? 'var(--accent-sapphire)' : 'transparent',
+                color: selectedFilter === 'all' ? '#fff' : 'var(--text-secondary)',
+              }}
+            >
+              All Items
+              <span className="text-[10px] font-mono">{menuItems.length}</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedFilter('unavailable')}
+              className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-between"
+              style={{
+                background: selectedFilter === 'unavailable' ? 'var(--accent-crimson)' : 'transparent',
+                color: selectedFilter === 'unavailable' ? '#fff' : 'var(--text-secondary)',
+              }}
+            >
+              Unavailable
+              <span className="text-[10px] font-mono">{unavailableCount}</span>
+            </button>
+
+            <div className="h-px my-2" style={{ background: 'var(--canvas-border)' }} />
+
+            {DEMO_CATEGORIES.map(cat => (
               <button
                 key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold transition ${selectedCategory === cat.id ? 'bg-accent-indigo text-white shadow' : 'bg-transparent text-neutral-400 hover:bg-white/5 hover:text-white'}`}
+                onClick={() => setSelectedFilter(cat.id)}
+                className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-between"
+                style={{
+                  background: selectedFilter === cat.id ? 'var(--accent-sapphire)' : 'transparent',
+                  color: selectedFilter === cat.id ? '#fff' : 'var(--text-secondary)',
+                }}
               >
-                {cat.label}
+                <span>{cat.icon} {cat.name}</span>
+                <span className="text-[10px] font-mono">{categoryCounts[cat.id] || 0}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Main Grid: Menu items filtered */}
-        <div className="lg:col-span-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {filteredItems.map(item => (
-              <div key={item.id} className="glass-card overflow-hidden flex flex-col justify-between">
-                
-                {/* Visual Mock Card Header */}
-                <div className="h-32 bg-gradient-to-br from-accent-indigo/10 to-neutral-800 p-4 relative flex items-end">
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                    <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${item.status === 'available' ? 'bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20' : 'bg-accent-rose/10 text-accent-rose border border-accent-rose/20'}`}>
-                      {item.status}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase tracking-widest text-accent-indigo font-bold block">{item.category}</span>
-                    <span className="font-display font-bold text-sm text-white block mt-1">{item.name}</span>
-                  </div>
-                </div>
+        {/* Right: Item Grid */}
+        <div className="lg:col-span-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredItems.map(item => {
+              const hasPending = pendingSyncIds.has(item.id);
+              const cat = DEMO_CATEGORIES.find(c => c.id === item.category_id);
 
-                {/* Card Content & Toggles */}
-                <div className="p-4 space-y-4 flex-1 flex flex-col justify-between">
-                  <p className="text-[10px] text-neutral-400 line-clamp-2 leading-relaxed">{item.description}</p>
-                  
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="font-display font-extrabold text-sm text-white">₹{item.price}</span>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => handleToggleStatus(item.id)}
-                        className="px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 text-[10px] font-semibold text-neutral-300 transition"
-                      >
-                        Toggle Avail
-                      </button>
-                      <button 
-                        onClick={() => setEditItem(item)}
-                        className="px-2.5 py-1.5 rounded-lg bg-accent-indigo/10 border border-accent-indigo/20 text-accent-indigo text-[10px] font-semibold transition"
-                      >
-                        Edit Item
-                      </button>
+              return (
+                <div key={item.id} className="glass-card overflow-hidden relative">
+                  {/* Sync Pending Badge */}
+                  {hasPending && (
+                    <div className="sync-pending-badge">
+                      <ClockIcon size={10} /> Sync Pending
+                    </div>
+                  )}
+
+                  {/* Card Header */}
+                  <div className="h-28 p-4 relative flex items-end" style={{
+                    background: `linear-gradient(135deg, rgba(77,124,254,0.08), ${item.available ? 'var(--canvas-surface)' : 'rgba(233,69,96,0.05)'})`,
+                  }}>
+                    {/* Status Badge */}
+                    <div className="absolute top-3 right-3">
+                      <span className="status-badge" style={{
+                        background: item.available ? 'rgba(0,214,143,0.1)' : 'rgba(233,69,96,0.1)',
+                        color: item.available ? 'var(--accent-emerald)' : 'var(--accent-crimson)',
+                        border: `1px solid ${item.available ? 'rgba(0,214,143,0.2)' : 'rgba(233,69,96,0.2)'}`,
+                        fontSize: '8px',
+                      }}>
+                        {item.available ? 'AVAILABLE' : 'UNAVAILABLE'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[9px] uppercase tracking-widest font-bold block" style={{ color: 'var(--accent-sapphire)' }}>
+                        {cat?.name || ''}
+                      </span>
+                      <span className="font-heading font-bold text-sm block mt-0.5" style={{ color: 'var(--text-primary)' }}>
+                        {item.name}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="p-4 space-y-3">
+                    <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+                      {item.description}
+                    </p>
+
+                    {/* Tags */}
+                    {item.tags.length > 0 && (
+                      <div className="flex gap-1 flex-wrap">
+                        {item.tags.map(tag => (
+                          <span key={tag} className="text-[8px] px-1.5 py-0.5 rounded font-bold uppercase" style={{
+                            background: 'rgba(255,255,255,0.04)',
+                            color: tag === 'bestseller' ? 'var(--accent-amber)' :
+                                   tag === 'spicy' ? 'var(--accent-crimson)' :
+                                   tag === 'veg' ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                          }}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="font-heading font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>
+                        ₹{item.price}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleAvailability(item.id)}
+                          className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
+                          style={{
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid var(--canvas-border)',
+                            color: 'var(--text-secondary)',
+                          }}
+                        >
+                          {item.available ? 'Mark Off' : 'Mark On'}
+                        </button>
+                        <button
+                          onClick={() => setEditItem(item)}
+                          className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
+                          style={{
+                            background: 'rgba(77,124,254,0.08)',
+                            border: '1px solid rgba(77,124,254,0.15)',
+                            color: 'var(--accent-sapphire)',
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
-
       </div>
 
-      {/* Slide-Over Panel for Edit Item */}
+      {/* Edit Drawer */}
       {editItem && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 flex justify-end">
-          <div className="w-full max-w-md bg-card border-l border-border backdrop-blur-md p-8 flex flex-col h-full overflow-y-auto">
-            <div className="flex items-center justify-between mb-8">
+        <div className="fixed inset-0 z-30 flex justify-end" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-md flex flex-col h-full overflow-y-auto p-6" style={{ background: 'var(--canvas-surface)', borderLeft: '1px solid var(--canvas-border)' }}>
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="font-display font-bold text-lg text-white">Edit Menu Item</h3>
-                <span className="text-xs text-neutral-400">Configure catalog options</span>
+                <h3 className="font-heading font-bold text-base" style={{ color: 'var(--text-primary)' }}>Edit Menu Item</h3>
+                <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>Modify details, pricing, and availability</span>
               </div>
-              <button 
-                onClick={() => setEditItem(null)}
-                className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-neutral-400 hover:text-white"
-              >
-                ✕
-              </button>
+              <button onClick={() => setEditItem(null)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{
+                background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)',
+              }}>✕</button>
             </div>
 
-            <form onSubmit={handleSaveItem} className="space-y-6">
+            <form onSubmit={handleSaveItem} className="space-y-5 flex-1">
               <div>
-                <label className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">Item Name</label>
-                <input 
-                  type="text" 
-                  value={editItem.name} 
-                  onChange={(e) => setEditItem({ ...editItem, name: e.target.value })}
-                  className="w-full glass-input px-4 py-2.5 text-xs" 
-                />
+                <label className="text-[10px] uppercase font-bold tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>Item Name</label>
+                <input type="text" value={editItem.name} onChange={e => setEditItem({ ...editItem, name: e.target.value })} className="glass-input w-full px-3 py-2.5 text-xs" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">Price (INR)</label>
-                  <input 
-                    type="number" 
-                    value={editItem.price} 
-                    onChange={(e) => setEditItem({ ...editItem, price: Number(e.target.value) })}
-                    className="w-full glass-input px-4 py-2.5 text-xs" 
-                  />
+                  <label className="text-[10px] uppercase font-bold tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>Price (₹)</label>
+                  <input type="number" value={editItem.price} onChange={e => setEditItem({ ...editItem, price: Number(e.target.value) })} className="glass-input w-full px-3 py-2.5 text-xs font-mono" />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">Status</label>
-                  <select 
-                    value={editItem.status} 
-                    onChange={(e) => setEditItem({ ...editItem, status: e.target.value as any })}
-                    className="w-full glass-input px-4 py-2.5 text-xs"
-                  >
-                    <option value="available">Available</option>
-                    <option value="unavailable">Unavailable</option>
-                    <option value="hidden">Hidden</option>
-                  </select>
+                  <label className="text-[10px] uppercase font-bold tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>Prep Time (min)</label>
+                  <input type="number" value={editItem.prep_time_min} onChange={e => setEditItem({ ...editItem, prep_time_min: Number(e.target.value) })} className="glass-input w-full px-3 py-2.5 text-xs font-mono" />
                 </div>
               </div>
 
               <div>
-                <label className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">Description</label>
-                <textarea 
-                  rows={3}
-                  value={editItem.description} 
-                  onChange={(e) => setEditItem({ ...editItem, description: e.target.value })}
-                  className="w-full glass-input px-4 py-2.5 text-xs"
-                />
+                <label className="text-[10px] uppercase font-bold tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>Description</label>
+                <textarea rows={3} value={editItem.description || ''} onChange={e => setEditItem({ ...editItem, description: e.target.value })} className="glass-input w-full px-3 py-2.5 text-xs" />
               </div>
 
-              {/* Mock Modifiers Group Inline Editor */}
-              <div className="border-t border-border pt-6">
-                <span className="text-xs font-bold text-white block mb-4">Modifier Groups</span>
-                <div className="p-3 rounded-lg bg-white/5 border border-white/5 text-[10px] text-neutral-400">
-                  Allows extra options (e.g. Soy Milk, Decaf Coffee shots). Fully customizable.
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] uppercase font-bold tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>Availability</label>
+                  <select value={editItem.available ? 'true' : 'false'} onChange={e => setEditItem({ ...editItem, available: e.target.value === 'true' })} className="glass-input w-full px-3 py-2.5 text-xs">
+                    <option value="true">Available</option>
+                    <option value="false">Unavailable</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold tracking-wider block mb-1.5" style={{ color: 'var(--text-muted)' }}>Featured</label>
+                  <select value={editItem.featured ? 'true' : 'false'} onChange={e => setEditItem({ ...editItem, featured: e.target.value === 'true' })} className="glass-input w-full px-3 py-2.5 text-xs">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="pt-6 flex gap-3">
-                <button 
-                  type="submit"
-                  className="flex-1 py-3 bg-accent-indigo hover:bg-accent-indigo/90 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-accent-indigo/20"
-                >
-                  Save Changes
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setEditItem(null)}
-                  className="px-4 py-3 bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white rounded-xl text-xs font-bold transition"
-                >
-                  Cancel
-                </button>
+              {/* Modifiers Section */}
+              <div className="border-t pt-4" style={{ borderColor: 'var(--canvas-border)' }}>
+                <span className="text-xs font-bold block mb-2" style={{ color: 'var(--text-primary)' }}>Modifier Groups</span>
+                <div className="p-3 rounded-xl text-[11px]" style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-muted)' }}>
+                  Allows extra options (e.g. Size: Regular / Large, Milk: Full Cream / Oat Milk). Configure after saving.
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button type="submit" className="btn-primary flex-1">Save Changes</button>
+                <button type="button" onClick={() => setEditItem(null)} className="btn-ghost">Cancel</button>
               </div>
             </form>
-
           </div>
         </div>
       )}
-
     </div>
   );
+}
+
+function ClockIcon({ size = 16 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
 }

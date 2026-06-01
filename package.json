@@ -1,18 +1,38 @@
 {
   "name": "cafe-canva",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Multi-tenant SaaS platform for the Indian restaurant industry",
+  "main": "Backend-Software/dist/Store-Admin/electron/main.js",
+  "workspaces": [
+    "frontend",
+    "Backend-Software/Store-Admin/store-front",
+    "Backend-Software/Store-Admin/frontend"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "backend:dev": "tsx Backend-Software/src/server.ts",
-    "store-admin:dev": "npm run dev --prefix Backend-Software/Store-Admin/frontend -- -p 3005"
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:storefront": "npm run dev --prefix Backend-Software/Store-Admin/store-front",
+    "dev:backend": "tsx Backend-Software/src/server.ts",
+    "dev:store-admin": "npm run dev --prefix Backend-Software/Store-Admin/frontend -- -p 3005",
+    "desktop:run": "npx electron Backend-Software/dist/Store-Admin/electron/main.js",
+    "desktop:build": "npm run build --prefix Backend-Software/Store-Admin/frontend",
+    "desktop:package": "npm run desktop:build && npx tsc -p Backend-Software/tsconfig.json && npx electron-builder",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Yashzagde/Cafe-Canva.git"
   },
-  "keywords": [],
+  "keywords": [
+    "saas",
+    "restaurant",
+    "pos",
+    "nextjs",
+    "supabase",
+    "drizzle"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -38,7 +58,7 @@
     "drizzle-kit": "^0.31.10",
     "electron": "^42.3.0",
     "electron-builder": "^26.8.1",
-    "prisma": "^7.8.0",
-    "tsx": "^4.22.3"
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
   }
 }
