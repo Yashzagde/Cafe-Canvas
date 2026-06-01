@@ -1,21 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Hive storage for persistent customer carts
-  await Hive.initFlutter();
-  await Hive.openBox('customer_storefront_cart');
 
-  // Initialize Supabase connection
-  await SupabaseService.instance.initialize(
-    url: 'https://oeringgdbxmmihgvuyfa.supabase.co',
-    anonKey: 'sb_publishable_laWLW3mZrK5wdSh115u2Dw_7K0BIjYU',
+  // 1. Config validation (fails fast on missing --dart-define parameters)
+  EnvConfig.assertValid();
+
+  // 2. Initialize Hive local persistent cache
+  await Hive.initFlutter();
+  await Hive.openBox('cart');
+  await Hive.openBox('session');
+
+  // 3. Initialize Supabase connection
+  await Supabase.initialize(
+    url: EnvConfig.supabaseUrl,
+    anonKey: EnvConfig.supabaseAnonKey,
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+    ),
   );
+
+  // 4. Expose dynamic Edge Function settings
+  await SupabaseService.instance.initialize(
+    url: EnvConfig.supabaseUrl,
+    anonKey: EnvConfig.supabaseAnonKey,
+  );
+
+  // 5. Restore session from securely cached refresh token
+  final authService = AuthService.instance;
+  await authService.restoreSessionFromCache();
 
   runApp(
     const ProviderScope(

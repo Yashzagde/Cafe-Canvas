@@ -1,131 +1,116 @@
-name: CafeCanva Multi-Platform Build & Deploy
+name: CafeCanva — Build & Deploy
 
 on:
   push:
-    branches: [ main, production ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+env:
+  FLUTTER_VERSION: '3.22.0'
 
 jobs:
-  bootstrap:
+  analyze:
+    name: Analyze & Test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x'
-          channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
-
-      - name: Install Melos Global Package
-        run: dart pub global activate melos
-
-      - name: Monorepo Bootstrap Dependencies
-        run: melos bootstrap
+      - run: dart pub global activate melos
+      - run: melos bootstrap
+      - run: melos run analyze
+      - run: melos run test
 
   build-android:
-    needs: bootstrap
+    name: Android APK — ${{ matrix.app }}
+    needs: analyze
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [customer_storefront, staff_pos, kitchen_display, store_admin_mobile]
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
-          flutter-version: '3.19.x'
-          channel: 'stable'
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
-
-      - name: Install Melos
-        run: dart pub global activate melos
-
-      - name: Bootstrap Dependencies
-        run: melos bootstrap
-
-      - name: Build Production Customer APK
+      - run: dart pub global activate melos && melos bootstrap
+      - name: Build APK
+        working-directory: apps/${{ matrix.app }}
         run: |
-          cd apps/customer_storefront
-          flutter build apk --release --split-per-abi
-
-      - name: Build Production POS APK
-        run: |
-          cd apps/staff_pos
-          flutter build apk --release --split-per-abi
-
-      - name: Upload Storefront APK Artifact
-        uses: actions/upload-artifact@v4
+          flutter build apk --release \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=ENV=prod
+      - uses: actions/upload-artifact@v4
         with:
-          name: customer-storefront-apk
-          path: apps/customer_storefront/build/app/outputs/flutter-apk/*.apk
-
-      - name: Upload POS APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: staff-pos-apk
-          path: apps/staff_pos/build/app/outputs/flutter-apk/*.apk
+          name: ${{ matrix.app }}-apk
+          path: apps/${{ matrix.app }}/build/app/outputs/flutter-apk/app-release.apk
 
   build-web:
-    needs: bootstrap
+    name: Web — ${{ matrix.app }}
+    needs: analyze
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - app: customer_storefront
+            vercel_project: cc-storefront
+          - app: store_admin_desktop
+            vercel_project: cc-admin
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x'
-          channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
-
-      - name: Install Melos
-        run: dart pub global activate melos
-
-      - name: Bootstrap Dependencies
-        run: melos bootstrap
-
-      - name: Build Store Admin Web Bundle
+      - run: dart pub global activate melos && melos bootstrap
+      - name: Build Web
+        working-directory: apps/${{ matrix.app }}
         run: |
-          cd apps/store_admin_desktop
-          flutter build web --release --web-renderer html --base-href /
-
-      - name: Upload Web Bundle Artifact
-        uses: actions/upload-artifact@v4
+          flutter build web --release \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=ENV=prod
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
         with:
-          name: admin-web-bundle
-          path: apps/store_admin_desktop/build/web
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: apps/${{ matrix.app }}/build/web
 
   build-windows:
-    needs: bootstrap
+    name: Windows Desktop
+    needs: analyze
     runs-on: windows-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x'
-          channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
-
-      - name: Install Melos
-        run: dotnet tool install -g melos || dart pub global activate melos
-
-      - name: Bootstrap Dependencies
-        run: melos bootstrap
-
-      - name: Build Windows Executable
+      - run: dart pub global activate melos && melos bootstrap
+      - name: Build Windows
+        working-directory: apps/store_admin_desktop
         run: |
-          cd apps/store_admin_desktop
-          flutter build windows --release
-
-      - name: Upload Windows Build
-        uses: actions/upload-artifact@v4
+          flutter build windows --release `
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} `
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} `
+            --dart-define=ENV=prod
+      - uses: actions/upload-artifact@v4
         with:
-          name: admin-windows-app
-          path: apps/store_admin_desktop/build/windows/runner/Release
+          name: store_admin_desktop-windows
+          path: apps/store_admin_desktop/build/windows/x64/runner/Release/

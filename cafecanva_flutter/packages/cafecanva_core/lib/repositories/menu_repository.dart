@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import '../models/models.dart';
 import '../supabase/supabase_service.dart';
 
@@ -101,5 +102,20 @@ class MenuRepository {
       groups.add(ModifierGroup.fromJson(g, options));
     }
     return groups;
+  }
+
+  // --- Image Upload Operations ---
+
+  Future<String> uploadMenuImage(String tenantId, String itemId, Uint8List imageBytes) async {
+    final path = '$tenantId/$itemId.webp';
+    await _client.storage.from('menu-images').uploadBinary(
+      path,
+      imageBytes,
+      fileOptions: const FileOptions(
+        upsert: true, 
+        contentType: 'image/webp',
+      ),
+    );
+    return _client.storage.from('menu-images').getPublicUrl(path);
   }
 }

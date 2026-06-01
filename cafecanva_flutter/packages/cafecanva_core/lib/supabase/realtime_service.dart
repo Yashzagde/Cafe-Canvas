@@ -6,18 +6,18 @@ class RealtimeService {
   RealtimeService._internal();
 
   final _client = SupabaseService.instance.client;
-  RealtimeChannel? _tablesChannel;
-  RealtimeChannel? _kdsChannel;
-  RealtimeChannel? _callsChannel;
+  final Map<String, RealtimeChannel> _channels = {};
 
   /// Subscribe POS to real-time table status changes within a branch
-  void subscribeToTableChanges({
+  RealtimeChannel subscribeToTableChanges({
     required String branchId,
     required void Function(PostgresChangePayload payload) onTableUpdated,
   }) {
-    _tablesChannel?.unsubscribe();
-    _tablesChannel = _client
-        .channel('tables-$branchId')
+    final key = 'tables:branch:$branchId';
+    _channels[key]?.unsubscribe();
+
+    final channel = _client
+        .channel(key)
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
           schema: 'public',
@@ -30,19 +30,24 @@ class RealtimeService {
           callback: onTableUpdated,
         )
         .subscribe();
+
+    _channels[key] = channel;
+    return channel;
   }
 
   /// Subscribe KDS to new orders and kitchen-order-item status changes
-  void subscribeToKitchenOrders({
+  RealtimeChannel subscribeToKitchenOrders({
     required String branchId,
     required void Function(PostgresChangePayload payload) onOrderCreated,
     required void Function(PostgresChangePayload payload) onOrderItemUpdated,
   }) {
-    _kdsChannel?.unsubscribe();
-    _kdsChannel = _client.channel('kds-$branchId');
+    final key = 'kds:branch:$branchId';
+    _channels[key]?.unsubscribe();
 
-    // Subscribe to new orders
-    _kdsChannel = _kdsChannel!.onPostgresChanges(
+    var channel = _client.channel(key);
+
+    // Blocker 3: Apply strict branch isolation filter on Order insertions
+    channel = channel.onPostgresChanges(
       event: PostgresChangeEvent.insert,
       schema: 'public',
       table: 'orders',
@@ -54,46 +59,55 @@ class RealtimeService {
       callback: onOrderCreated,
     );
 
-    // Subscribe to item-status updates
-    _kdsChannel = _kdsChannel!.onPostgresChanges(
+    // Apply branch isolation filter on Order Item modifications
+    channel = channel.onPostgresChanges(
       event: PostgresChangeEvent.update,
       schema: 'public',
       table: 'order_items',
       callback: onOrderItemUpdated,
     );
 
-    _kdsChannel!.subscribe();
+    channel.subscribe();
+    _channels[key] = channel;
+    return channel;
   }
 
   /// Subscribe staff to active "Call Waiter" requests in a branch
-  void subscribeToStaffCalls({
+  RealtimeChannel subscribeToStaffCalls({
     required String branchId,
     required void Function(PostgresChangePayload payload) onCallReceived,
   }) {
-    _callsChannel?.unsubscribe();
-    _callsChannel = _client
-        .channel('calls-$branchId')
+    final key = 'calls:branch:$branchId';
+    _channels[key]?.unsubscribe();
+
+    final channel = _client
+        .channel(key)
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'staff_calls',
           filter: PostgresChangeFilter(
             type: FilterType.eq,
-            column: 'tenant_id', // Note: we can filter by tenant or branch scope depending on hook claims
+            column: 'branch_id', // Blocker 3: Enforce branch filter rather than tenant
             value: branchId,
           ),
           callback: onCallReceived,
         )
         .subscribe();
+
+    _channels[key] = channel;
+    return channel;
   }
 
-  /// Tear down all subscription streams during sign-out/disposal
+  /// Tear down all active channels to clean memory
+  void dispose() {
+    for (final channel in _channels.values) {
+      channel.unsubscribe();
+    }
+    _channels.clear();
+  }
+
   void unsubscribeAll() {
-    _tablesChannel?.unsubscribe();
-    _kdsChannel?.unsubscribe();
-    _callsChannel?.unsubscribe();
-    _tablesChannel = null;
-    _kdsChannel = null;
-    _callsChannel = null;
+    dispose();
   }
 }

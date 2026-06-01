@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
 import 'package:cafecanva_billing/cafecanva_billing.dart';
 
-// Shared state for cart local items
-// Structure: List<Map<String, dynamic>>
-// Maps menu-item id with quantity and list of selected modifiers options.
-final _cartBox = Hive.box('customer_storefront_cart');
+// Persistent Cart Local Boxes
+final _cartBox = Hive.box('cart');
 
 List<Map<String, dynamic>> _getCart(String slug) {
   final List<dynamic>? raw = _cartBox.get('cart_$slug');
@@ -42,7 +41,7 @@ void _addToCart(String slug, MenuItem item, int quantity, List<ModifierOption> m
   _saveCart(slug, cart);
 }
 
-// --- SCREEN 1: SLUG ENTRY ---
+// --- SCREEN 1: SLUG ENTRY WITH CAMERA QR SCANNER ---
 class SlugEntryScreen extends StatefulWidget {
   const SlugEntryScreen({Key? key}) : super(key: key);
 
@@ -59,11 +58,75 @@ class _SlugEntryScreenState extends State<SlugEntryScreen> {
     if (slug.isEmpty) return;
 
     setState(() => _isLoading = true);
+    context.go('/$slug');
+  }
+
+  /// Blocker 4: Triggers camera scanner overlay modal
+  void _openCameraScanner() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: CafeCanvaRadius.lg)),
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          padding: const EdgeInsets.all(CafeCanvaSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.between,
+                children: [
+                  const Text('Scan Table QR Code', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12.0),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: MobileScanner(
+                    onDetect: (capture) {
+                      final List<Barcode> barcodes = capture.barcodes;
+                      for (final barcode in barcodes) {
+                        final String? code = barcode.rawValue;
+                        if (code != null && code.startsWith('cafecanva://')) {
+                          Navigator.pop(context);
+                          _handleDeepLink(code);
+                          return;
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              const Center(
+                child: Text('Position the QR code inside the camera view finder', style: TextStyle(color: CafeCanvaColors.stone500, fontSize: 12.0)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleDeepLink(String url) {
     try {
-      // Direct navigate to storefront slug
-      context.go('/$slug');
+      final uri = Uri.parse(url);
+      final slug = uri.pathSegments.isNotEmpty ? uri.pathSegments[0] : '';
+      final tableId = uri.queryParameters['table'];
+      
+      if (slug.isNotEmpty) {
+        context.go('/$slug?table=$tableId');
+      }
     } catch (_) {
-      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid CafeCanva QR code scanned.'), backgroundColor: CafeCanvaColors.error),
+      );
     }
   }
 
@@ -100,21 +163,22 @@ class _SlugEntryScreenState extends State<SlugEntryScreen> {
             const SizedBox(height: 8.0),
             Center(
               child: Text(
-                'Enter cafe code or scan the table QR code to browse menu & order',
+                'Scan your table QR code or enter code to browse & place orders',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.dmSans(
-                  fontSize: 14.0,
-                  color: CafeCanvaColors.stone500,
-                ),
+                style: GoogleFonts.dmSans(fontSize: 14.0, color: CafeCanvaColors.stone500),
               ),
             ),
             const SizedBox(height: 32.0),
             TextField(
               controller: _controller,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'e.g. cappuccino-house',
                 labelText: 'Cafe Subdomain Code',
-                prefixIcon: Icon(Icons.qr_code_scanner),
+                prefixIcon: const Icon(Icons.qr_code_scanner),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.camera_alt_outlined, color: CafeCanvaColors.primary),
+                  onPressed: _openCameraScanner,
+                ),
               ),
             ),
             const SizedBox(height: 16.0),
@@ -134,10 +198,12 @@ class _SlugEntryScreenState extends State<SlugEntryScreen> {
 // --- SCREEN 2: HOME / MENU BROWSE ---
 class StorefrontHomeScreen extends StatefulWidget {
   final String slug;
+  final String? prefilledTableId;
 
   const StorefrontHomeScreen({
     Key? key,
     required this.slug,
+    this.prefilledTableId,
   }) : super(key: key);
 
   @override
@@ -146,8 +212,6 @@ class StorefrontHomeScreen extends StatefulWidget {
 
 class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
   final MenuRepository _menuRepo = MenuRepository();
-  final TableRepository _tableRepo = TableRepository();
-
   bool _isLoading = true;
   String? _errorMessage;
   
@@ -157,7 +221,6 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
   String? _selectedCategoryId;
   String _searchQuery = '';
   
-  // Call waiter states
   bool _callCooldown = false;
   int _cooldownSeconds = 0;
   Timer? _cooldownTimer;
@@ -175,8 +238,6 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
         _errorMessage = null;
       });
 
-      // Defaulting tenant and branch details to demo settings
-      // In production, slug metadata config lookup is loaded via API
       final categories = await _menuRepo.fetchCategories('demo-branch-7777');
       final items = await _menuRepo.fetchItems('demo-branch-7777');
 
@@ -195,7 +256,7 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = CcError.friendly(e);
           _isLoading = false;
         });
       }
@@ -206,8 +267,7 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
     setState(() {
       _filteredItems = _items.where((i) {
         final matchesCategory = _selectedCategoryId == null || i.categoryId == _selectedCategoryId;
-        final matchesSearch = i.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            (i.description?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+        final matchesSearch = i.name.toLowerCase().contains(_searchQuery.toLowerCase());
         return matchesCategory && matchesSearch;
       }).toList();
     });
@@ -218,7 +278,7 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
     
     setState(() {
       _callCooldown = true;
-      _cooldownSeconds = 120; // 2 minutes cooldown
+      _cooldownSeconds = 120;
     });
 
     _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -231,16 +291,15 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
       }
     });
 
-    // Invoke Edge Function
     await SupabaseService.instance.callStaff(
-      tableId: 'demo-table-1',
+      tableId: widget.prefilledTableId ?? 'demo-table-1',
       tenantId: 'demo-tenant-5555',
       tableNumber: 'Table 4',
     );
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Staff called. Waiter is on their way!'),
+        content: Text('Waitress support requested. Staff will be at your table shortly!'),
         backgroundColor: CafeCanvaColors.success,
       ),
     );
@@ -264,7 +323,8 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
         title: Column(
           children: [
             Text(widget.slug.toUpperCase().replaceAll('-', ' ')),
-            const Text('Browse Menu', style: TextStyle(fontSize: 12.0, color: CafeCanvaColors.stone500)),
+            if (widget.prefilledTableId != null)
+              const Text('Dine-In • Active Table Session', style: TextStyle(fontSize: 11.0, color: CafeCanvaColors.success, fontWeight: FontWeight.bold)),
           ],
         ),
         actions: [
@@ -286,7 +346,7 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Banner Space
+          // Theme banners
           Container(
             height: 120,
             decoration: const BoxDecoration(
@@ -296,12 +356,11 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
               ),
             ),
           ),
-          // Search & Filter
           Padding(
             padding: const EdgeInsets.all(CafeCanvaSpacing.md),
             child: TextField(
               decoration: const InputDecoration(
-                hintText: 'Search delicious foods...',
+                hintText: 'Search menus...',
                 prefixIcon: Icon(Icons.search),
               ),
               onChanged: (val) {
@@ -310,7 +369,7 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
               },
             ),
           ),
-          // Category horizontal scroll list
+          // Categories list
           SizedBox(
             height: 48.0,
             child: ListView.builder(
@@ -338,10 +397,9 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
             ),
           ),
           const SizedBox(height: 12.0),
-          // Items Grid
           Expanded(
             child: _filteredItems.isEmpty
-                ? const CcEmptyState(title: 'No items match your search.')
+                ? const CcEmptyState(title: 'No items matching criteria.')
                 : GridView.builder(
                     padding: const EdgeInsets.all(CafeCanvaSpacing.md),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -360,7 +418,6 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
                     },
                   ),
           ),
-          // Cart Shortcut Banner
           if (cartItems.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(CafeCanvaSpacing.md),
@@ -369,7 +426,7 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.between,
                 children: [
                   Text(
-                    '${cartItems.length} items added in cart',
+                    '${cartItems.length} items added in basket',
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   TextButton.icon(
@@ -431,12 +488,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           _item = matched;
           _modifierGroups = modifiers;
           
-          // Preselect default modifiers
           for (final group in modifiers) {
             for (final opt in group.options) {
-              if (opt.isDefault) {
-                _selectedOptions.add(opt);
-              }
+              if (opt.isDefault) _selectedOptions.add(opt);
             }
           }
           _isLoading = false;
@@ -445,7 +499,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = CcError.friendly(e);
           _isLoading = false;
         });
       }
@@ -454,19 +508,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   void _toggleOption(ModifierOption opt, ModifierGroup group) {
     setState(() {
-      final inGroupOptions = group.options.map((o) => o.id).toList();
-      
-      // If single select (maxSelect = 1)
+      final inGroup = group.options.map((o) => o.id).toList();
       if (group.maxSelect == 1) {
-        _selectedOptions.removeWhere((o) => inGroupOptions.contains(o.id));
+        _selectedOptions.removeWhere((o) => inGroup.contains(o.id));
         _selectedOptions.add(opt);
       } else {
-        // Multi-select handling
         if (_selectedOptions.any((o) => o.id == opt.id)) {
           _selectedOptions.removeWhere((o) => o.id == opt.id);
         } else {
-          final countInGroup = _selectedOptions.where((o) => inGroupOptions.contains(o.id)).length;
-          if (countInGroup < group.maxSelect) {
+          final count = _selectedOptions.where((o) => inGroup.contains(o.id)).length;
+          if (count < group.maxSelect) {
             _selectedOptions.add(opt);
           }
         }
@@ -475,12 +526,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   void _submit() {
-    // Validate required groups
     for (final group in _modifierGroups) {
       if (group.required) {
-        final inGroupOptions = group.options.map((o) => o.id).toList();
-        final selectedInGroup = _selectedOptions.where((o) => inGroupOptions.contains(o.id));
-        if (selectedInGroup.length < group.minSelect) {
+        final inGroup = group.options.map((o) => o.id).toList();
+        final selected = _selectedOptions.where((o) => inGroup.contains(o.id));
+        if (selected.length < group.minSelect) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Please select required modifier: ${group.name}'),
@@ -528,18 +578,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       CcPriceText(priceInPaise: priceAggregator, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: CafeCanvaColors.primary)),
                     ],
                   ),
-                  if (_item.description != null) ...[
-                    const SizedBox(height: 8.0),
-                    Text(_item.description!, style: const TextStyle(color: CafeCanvaColors.stone500)),
-                  ],
                   const SizedBox(height: 16.0),
                   
-                  // Modifiers List
                   ..._modifierGroups.map((group) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 16.0),
+                        const SizedBox(height: 12.0),
                         Row(
                           children: [
                             Text(group.name, style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
@@ -566,17 +611,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   }).toList(),
                   
                   const SizedBox(height: 16.0),
-                  const Text('Special Instructions', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+                  const Text('Instructions notes', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8.0),
                   TextField(
                     controller: _notesController,
-                    decoration: const InputDecoration(hintText: 'e.g. Extra spicy, no onions, extra ice'),
+                    decoration: const InputDecoration(hintText: 'e.g. Extra hot, sugar free'),
                   ),
                   const SizedBox(height: 24.0),
                   
-                  // Quantity
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.between,
                     children: [
                       const Text('Quantity', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
                       Row(
@@ -598,7 +642,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   
                   ElevatedButton(
                     onPressed: _submit,
-                    child: Text('ADD TO CART (₹${((priceAggregator * _quantity) / 100).toStringAsFixed(0)})'),
+                    child: Text('ADD TO BASKET (₹${((priceAggregator * _quantity) / 100).toStringAsFixed(0)})'),
                   ),
                 ],
               ),
@@ -610,7 +654,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 }
 
-// --- SCREEN 4: BASKET / CHECKOUT ---
+// --- SCREEN 4: BASKET / CHECKOUT & PAYMENTS ---
 class CartScreen extends StatefulWidget {
   final String slug;
 
@@ -625,7 +669,6 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   final OrderRepository _orderRepo = OrderRepository();
-  final BillingRepository _billingRepo = BillingRepository();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -647,7 +690,6 @@ class _CartScreenState extends State<CartScreen> {
       subtotal += itemPrice * (item['quantity'] as int);
     }
     
-    // Add simple tax calculations (e.g. 5%)
     int tax = (subtotal * 0.05).round();
     int total = subtotal + tax;
 
@@ -658,7 +700,7 @@ class _CartScreenState extends State<CartScreen> {
 
       if (name.isEmpty || phone.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter name and contact details'), backgroundColor: CafeCanvaColors.error),
+          const SnackBar(content: Text('Please enter customer details'), backgroundColor: CafeCanvaColors.error),
         );
         return;
       }
@@ -698,17 +740,27 @@ class _CartScreenState extends State<CartScreen> {
           itemsData: itemsData,
         );
 
-        // 2. Clear cart
+        // Blocker 1 & 6: trigger payment flow cross-platform via BillingFactory
+        final paymentGateway = BillingFactory.createPaymentGateway();
+        await paymentGateway.payWithRazorpay(
+          razorpayOrderId: 'order_mock_123',
+          keyId: 'rzp_test_1234',
+          amountInPaise: total,
+          storeName: 'CafeCanva',
+          customerName: name,
+          customerPhone: phone,
+          themeColor: '#D97706',
+        );
+
         _saveCart(widget.slug, []);
 
         if (mounted) {
-          // Navigate to live tracker
           context.go('/${widget.slug}/track/${order.id}');
         }
       } catch (e) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to submit order: $e'), backgroundColor: CafeCanvaColors.error),
+          SnackBar(content: Text(CcError.friendly(e)), backgroundColor: CafeCanvaColors.error),
         );
       }
     }
@@ -716,7 +768,7 @@ class _CartScreenState extends State<CartScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('My Basket')),
       body: cart.isEmpty
-          ? const CcEmptyState(icon: Icons.shopping_basket, title: 'Your basket is empty', description: 'Browse categories to add menu items.')
+          ? const CcEmptyState(icon: Icons.shopping_basket, title: 'Basket is empty')
           : SingleChildScrollView(
               padding: const EdgeInsets.all(CafeCanvaSpacing.lg),
               child: Column(
@@ -762,7 +814,6 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                   const Divider(),
                   
-                  // Aggregates
                   Row(
                     mainAxisAlignment: MainAxisAlignment.between,
                     children: [
@@ -788,12 +839,11 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                   const SizedBox(height: 24.0),
 
-                  // Order configuration details
                   const Text('Customer Details', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12.0),
-                  TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Your Name')),
+                  TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Name')),
                   const SizedBox(height: 8.0),
-                  TextField(controller: _phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Mobile Number')),
+                  TextField(controller: _phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone Number')),
                   const SizedBox(height: 16.0),
                   
                   Row(
@@ -817,14 +867,14 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                   const SizedBox(height: 12.0),
                   if (_isDineIn)
-                    TextField(controller: _tableController, decoration: const InputDecoration(labelText: 'Table Number (physical marker)')),
+                    TextField(controller: _tableController, decoration: const InputDecoration(labelText: 'Table Number')),
                   
                   const SizedBox(height: 24.0),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _placeOrder,
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('PLACE DINE-IN ORDER'),
+                        : const Text('CONFIRM AND PLACE ORDER'),
                   ),
                 ],
               ),
@@ -858,8 +908,6 @@ class _TrackScreenState extends State<TrackScreen> {
   void initState() {
     super.initState();
     _loadStatus();
-    
-    // Simulating updates dynamically for presentation (real-time stream backup)
     _realtimeMockTimer = Timer.periodic(const Duration(seconds: 8), (t) {
       _loadStatus();
     });
@@ -889,7 +937,7 @@ class _TrackScreenState extends State<TrackScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (_order == null) return const Scaffold(body: CcEmptyState(title: 'Order Details missing.'));
+    if (_order == null) return const Scaffold(body: CcEmptyState(title: 'Missing order details'));
 
     final String status = _order!.status;
     int progressPercent = 10;
@@ -899,7 +947,7 @@ class _TrackScreenState extends State<TrackScreen> {
     if (status == 'served' || status == 'paid') progressPercent = 100;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Order Tracking')),
+      appBar: AppBar(title: const Text('Track Order')),
       body: Padding(
         padding: const EdgeInsets.all(CafeCanvaSpacing.xl),
         child: Column(
@@ -931,7 +979,7 @@ class _TrackScreenState extends State<TrackScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Order Items:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Order details:', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8.0),
                   ..._order!.items.map((i) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2.0),
@@ -941,7 +989,7 @@ class _TrackScreenState extends State<TrackScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.between,
                     children: [
-                      const Text('Total Amount'),
+                      const Text('Total'),
                       CcPriceText(priceInPaise: _order!.total),
                     ],
                   ),

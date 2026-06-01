@@ -1,19 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
 import 'router.dart';
 
-class StorefrontApp extends StatelessWidget {
+// Riverpod provider for storefront dynamic configs mapping
+final storefrontConfigProvider = FutureProvider<StorefrontConfig>((ref) async {
+  // In production, reads the active config filtered by the active subdomain/slug
+  return StorefrontConfig(
+    id: 'demo-cfg-1',
+    tenantId: 'demo-tenant-5555',
+    branchId: 'demo-branch-7777',
+    slug: 'default-slug',
+    primaryColor: '#D97706', // Primary Brand Seed
+  );
+});
+
+class StorefrontApp extends ConsumerWidget {
   const StorefrontApp({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'CafeCanva Storefront',
-      debugShowCheckedModeBanner: false,
-      theme: buildLightTheme(),
-      darkTheme: buildDarkTheme(),
-      themeMode: ThemeMode.light, // Default customer flow to a warm, cozy light theme
-      routerConfig: storefrontRouter,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final configState = ref.watch(storefrontConfigProvider);
+
+    return configState.when(
+      data: (config) => MaterialApp.router(
+        title: 'CafeCanva Storefront',
+        debugShowCheckedModeBanner: false,
+        theme: buildTenantTheme(config),
+        routerConfig: storefrontRouter,
+      ),
+      loading: () => MaterialApp.router(
+        title: 'CafeCanva Storefront',
+        debugShowCheckedModeBanner: false,
+        theme: buildDefaultTheme(),
+        routerConfig: storefrontRouter,
+      ),
+      error: (_, __) => MaterialApp.router(
+        title: 'CafeCanva Storefront',
+        debugShowCheckedModeBanner: false,
+        theme: buildDefaultTheme(),
+        routerConfig: storefrontRouter,
+      ),
     );
   }
 }

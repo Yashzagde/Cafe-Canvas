@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
 import 'package:cafecanva_analytics/cafecanva_analytics.dart';
@@ -213,6 +217,9 @@ class _MenuEditorScreenState extends State<MenuEditorScreen> {
     final TextEditingController descCont = TextEditingController();
     final TextEditingController priceCont = TextEditingController();
     String? selectedCatId = _categories.isNotEmpty ? _categories[0].id : null;
+    XFile? pickedImage;
+    final ImagePicker picker = ImagePicker();
+    bool isUploading = false;
 
     showModalBottomSheet(
       context: context,
@@ -249,26 +256,97 @@ class _MenuEditorScreenState extends State<MenuEditorScreen> {
                     TextField(controller: descCont, decoration: const InputDecoration(labelText: 'Item Description')),
                     const SizedBox(height: 8.0),
                     TextField(controller: priceCont, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Price (Rupees)')),
+                    const SizedBox(height: 16.0),
+                    
+                    // Image picker UI block
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            pickedImage == null 
+                                ? 'No menu photo selected' 
+                                : 'Photo ready for upload',
+                            style: const TextStyle(fontSize: 12.0, color: CafeCanvaColors.stone500),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () async {
+                            final image = await picker.pickImage(source: ImageSource.gallery);
+                            if (image != null) {
+                              setSheetState(() => pickedImage = image);
+                            }
+                          },
+                          icon: const Icon(Icons.add_photo_alternate),
+                          label: Text(pickedImage == null ? 'Select Photo' : 'Change Photo'),
+                        ),
+                      ],
+                    ),
+                    if (pickedImage != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(CafeCanvaRadius.sm),
+                          child: Image.file(
+                            File(pickedImage!.path),
+                            height: 120,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 24.0),
                     ElevatedButton(
-                      onPressed: () async {
+                      onPressed: isUploading ? null : () async {
                         if (nameCont.text.trim().isEmpty || priceCont.text.trim().isEmpty || selectedCatId == null) return;
-                        final priceRupees = double.parse(priceCont.text.trim());
-                        final pricePaise = (priceRupees * 100).round();
+                        
+                        setSheetState(() => isUploading = true);
+                        String? uploadedUrl;
 
-                        await _menuRepo.createItem({
-                          'tenant_id': 'demo-tenant-5555',
-                          'branch_id': 'demo-branch-7777',
-                          'category_id': selectedCatId!,
-                          'name': nameCont.text.trim(),
-                          'description': descCont.text.trim(),
-                          'price': pricePaise,
-                          'status': 'available',
-                        });
-                        Navigator.pop(context);
-                        _loadMenu();
+                        try {
+                          if (pickedImage != null) {
+                            // Compress item photo to 80% WebP securely before uploading to Supabase menu-images bucket
+                            final compressedBytes = await FlutterImageCompress.compressWithFile(
+                              pickedImage!.path,
+                              quality: 80,
+                              format: CompressFormat.webp,
+                            );
+
+                            if (compressedBytes != null) {
+                              final generatedItemId = 'item_${DateTime.now().millisecondsSinceEpoch}';
+                              uploadedUrl = await _menuRepo.uploadMenuImage(
+                                'demo-tenant-5555',
+                                generatedItemId,
+                                compressedBytes,
+                              );
+                            }
+                          }
+
+                          final priceRupees = double.parse(priceCont.text.trim());
+                          final pricePaise = (priceRupees * 100).round();
+
+                          await _menuRepo.createItem({
+                            'tenant_id': 'demo-tenant-5555',
+                            'branch_id': 'demo-branch-7777',
+                            'category_id': selectedCatId!,
+                            'name': nameCont.text.trim(),
+                            'description': descCont.text.trim(),
+                            'price': pricePaise,
+                            'status': 'available',
+                            'image_url': uploadedUrl,
+                          });
+
+                          Navigator.pop(context);
+                          _loadMenu();
+                        } catch (e) {
+                          setSheetState(() => isUploading = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to save item: $e')),
+                          );
+                        }
                       },
-                      child: const Text('SAVE MENU ITEM'),
+                      child: isUploading 
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('SAVE MENU ITEM'),
                     ),
                     const SizedBox(height: 16.0),
                   ],

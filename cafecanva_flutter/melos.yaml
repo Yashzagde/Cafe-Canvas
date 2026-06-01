@@ -1,5 +1,5 @@
 name: cafecanva_flutter
-repository: https://github.com/Yashzagde/Cafe-Canva
+repository: https://github.com/your-org/cafecanva_flutter
 
 packages:
   - apps/*
@@ -12,17 +12,27 @@ command:
 
 scripts:
   analyze:
-    run: melos exec -- "flutter analyze"
-    description: Run analytical lint checks on all projects
+    run: melos exec -- flutter analyze --fatal-infos
+    description: Static analysis across all packages and apps
+
+  test:
+    run: melos exec --depends-on="flutter_test" -- flutter test
+    description: Run all unit and widget tests
 
   clean:
-    run: melos exec -- "flutter clean"
-    description: Clean build caches across the monorepo
+    run: melos exec -- flutter clean
+    description: Clean all build artifacts
 
-  get:
-    run: melos exec -- "flutter pub get"
-    description: Fetch all dependencies
+  format:
+    run: melos exec -- dart format lib --set-exit-if-changed
+    description: Format all Dart source files
 
-  codegen:
-    run: melos exec --depends-on="build_runner" -- "flutter pub run build_runner build --delete-conflicting-outputs"
-    description: Trigger code generators (Freezed, JSON Serialization, etc.)
+  drift:build:
+    run: dart run build_runner build --delete-conflicting-outputs
+    packageFilters:
+      scope: store_admin_desktop
+    description: Generate Drift database schema
+
+  deps:check:
+    run: melos exec -- flutter pub deps
+    description: Check dependency resolution

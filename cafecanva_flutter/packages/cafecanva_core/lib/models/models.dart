@@ -71,7 +71,7 @@ class Branch {
 
   factory Branch.fromJson(Map<String, dynamic> json) => Branch(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String, // Safe mapping
     name: json['name'] as String,
     status: json['status'] as String? ?? 'ACTIVE',
     createdAt: DateTime.parse(json['created_at'] as String),
@@ -131,7 +131,7 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String?,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String?,
     branchId: json['branch_id'] as String?,
     fullName: json['full_name'] as String? ?? json['name'] as String? ?? 'Anonymous',
     email: json['email'] as String?,
@@ -155,6 +155,13 @@ class UserProfile {
     'pin_hash': pinHash,
     'fcm_token': fcmToken,
     'created_at': createdAt.toIso8601String(),
+  };
+
+  Map<String, dynamic> toMinimalJson() => {
+    'id': id,
+    'name': fullName,
+    'role': role,
+    'branch_id': branchId,
   };
 
   UserProfile copyWith({
@@ -209,7 +216,7 @@ class MenuCategory {
 
   factory MenuCategory.fromJson(Map<String, dynamic> json) => MenuCategory(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String,
     branchId: json['branch_id'] as String,
     name: json['name'] as String,
     sortOrder: json['sort_order'] as int? ?? 0,
@@ -237,7 +244,7 @@ class MenuItem {
   final String categoryId;
   final String name;
   final String? description;
-  final int price; // Paise
+  final int price; // In Paise (Int)
   final String? imageUrl;
   final String status; // available, unavailable, hidden
   final bool allowsModifiers;
@@ -265,12 +272,12 @@ class MenuItem {
 
   factory MenuItem.fromJson(Map<String, dynamic> json) => MenuItem(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String,
     branchId: json['branch_id'] as String,
     categoryId: json['category_id'] as String,
     name: json['name'] as String,
     description: json['description'] as String?,
-    price: json['price'] as int,
+    price: ((json['price'] as num) * 100).round(), // Blocker 6: num -> paise
     imageUrl: json['image_url'] as String?,
     status: json['status'] as String? ?? 'available',
     allowsModifiers: json['allows_modifiers'] as bool? ?? false,
@@ -287,7 +294,7 @@ class MenuItem {
     'category_id': categoryId,
     'name': name,
     'description': description,
-    'price': price,
+    'price': price / 100.0, // Blocker 6: paise -> num rate
     'image_url': imageUrl,
     'status': status,
     'allows_modifiers': allowsModifiers,
@@ -341,7 +348,7 @@ class ModifierOption {
   final String id;
   final String groupId;
   final String name;
-  final int extraPrice; // Paise
+  final int extraPrice; // In Paise (Int)
   final bool isDefault;
 
   ModifierOption({
@@ -356,7 +363,7 @@ class ModifierOption {
     id: json['id'] as String,
     groupId: json['group_id'] as String,
     name: json['name'] as String,
-    extraPrice: json['extra_price'] as int? ?? 0,
+    extraPrice: ((json['extra_price'] as num) * 100).round(), // num -> paise
     isDefault: json['is_default'] as bool? ?? false,
   );
 
@@ -364,7 +371,7 @@ class ModifierOption {
     'id': id,
     'group_id': groupId,
     'name': name,
-    'extra_price': extraPrice,
+    'extra_price': extraPrice / 100.0, // paise -> num
     'is_default': isDefault,
   };
 }
@@ -398,7 +405,7 @@ class TableModel {
 
   factory TableModel.fromJson(Map<String, dynamic> json) => TableModel(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String,
     branchId: json['branch_id'] as String,
     name: json['name'] as String,
     capacity: json['capacity'] as int? ?? 2,
@@ -470,7 +477,7 @@ class Customer {
 
   factory Customer.fromJson(Map<String, dynamic> json) => Customer(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String,
     branchId: json['branch_id'] as String,
     name: json['name'] as String,
     phone: json['phone'] as String,
@@ -500,10 +507,10 @@ class OrderModel {
   final String? createdBy;
   final String status; // pending, confirmed, preparing, ready, served, billed, paid, cancelled
   final String source; // staff_app, storefront
-  final int subtotal; // Paise
-  final int discountAmount; // Paise
+  final int subtotal; // In Paise (Int)
+  final int discountAmount; // In Paise (Int)
   final List<dynamic> extraCharges;
-  final int total; // Paise
+  final int total; // In Paise (Int)
   final String? notes;
   final DateTime createdAt;
   final List<OrderItemModel> items;
@@ -528,19 +535,19 @@ class OrderModel {
 
   factory OrderModel.fromJson(Map<String, dynamic> json, [List<OrderItemModel> items = const []]) => OrderModel(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String,
     branchId: json['branch_id'] as String,
     tableId: json['table_id'] as String?,
     customerId: json['customer_id'] as String?,
     createdBy: json['created_by'] as String?,
     status: json['status'] as String? ?? 'pending',
     source: json['source'] as String? ?? 'staff_app',
-    subtotal: json['subtotal'] as int? ?? 0,
-    discountAmount: json['discount_amount'] as int? ?? 0,
+    subtotal: ((json['subtotal'] as num? ?? 0) * 100).round(), // Blocker 6: num -> paise
+    discountAmount: ((json['discount_amount'] as num? ?? 0) * 100).round(),
     extraCharges: json['extra_charges'] is String 
         ? jsonDecode(json['extra_charges'] as String) as List<dynamic>
         : json['extra_charges'] as List<dynamic>? ?? const [],
-    total: json['total'] as int,
+    total: ((json['total'] as num) * 100).round(),
     notes: json['notes'] as String?,
     createdAt: DateTime.parse(json['created_at'] as String),
     items: items,
@@ -555,10 +562,10 @@ class OrderModel {
     'created_by': createdBy,
     'status': status,
     'source': source,
-    'subtotal': subtotal,
-    'discount_amount': discountAmount,
+    'subtotal': subtotal / 100.0, // Blocker 6: paise -> num
+    'discount_amount': discountAmount / 100.0,
     'extra_charges': extraCharges,
-    'total': total,
+    'total': total / 100.0,
     'notes': notes,
     'created_at': createdAt.toIso8601String(),
   };
@@ -603,7 +610,7 @@ class OrderItemModel {
   final String orderId;
   final String? menuItemId;
   final int quantity;
-  final int unitPrice; // Paise
+  final int unitPrice; // In Paise (Int)
   final List<dynamic> modifierSelections;
   final String itemName;
   final String? itemNotes;
@@ -626,7 +633,7 @@ class OrderItemModel {
     orderId: json['order_id'] as String,
     menuItemId: json['menu_item_id'] as String?,
     quantity: json['quantity'] as int? ?? 1,
-    unitPrice: json['unit_price'] as int,
+    unitPrice: ((json['unit_price'] as num) * 100).round(), // num -> paise
     modifierSelections: json['modifier_selections'] is String 
         ? jsonDecode(json['modifier_selections'] as String) as List<dynamic>
         : json['modifier_selections'] as List<dynamic>? ?? const [],
@@ -640,7 +647,7 @@ class OrderItemModel {
     'order_id': orderId,
     'menu_item_id': menuItemId,
     'quantity': quantity,
-    'unit_price': unitPrice,
+    'unit_price': unitPrice / 100.0, // paise -> num
     'modifier_selections': modifierSelections,
     'item_name': itemName,
     'item_notes': itemNotes,
@@ -654,11 +661,11 @@ class BillModel {
   final String branchId;
   final String? tableId;
   final List<String> orderIds;
-  final int subtotal; // Paise
-  final int tax; // Paise
-  final int discountAmount; // Paise
+  final int subtotal; // In Paise (Int)
+  final int tax; // In Paise (Int)
+  final int discountAmount; // In Paise (Int)
   final List<dynamic> extraCharges;
-  final int total; // Paise
+  final int total; // In Paise (Int)
   final String status; // open, paid, voided
   final String? paymentMethod;
   final DateTime? paidAt;
@@ -699,17 +706,17 @@ class BillModel {
 
     return BillModel(
       id: json['id'] as String,
-      tenantId: json['tenant_id'] as String,
+      tenantId: (json['tenant_id'] ?? json['org_id']) as String,
       branchId: json['branch_id'] as String,
       tableId: json['table_id'] as String?,
       orderIds: parsedIds,
-      subtotal: json['subtotal'] as int,
-      tax: json['tax'] as int? ?? 0,
-      discountAmount: json['discount_amount'] as int? ?? 0,
+      subtotal: ((json['subtotal'] as num) * 100).round(), // num -> paise
+      tax: ((json['tax'] as num? ?? 0) * 100).round(),
+      discountAmount: ((json['discount_amount'] as num? ?? 0) * 100).round(),
       extraCharges: json['extra_charges'] is String 
           ? jsonDecode(json['extra_charges'] as String) as List<dynamic>
           : json['extra_charges'] as List<dynamic>? ?? const [],
-      total: json['total'] as int,
+      total: ((json['total'] as num) * 100).round(),
       status: json['status'] as String? ?? 'open',
       paymentMethod: json['payment_method'] as String?,
       paidAt: json['paid_at'] != null ? DateTime.parse(json['paid_at'] as String) : null,
@@ -724,11 +731,11 @@ class BillModel {
     'branch_id': branchId,
     'table_id': tableId,
     'orders': orderIds,
-    'subtotal': subtotal,
-    'tax': tax,
-    'discount_amount': discountAmount,
+    'subtotal': subtotal / 100.0, // paise -> num
+    'tax': tax / 100.0,
+    'discount_amount': discountAmount / 100.0,
     'extra_charges': extraCharges,
-    'total': total,
+    'total': total / 100.0,
     'status': status,
     'payment_method': paymentMethod,
     'paid_at': paidAt?.toIso8601String(),
@@ -744,7 +751,7 @@ class TableSession {
   final DateTime checkInAt;
   final DateTime? checkOutAt;
   final int? durationMinutes;
-  final int totalRevenue; // Paise
+  final int totalRevenue; // In Paise
   final int customerCount;
   final String? assignedStaffId;
   final String? billId;
@@ -765,11 +772,11 @@ class TableSession {
   factory TableSession.fromJson(Map<String, dynamic> json) => TableSession(
     id: json['id'] as String,
     tableId: json['table_id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String,
     checkInAt: DateTime.parse(json['check_in_at'] as String),
     checkOutAt: json['check_out_at'] != null ? DateTime.parse(json['check_out_at'] as String) : null,
     durationMinutes: json['duration_minutes'] as int?,
-    totalRevenue: json['total_revenue'] as int? ?? 0,
+    totalRevenue: ((json['total_revenue'] as num? ?? 0) * 100).round(), // num -> paise
     customerCount: json['customer_count'] as int? ?? 1,
     assignedStaffId: json['assigned_staff_id'] as String?,
     billId: json['bill_id'] as String?,
@@ -782,7 +789,7 @@ class TableSession {
     'check_in_at': checkInAt.toIso8601String(),
     'check_out_at': checkOutAt?.toIso8601String(),
     'duration_minutes': durationMinutes,
-    'total_revenue': totalRevenue,
+    'total_revenue': totalRevenue / 100.0, // paise -> num
     'customer_count': customerCount,
     'assigned_staff_id': assignedStaffId,
     'bill_id': billId,
@@ -812,7 +819,7 @@ class StaffCall {
 
   factory StaffCall.fromJson(Map<String, dynamic> json) => StaffCall(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String,
     tableId: json['table_id'] as String,
     sessionId: json['session_id'] as String?,
     calledAt: DateTime.parse(json['called_at'] as String),
@@ -846,6 +853,7 @@ class StoreSettings {
   final String? gstin;
   final String currency;
   final String timezone;
+  final String printerWidth; // mm80 or mm58
 
   StoreSettings({
     required this.id,
@@ -858,11 +866,12 @@ class StoreSettings {
     this.gstin,
     this.currency = 'INR',
     this.timezone = 'Asia/Kolkata',
+    this.printerWidth = 'mm80',
   });
 
   factory StoreSettings.fromJson(Map<String, dynamic> json) => StoreSettings(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String,
     branchId: json['branch_id'] as String,
     storeName: json['store_name'] as String,
     address: json['address'] as String?,
@@ -871,6 +880,7 @@ class StoreSettings {
     gstin: json['gstin'] as String?,
     currency: json['currency'] as String? ?? 'INR',
     timezone: json['timezone'] as String? ?? 'Asia/Kolkata',
+    printerWidth: json['printer_width'] as String? ?? 'mm80', // Fetch default Mm preference
   );
 
   Map<String, dynamic> toJson() => {
@@ -884,6 +894,7 @@ class StoreSettings {
     'gstin': gstin,
     'currency': currency,
     'timezone': timezone,
+    'printer_width': printerWidth,
   };
 }
 
@@ -912,7 +923,7 @@ class Branding {
 
   factory Branding.fromJson(Map<String, dynamic> json) => Branding(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String,
     branchId: json['branch_id'] as String,
     logoUrl: json['logo_url'] as String?,
     bannerUrl: json['banner_url'] as String?,
@@ -962,7 +973,7 @@ class StorefrontConfig {
 
   factory StorefrontConfig.fromJson(Map<String, dynamic> json) => StorefrontConfig(
     id: json['id'] as String,
-    tenantId: json['tenant_id'] as String,
+    tenantId: (json['tenant_id'] ?? json['org_id']) as String,
     branchId: json['branch_id'] as String,
     slug: json['slug'] as String,
     domain: json['domain'] as String?,

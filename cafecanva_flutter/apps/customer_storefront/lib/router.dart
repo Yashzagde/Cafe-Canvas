@@ -11,9 +11,15 @@ final GoRouter storefrontRouter = GoRouter(
     ),
     GoRoute(
       path: '/:slug',
-      builder: (context, state) => StorefrontHomeScreen(
-        slug: state.pathParameters['slug'] ?? 'default-slug',
-      ),
+      builder: (context, state) {
+        final slug = state.pathParameters['slug'] ?? 'default-slug';
+        // Extract table prefill query parameters from scanned QR codes
+        final tableId = state.uri.queryParameters['table'];
+        return StorefrontHomeScreen(
+          slug: slug,
+          prefilledTableId: tableId,
+        );
+      },
     ),
     GoRoute(
       path: '/:slug/item/:itemId',

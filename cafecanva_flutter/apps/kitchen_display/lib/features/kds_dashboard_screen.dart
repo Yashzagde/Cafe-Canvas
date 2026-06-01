@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
+import 'kds/kds_audio_controller.dart';
 
 class KdsDashboardScreen extends StatefulWidget {
   final String branchId;
@@ -20,13 +21,14 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
   final OrderRepository _orderRepo = OrderRepository();
   final TableRepository _tableRepo = TableRepository();
   final RealtimeService _realtimeService = RealtimeService.instance;
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final KdsAudioController _audioController = KdsAudioController();
 
   List<OrderModel> _orders = [];
   Map<String, String> _tableNames = {};
   bool _isLoading = true;
   String? _errorMessage;
   late Timer _tickerTimer;
+  Timer? _autoUnmuteTimer;
 
   @override
   void initState() {
@@ -34,7 +36,7 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
     _loadInitialData();
     _setupRealtime();
     
-    // Ticker to refresh elapsed time displays on cards every minute
+    // Refresh card elapsed timers periodically
     _tickerTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (mounted) setState(() {});
     });
@@ -47,14 +49,12 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
         _errorMessage = null;
       });
 
-      // 1. Fetch tables to map table IDs to display names
       final tables = await _tableRepo.fetchTables(widget.branchId);
       final Map<String, String> tableMap = {};
       for (final t in tables) {
         tableMap[t.id] = t.name;
       }
 
-      // 2. Fetch active orders
       final activeOrders = await _orderRepo.fetchOrders(widget.branchId);
 
       if (mounted) {
@@ -67,7 +67,7 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = CcError.friendly(e);
           _isLoading = false;
         });
       }
@@ -75,46 +75,63 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
   }
 
   void _setupRealtime() {
+    // Blocker 3: Realtime subscriptions strictly bounded inside Postgres branch filters
     _realtimeService.subscribeToKitchenOrders(
       branchId: widget.branchId,
       onOrderCreated: (payload) {
-        _playIncomingChime();
-        _loadInitialData(); // Reload orders on incoming tickets
+        final orderId = payload.newRecord['id'] as String;
+        _audioController.chimeForOrder(orderId);
+        _loadInitialData();
       },
       onOrderItemUpdated: (payload) {
-        _loadInitialData(); // Reload on item progress updates
+        _loadInitialData();
       },
     );
   }
 
-  Future<void> _playIncomingChime() async {
-    try {
-      // Play a short system click sound or local alert chimes safely
-      await _audioPlayer.play(AssetSource('sounds/notification.wav'));
-    } catch (_) {
-      // Fallback: print to log or trigger device vibration
-      debugPrint('Incoming order chime played.');
-    }
-  }
-
-  Future<void> _updateItemStatus(String itemId, String newStatus) async {
+  Future<void> _updateItemStatus(String itemId, String orderId, String newStatus) async {
     try {
       await _orderRepo.updateOrderItemKdsStatus(itemId, newStatus);
+      
+      // Stop loop chimes once prep work has started
+      if (newStatus == 'preparing') {
+        await _audioController.stopChimeForOrder(orderId);
+      }
+      
       await _loadInitialData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to update status: $e'),
+          content: Text(CcError.friendly(e)),
           backgroundColor: CafeCanvaColors.error,
         ),
       );
     }
   }
 
+  void _toggleMute() {
+    setState(() {
+      _audioController.toggleMute();
+    });
+
+    // Blocker 9: Safety auto-unmute chimes trigger after 30 minutes
+    _autoUnmuteTimer?.cancel();
+    if (_audioController.isMuted) {
+      _autoUnmuteTimer = Timer(const Duration(minutes: 30), () {
+        if (mounted && _audioController.isMuted) {
+          setState(() {
+            _audioController.toggleMute();
+          });
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
     _tickerTimer.cancel();
-    _audioPlayer.dispose();
+    _autoUnmuteTimer?.cancel();
+    _audioController.dispose();
     _realtimeService.unsubscribeAll();
     super.dispose();
   }
@@ -136,7 +153,6 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
       );
     }
 
-    // Split items by column statuses
     final pendingItems = _filterItemsByStatus('pending');
     final preparingItems = _filterItemsByStatus('preparing');
     final readyItems = _filterItemsByStatus('ready');
@@ -161,6 +177,14 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
           ],
         ),
         actions: [
+          // Blocker 9: Audio loop chimes mute controller chimes toggle
+          IconButton(
+            onPressed: _toggleMute,
+            icon: Icon(
+              _audioController.isMuted ? Icons.volume_off : Icons.volume_up,
+              color: _audioController.isMuted ? CafeCanvaColors.error : Colors.white,
+            ),
+          ),
           IconButton(
             onPressed: _loadInitialData,
             icon: const Icon(Icons.refresh, color: Colors.white),
@@ -207,7 +231,6 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
     final List<Map<String, dynamic>> result = [];
     for (final order in _orders) {
       for (final item in order.items) {
-        // Match column KDS status
         final itemStatus = item.toJson()['kds_status'] ?? 'pending';
         if (itemStatus == status) {
           result.add({
@@ -249,7 +272,7 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
           child: items.isEmpty
               ? const Center(
                   child: Text(
-                    'No items in this queue',
+                    'No items in queue',
                     style: TextStyle(color: Colors.white30, fontSize: 13.0),
                   ),
                 )
@@ -384,7 +407,7 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
                                   ),
                                   padding: const EdgeInsets.symmetric(vertical: 12.0),
                                 ),
-                                onPressed: () => _updateItemStatus(item.id, nextStatus),
+                                onPressed: () => _updateItemStatus(item.id, order.id, nextStatus),
                                 child: Text(
                                   actionLabel,
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0, letterSpacing: 0.5),
