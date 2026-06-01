@@ -7,7 +7,7 @@
   },
   "files": [
     "package.json",
-    "Backend-Software/dist/Store-Admin/electron/**/*",
+    "Backend-Software/dist/Backend-Software/Store-Admin/electron/**/*",
     "Backend-Software/Store-Admin/frontend/out/**/*",
     "Backend-Software/Store-Admin/frontend/public/**/*",
     "Backend-Software/Store-Admin/frontend/package.json"

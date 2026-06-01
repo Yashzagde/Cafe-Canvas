@@ -1,47 +1,62 @@
-import '../models/models.dart';
-import '../supabase/supabase_service.dart';
+import '../models/table_model.dart';
+import '../models/table_session.dart';
+import '../services/supabase_service.dart';
 
+/// Repository for table management and sessions.
 class TableRepository {
-  final _client = SupabaseService.instance.client;
+  TableRepository._();
 
-  Future<List<TableModel>> fetchTables(String branchId) async {
-    final response = await _client
-        .from('tables')
+  static Future<List<CafeTable>> getTables(String tenantId, String branchId) async {
+    final data = await SupabaseService.from('tables')
         .select()
+        .eq('tenant_id', tenantId)
         .eq('branch_id', branchId)
-        .isFilter('deleted_at', 'null')
-        .order('name', ascending: true);
-
-    return (response as List).map((t) => TableModel.fromJson(t)).toList();
+        .is_('deleted_at', null)
+        .order('name');
+    return (data as List).map((e) => CafeTable.fromJson(e)).toList();
   }
 
-  Future<TableModel> createTable(Map<String, dynamic> data) async {
-    final response = await _client
-        .from('tables')
-        .insert(data)
+  static Future<CafeTable> createTable(Map<String, dynamic> table) async {
+    final data = await SupabaseService.from('tables')
+        .insert(table)
         .select()
         .single();
-    return TableModel.fromJson(response);
+    return CafeTable.fromJson(data);
   }
 
-  Future<TableModel> updateTable(String id, Map<String, dynamic> data) async {
-    final response = await _client
-        .from('tables')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-    return TableModel.fromJson(response);
+  static Future<void> updateTable(String id, Map<String, dynamic> updates) async {
+    updates['updated_at'] = DateTime.now().toUtc().toIso8601String();
+    await SupabaseService.from('tables').update(updates).eq('id', id);
   }
 
-  Future<void> updateTableStatus(String id, String status) async {
-    await _client.from('tables').update({'status': status}).eq('id', id);
-  }
-
-  Future<void> deleteTable(String id) async {
-    await _client
-        .from('tables')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+  static Future<void> updateTableStatus(String id, String status) async {
+    await SupabaseService.from('tables')
+        .update({'status': status, 'updated_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
+  }
+
+  static Future<void> deleteTable(String id) async {
+    await SupabaseService.from('tables')
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', id);
+  }
+
+  // ─── SESSIONS ───
+
+  static Future<TableSession> startSession(String tenantId, String tableId) async {
+    final data = await SupabaseService.from('table_sessions')
+        .insert({'tenant_id': tenantId, 'table_id': tableId})
+        .select()
+        .single();
+    return TableSession.fromJson(data);
+  }
+
+  static Future<void> endSession(String tableId) async {
+    await SupabaseService.from('table_sessions')
+        .update({
+          'check_out_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('table_id', tableId)
+        .is_('check_out_at', null);
   }
 }

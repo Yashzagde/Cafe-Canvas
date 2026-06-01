@@ -1,17 +1,24 @@
 name: cafecanva_ui
-description: Premium design system, theme tokens, and reusable responsive widgets for CafeCanva.
+description: Shared UI package - design system, theme, and reusable widgets for CafeCanva
 version: 1.0.0
-publish_to: 'none'
+publish_to: none
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
-  flutter: '>=3.0.0'
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  google_fonts: ^6.2.1
-  shimmer: ^3.0.0
-  cached_network_image: ^3.3.1
   cafecanva_core:
     path: ../cafecanva_core
+  google_fonts: ^6.2.1
+  cached_network_image: ^3.3.1
+  flutter_svg: ^2.0.10+1
+  shimmer: ^3.0.0
+  fl_chart: ^0.68.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

@@ -1,103 +1,127 @@
-import '../models/models.dart';
-import '../supabase/supabase_service.dart';
+import '../models/order.dart';
+import '../models/order_item.dart';
+import '../services/supabase_service.dart';
 
+/// Repository for creating/managing orders.
 class OrderRepository {
-  final _client = SupabaseService.instance.client;
+  OrderRepository._();
 
-  /// Fetch active orders for a branch, optionally filtered by status
-  Future<List<OrderModel>> fetchOrders(String branchId, {String? status}) async {
-    var query = _client.from('orders').select().eq('branch_id', branchId);
-    
-    if (status != null) {
-      query = query.eq('status', status);
-    }
-    
-    final response = await query.order('created_at', ascending: false);
-    final List<OrderModel> orders = [];
-    
-    for (final o in response as List) {
-      final List<dynamic> itemsRes = await _client
-          .from('order_items')
-          .select()
-          .eq('order_id', o['id']);
-      
-      final items = itemsRes.map((i) => OrderItemModel.fromJson(i)).toList();
-      orders.add(OrderModel.fromJson(o, items));
-    }
-    
-    return orders;
-  }
-
-  /// Create order along with nested order items inside a transaction
-  Future<OrderModel> createOrder({
+  /// Create a new order with items. Returns the created order.
+  static Future<Order> createOrder({
     required String tenantId,
     required String branchId,
-    String? tableId,
-    String? customerId,
-    required int subtotal,
-    required int discountAmount,
-    required int total,
+    required String tableId,
+    required String createdBy,
+    required List<Map<String, dynamic>> items,
     String? notes,
-    required List<Map<String, dynamic>> itemsData,
+    int subtotal = 0,
+    int total = 0,
   }) async {
-    // 1. Create order
-    final orderRes = await _client.from('orders').insert({
-      'tenant_id': tenantId,
-      'branch_id': branchId,
-      'table_id': tableId,
-      'customer_id': customerId,
-      'status': 'pending',
-      'subtotal': subtotal,
-      'discount_amount': discountAmount,
-      'total': total,
-      'notes': notes,
-    }).select().single();
+    // 1. Insert the order
+    final orderData = await SupabaseService.from('orders')
+        .insert({
+          'tenant_id': tenantId,
+          'branch_id': branchId,
+          'table_id': tableId,
+          'created_by': createdBy,
+          'status': 'pending',
+          'subtotal': subtotal,
+          'discount_amount': 0,
+          'total': total,
+          'notes': notes,
+        })
+        .select()
+        .single();
 
-    final orderId = orderRes['id'] as String;
+    final order = Order.fromJson(orderData);
 
-    // 2. Insert items
-    final List<Map<String, dynamic>> itemsToInsert = [];
-    for (final item in itemsData) {
-      itemsToInsert.add({
-        'order_id': orderId,
-        'menu_item_id': item['menuItemId'],
-        'item_name': item['itemName'],
-        'unit_price': item['unitPrice'],
-        'quantity': item['quantity'],
-        'modifier_selections': item['modifierSelections'] ?? [],
-        'item_notes': item['itemNotes'],
-      });
-    }
+    // 2. Insert order items
+    final itemsPayload = items.map((item) => {
+          ...item,
+          'order_id': order.id,
+        }).toList();
 
-    final itemsRes = await _client.from('order_items').insert(itemsToInsert).select();
-    final items = (itemsRes as List).map((i) => OrderItemModel.fromJson(i)).toList();
+    await SupabaseService.from('order_items').insert(itemsPayload);
 
-    // 3. Update table status if dine-in
-    if (tableId != null) {
-      await _client.from('tables').update({'status': 'occupied'}).eq('id', tableId);
-    }
+    // 3. Set table status to occupied
+    await SupabaseService.from('tables')
+        .update({'status': 'occupied'})
+        .eq('id', tableId);
 
-    return OrderModel.fromJson(orderRes, items);
+    return order;
   }
 
-  /// Update the high-level order state (pending -> preparing -> ready -> served)
-  Future<void> updateOrderStatus(String orderId, String status) async {
-    await _client.from('orders').update({'status': status}).eq('id', orderId);
+  /// Get active orders for a branch.
+  static Future<List<Order>> getActiveOrders(String tenantId, String branchId) async {
+    final data = await SupabaseService.from('orders')
+        .select()
+        .eq('tenant_id', tenantId)
+        .eq('branch_id', branchId)
+        .inFilter('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed'])
+        .order('created_at', ascending: false);
+
+    return (data as List).map((e) => Order.fromJson(e)).toList();
   }
 
-  /// Update KDS-specific food item statuses
-  Future<void> updateOrderItemKdsStatus(String orderItemId, String status) async {
-    await _client.from('order_items').update({'kds_status': status}).eq('id', orderItemId);
+  /// Get order items for a specific order.
+  static Future<List<OrderItem>> getOrderItems(String orderId) async {
+    final data = await SupabaseService.from('order_items')
+        .select()
+        .eq('order_id', orderId);
+    return (data as List).map((e) => OrderItem.fromJson(e)).toList();
   }
 
-  /// Fetch order items meant for kitchen displays
-  Future<List<OrderItemModel>> fetchOrderItemsForKds(String branchId) async {
-    final response = await _client
-        .from('order_items')
-        .select('*, orders(branch_id)')
-        .eq('orders.branch_id', branchId)
-        .order('created_at', ascending: true);
+  /// Get order items for multiple orders.
+  static Future<List<OrderItem>> getOrderItemsBatch(List<String> orderIds) async {
+    if (orderIds.isEmpty) return [];
+    final data = await SupabaseService.from('order_items')
+        .select()
+        .inFilter('order_id', orderIds);
+    return (data as List).map((e) => OrderItem.fromJson(e)).toList();
+  }
 
-    return (response as List).map((i) => OrderItemModel.fromJson(i)).toList();
+  /// Update order status.
+  static Future<void> updateOrderStatus(String orderId, String status) async {
+    await SupabaseService.from('orders')
+        .update({
+          'status': status,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', orderId);
+  }
+
+  /// Update an order item's KDS status.
+  static Future<void> updateItemKdsStatus(String itemId, String kdsStatus) async {
+    await SupabaseService.from('order_items')
+        .update({'kds_status': kdsStatus})
+        .eq('id', itemId);
+  }
+
+  /// Get orders for a specific table.
+  static Future<List<Order>> getTableOrders(String tableId) async {
+    final data = await SupabaseService.from('orders')
+        .select()
+        .eq('table_id', tableId)
+        .not('status', 'in', '("cancelled","paid")')
+        .order('created_at', ascending: false);
+    return (data as List).map((e) => Order.fromJson(e)).toList();
+  }
+
+  /// Get all orders (with date filter for admin).
+  static Future<List<Order>> getAllOrders(
+    String tenantId, String branchId, {
+    String? fromDate,
+    String? toDate,
+    String? status,
+  }) async {
+    var query = SupabaseService.from('orders')
+        .select()
+        .eq('tenant_id', tenantId)
+        .eq('branch_id', branchId);
+    if (status != null) query = query.eq('status', status);
+    if (fromDate != null) query = query.gte('created_at', fromDate);
+    if (toDate != null) query = query.lte('created_at', toDate);
+    final data = await query.order('created_at', ascending: false);
+    return (data as List).map((e) => Order.fromJson(e)).toList();
   }
 }

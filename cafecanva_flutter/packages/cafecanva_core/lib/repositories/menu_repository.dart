@@ -1,121 +1,145 @@
-import 'dart:typed_data';
-import '../models/models.dart';
-import '../supabase/supabase_service.dart';
+import '../models/menu_category.dart';
+import '../models/menu_item.dart';
+import '../models/modifier_group.dart';
+import '../services/supabase_service.dart';
 
+/// Repository for menu categories, items, and modifiers.
 class MenuRepository {
-  final _client = SupabaseService.instance.client;
+  MenuRepository._();
 
-  // --- Category CRUD Operations ---
+  // ─── CATEGORIES ───
 
-  Future<List<MenuCategory>> fetchCategories(String branchId) async {
-    final response = await _client
-        .from('menu_categories')
+  static Future<List<MenuCategory>> getCategories(String tenantId, String branchId) async {
+    final data = await SupabaseService.from('menu_categories')
         .select()
+        .eq('tenant_id', tenantId)
         .eq('branch_id', branchId)
-        .isFilter('deleted_at', 'null')
-        .order('sort_order', ascending: true);
-
-    return (response as List).map((c) => MenuCategory.fromJson(c)).toList();
+        .is_('deleted_at', null)
+        .order('sort_order');
+    return (data as List).map((e) => MenuCategory.fromJson(e)).toList();
   }
 
-  Future<MenuCategory> createCategory(Map<String, dynamic> data) async {
-    final response = await _client
-        .from('menu_categories')
-        .insert(data)
+  static Future<MenuCategory> createCategory(Map<String, dynamic> category) async {
+    final data = await SupabaseService.from('menu_categories')
+        .insert(category)
         .select()
         .single();
-    return MenuCategory.fromJson(response);
+    return MenuCategory.fromJson(data);
   }
 
-  Future<MenuCategory> updateCategory(String id, Map<String, dynamic> data) async {
-    final response = await _client
-        .from('menu_categories')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-    return MenuCategory.fromJson(response);
+  static Future<void> updateCategory(String id, Map<String, dynamic> updates) async {
+    await SupabaseService.from('menu_categories').update(updates).eq('id', id);
   }
 
-  Future<void> deleteCategory(String id) async {
-    await _client
-        .from('menu_categories')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+  static Future<void> deleteCategory(String id) async {
+    await SupabaseService.from('menu_categories')
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
   }
 
-  // --- MenuItem CRUD Operations ---
+  // ─── MENU ITEMS ───
 
-  Future<List<MenuItem>> fetchItems(String branchId, {String? categoryId}) async {
-    var query = _client.from('menu_items').select().eq('branch_id', branchId).isFilter('deleted_at', 'null');
-    
+  static Future<List<MenuItem>> getItems(String tenantId, String branchId, {String? categoryId}) async {
+    var query = SupabaseService.from('menu_items')
+        .select()
+        .eq('tenant_id', tenantId)
+        .eq('branch_id', branchId)
+        .is_('deleted_at', null);
     if (categoryId != null) {
       query = query.eq('category_id', categoryId);
     }
-    
-    final response = await query.order('name', ascending: true);
-    return (response as List).map((i) => MenuItem.fromJson(i)).toList();
+    final data = await query.order('sort_order');
+    return (data as List).map((e) => MenuItem.fromJson(e)).toList();
   }
 
-  Future<MenuItem> createItem(Map<String, dynamic> data) async {
-    final response = await _client
-        .from('menu_items')
-        .insert(data)
+  static Future<List<MenuItem>> getAvailableItems(String tenantId, String branchId) async {
+    final data = await SupabaseService.from('menu_items')
+        .select()
+        .eq('tenant_id', tenantId)
+        .eq('branch_id', branchId)
+        .eq('status', 'available')
+        .is_('deleted_at', null)
+        .order('sort_order');
+    return (data as List).map((e) => MenuItem.fromJson(e)).toList();
+  }
+
+  static Future<MenuItem> createItem(Map<String, dynamic> item) async {
+    final data = await SupabaseService.from('menu_items')
+        .insert(item)
         .select()
         .single();
-    return MenuItem.fromJson(response);
+    return MenuItem.fromJson(data);
   }
 
-  Future<MenuItem> updateItem(String id, Map<String, dynamic> data) async {
-    final response = await _client
-        .from('menu_items')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-    return MenuItem.fromJson(response);
+  static Future<void> updateItem(String id, Map<String, dynamic> updates) async {
+    updates['updated_at'] = DateTime.now().toUtc().toIso8601String();
+    await SupabaseService.from('menu_items').update(updates).eq('id', id);
   }
 
-  Future<void> deleteItem(String id) async {
-    await _client
-        .from('menu_items')
-        .update({'deleted_at': DateTime.now().toIso8601String()})
+  static Future<void> toggleItemStatus(String id, String newStatus) async {
+    await SupabaseService.from('menu_items')
+        .update({'status': newStatus, 'updated_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
   }
 
-  // --- Modifier CRUD Operations ---
+  static Future<void> deleteItem(String id) async {
+    await SupabaseService.from('menu_items')
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', id);
+  }
 
-  Future<List<ModifierGroup>> fetchModifiersForItem(String itemId) async {
-    final List<dynamic> groupsRes = await _client
-        .from('modifier_groups')
+  // ─── MODIFIERS ───
+
+  static Future<List<ModifierGroup>> getModifierGroups(String itemId) async {
+    final groupsData = await SupabaseService.from('modifier_groups')
         .select()
         .eq('item_id', itemId);
 
-    final List<ModifierGroup> groups = [];
-    for (final g in groupsRes) {
-      final List<dynamic> optionsRes = await _client
-          .from('modifier_options')
-          .select()
-          .eq('group_id', g['id']);
-      
-      final options = optionsRes.map((o) => ModifierOption.fromJson(o)).toList();
-      groups.add(ModifierGroup.fromJson(g, options));
-    }
-    return groups;
+    final groups = (groupsData as List).map((e) => ModifierGroup.fromJson(e)).toList();
+
+    if (groups.isEmpty) return groups;
+
+    final groupIds = groups.map((g) => g.id).toList();
+    final optionsData = await SupabaseService.from('modifier_options')
+        .select()
+        .inFilter('group_id', groupIds);
+
+    final options = (optionsData as List).map((e) => ModifierOption.fromJson(e)).toList();
+
+    return groups.map((g) => g.copyWith(
+      options: options.where((o) => o.groupId == g.id).toList(),
+    )).toList();
   }
 
-  // --- Image Upload Operations ---
+  static Future<ModifierGroup> createModifierGroup(Map<String, dynamic> group) async {
+    final data = await SupabaseService.from('modifier_groups')
+        .insert(group)
+        .select()
+        .single();
+    return ModifierGroup.fromJson(data);
+  }
 
-  Future<String> uploadMenuImage(String tenantId, String itemId, Uint8List imageBytes) async {
-    final path = '$tenantId/$itemId.webp';
-    await _client.storage.from('menu-images').uploadBinary(
+  static Future<void> deleteModifierGroup(String groupId) async {
+    await SupabaseService.from('modifier_groups').delete().eq('id', groupId);
+  }
+
+  static Future<ModifierOption> createModifierOption(Map<String, dynamic> option) async {
+    final data = await SupabaseService.from('modifier_options')
+        .insert(option)
+        .select()
+        .single();
+    return ModifierOption.fromJson(data);
+  }
+
+  // ─── IMAGE UPLOAD ───
+
+  static Future<String> uploadMenuImage(String tenantId, String itemId, List<int> imageBytes) async {
+    final path = '$tenantId/menu/$itemId.jpg';
+    await SupabaseService.storage.from('menu-images').uploadBinary(
       path,
       imageBytes,
-      fileOptions: const FileOptions(
-        upsert: true, 
-        contentType: 'image/webp',
-      ),
+      fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
     );
-    return _client.storage.from('menu-images').getPublicUrl(path);
+    return SupabaseService.storage.from('menu-images').getPublicUrl(path);
   }
 }

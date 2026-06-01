@@ -6,6 +6,13 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "redirects": [
+      {
+        "source": "/download",
+        "destination": "https://www.cafecanvas.bar/download",
+        "type": 301
+      }
+    ],
     "headers": [
       {
         "source": "**",

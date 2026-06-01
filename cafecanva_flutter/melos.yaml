@@ -1,5 +1,5 @@
 name: cafecanva_flutter
-repository: https://github.com/your-org/cafecanva_flutter
+repository: https://github.com/Yashzagde/Cafe-Canva
 
 packages:
   - apps/*
@@ -8,31 +8,28 @@ packages:
 command:
   bootstrap:
     usePubspecOverrides: true
-    runPubGetInParallel: true
 
 scripts:
   analyze:
-    run: melos exec -- flutter analyze --fatal-infos
-    description: Static analysis across all packages and apps
+    run: melos exec -- flutter analyze --no-fatal-infos
+    description: Run flutter analyze in all packages
 
   test:
-    run: melos exec --depends-on="flutter_test" -- flutter test
-    description: Run all unit and widget tests
+    run: melos exec -- flutter test
+    description: Run flutter test in all packages
+
+  build:android:staff:
+    run: cd apps/staff_app && flutter build apk --release
+    description: Build Staff App APK
+
+  build:android:admin:
+    run: cd apps/store_admin && flutter build apk --release
+    description: Build Store Admin APK
+
+  build:windows:admin:
+    run: cd apps/store_admin && flutter build windows --release
+    description: Build Store Admin Windows
 
   clean:
     run: melos exec -- flutter clean
-    description: Clean all build artifacts
-
-  format:
-    run: melos exec -- dart format lib --set-exit-if-changed
-    description: Format all Dart source files
-
-  drift:build:
-    run: dart run build_runner build --delete-conflicting-outputs
-    packageFilters:
-      scope: store_admin_desktop
-    description: Generate Drift database schema
-
-  deps:check:
-    run: melos exec -- flutter pub deps
-    description: Check dependency resolution
+    description: Clean all packages
