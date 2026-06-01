@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/store-admin",
+      "destination": "https://app.cafecanvas.bar/login",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/themes01", "destination": "/theme-01.html" },
     { "source": "/themes02", "destination": "/theme-02.html" },
@@ -16,3 +23,4 @@
     { "source": "/store-admin-downloading", "destination": "/store-admin-downloding.html" }
   ]
 }
+
