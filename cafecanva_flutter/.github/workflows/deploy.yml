@@ -1,0 +1,131 @@
+name: CafeCanva Multi-Platform Build & Deploy
+
+on:
+  push:
+    branches: [ main, production ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Melos Global Package
+        run: dart pub global activate melos
+
+      - name: Monorepo Bootstrap Dependencies
+        run: melos bootstrap
+
+  build-android:
+    needs: bootstrap
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap Dependencies
+        run: melos bootstrap
+
+      - name: Build Production Customer APK
+        run: |
+          cd apps/customer_storefront
+          flutter build apk --release --split-per-abi
+
+      - name: Build Production POS APK
+        run: |
+          cd apps/staff_pos
+          flutter build apk --release --split-per-abi
+
+      - name: Upload Storefront APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-storefront-apk
+          path: apps/customer_storefront/build/app/outputs/flutter-apk/*.apk
+
+      - name: Upload POS APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: staff-pos-apk
+          path: apps/staff_pos/build/app/outputs/flutter-apk/*.apk
+
+  build-web:
+    needs: bootstrap
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap Dependencies
+        run: melos bootstrap
+
+      - name: Build Store Admin Web Bundle
+        run: |
+          cd apps/store_admin_desktop
+          flutter build web --release --web-renderer html --base-href /
+
+      - name: Upload Web Bundle Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-web-bundle
+          path: apps/store_admin_desktop/build/web
+
+  build-windows:
+    needs: bootstrap
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Melos
+        run: dotnet tool install -g melos || dart pub global activate melos
+
+      - name: Bootstrap Dependencies
+        run: melos bootstrap
+
+      - name: Build Windows Executable
+        run: |
+          cd apps/store_admin_desktop
+          flutter build windows --release
+
+      - name: Upload Windows Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-windows-app
+          path: apps/store_admin_desktop/build/windows/runner/Release

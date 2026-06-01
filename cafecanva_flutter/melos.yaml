@@ -1,0 +1,28 @@
+name: cafecanva_flutter
+repository: https://github.com/Yashzagde/Cafe-Canva
+
+packages:
+  - apps/*
+  - packages/*
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
+    runPubGetInParallel: true
+
+scripts:
+  analyze:
+    run: melos exec -- "flutter analyze"
+    description: Run analytical lint checks on all projects
+
+  clean:
+    run: melos exec -- "flutter clean"
+    description: Clean build caches across the monorepo
+
+  get:
+    run: melos exec -- "flutter pub get"
+    description: Fetch all dependencies
+
+  codegen:
+    run: melos exec --depends-on="build_runner" -- "flutter pub run build_runner build --delete-conflicting-outputs"
+    description: Trigger code generators (Freezed, JSON Serialization, etc.)

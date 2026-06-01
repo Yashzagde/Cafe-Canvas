@@ -1,0 +1,22 @@
+name: customer_storefront
+description: Customer Dine-in / Takeaway Storefront for CafeCanva.
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.7
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.4
+  cafecanva_core:
+    path: ../../packages/cafecanva_core
+  cafecanva_ui:
+    path: ../../packages/cafecanva_ui
+  cafecanva_billing:
+    path: ../../packages/cafecanva_billing
