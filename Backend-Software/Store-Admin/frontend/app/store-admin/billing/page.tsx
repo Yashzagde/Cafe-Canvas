@@ -4,72 +4,13 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSyncContext } from '@/app/context/SyncContext';
 import type { FloorTable, MenuItem, MenuCategory, OrderItem as OrderItemType, TableStatus } from '@/app/types';
 import { db, enqueueOperation, addToLocalCache, updateLocalCache } from '@/app/utils/offline-sync';
+import { supabase } from '@/app/utils/supabase';
 
 /* ═══════════════════════════════════════════════════════
-   DEMO DATA — replaced by Dexie cache / API in production
+   DATA LAYER — Fetched from Supabase
    ═══════════════════════════════════════════════════════ */
 
-const DEMO_SECTIONS = [
-  { id: 'all', name: 'All Sections' },
-  { id: 'b0000000-0000-0000-0000-000000000001', name: 'Indoor' },
-  { id: 'b0000000-0000-0000-0000-000000000002', name: 'Outdoor' },
-  { id: 'b0000000-0000-0000-0000-000000000003', name: 'Bar' },
-];
-
-const DEMO_TABLES: FloorTable[] = [
-  { id: 'c001', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000001', name: 'Table 01', capacity: 2, status: 'free', position_x: 0, position_y: 0, shape: 'square', created_at: '', updated_at: '' },
-  { id: 'c002', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000001', name: 'Table 02', capacity: 4, status: 'free', position_x: 1, position_y: 0, shape: 'square', created_at: '', updated_at: '' },
-  { id: 'c003', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000001', name: 'Table 03', capacity: 2, status: 'reserved', position_x: 2, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
-  { id: 'c004', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000001', name: 'Table 04', capacity: 6, status: 'occupied', position_x: 0, position_y: 1, shape: 'long', created_at: '', updated_at: '' },
-  { id: 'c005', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000001', name: 'Table 05', capacity: 2, status: 'free', position_x: 1, position_y: 1, shape: 'square', created_at: '', updated_at: '' },
-  { id: 'c006', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000002', name: 'Patio 01', capacity: 4, status: 'occupied', position_x: 0, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
-  { id: 'c007', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000002', name: 'Patio 02', capacity: 2, status: 'free', position_x: 1, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
-  { id: 'c008', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000003', name: 'Bar Seat 1', capacity: 1, status: 'free', position_x: 0, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
-  { id: 'c009', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000003', name: 'Bar Seat 2', capacity: 1, status: 'occupied', position_x: 1, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
-  { id: 'c010', tenant_id: 'demo', section_id: 'b0000000-0000-0000-0000-000000000003', name: 'Bar Seat 3', capacity: 1, status: 'cleaning', position_x: 2, position_y: 0, shape: 'round', created_at: '', updated_at: '' },
-];
-
-const DEMO_CATEGORIES: MenuCategory[] = [
-  { id: 'd001', tenant_id: 'demo', name: 'Hot Coffee', icon: '☕', sort_order: 0, visible: true },
-  { id: 'd002', tenant_id: 'demo', name: 'Cold Brews', icon: '🧊', sort_order: 1, visible: true },
-  { id: 'd003', tenant_id: 'demo', name: 'Teas', icon: '🍵', sort_order: 2, visible: true },
-  { id: 'd004', tenant_id: 'demo', name: 'Bakery', icon: '🥐', sort_order: 3, visible: true },
-  { id: 'd005', tenant_id: 'demo', name: 'Bites', icon: '🍽️', sort_order: 4, visible: true },
-  { id: 'd006', tenant_id: 'demo', name: 'Coolers', icon: '🍹', sort_order: 5, visible: true },
-];
-
-const DEMO_MENU: MenuItem[] = [
-  { id: 'e001', tenant_id: 'demo', category_id: 'd001', name: 'Classic Cappuccino', description: 'Double espresso with silky steamed milk', price: 290, image_url: null, available: true, featured: true, tags: ['bestseller'], prep_time_min: 5, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e002', tenant_id: 'demo', category_id: 'd001', name: 'Flat White', description: 'Velvety micro-foam espresso', price: 310, image_url: null, available: true, featured: false, tags: [], prep_time_min: 5, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'e003', tenant_id: 'demo', category_id: 'd001', name: 'Caramel Macchiato', description: 'Espresso with vanilla and caramel drizzle', price: 350, image_url: null, available: true, featured: false, tags: ['sweet'], prep_time_min: 6, sort_order: 2, created_at: '', updated_at: '' },
-  { id: 'e004', tenant_id: 'demo', category_id: 'd002', name: 'Specialty Cold Brew', description: '24-hour slow-dripped single origin', price: 350, image_url: null, available: true, featured: true, tags: ['bestseller'], prep_time_min: 1, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e005', tenant_id: 'demo', category_id: 'd002', name: 'Iced Mocha Shake', description: 'Chocolate blended with espresso over ice', price: 380, image_url: null, available: true, featured: false, tags: ['sweet'], prep_time_min: 4, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'e006', tenant_id: 'demo', category_id: 'd003', name: 'Green Tea Mint', description: 'Premium green tea with fresh mint', price: 210, image_url: null, available: true, featured: false, tags: ['veg'], prep_time_min: 4, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e007', tenant_id: 'demo', category_id: 'd004', name: 'Almond Croissant', description: 'Buttery pastry with almond cream', price: 240, image_url: null, available: true, featured: true, tags: ['bestseller'], prep_time_min: 2, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e008', tenant_id: 'demo', category_id: 'd004', name: 'Chocolate Truffle', description: 'Dark chocolate ganache pastry', price: 180, image_url: null, available: true, featured: false, tags: [], prep_time_min: 2, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'e009', tenant_id: 'demo', category_id: 'd005', name: 'Avocado Toast', description: 'Organic avocado on sourdough', price: 390, image_url: null, available: true, featured: true, tags: ['bestseller','veg'], prep_time_min: 8, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e010', tenant_id: 'demo', category_id: 'd005', name: 'Loaded Burrito', description: 'Grilled chicken, guac, salsa wrap', price: 420, image_url: null, available: true, featured: false, tags: ['spicy'], prep_time_min: 12, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'e011', tenant_id: 'demo', category_id: 'd006', name: 'Hibiscus Cooler', description: 'Hibiscus tea with rose syrup and lime', price: 230, image_url: null, available: true, featured: false, tags: ['cold'], prep_time_min: 3, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e012', tenant_id: 'demo', category_id: 'd006', name: 'Matcha Latte', description: 'Ceremonial matcha with oat milk', price: 320, image_url: null, available: true, featured: false, tags: ['cold'], prep_time_min: 4, sort_order: 1, created_at: '', updated_at: '' },
-];
-
-// Pre-fill Table 04 with demo order
-const DEMO_INITIAL_ORDERS: Record<string, CartItem[]> = {
-  'c004': [
-    { menuItemId: 'e001', name: 'Classic Cappuccino', price: 290, quantity: 2, modifiers: [] },
-    { menuItemId: 'e009', name: 'Avocado Toast', price: 390, quantity: 2, modifiers: [] },
-    { menuItemId: 'e008', name: 'Chocolate Truffle', price: 180, quantity: 1, modifiers: [] },
-  ],
-  'c006': [
-    { menuItemId: 'e004', name: 'Specialty Cold Brew', price: 350, quantity: 2, modifiers: [] },
-    { menuItemId: 'e007', name: 'Almond Croissant', price: 240, quantity: 1, modifiers: [] },
-  ],
-  'c009': [
-    { menuItemId: 'e012', name: 'Matcha Latte', price: 320, quantity: 1, modifiers: [] },
-  ],
-};
-
-/* ═══════════════════════════════════════════════════════ */
+const TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
 
 interface CartItem {
   menuItemId: string;
@@ -79,6 +20,11 @@ interface CartItem {
   modifiers: Array<{ label: string; price_delta: number }>;
 }
 
+interface SectionTab {
+  id: string;
+  name: string;
+}
+
 type PayMethod = 'cash' | 'card' | 'upi' | 'split' | 'complimentary';
 type BillingStep = 'order' | 'settle' | 'success';
 
@@ -86,13 +32,17 @@ export default function BillingPage() {
   const { effectivelyOnline, queueAction } = useSyncContext();
 
   // Floor state
-  const [tables, setTables] = useState<FloorTable[]>(DEMO_TABLES);
+  const [tables, setTables] = useState<FloorTable[]>([]);
+  const [sections, setSections] = useState<SectionTab[]>([{ id: 'all', name: 'All Sections' }]);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [menuItemsList, setMenuItemsList] = useState<MenuItem[]>([]);
   const [sectionFilter, setSectionFilter] = useState('all');
-  const [selectedTableId, setSelectedTableId] = useState<string | null>('c004');
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Order state
-  const [tableOrders, setTableOrders] = useState<Record<string, CartItem[]>>(DEMO_INITIAL_ORDERS);
-  const [occupiedTimers, setOccupiedTimers] = useState<Record<string, number>>({ c004: 1800, c006: 900, c009: 420 });
+  const [tableOrders, setTableOrders] = useState<Record<string, CartItem[]>>({});
+  const [occupiedTimers, setOccupiedTimers] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [catFilter, setCatFilter] = useState<string | null>(null);
 
@@ -102,6 +52,106 @@ export default function BillingPage() {
   const [cashReceived, setCashReceived] = useState('');
   const [billCounter, setBillCounter] = useState(142);
   const [customerName, setCustomerName] = useState('');
+
+  // ─── Load data from Supabase ──────────────────────
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch tables
+      const { data: tablesData } = await supabase
+        .from('tables')
+        .select('id, name, capacity, section, shape, status, position_x, position_y')
+        .eq('tenant_id', TENANT_ID)
+        .is('deleted_at', null)
+        .order('name');
+
+      const mappedTables: FloorTable[] = (tablesData ?? []).map(t => ({
+        id: t.id,
+        tenant_id: TENANT_ID,
+        section_id: t.section || 'Indoor',
+        name: t.name,
+        capacity: t.capacity,
+        status: (t.status === 'available' ? 'free' : t.status) as TableStatus,
+        position_x: t.position_x || 0,
+        position_y: t.position_y || 0,
+        shape: t.shape || 'square',
+        created_at: '',
+        updated_at: '',
+      }));
+      setTables(mappedTables);
+
+      // Build section tabs
+      const uniqueSections = [...new Set(mappedTables.map(t => t.section_id))];
+      setSections([
+        { id: 'all', name: 'All Sections' },
+        ...uniqueSections.map(s => ({ id: s, name: s })),
+      ]);
+
+      // Initialize timers for occupied tables
+      const timers: Record<string, number> = {};
+      mappedTables.filter(t => t.status === 'occupied').forEach(t => { timers[t.id] = 0; });
+      setOccupiedTimers(prev => ({ ...prev, ...timers }));
+
+      // Fetch categories
+      const { data: catsData } = await supabase
+        .from('menu_categories')
+        .select('id, tenant_id, name, icon, sort_order, is_visible')
+        .eq('tenant_id', TENANT_ID)
+        .is('deleted_at', null)
+        .order('sort_order');
+
+      setCategories((catsData ?? []).map(c => ({
+        id: c.id,
+        tenant_id: c.tenant_id,
+        name: c.name,
+        icon: c.icon,
+        sort_order: c.sort_order,
+        visible: c.is_visible,
+      })));
+
+      // Fetch menu items
+      const { data: menuData } = await supabase
+        .from('menu_items')
+        .select('id, tenant_id, category_id, name, description, price, image_url, status, featured, tags, prep_time_min, sort_order, created_at, updated_at')
+        .eq('tenant_id', TENANT_ID)
+        .eq('status', 'available')
+        .is('deleted_at', null)
+        .order('sort_order');
+
+      setMenuItemsList((menuData ?? []).map(item => ({
+        id: item.id,
+        tenant_id: item.tenant_id,
+        category_id: item.category_id,
+        name: item.name,
+        description: item.description,
+        price: Math.round(item.price / 100), // paise → rupees
+        image_url: item.image_url,
+        available: item.status === 'available',
+        featured: item.featured || false,
+        tags: item.tags || [],
+        prep_time_min: item.prep_time_min || 10,
+        sort_order: item.sort_order || 0,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      })));
+    } catch (err) {
+      console.error('[Billing] Failed to load data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // Realtime subscription for table status
+  useEffect(() => {
+    const channel = supabase
+      .channel('billing-tables')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tables', filter: `tenant_id=eq.${TENANT_ID}` }, () => loadData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loadData]);
 
   // Derived
   const selectedTable = tables.find(t => t.id === selectedTableId);
@@ -133,14 +183,14 @@ export default function BillingPage() {
 
   // Filtered menu items
   const filteredMenu = useMemo(() => {
-    let items = DEMO_MENU.filter(m => m.available);
+    let items = menuItemsList.filter(m => m.available);
     if (catFilter) items = items.filter(m => m.category_id === catFilter);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       items = items.filter(m => m.name.toLowerCase().includes(q) || (m.description || '').toLowerCase().includes(q));
     }
     return items;
-  }, [catFilter, searchQuery]);
+  }, [menuItemsList, catFilter, searchQuery]);
 
   // Format elapsed time
   const formatElapsed = (seconds: number) => {
@@ -309,7 +359,7 @@ export default function BillingPage() {
           <div className="glass-card p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex gap-1.5">
-                {DEMO_SECTIONS.map(s => (
+                {sections.map(s => (
                   <button
                     key={s.id}
                     onClick={() => setSectionFilter(s.id)}
@@ -436,7 +486,7 @@ export default function BillingPage() {
                 >
                   All
                 </button>
-                {DEMO_CATEGORIES.map(cat => (
+                {categories.map(cat => (
                   <button
                     key={cat.id}
                     onClick={() => setCatFilter(cat.id)}

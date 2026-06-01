@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { UserRole } from '@/app/types';
+import { supabase } from '@/app/utils/supabase';
+
+const TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
 
 interface StaffMember {
   id: string;
@@ -16,14 +19,31 @@ interface StaffMember {
   bills_today: number;
 }
 
-const DEMO_STAFF: StaffMember[] = [
-  { id: 's001', name: 'Yash Zagde', email: 'yash@cafecanvas.bar', phone: '+91 98765 43210', role: 'owner', active: true, avatar_initials: 'YZ', pin_set: true, orders_today: 42, bills_today: 38 },
-  { id: 's002', name: 'Rohan Kulkarni', email: 'rohan@cafecanvas.bar', phone: '+91 98765 43211', role: 'manager', active: true, avatar_initials: 'RK', pin_set: true, orders_today: 28, bills_today: 24 },
-  { id: 's003', name: 'Anjali Patel', email: null, phone: '+91 98765 43212', role: 'cashier', active: true, avatar_initials: 'AP', pin_set: true, orders_today: 35, bills_today: 31 },
-  { id: 's004', name: 'Vikram Sharma', email: null, phone: '+91 98765 43213', role: 'staff', active: true, avatar_initials: 'VS', pin_set: false, orders_today: 19, bills_today: 14 },
-  { id: 's005', name: 'Priya Menon', email: null, phone: '+91 98765 43214', role: 'kitchen', active: true, avatar_initials: 'PM', pin_set: true, orders_today: 0, bills_today: 0 },
-  { id: 's006', name: 'Dev Rathore', email: null, phone: '+91 98765 43215', role: 'staff', active: false, avatar_initials: 'DR', pin_set: false, orders_today: 0, bills_today: 0 },
-];
+async function fetchStaff(): Promise<StaffMember[]> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, name, email, phone, role, active, pin_hash, avatar_url')
+    .eq('tenant_id', TENANT_ID)
+    .order('name');
+
+  if (error) {
+    console.error('[Staff] Error fetching:', error);
+    return [];
+  }
+
+  return (data ?? []).map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    phone: u.phone || '',
+    role: (u.role || 'staff') as UserRole,
+    active: u.active !== false,
+    avatar_initials: u.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+    pin_set: !!u.pin_hash,
+    orders_today: 0,
+    bills_today: 0,
+  }));
+}
 
 const ROLE_COLORS: Record<UserRole, { bg: string; color: string; border: string }> = {
   owner:   { bg: 'rgba(155,89,182,0.1)', color: 'var(--accent-violet)', border: 'rgba(155,89,182,0.2)' },
@@ -36,12 +56,22 @@ const ROLE_COLORS: Record<UserRole, { bg: string; color: string; border: string 
 const AVATAR_COLORS = ['#4d7cfe', '#00d68f', '#e94560', '#ffc94d', '#9b59b6'];
 
 export default function StaffPage() {
-  const [staff, setStaff] = useState(DEMO_STAFF);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterRole, setFilterRole] = useState<UserRole | 'all'>('all');
   const [showInvite, setShowInvite] = useState(false);
   const [inviteName, setInviteName] = useState('');
   const [invitePhone, setInvitePhone] = useState('');
   const [inviteRole, setInviteRole] = useState<UserRole>('staff');
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const data = await fetchStaff();
+    setStaff(data);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const filteredStaff = filterRole === 'all' ? staff : staff.filter(s => s.role === filterRole);
   const activeCount = staff.filter(s => s.active).length;

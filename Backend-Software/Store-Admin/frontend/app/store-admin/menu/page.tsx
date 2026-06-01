@@ -1,37 +1,70 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSyncContext } from '@/app/context/SyncContext';
+import { supabase } from '@/app/utils/supabase';
 import type { MenuItem, MenuCategory } from '@/app/types';
 import { enqueueOperation, getPendingSyncItemIds } from '@/app/utils/offline-sync';
 
-/* ─── Demo Data ─── */
+// ─── Tenant Context ─────────────────────────────────
+const TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
+const BRANCH_ID = 'ab000000-0000-0000-0000-000000000001';
 
-const DEMO_CATEGORIES: MenuCategory[] = [
-  { id: 'd001', tenant_id: 'demo', name: 'Hot Coffee', icon: '☕', sort_order: 0, visible: true },
-  { id: 'd002', tenant_id: 'demo', name: 'Cold Brews', icon: '🧊', sort_order: 1, visible: true },
-  { id: 'd003', tenant_id: 'demo', name: 'Organic Teas', icon: '🍵', sort_order: 2, visible: true },
-  { id: 'd004', tenant_id: 'demo', name: 'Bakery & Sweets', icon: '🥐', sort_order: 3, visible: true },
-  { id: 'd005', tenant_id: 'demo', name: 'Gourmet Bites', icon: '🍽️', sort_order: 4, visible: true },
-  { id: 'd006', tenant_id: 'demo', name: 'Fresh Coolers', icon: '🍹', sort_order: 5, visible: true },
-];
+// ─── Data Fetching ──────────────────────────────────
 
-const DEMO_ITEMS: MenuItem[] = [
-  { id: 'e001', tenant_id: 'demo', category_id: 'd001', name: 'Classic Cappuccino', description: 'Double espresso with silky steamed milk and delicate foam art.', price: 290, image_url: null, available: true, featured: true, tags: ['bestseller','hot'], prep_time_min: 5, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e002', tenant_id: 'demo', category_id: 'd001', name: 'Flat White', description: 'Velvety micro-foam espresso with full-cream milk.', price: 310, image_url: null, available: true, featured: false, tags: ['hot'], prep_time_min: 5, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'e003', tenant_id: 'demo', category_id: 'd001', name: 'Caramel Macchiato', description: 'Espresso layered with vanilla syrup, steamed milk, and caramel drizzle.', price: 350, image_url: null, available: true, featured: false, tags: ['hot','sweet'], prep_time_min: 6, sort_order: 2, created_at: '', updated_at: '' },
-  { id: 'e004', tenant_id: 'demo', category_id: 'd002', name: 'Specialty Cold Brew', description: '24-hour slow-dripped single-origin cold brew.', price: 350, image_url: null, available: true, featured: true, tags: ['bestseller','cold'], prep_time_min: 1, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e005', tenant_id: 'demo', category_id: 'd002', name: 'Iced Mocha Shake', description: 'Rich chocolate blended with espresso shots over crushed ice.', price: 380, image_url: null, available: true, featured: false, tags: ['cold','sweet'], prep_time_min: 4, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'e006', tenant_id: 'demo', category_id: 'd003', name: 'Green Tea Mint Infusion', description: 'Premium loose-leaf green tea with fresh mint leaves.', price: 210, image_url: null, available: true, featured: false, tags: ['veg','healthy'], prep_time_min: 4, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e007', tenant_id: 'demo', category_id: 'd003', name: 'Chamomile Honey Soothe', description: 'Warm chamomile infusion with wildflower honey.', price: 230, image_url: null, available: true, featured: false, tags: ['veg','healthy'], prep_time_min: 4, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'e008', tenant_id: 'demo', category_id: 'd004', name: 'Almond Butter Croissant', description: 'Buttery flaky pastry filled with house-roasted almond cream.', price: 240, image_url: null, available: true, featured: true, tags: ['bestseller','bakery'], prep_time_min: 2, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e009', tenant_id: 'demo', category_id: 'd004', name: 'Chocolate Truffle Pastry', description: 'Belgian dark chocolate ganache in a buttery shell.', price: 180, image_url: null, available: true, featured: false, tags: ['sweet','bakery'], prep_time_min: 2, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'e010', tenant_id: 'demo', category_id: 'd004', name: 'Vegan Blueberry Muffin', description: 'Oat-flour muffin packed with organic blueberries.', price: 160, image_url: null, available: false, featured: false, tags: ['veg','healthy'], prep_time_min: 2, sort_order: 2, created_at: '', updated_at: '' },
-  { id: 'e011', tenant_id: 'demo', category_id: 'd005', name: 'Avocado Sourdough Toast', description: 'Mashed organic avocado on house-baked sourdough with chili flakes.', price: 390, image_url: null, available: true, featured: true, tags: ['bestseller','veg'], prep_time_min: 8, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e012', tenant_id: 'demo', category_id: 'd005', name: 'Aether Loaded Burrito', description: 'Grilled chicken, black beans, guac, salsa in a toasted wrap.', price: 420, image_url: null, available: true, featured: false, tags: ['spicy'], prep_time_min: 12, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'e013', tenant_id: 'demo', category_id: 'd006', name: 'Hibiscus Rose Cooler', description: 'Chilled hibiscus flower tea with rose syrup and lime.', price: 230, image_url: null, available: true, featured: false, tags: ['cold','healthy'], prep_time_min: 3, sort_order: 0, created_at: '', updated_at: '' },
-  { id: 'e014', tenant_id: 'demo', category_id: 'd006', name: 'Matcha Latte Special', description: 'Ceremonial-grade matcha whisked with oat milk over ice.', price: 320, image_url: null, available: true, featured: false, tags: ['cold','healthy'], prep_time_min: 4, sort_order: 1, created_at: '', updated_at: '' },
-];
+async function fetchCategories(): Promise<MenuCategory[]> {
+  const { data, error } = await supabase
+    .from('menu_categories')
+    .select('id, tenant_id, name, icon, sort_order, is_visible')
+    .eq('tenant_id', TENANT_ID)
+    .is('deleted_at', null)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    console.error('[Menu] Error fetching categories:', error);
+    return [];
+  }
+
+  return (data ?? []).map(c => ({
+    id: c.id,
+    tenant_id: c.tenant_id,
+    name: c.name,
+    icon: c.icon,
+    sort_order: c.sort_order,
+    visible: c.is_visible,
+  }));
+}
+
+async function fetchMenuItems(): Promise<MenuItem[]> {
+  const { data, error } = await supabase
+    .from('menu_items')
+    .select('id, tenant_id, category_id, name, description, price, image_url, status, featured, tags, prep_time_min, sort_order, created_at, updated_at')
+    .eq('tenant_id', TENANT_ID)
+    .is('deleted_at', null)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    console.error('[Menu] Error fetching items:', error);
+    return [];
+  }
+
+  return (data ?? []).map(item => ({
+    id: item.id,
+    tenant_id: item.tenant_id,
+    category_id: item.category_id,
+    name: item.name,
+    description: item.description,
+    price: Math.round(item.price / 100), // paise → rupees
+    image_url: item.image_url,
+    available: item.status === 'available',
+    featured: item.featured || false,
+    tags: item.tags || [],
+    prep_time_min: item.prep_time_min || 10,
+    sort_order: item.sort_order || 0,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+  }));
+}
 
 /* ─── Sidebar Filters ─── */
 
@@ -40,10 +73,55 @@ type SideFilter = 'all' | 'unavailable' | string;
 export default function MenuManagementPage() {
   const { effectivelyOnline, queueAction } = useSyncContext();
 
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(DEMO_ITEMS);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<SideFilter>('all');
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [pendingSyncIds, setPendingSyncIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // ─── Load data from Supabase ──────────────────────
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [cats, items] = await Promise.all([
+        fetchCategories(),
+        fetchMenuItems(),
+      ]);
+      setCategories(cats);
+      setMenuItems(items);
+    } catch (err) {
+      console.error('[Menu] Failed to load:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // ─── Real-time subscription ──────────────────────
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('menu-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'menu_items', filter: `tenant_id=eq.${TENANT_ID}` },
+        () => loadData()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'menu_categories', filter: `tenant_id=eq.${TENANT_ID}` },
+        () => loadData()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [loadData]);
 
   // Check pending sync status
   useEffect(() => {
@@ -76,22 +154,33 @@ export default function MenuManagementPage() {
     return menuItems.filter(m => m.category_id === selectedFilter);
   }, [menuItems, selectedFilter]);
 
-  // Toggle availability
+  // Toggle availability — writes directly to Supabase
   const handleToggleAvailability = async (id: string) => {
     const item = menuItems.find(m => m.id === id);
     if (!item) return;
 
-    const newAvailable = !item.available;
+    const newStatus = item.available ? 'unavailable' : 'available';
 
     // Optimistic local update
-    setMenuItems(prev => prev.map(m => m.id === id ? { ...m, available: newAvailable } : m));
+    setMenuItems(prev => prev.map(m => m.id === id ? { ...m, available: !m.available } : m));
 
-    if (!effectivelyOnline) {
+    if (effectivelyOnline) {
+      const { error } = await supabase
+        .from('menu_items')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) {
+        console.error('[Menu] Toggle availability error:', error);
+        // Revert optimistic update
+        setMenuItems(prev => prev.map(m => m.id === id ? { ...m, available: item.available } : m));
+      }
+    } else {
       await queueAction({
         operation: 'TOGGLE_AVAILABILITY',
-        endpoint: `/api/store-admin/menu/items/${id}`,
+        endpoint: `/api/store-admin/menu/items/${id}/toggle`,
         method: 'PATCH',
-        payload: { available: newAvailable, id },
+        payload: { status: newStatus, id },
       });
       setPendingSyncIds(prev => {
         const next = new Set(prev);
@@ -101,13 +190,36 @@ export default function MenuManagementPage() {
     }
   };
 
-  // Save edited item
-  const handleSaveItem = (e: React.FormEvent) => {
+  // Save edited item — writes to Supabase
+  const handleSaveItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editItem) return;
+
+    setSaving(true);
+
+    // Optimistic update
     setMenuItems(prev => prev.map(m => m.id === editItem.id ? editItem : m));
 
-    if (!effectivelyOnline) {
+    if (effectivelyOnline) {
+      const { error } = await supabase
+        .from('menu_items')
+        .update({
+          name: editItem.name,
+          description: editItem.description,
+          price: editItem.price * 100, // rupees → paise for storage
+          status: editItem.available ? 'available' : 'unavailable',
+          featured: editItem.featured,
+          prep_time_min: editItem.prep_time_min,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editItem.id);
+
+      if (error) {
+        console.error('[Menu] Save item error:', error);
+        // Reload to revert
+        await loadData();
+      }
+    } else {
       queueAction({
         operation: 'UPDATE_MENU_ITEM',
         endpoint: `/api/store-admin/menu/items/${editItem.id}`,
@@ -115,8 +227,43 @@ export default function MenuManagementPage() {
         payload: editItem as unknown as Record<string, unknown>,
       });
     }
+
+    setSaving(false);
     setEditItem(null);
   };
+
+  // ─── Loading State ────────────────────────────────
+
+  if (loading && menuItems.length === 0) {
+    return (
+      <div className="space-y-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-heading font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Menu Manager</h2>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Loading menu from Supabase...</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          <div className="glass-card p-4 h-fit animate-pulse">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-8 rounded-xl mb-2" style={{ background: 'var(--canvas-muted)' }} />
+            ))}
+          </div>
+          <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="glass-card h-56 animate-pulse">
+                <div className="h-28" style={{ background: 'var(--canvas-muted)' }} />
+                <div className="p-4 space-y-3">
+                  <div className="h-3 w-3/4 rounded" style={{ background: 'var(--canvas-muted)' }} />
+                  <div className="h-2 w-full rounded" style={{ background: 'var(--canvas-muted)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -125,12 +272,17 @@ export default function MenuManagementPage() {
         <div>
           <h2 className="font-heading font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Menu Manager</h2>
           <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Configure categories, items, modifiers, and availability.
+            {menuItems.length} items across {categories.length} categories • Connected to Supabase
           </p>
         </div>
-        <button className="btn-primary flex items-center gap-2">
-          <span>+</span> Add Menu Item
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={loadData} className="btn-ghost text-[10px] flex items-center gap-1.5">
+            ↻ Refresh
+          </button>
+          <button className="btn-primary flex items-center gap-2">
+            <span>+</span> Add Menu Item
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
@@ -168,7 +320,7 @@ export default function MenuManagementPage() {
 
             <div className="h-px my-2" style={{ background: 'var(--canvas-border)' }} />
 
-            {DEMO_CATEGORIES.map(cat => (
+            {categories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedFilter(cat.id)}
@@ -187,102 +339,116 @@ export default function MenuManagementPage() {
 
         {/* Right: Item Grid */}
         <div className="lg:col-span-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredItems.map(item => {
-              const hasPending = pendingSyncIds.has(item.id);
-              const cat = DEMO_CATEGORIES.find(c => c.id === item.category_id);
+          {filteredItems.length === 0 ? (
+            <div className="glass-card p-12 text-center">
+              <div className="text-4xl mb-3">🍽️</div>
+              <h3 className="font-heading font-bold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>
+                No items found
+              </h3>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {selectedFilter === 'all'
+                  ? 'Add your first menu item to get started.'
+                  : 'No items match this filter.'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredItems.map(item => {
+                const hasPending = pendingSyncIds.has(item.id);
+                const cat = categories.find(c => c.id === item.category_id);
 
-              return (
-                <div key={item.id} className="glass-card overflow-hidden relative">
-                  {/* Sync Pending Badge */}
-                  {hasPending && (
-                    <div className="sync-pending-badge">
-                      <ClockIcon size={10} /> Sync Pending
-                    </div>
-                  )}
-
-                  {/* Card Header */}
-                  <div className="h-28 p-4 relative flex items-end" style={{
-                    background: `linear-gradient(135deg, rgba(77,124,254,0.08), ${item.available ? 'var(--canvas-surface)' : 'rgba(233,69,96,0.05)'})`,
-                  }}>
-                    {/* Status Badge */}
-                    <div className="absolute top-3 right-3">
-                      <span className="status-badge" style={{
-                        background: item.available ? 'rgba(0,214,143,0.1)' : 'rgba(233,69,96,0.1)',
-                        color: item.available ? 'var(--accent-emerald)' : 'var(--accent-crimson)',
-                        border: `1px solid ${item.available ? 'rgba(0,214,143,0.2)' : 'rgba(233,69,96,0.2)'}`,
-                        fontSize: '8px',
-                      }}>
-                        {item.available ? 'AVAILABLE' : 'UNAVAILABLE'}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[9px] uppercase tracking-widest font-bold block" style={{ color: 'var(--accent-sapphire)' }}>
-                        {cat?.name || ''}
-                      </span>
-                      <span className="font-heading font-bold text-sm block mt-0.5" style={{ color: 'var(--text-primary)' }}>
-                        {item.name}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Card Content */}
-                  <div className="p-4 space-y-3">
-                    <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-                      {item.description}
-                    </p>
-
-                    {/* Tags */}
-                    {item.tags.length > 0 && (
-                      <div className="flex gap-1 flex-wrap">
-                        {item.tags.map(tag => (
-                          <span key={tag} className="text-[8px] px-1.5 py-0.5 rounded font-bold uppercase" style={{
-                            background: 'rgba(255,255,255,0.04)',
-                            color: tag === 'bestseller' ? 'var(--accent-amber)' :
-                                   tag === 'spicy' ? 'var(--accent-crimson)' :
-                                   tag === 'veg' ? 'var(--accent-emerald)' : 'var(--text-muted)',
-                          }}>
-                            {tag}
-                          </span>
-                        ))}
+                return (
+                  <div key={item.id} className="glass-card overflow-hidden relative">
+                    {/* Sync Pending Badge */}
+                    {hasPending && (
+                      <div className="sync-pending-badge">
+                        <ClockIcon size={10} /> Sync Pending
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="font-heading font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>
-                        ₹{item.price}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleToggleAvailability(item.id)}
-                          className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
-                          style={{
-                            background: 'rgba(255,255,255,0.04)',
-                            border: '1px solid var(--canvas-border)',
-                            color: 'var(--text-secondary)',
-                          }}
-                        >
-                          {item.available ? 'Mark Off' : 'Mark On'}
-                        </button>
-                        <button
-                          onClick={() => setEditItem(item)}
-                          className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
-                          style={{
-                            background: 'rgba(77,124,254,0.08)',
-                            border: '1px solid rgba(77,124,254,0.15)',
-                            color: 'var(--accent-sapphire)',
-                          }}
-                        >
-                          Edit
-                        </button>
+                    {/* Card Header */}
+                    <div className="h-28 p-4 relative flex items-end" style={{
+                      background: `linear-gradient(135deg, rgba(77,124,254,0.08), ${item.available ? 'var(--canvas-surface)' : 'rgba(233,69,96,0.05)'})`,
+                    }}>
+                      {/* Status Badge */}
+                      <div className="absolute top-3 right-3">
+                        <span className="status-badge" style={{
+                          background: item.available ? 'rgba(0,214,143,0.1)' : 'rgba(233,69,96,0.1)',
+                          color: item.available ? 'var(--accent-emerald)' : 'var(--accent-crimson)',
+                          border: `1px solid ${item.available ? 'rgba(0,214,143,0.2)' : 'rgba(233,69,96,0.2)'}`,
+                          fontSize: '8px',
+                        }}>
+                          {item.available ? 'AVAILABLE' : 'UNAVAILABLE'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[9px] uppercase tracking-widest font-bold block" style={{ color: 'var(--accent-sapphire)' }}>
+                          {cat?.name || ''}
+                        </span>
+                        <span className="font-heading font-bold text-sm block mt-0.5" style={{ color: 'var(--text-primary)' }}>
+                          {item.name}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-4 space-y-3">
+                      <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+                        {item.description}
+                      </p>
+
+                      {/* Tags */}
+                      {item.tags.length > 0 && (
+                        <div className="flex gap-1 flex-wrap">
+                          {item.tags.map(tag => (
+                            <span key={tag} className="text-[8px] px-1.5 py-0.5 rounded font-bold uppercase" style={{
+                              background: 'rgba(255,255,255,0.04)',
+                              color: tag === 'bestseller' ? 'var(--accent-amber)' :
+                                     tag === 'spicy' ? 'var(--accent-crimson)' :
+                                     tag === 'veg' ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                            }}>
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="font-heading font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>
+                          ₹{item.price}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleToggleAvailability(item.id)}
+                            className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
+                            style={{
+                              background: 'rgba(255,255,255,0.04)',
+                              border: '1px solid var(--canvas-border)',
+                              color: 'var(--text-secondary)',
+                            }}
+                          >
+                            {item.available ? 'Mark Off' : 'Mark On'}
+                          </button>
+                          <button
+                            onClick={() => setEditItem(item)}
+                            className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
+                            style={{
+                              background: 'rgba(77,124,254,0.08)',
+                              border: '1px solid rgba(77,124,254,0.15)',
+                              color: 'var(--accent-sapphire)',
+                            }}
+                          >
+                            Edit
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -293,7 +459,7 @@ export default function MenuManagementPage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="font-heading font-bold text-base" style={{ color: 'var(--text-primary)' }}>Edit Menu Item</h3>
-                <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>Modify details, pricing, and availability</span>
+                <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>Changes saved directly to Supabase</span>
               </div>
               <button onClick={() => setEditItem(null)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{
                 background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)',
@@ -348,7 +514,9 @@ export default function MenuManagementPage() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button type="submit" className="btn-primary flex-1">Save Changes</button>
+                <button type="submit" disabled={saving} className="btn-primary flex-1">
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
                 <button type="button" onClick={() => setEditItem(null)} className="btn-ghost">Cancel</button>
               </div>
             </form>

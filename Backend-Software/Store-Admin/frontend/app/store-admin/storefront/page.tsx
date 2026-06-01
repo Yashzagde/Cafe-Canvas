@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/app/utils/supabase';
 
+const TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
 const THEME_OPTIONS = ['light', 'dark', 'custom'] as const;
 
 export default function StorefrontPage() {
@@ -11,7 +13,7 @@ export default function StorefrontPage() {
     accent_color: '#4d7cfe',
     font_heading: 'Sora',
     font_body: 'DM Sans',
-    banner_text: '🎉 New summer menu now available! Try our Hibiscus Cooler',
+    banner_text: '',
     show_prices: true,
     allow_orders: false,
     hero_image_url: '',
@@ -19,8 +21,62 @@ export default function StorefrontPage() {
 
   const [previewUrl, setPreviewUrl] = useState('https://demo.cafecanvas.bar');
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleSave = () => {
+  // Load storefront config from Supabase
+  const loadConfig = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('storefront_configs')
+      .select('*')
+      .eq('tenant_id', TENANT_ID)
+      .single();
+
+    if (data) {
+      setConfig({
+        theme: data.theme || 'dark',
+        primary_color: data.primary_color || '#0f0f13',
+        accent_color: data.accent_color || '#4d7cfe',
+        font_heading: data.font_heading || 'Sora',
+        font_body: data.font_body || 'DM Sans',
+        banner_text: data.banner_text || '',
+        show_prices: data.show_prices !== false,
+        allow_orders: data.allow_orders === true,
+        hero_image_url: data.hero_image_url || '',
+      });
+    }
+    if (error && error.code !== 'PGRST116') {
+      console.error('[Storefront] Load error:', error);
+    }
+
+    // Get tenant subdomain for preview URL
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('subdomain')
+      .eq('id', TENANT_ID)
+      .single();
+
+    if (tenant?.subdomain) {
+      setPreviewUrl(`https://${tenant.subdomain}.cafecanvas.bar`);
+    }
+
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadConfig(); }, [loadConfig]);
+
+  const handleSave = async () => {
+    const { error } = await supabase
+      .from('storefront_configs')
+      .upsert({
+        tenant_id: TENANT_ID,
+        ...config,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'tenant_id' });
+
+    if (error) {
+      console.error('[Storefront] Save error:', error);
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

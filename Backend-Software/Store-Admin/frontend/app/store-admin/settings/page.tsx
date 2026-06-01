@@ -1,19 +1,56 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/app/utils/supabase';
+
+const TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'domain' | 'payments'>('general');
-  const [storeName, setStoreName] = useState<string>('AETHER Cafe & Roastery');
-  const [gstin, setGstin] = useState<string>('27AAAAA1111A1Z1');
+  const [storeName, setStoreName] = useState<string>('');
+  const [gstin, setGstin] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [phone, setPhone] = useState<string>('');
   const [selectedTheme, setSelectedTheme] = useState<string>('classic');
-  const [cnameDomain, setCnameDomain] = useState<string>('menu.mycafe.com');
-  const [razorpayKey, setRazorpayKey] = useState<string>('rzp_live_xxxxxxxxxx1234');
+  const [cnameDomain, setCnameDomain] = useState<string>('');
+  const [razorpayKey, setRazorpayKey] = useState<string>('');
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleSave = (e: React.FormEvent) => {
+  // Load tenant settings from Supabase
+  const loadSettings = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('name, tax_id, email, phone, subdomain')
+      .eq('id', TENANT_ID)
+      .single();
+
+    if (data) {
+      setStoreName(data.name || '');
+      setGstin(data.tax_id || '');
+      setEmail(data.email || '');
+      setPhone(data.phone || '');
+      setCnameDomain(data.subdomain ? `menu.${data.subdomain}.cafecanvas.bar` : '');
+    }
+    if (error) console.error('[Settings] Load error:', error);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadSettings(); }, [loadSettings]);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaveStatus('Success: All configurations synced and encrypted successfully!');
+    const { error } = await supabase
+      .from('tenants')
+      .update({ name: storeName, tax_id: gstin, email, phone, updated_at: new Date().toISOString() })
+      .eq('id', TENANT_ID);
+
+    if (error) {
+      setSaveStatus('Error: Failed to save. ' + error.message);
+    } else {
+      setSaveStatus('Success: All configurations synced to Supabase!');
+    }
     setTimeout(() => setSaveStatus(null), 4000);
   };
 
@@ -86,7 +123,8 @@ export default function SettingsPage() {
                     <label className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">Support Email Address</label>
                     <input 
                       type="email" 
-                      defaultValue="support@aethercafe.com" 
+                      value={email} 
+                      onChange={(e) => setEmail(e.target.value)} 
                       className="w-full glass-input px-4 py-2.5 text-xs font-medium" 
                     />
                   </div>
@@ -94,7 +132,8 @@ export default function SettingsPage() {
                     <label className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">Contact Telephone</label>
                     <input 
                       type="text" 
-                      defaultValue="+91 99999 88888" 
+                      value={phone} 
+                      onChange={(e) => setPhone(e.target.value)} 
                       className="w-full glass-input px-4 py-2.5 text-xs font-medium" 
                     />
                   </div>

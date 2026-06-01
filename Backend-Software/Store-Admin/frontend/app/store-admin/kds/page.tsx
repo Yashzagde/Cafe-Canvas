@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/app/utils/supabase';
 
-/* ─── Demo KDS Data ─── */
+const TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
+
+/* ─── KDS Types ─── */
 
 interface KdsOrder {
   id: string;
@@ -12,18 +15,96 @@ interface KdsOrder {
   status: 'pending' | 'preparing' | 'ready';
 }
 
-const INITIAL_ORDERS: KdsOrder[] = [
-  { id: 'K001', table: 'Table 04', items: [{ name: 'Classic Cappuccino', quantity: 2 }, { name: 'Avocado Toast', quantity: 2 }, { name: 'Chocolate Truffle', quantity: 1 }], createdAt: new Date(Date.now() - 12 * 60000), status: 'pending' },
-  { id: 'K002', table: 'Patio 01', items: [{ name: 'Specialty Cold Brew', quantity: 2 }, { name: 'Almond Croissant', quantity: 1 }], createdAt: new Date(Date.now() - 8 * 60000), status: 'pending' },
-  { id: 'K003', table: 'Bar Seat 2', items: [{ name: 'Matcha Latte', quantity: 1 }], createdAt: new Date(Date.now() - 4 * 60000), status: 'preparing' },
-  { id: 'K004', table: 'Table 02', items: [{ name: 'Flat White', quantity: 1 }, { name: 'Loaded Burrito', quantity: 1, notes: 'Extra spicy' }], createdAt: new Date(Date.now() - 18 * 60000), status: 'preparing' },
-  { id: 'K005', table: 'Table 05', items: [{ name: 'Green Tea Mint', quantity: 2 }], createdAt: new Date(Date.now() - 22 * 60000), status: 'ready' },
-];
+async function fetchKdsOrders(): Promise<KdsOrder[]> {
+  // Fetch active orders with their items
+  const { data: ordersData, error } = await supabase
+    .from('orders')
+    .select(`
+      id,
+      table_id,
+      status,
+      created_at,
+      order_items (
+        id,
+        item_name,
+        quantity,
+        notes,
+        kds_status
+      )
+    `)
+    .eq('tenant_id', TENANT_ID)
+    .in('status', ['open', 'sent_to_kitchen', 'ready'])
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('[KDS] Error fetching orders:', error);
+    return [];
+  }
+
+  if (!ordersData || ordersData.length === 0) return [];
+
+  // Fetch table names
+  const tableIds = [...new Set(ordersData.map(o => o.table_id).filter(Boolean))];
+  const { data: tablesData } = tableIds.length > 0
+    ? await supabase.from('tables').select('id, name').in('id', tableIds)
+    : { data: [] };
+  const tableMap = new Map((tablesData ?? []).map(t => [t.id, t.name]));
+
+  // Map to KDS format
+  return ordersData.map(order => {
+    const items = (order.order_items || []).map((oi: any) => ({
+      name: oi.item_name,
+      quantity: oi.quantity,
+      notes: oi.notes || undefined,
+    }));
+
+    // Determine KDS status from order status + item kds_status
+    let kdsStatus: 'pending' | 'preparing' | 'ready' = 'pending';
+    if (order.status === 'ready') {
+      kdsStatus = 'ready';
+    } else if (order.status === 'sent_to_kitchen') {
+      const allReady = (order.order_items || []).every((oi: any) => oi.kds_status === 'ready');
+      const anyPreparing = (order.order_items || []).some((oi: any) => oi.kds_status === 'preparing');
+      if (allReady) kdsStatus = 'ready';
+      else if (anyPreparing) kdsStatus = 'preparing';
+      else kdsStatus = 'pending';
+    }
+
+    return {
+      id: order.id.slice(0, 8).toUpperCase(),
+      table: tableMap.get(order.table_id) || 'Walk-in',
+      items,
+      createdAt: new Date(order.created_at),
+      status: kdsStatus,
+    };
+  });
+}
 
 export default function KDSPage() {
-  const [orders, setOrders] = useState<KdsOrder[]>(INITIAL_ORDERS);
+  const [orders, setOrders] = useState<KdsOrder[]>([]);
+  const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Load orders from Supabase
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const data = await fetchKdsOrders();
+    setOrders(data);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // Realtime: refresh when orders or order_items change
+  useEffect(() => {
+    const channel = supabase
+      .channel('kds-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${TENANT_ID}` }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => loadData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loadData]);
 
   // Tick every second for elapsed timers
   useEffect(() => {

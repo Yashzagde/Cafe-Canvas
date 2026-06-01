@@ -1,69 +1,385 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSyncContext } from '@/app/context/SyncContext';
+import { supabase } from '@/app/utils/supabase';
+import type { DashboardMetrics, RevenuePoint, TopItem, HourlyData } from '@/app/types';
 
-/* ─── Mock Dashboard Data ─── */
-const MOCK_METRICS = {
-  revenue_today: 48250,
-  revenue_yesterday: 44600,
-  orders_today: 124,
-  orders_yesterday: 109,
-  active_tables: 6,
-  total_tables: 10,
-  avg_bill_value: 389,
-  avg_bill_yesterday: 409,
-};
+// ─── Demo Tenant Context ──────────────────────────────
+const TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
+const BRANCH_ID = 'ab000000-0000-0000-0000-000000000001';
 
-const MOCK_REVENUE_TREND = [
-  { date: 'Mon', revenue: 32400 },
-  { date: 'Tue', revenue: 38100 },
-  { date: 'Wed', revenue: 41200 },
-  { date: 'Thu', revenue: 35800 },
-  { date: 'Fri', revenue: 52600 },
-  { date: 'Sat', revenue: 61400 },
-  { date: 'Sun', revenue: 48250 },
-];
+// ─── Helper: Get today's date range ───────────────────
+function todayRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
 
-const MOCK_TOP_ITEMS = [
-  { name: 'Classic Cappuccino', category: 'Hot Coffee', qty: 84, revenue: 24360 },
-  { name: 'Avocado Toast', category: 'Gourmet Bites', qty: 56, revenue: 21840 },
-  { name: 'Specialty Cold Brew', category: 'Cold Brews', qty: 48, revenue: 16800 },
-  { name: 'Almond Croissant', category: 'Bakery & Sweets', qty: 42, revenue: 10080 },
-  { name: 'Matcha Latte', category: 'Cold Brews', qty: 38, revenue: 12160 },
-];
+function yesterdayRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return { start: start.toISOString(), end: end.toISOString() };
+}
 
-const MOCK_RECENT_BILLS = [
-  { id: 'CC-2026-0142', table: 'Table 04', staff: 'Rohan K.', amount: 1450, time: '2:15 PM', method: 'UPI' },
-  { id: 'CC-2026-0141', table: 'Patio 01', staff: 'Anjali P.', amount: 890, time: '1:48 PM', method: 'Cash' },
-  { id: 'CC-2026-0140', table: 'Table 02', staff: 'Rohan K.', amount: 2840, time: '1:22 PM', method: 'Card' },
-  { id: 'CC-2026-0139', table: 'Bar Seat 2', staff: 'Vikram S.', amount: 650, time: '12:55 PM', method: 'UPI' },
-  { id: 'CC-2026-0138', table: 'Table 05', staff: 'Anjali P.', amount: 1920, time: '12:30 PM', method: 'Cash' },
-];
+// ─── Data Fetching Hooks ──────────────────────────────
 
-const MOCK_HOURLY = [
-  { hour: 8, orders: 8 }, { hour: 9, orders: 15 }, { hour: 10, orders: 12 },
-  { hour: 11, orders: 18 }, { hour: 12, orders: 28 }, { hour: 13, orders: 22 },
-  { hour: 14, orders: 14 }, { hour: 15, orders: 10 }, { hour: 16, orders: 8 },
-  { hour: 17, orders: 12 }, { hour: 18, orders: 24 }, { hour: 19, orders: 32 },
-  { hour: 20, orders: 28 }, { hour: 21, orders: 18 }, { hour: 22, orders: 6 },
-];
+async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
+  const today = todayRange();
+  const yesterday = yesterdayRange();
+
+  // Today's orders (non-cancelled)
+  const { data: todayOrders, error: todayErr } = await supabase
+    .from('orders')
+    .select('id, total, status')
+    .eq('tenant_id', TENANT_ID)
+    .gte('created_at', today.start)
+    .lt('created_at', today.end)
+    .neq('status', 'cancelled');
+
+  // Yesterday's orders
+  const { data: yesterdayOrders } = await supabase
+    .from('orders')
+    .select('id, total, status')
+    .eq('tenant_id', TENANT_ID)
+    .gte('created_at', yesterday.start)
+    .lt('created_at', yesterday.end)
+    .neq('status', 'cancelled');
+
+  // Table counts
+  const { data: allTables } = await supabase
+    .from('tables')
+    .select('id, status')
+    .eq('tenant_id', TENANT_ID)
+    .is('deleted_at', null);
+
+  const ordersToday = todayOrders?.length ?? 0;
+  const revenueToday = (todayOrders ?? []).reduce((sum, o) => sum + (o.total || 0), 0);
+  const ordersYesterday = yesterdayOrders?.length ?? 0;
+  const revenueYesterday = (yesterdayOrders ?? []).reduce((sum, o) => sum + (o.total || 0), 0);
+
+  const totalTables = allTables?.length ?? 0;
+  const activeTables = (allTables ?? []).filter(t => t.status === 'occupied').length;
+
+  const avgBillToday = ordersToday > 0 ? Math.round(revenueToday / ordersToday) : 0;
+  const avgBillYesterday = ordersYesterday > 0 ? Math.round(revenueYesterday / ordersYesterday) : 0;
+
+  if (todayErr) {
+    console.error('[Dashboard] Error fetching today orders:', todayErr);
+  }
+
+  return {
+    revenue_today: Math.round(revenueToday / 100), // paise to rupees
+    revenue_yesterday: Math.round(revenueYesterday / 100),
+    orders_today: ordersToday,
+    orders_yesterday: ordersYesterday,
+    active_tables: activeTables,
+    total_tables: totalTables,
+    avg_bill_value: Math.round(avgBillToday / 100),
+    avg_bill_yesterday: Math.round(avgBillYesterday / 100),
+  };
+}
+
+async function fetchRevenueChart(): Promise<RevenuePoint[]> {
+  // Last 7 days revenue
+  const days: RevenuePoint[] = [];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    const { data } = await supabase
+      .from('orders')
+      .select('total')
+      .eq('tenant_id', TENANT_ID)
+      .gte('created_at', start.toISOString())
+      .lt('created_at', end.toISOString())
+      .neq('status', 'cancelled');
+
+    const revenue = (data ?? []).reduce((sum, o) => sum + (o.total || 0), 0);
+    days.push({ date: dayNames[start.getDay()], revenue: Math.round(revenue / 100) });
+  }
+
+  return days;
+}
+
+async function fetchTopItems(): Promise<TopItem[]> {
+  // Fetch recent order items joined with menu items
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const { data: orderItemsData } = await supabase
+    .from('order_items')
+    .select(`
+      menu_item_id,
+      item_name,
+      quantity,
+      unit_price,
+      order_id
+    `)
+    .gte('sent_at', sevenDaysAgo.toISOString());
+
+  if (!orderItemsData || orderItemsData.length === 0) {
+    // If no order items exist yet, show menu items as "0 sold"
+    const { data: menuData } = await supabase
+      .from('menu_items')
+      .select('id, name, category_id')
+      .eq('tenant_id', TENANT_ID)
+      .is('deleted_at', null)
+      .limit(5);
+
+    const { data: categories } = await supabase
+      .from('menu_categories')
+      .select('id, name')
+      .eq('tenant_id', TENANT_ID);
+
+    const catMap = new Map((categories ?? []).map(c => [c.id, c.name]));
+
+    return (menuData ?? []).map(item => ({
+      id: item.id,
+      name: item.name,
+      category: catMap.get(item.category_id) || 'Uncategorized',
+      quantity_sold: 0,
+      revenue: 0,
+    }));
+  }
+
+  // Aggregate by menu item
+  const itemMap = new Map<string, { name: string; qty: number; revenue: number }>();
+  for (const oi of orderItemsData) {
+    const key = oi.menu_item_id || oi.item_name;
+    const existing = itemMap.get(key) || { name: oi.item_name, qty: 0, revenue: 0 };
+    existing.qty += oi.quantity;
+    existing.revenue += oi.quantity * oi.unit_price;
+    itemMap.set(key, existing);
+  }
+
+  const sorted = Array.from(itemMap.entries())
+    .map(([id, data]) => ({
+      id,
+      name: data.name,
+      category: '',
+      quantity_sold: data.qty,
+      revenue: Math.round(data.revenue / 100),
+    }))
+    .sort((a, b) => b.quantity_sold - a.quantity_sold)
+    .slice(0, 5);
+
+  return sorted;
+}
+
+interface RecentBill {
+  id: string;
+  table: string;
+  staff: string;
+  amount: number;
+  time: string;
+  method: string;
+}
+
+async function fetchRecentBills(): Promise<RecentBill[]> {
+  const { data: bills } = await supabase
+    .from('bills')
+    .select(`
+      id,
+      table_id,
+      total,
+      payment_method,
+      paid_at,
+      created_by,
+      created_at
+    `)
+    .eq('tenant_id', TENANT_ID)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  if (!bills || bills.length === 0) {
+    return [];
+  }
+
+  // Fetch table names
+  const tableIds = [...new Set(bills.map(b => b.table_id).filter(Boolean))];
+  const { data: tablesData } = tableIds.length > 0
+    ? await supabase.from('tables').select('id, name').in('id', tableIds)
+    : { data: [] };
+
+  const tableMap = new Map((tablesData ?? []).map(t => [t.id, t.name]));
+
+  return bills.map(bill => ({
+    id: `CC-${bill.id.slice(0, 8).toUpperCase()}`,
+    table: tableMap.get(bill.table_id) || 'Walk-in',
+    staff: 'Staff',
+    amount: Math.round(bill.total / 100),
+    time: bill.paid_at
+      ? new Date(bill.paid_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+      : new Date(bill.created_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }),
+    method: bill.payment_method || 'Cash',
+  }));
+}
+
+async function fetchHourlyData(): Promise<HourlyData[]> {
+  const today = todayRange();
+
+  const { data: orders } = await supabase
+    .from('orders')
+    .select('created_at')
+    .eq('tenant_id', TENANT_ID)
+    .gte('created_at', today.start)
+    .lt('created_at', today.end)
+    .neq('status', 'cancelled');
+
+  // Build hour buckets (8am to 10pm)
+  const hours: HourlyData[] = [];
+  const hourCounts = new Map<number, number>();
+
+  for (const order of (orders ?? [])) {
+    const h = new Date(order.created_at).getHours();
+    hourCounts.set(h, (hourCounts.get(h) || 0) + 1);
+  }
+
+  for (let h = 8; h <= 22; h++) {
+    hours.push({ hour: h, orders: hourCounts.get(h) || 0 });
+  }
+
+  return hours;
+}
+
+// ─── Main Dashboard Component ─────────────────────────
 
 export default function DashboardPage() {
   const { effectivelyOnline, lastSyncedAt } = useSyncContext();
+
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [revenueTrend, setRevenueTrend] = useState<RevenuePoint[]>([]);
+  const [topItems, setTopItems] = useState<TopItem[]>([]);
+  const [recentBills, setRecentBills] = useState<RecentBill[]>([]);
+  const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    return () => clearInterval(timer);
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [m, chart, items, bills, hourly] = await Promise.all([
+        fetchDashboardMetrics(),
+        fetchRevenueChart(),
+        fetchTopItems(),
+        fetchRecentBills(),
+        fetchHourlyData(),
+      ]);
+      setMetrics(m);
+      setRevenueTrend(chart);
+      setTopItems(items);
+      setRecentBills(bills);
+      setHourlyData(hourly);
+    } catch (err) {
+      console.error('[Dashboard] Failed to load data:', err);
+      setError('Failed to load dashboard data. Check your Supabase connection.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const m = MOCK_METRICS;
-  const revDelta = ((m.revenue_today - m.revenue_yesterday) / m.revenue_yesterday * 100).toFixed(1);
-  const orderDelta = ((m.orders_today - m.orders_yesterday) / m.orders_yesterday * 100).toFixed(1);
-  const avgDelta = ((m.avg_bill_value - m.avg_bill_yesterday) / m.avg_bill_yesterday * 100).toFixed(1);
-  const maxRevenue = Math.max(...MOCK_REVENUE_TREND.map(r => r.revenue));
-  const maxHourly = Math.max(...MOCK_HOURLY.map(h => h.orders));
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Auto-refresh every 60 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+      loadData();
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [loadData]);
+
+  // Subscribe to real-time order changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('dashboard-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `tenant_id=eq.${TENANT_ID}`,
+        },
+        () => {
+          // Refresh dashboard when any order changes
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadData]);
+
+  // ─── Loading State ──────────────────────────────────
+
+  if (loading && !metrics) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-heading font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
+              Dashboard Overview
+            </h2>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+              Loading real-time data from Supabase...
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="glass-card p-5 animate-pulse">
+              <div className="h-3 w-20 rounded" style={{ background: 'var(--canvas-muted)' }} />
+              <div className="h-7 w-28 rounded mt-3" style={{ background: 'var(--canvas-muted)' }} />
+              <div className="h-2 w-16 rounded mt-2" style={{ background: 'var(--canvas-muted)' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Error State ────────────────────────────────────
+
+  if (error && !metrics) {
+    return (
+      <div className="space-y-6">
+        <div className="glass-card p-8 text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className="font-heading font-bold text-base mb-2" style={{ color: 'var(--text-primary)' }}>
+            Connection Error
+          </h3>
+          <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>{error}</p>
+          <button onClick={loadData} className="btn-primary">Retry</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Computed Values ────────────────────────────────
+
+  const m = metrics!;
+  const safeDiv = (a: number, b: number) => b === 0 ? 0 : ((a - b) / b * 100);
+  const revDelta = safeDiv(m.revenue_today, m.revenue_yesterday).toFixed(1);
+  const orderDelta = safeDiv(m.orders_today, m.orders_yesterday).toFixed(1);
+  const avgDelta = safeDiv(m.avg_bill_value, m.avg_bill_yesterday).toFixed(1);
+  const maxRevenue = Math.max(...revenueTrend.map(r => r.revenue), 1);
+  const maxHourly = Math.max(...hourlyData.map(h => h.orders), 1);
 
   return (
     <div className="space-y-6">
@@ -74,7 +390,7 @@ export default function DashboardPage() {
             Dashboard Overview
           </h2>
           <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Real-time performance and store health indicators.
+            Real-time performance from Supabase • {currentTime.toLocaleTimeString()}
             {!effectivelyOnline && lastSyncedAt && (
               <span className="ml-2" style={{ color: 'var(--accent-amber)' }}>
                 (Cached — last updated {lastSyncedAt.toLocaleTimeString()})
@@ -82,6 +398,9 @@ export default function DashboardPage() {
             )}
           </p>
         </div>
+        <button onClick={loadData} className="btn-ghost text-[10px] flex items-center gap-1.5">
+          <RefreshIcon size={12} /> Refresh
+        </button>
       </div>
 
       {/* KPI Cards */}
@@ -103,7 +422,7 @@ export default function DashboardPage() {
         <KPICard
           label="Active Tables"
           value={`${m.active_tables}/${m.total_tables}`}
-          subtitle={`${Math.round(m.active_tables / m.total_tables * 100)}% occupancy`}
+          subtitle={m.total_tables > 0 ? `${Math.round(m.active_tables / m.total_tables * 100)}% occupancy` : 'No tables'}
           icon={<TablesIcon />}
           color="var(--accent-violet)"
         />
@@ -125,33 +444,47 @@ export default function DashboardPage() {
               <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Revenue Trend</h3>
               <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Last 7 days performance</p>
             </div>
+            <span className="status-badge" style={{
+              background: 'rgba(0,214,143,0.1)',
+              color: 'var(--accent-emerald)',
+              border: '1px solid rgba(0,214,143,0.2)',
+              fontSize: '9px',
+            }}>
+              LIVE
+            </span>
           </div>
-          <div className="flex items-end gap-3 h-[200px] pt-4">
-            {MOCK_REVENUE_TREND.map((point, i) => {
-              const height = (point.revenue / maxRevenue) * 100;
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
-                  <div className="relative w-full flex justify-center">
-                    <span className="absolute -top-6 text-[10px] font-mono font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ color: 'var(--accent-sapphire)' }}>
-                      ₹{(point.revenue / 1000).toFixed(1)}k
+          {revenueTrend.length > 0 ? (
+            <div className="flex items-end gap-3 h-[200px] pt-4">
+              {revenueTrend.map((point, i) => {
+                const height = maxRevenue > 0 ? (point.revenue / maxRevenue) * 100 : 0;
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
+                    <div className="relative w-full flex justify-center">
+                      <span className="absolute -top-6 text-[10px] font-mono font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ color: 'var(--accent-sapphire)' }}>
+                        ₹{(point.revenue / 1000).toFixed(1)}k
+                      </span>
+                      <div
+                        className="w-full max-w-[40px] rounded-t-lg transition-all duration-300 group-hover:opacity-90"
+                        style={{
+                          height: `${Math.max(height, 2)}%`,
+                          background: `linear-gradient(180deg, var(--accent-sapphire), rgba(77, 124, 254, 0.3))`,
+                          minHeight: '8px',
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                      {point.date}
                     </span>
-                    <div
-                      className="w-full max-w-[40px] rounded-t-lg transition-all duration-300 group-hover:opacity-90"
-                      style={{
-                        height: `${height}%`,
-                        background: `linear-gradient(180deg, var(--accent-sapphire), rgba(77, 124, 254, 0.3))`,
-                        minHeight: '8px',
-                      }}
-                    />
                   </div>
-                  <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
-                    {point.date}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center">
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No order data yet. Revenue will appear here once orders start coming in.</p>
+            </div>
+          )}
         </div>
 
         {/* Top Selling Items */}
@@ -159,8 +492,8 @@ export default function DashboardPage() {
           <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Top Selling Items</h3>
           <p className="text-[11px] mt-0.5 mb-4" style={{ color: 'var(--text-muted)' }}>By quantity sold this week</p>
           <div className="space-y-3">
-            {MOCK_TOP_ITEMS.map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-2.5 rounded-xl" style={{
+            {topItems.length > 0 ? topItems.map((item, i) => (
+              <div key={item.id} className="flex items-center justify-between p-2.5 rounded-xl" style={{
                 background: i === 0 ? 'rgba(77, 124, 254, 0.06)' : 'transparent',
                 border: `1px solid ${i === 0 ? 'rgba(77, 124, 254, 0.1)' : 'transparent'}`,
               }}>
@@ -176,11 +509,15 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold block" style={{ color: 'var(--text-primary)' }}>{item.qty} sold</span>
+                  <span className="text-xs font-bold block" style={{ color: 'var(--text-primary)' }}>{item.quantity_sold} sold</span>
                   <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>₹{item.revenue.toLocaleString()}</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <p className="text-xs p-4 text-center" style={{ color: 'var(--text-muted)' }}>
+                No sales data yet.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -198,40 +535,46 @@ export default function DashboardPage() {
               View All →
             </a>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-[10px] font-bold uppercase tracking-wider text-left" style={{ color: 'var(--text-muted)' }}>
-                  <th className="pb-3 pr-4">Bill #</th>
-                  <th className="pb-3 pr-4">Table</th>
-                  <th className="pb-3 pr-4">Staff</th>
-                  <th className="pb-3 pr-4">Amount</th>
-                  <th className="pb-3 pr-4">Time</th>
-                  <th className="pb-3">Method</th>
-                </tr>
-              </thead>
-              <tbody>
-                {MOCK_RECENT_BILLS.map((bill) => (
-                  <tr key={bill.id} className="text-xs border-t" style={{ borderColor: 'var(--canvas-border)' }}>
-                    <td className="py-3 pr-4 font-mono font-bold" style={{ color: 'var(--text-primary)' }}>{bill.id}</td>
-                    <td className="py-3 pr-4" style={{ color: 'var(--text-secondary)' }}>{bill.table}</td>
-                    <td className="py-3 pr-4" style={{ color: 'var(--text-secondary)' }}>{bill.staff}</td>
-                    <td className="py-3 pr-4 font-mono font-bold" style={{ color: 'var(--accent-emerald)' }}>₹{bill.amount.toLocaleString()}</td>
-                    <td className="py-3 pr-4" style={{ color: 'var(--text-muted)' }}>{bill.time}</td>
-                    <td className="py-3">
-                      <span className="status-badge" style={{
-                        background: bill.method === 'UPI' ? 'rgba(77, 124, 254, 0.1)' : bill.method === 'Card' ? 'rgba(155, 89, 182, 0.1)' : 'rgba(255, 255, 255, 0.04)',
-                        color: bill.method === 'UPI' ? 'var(--accent-sapphire)' : bill.method === 'Card' ? 'var(--accent-violet)' : 'var(--text-secondary)',
-                        border: 'none',
-                      }}>
-                        {bill.method}
-                      </span>
-                    </td>
+          {recentBills.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-[10px] font-bold uppercase tracking-wider text-left" style={{ color: 'var(--text-muted)' }}>
+                    <th className="pb-3 pr-4">Bill #</th>
+                    <th className="pb-3 pr-4">Table</th>
+                    <th className="pb-3 pr-4">Staff</th>
+                    <th className="pb-3 pr-4">Amount</th>
+                    <th className="pb-3 pr-4">Time</th>
+                    <th className="pb-3">Method</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {recentBills.map((bill) => (
+                    <tr key={bill.id} className="text-xs border-t" style={{ borderColor: 'var(--canvas-border)' }}>
+                      <td className="py-3 pr-4 font-mono font-bold" style={{ color: 'var(--text-primary)' }}>{bill.id}</td>
+                      <td className="py-3 pr-4" style={{ color: 'var(--text-secondary)' }}>{bill.table}</td>
+                      <td className="py-3 pr-4" style={{ color: 'var(--text-secondary)' }}>{bill.staff}</td>
+                      <td className="py-3 pr-4 font-mono font-bold" style={{ color: 'var(--accent-emerald)' }}>₹{bill.amount.toLocaleString()}</td>
+                      <td className="py-3 pr-4" style={{ color: 'var(--text-muted)' }}>{bill.time}</td>
+                      <td className="py-3">
+                        <span className="status-badge" style={{
+                          background: bill.method === 'UPI' ? 'rgba(77, 124, 254, 0.1)' : bill.method === 'Card' ? 'rgba(155, 89, 182, 0.1)' : 'rgba(255, 255, 255, 0.04)',
+                          color: bill.method === 'UPI' ? 'var(--accent-sapphire)' : bill.method === 'Card' ? 'var(--accent-violet)' : 'var(--text-secondary)',
+                          border: 'none',
+                        }}>
+                          {bill.method}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-xs p-8 text-center" style={{ color: 'var(--text-muted)' }}>
+              No bills yet. Settlements will appear here once payments are processed.
+            </p>
+          )}
         </div>
 
         {/* Hourly Heatmap */}
@@ -239,8 +582,8 @@ export default function DashboardPage() {
           <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Hourly Rush</h3>
           <p className="text-[11px] mt-0.5 mb-4" style={{ color: 'var(--text-muted)' }}>Order volume by hour today</p>
           <div className="space-y-1.5">
-            {MOCK_HOURLY.map((h) => {
-              const pct = (h.orders / maxHourly) * 100;
+            {hourlyData.map((h) => {
+              const pct = maxHourly > 0 ? (h.orders / maxHourly) * 100 : 0;
               const isHot = pct > 70;
               const isMed = pct > 40;
               return (
@@ -321,6 +664,14 @@ function KPICard({ label, value, delta, subtitle, icon, color }: {
 }
 
 /* ─── Inline Icons ─── */
+
+function RefreshIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M2 11.5a10 10 0 0 1 18.8-4.3"/><path d="M22 12.5a10 10 0 0 1-18.8 4.2"/>
+    </svg>
+  );
+}
 
 function CurrencyIcon() {
   return (
