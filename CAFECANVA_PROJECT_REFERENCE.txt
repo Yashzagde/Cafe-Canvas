@@ -1859,6 +1859,465 @@ Endpoints:
   DELETE /api/super-admin/staff/:userId          — Delete staff + Supabase auth
 
 
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 11: SUBAGENTS, SKILLS & MCP SERVER DETAILS
+████████████████████████████████████████████████████████████████████████████████
+
+================================================================================
+  11.1  SUBAGENTS — STATUS
+================================================================================
+
+SUBAGENT STATUS: ❌ NONE DEFINED
+
+  Subagents are specialized AI agents that can be spawned by the main agent
+  to handle tasks in parallel or work on focused subtasks independently.
+  They live inside plugin `agents/` directories.
+
+  Current plugin scan:
+    ┌──────────────────────────────┬──────────────┬──────────────┐
+    │ Plugin                       │ agents/ dir? │ skills/ dir? │
+    ├──────────────────────────────┼──────────────┼──────────────┤
+    │ android-cli-plugin           │ ❌ No        │ ✅ Yes       │
+    │ firebase                     │ ❌ No        │ ❌ No        │
+    │ modern-web-guidance-plugin   │ ❌ No        │ ❌ No        │
+    └──────────────────────────────┴──────────────┴──────────────┘
+
+  No custom subagents are configured for this workspace.
+  The main Antigravity agent handles all tasks directly.
+
+  POTENTIAL SUBAGENTS THAT COULD BE CREATED:
+    - Code review subagent (automated PR review)
+    - Migration subagent (Supabase schema changes)
+    - Flutter build subagent (multi-app builds)
+    - Testing subagent (E2E + unit test execution)
+
+  HOW TO CREATE A SUBAGENT:
+    1. Create an agents/ folder inside any plugin directory
+    2. Add a subagent config JSON defining its name, model, and instructions
+    3. The main agent can then invoke it for specialized tasks
+
+
+================================================================================
+  11.2  SKILLS — FULL DETAILS
+================================================================================
+
+A "Skill" is a folder of instructions (SKILL.md) + optional scripts/references
+that extend the AI agent's capabilities for specific domains.
+
+────────────────────────────────────────────────────────────────────────────────
+  SKILL 1: android-cli
+────────────────────────────────────────────────────────────────────────────────
+  Source:    C:\Users\yash\.gemini\config\plugins\android-cli-plugin\skills\SKILL.md
+  Version:   1.0.0
+  Author:    Android developer tools team
+  License:   Apache-2.0
+
+  PURPOSE:
+    Orchestrates Android development tasks including project creation,
+    deployment, SDK management, and environment diagnostics using the
+    `android` command-line tool.
+
+  INSTALLATION (if android CLI not in PATH):
+    Windows: curl.exe -fsSL https://dl.google.com/android/cli/latest/windows_x86_64/install.cmd -o "%TEMP%\i.cmd" && "%TEMP%\i.cmd"
+    Linux:   curl -fsSL https://dl.google.com/android/cli/latest/linux_x86_64/install.sh | bash
+    Mac:     curl -fsSL https://dl.google.com/android/cli/latest/darwin_arm64/install.sh | bash
+
+  COMMANDS:
+    ┌────────────────────┬────────────────────────────────────────────────────────┐
+    │ Command            │ Description                                            │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ android create     │ Create new Android project from templates              │
+    │ android describe   │ Analyze project structure + build targets              │
+    │ android docs       │ Search/fetch Android developer documentation           │
+    │ android emulator   │ Create/start/stop/list/remove AVDs                     │
+    │ android info       │ Print environment info (SDK location, etc.)            │
+    │ android init       │ Initialize environment (skills) for Android CLI        │
+    │ android layout     │ Returns UI layout tree in JSON (debug UI)              │
+    │ android run        │ Deploy and run an Android application                  │
+    │ android screen     │ Capture screenshots / resolve UI elements              │
+    │ android sdk        │ Install/update/remove/list SDK packages                │
+    │ android skills     │ Add/remove/list/find agent skills                      │
+    │ android update     │ Update the Android CLI itself                          │
+    └────────────────────┴────────────────────────────────────────────────────────┘
+
+  EXAMPLE USAGE:
+    android create empty-activity --name="My App" --output=./my-app
+    android sdk install platforms/android-34
+    android sdk list --all
+    android run --apks=app-debug.apk --device=emulator-5554
+    android emulator create --name=Pixel8 --api=34
+    android docs search "compose navigation"
+    android screen capture --output=screenshot.png
+    android layout --pretty --device=emulator-5554
+
+────────────────────────────────────────────────────────────────────────────────
+  SKILL 2: supabase
+────────────────────────────────────────────────────────────────────────────────
+  Source:    d:\Cafe Canva\.agents\skills\supabase\SKILL.md
+  Version:   0.1.2
+  Author:    Supabase
+
+  PURPOSE:
+    Comprehensive guidance for ALL Supabase tasks — Database, Auth,
+    Edge Functions, Realtime, Storage, Vectors, Cron, Queues, client
+    libraries (@supabase/ssr, supabase-js), CLI, and MCP server.
+
+  TRIGGER CONDITIONS:
+    - Working with Supabase products (Database, Auth, Edge Functions, etc.)
+    - Using client libraries (supabase-js, @supabase/ssr) in Next.js/React
+    - Auth issues (login, logout, sessions, JWT, cookies, RLS)
+    - Supabase CLI or MCP server operations
+    - Schema changes, migrations, security audits
+    - Postgres extensions (pg_graphql, pg_cron, pg_vector)
+
+  CORE PRINCIPLES:
+    1. VERIFY AGAINST CHANGELOG: Supabase changes frequently.
+       Fetch https://supabase.com/changelog.md before implementing.
+    2. VERIFY YOUR WORK: Run test queries after every fix.
+    3. DON'T LOOP: If approach fails 2-3 times, try a different method.
+    4. DATA API EXPOSURE: New tables may need explicit GRANT for access.
+    5. RLS EVERYWHERE: Enable RLS on every table in exposed schemas.
+    6. SECURITY CHECKLIST:
+       - Never use user_metadata in JWT authorization (user-editable!)
+       - Deleting user doesn't invalidate existing tokens
+       - Views bypass RLS by default (use security_invoker = true)
+       - UPDATE requires a SELECT policy
+       - auth.role() is DEPRECATED — use TO clause instead
+       - TO authenticated alone = auth without authorization (BOLA/IDOR)
+       - UPDATE policies need both USING and WITH CHECK
+       - SECURITY DEFINER functions bypass RLS
+       - Storage upsert requires INSERT + SELECT + UPDATE
+
+  CLI COMMANDS:
+    supabase --help                     # All top-level commands
+    supabase <group> --help             # Subcommands
+    supabase <group> <command> --help   # Flags for specific command
+
+  CLI GOTCHAS:
+    - supabase db query requires CLI v2.79.0+
+    - supabase db advisors requires CLI v2.81.3+
+    - Always create migrations with: supabase migration new <name>
+
+  SCHEMA CHANGE WORKFLOW:
+    1. Use execute_sql (MCP) or supabase db query to make changes
+    2. Run advisors: supabase db advisors
+    3. Review security checklist
+    4. Generate migration: supabase db pull <name> --local --yes
+    5. Verify: supabase migration list --local
+
+────────────────────────────────────────────────────────────────────────────────
+  SKILL 3: supabase-postgres-best-practices
+────────────────────────────────────────────────────────────────────────────────
+  Source:    d:\Cafe Canva\.agents\skills\supabase-postgres-best-practices\SKILL.md
+  Version:   1.1.1
+  Author:    Supabase
+  License:   MIT
+
+  PURPOSE:
+    Postgres performance optimization and best practices. Use when writing,
+    reviewing, or optimizing Postgres queries, schema designs, or configs.
+
+  WHEN TO APPLY:
+    - Writing SQL queries or designing schemas
+    - Implementing indexes or query optimization
+    - Reviewing database performance issues
+    - Configuring connection pooling or scaling
+    - Optimizing for Postgres-specific features
+    - Working with Row-Level Security (RLS)
+
+  RULE CATEGORIES (by priority):
+    ┌──────────┬──────────────────────────────┬────────────┬─────────────┐
+    │ Priority │ Category                     │ Impact     │ Prefix      │
+    ├──────────┼──────────────────────────────┼────────────┼─────────────┤
+    │ 1        │ Query Performance            │ CRITICAL   │ query-      │
+    │ 2        │ Connection Management        │ CRITICAL   │ conn-       │
+    │ 3        │ Security & RLS              │ CRITICAL   │ security-   │
+    │ 4        │ Schema Design               │ HIGH       │ schema-     │
+    │ 5        │ Concurrency & Locking       │ MEDIUM-HIGH│ lock-       │
+    │ 6        │ Data Access Patterns        │ MEDIUM     │ data-       │
+    │ 7        │ Monitoring & Diagnostics    │ LOW-MEDIUM │ monitor-    │
+    │ 8        │ Advanced Features           │ LOW        │ advanced-   │
+    └──────────┴──────────────────────────────┴────────────┴─────────────┘
+
+  REFERENCE FILES:
+    references/query-missing-indexes.md
+    references/query-partial-indexes.md
+    references/_sections.md
+
+  Each rule file contains:
+    - Brief explanation of why it matters
+    - Incorrect SQL example with explanation
+    - Correct SQL example with explanation
+    - Optional EXPLAIN output or metrics
+    - Supabase-specific notes (when applicable)
+
+
+================================================================================
+  11.3  MCP SERVERS — FULL TOOL DETAILS
+================================================================================
+
+MCP (Model Context Protocol) servers provide external tool capabilities.
+Each server exposes tools that the AI agent can call to interact with
+external services (Firebase, Cloud Run, Flutter, etc.).
+
+Root Path: C:\Users\yash\.gemini\antigravity-ide\mcp\
+
+────────────────────────────────────────────────────────────────────────────────
+  MCP SERVER 1: android-management-api
+────────────────────────────────────────────────────────────────────────────────
+  Path: C:\Users\yash\.gemini\antigravity-ide\mcp\android-management-api\
+  Loading: Lazy (called on demand)
+  Tools: 9
+
+  TOOL LIST:
+    ┌──────────────────────┬────────────────────────────────────────────────────┐
+    │ Tool                 │ Description                                        │
+    ├──────────────────────┼────────────────────────────────────────────────────┤
+    │ get_enterprise       │ Get details of an Android enterprise               │
+    │ list_enterprises     │ List all Android enterprises                       │
+    │ get_application      │ Get application details (package info)             │
+    │ get_device           │ Get details of a managed device                    │
+    │ list_devices         │ List all managed devices                           │
+    │ get_policy           │ Get a device management policy                     │
+    │ list_policies        │ List all device management policies                │
+    │ get_web_app          │ Get a web app configuration                        │
+    │ list_web_apps        │ List all web apps                                  │
+    └──────────────────────┴────────────────────────────────────────────────────┘
+
+────────────────────────────────────────────────────────────────────────────────
+  MCP SERVER 2: cloudrun
+────────────────────────────────────────────────────────────────────────────────
+  Path: C:\Users\yash\.gemini\antigravity-ide\mcp\cloudrun\
+  Loading: Lazy
+  Tools: 8
+
+  TOOL LIST:
+    ┌────────────────────────────┬────────────────────────────────────────────────┐
+    │ Tool                       │ Description                                    │
+    ├────────────────────────────┼────────────────────────────────────────────────┤
+    │ list_projects              │ List Google Cloud projects                     │
+    │ create_project             │ Create a new GCP project                       │
+    │ list_services              │ List Cloud Run services                        │
+    │ get_service                │ Get details of a Cloud Run service             │
+    │ get_service_log            │ Get logs from a Cloud Run service              │
+    │ deploy_local_folder        │ Deploy a local folder to Cloud Run             │
+    │ deploy_file_contents       │ Deploy file contents to Cloud Run              │
+    │ deploy_container_image     │ Deploy a container image to Cloud Run          │
+    └────────────────────────────┴────────────────────────────────────────────────┘
+
+  KEY TOOL PARAMETERS:
+    deploy_local_folder:
+      - project (required): Google Cloud project ID
+      - folderPath (required): Absolute path to folder to deploy
+      - service: Name of the Cloud Run service
+      - region: Deploy region (default: europe-west1)
+
+────────────────────────────────────────────────────────────────────────────────
+  MCP SERVER 3: dart-mcp-server
+────────────────────────────────────────────────────────────────────────────────
+  Path: C:\Users\yash\.gemini\antigravity-ide\mcp\dart-mcp-server\
+  Loading: Lazy
+  Tools: 13 + instructions.md
+
+  INSTRUCTIONS:
+    "This server exposes resources for Flutter and Dart development.
+     Be sure to list these resources especially when dealing with errors
+     or unfamiliar packages. Use read_package_uris and rip_grep_packages
+     to explore package dependencies. Supports package: and package-root:
+     URIs (root resolves to package root instead of lib/)."
+
+  TOOL LIST:
+    ┌────────────────────────────┬────────────────────────────────────────────────────────────┐
+    │ Tool                       │ Description                                                │
+    ├────────────────────────────┼────────────────────────────────────────────────────────────┤
+    │ rip_grep_packages          │ Search package files with ripgrep                          │
+    │ read_package_uris          │ Read package dependency files                              │
+    │ dtd                        │ Dart Tooling Daemon connection management                  │
+    │ get_runtime_errors         │ Get runtime errors from connected Flutter app              │
+    │ hot_restart                │ Perform hot restart (full app reload)                      │
+    │ hot_reload                 │ Perform hot reload (apply changes, keep state)             │
+    │ widget_inspector           │ Inspect widget tree of running Flutter app                 │
+    │ flutter_driver_command     │ Execute Flutter Driver commands for testing                 │
+    │ pub_dev_search             │ Search pub.dev for packages by keyword/query               │
+    │ roots                      │ Get workspace root paths                                   │
+    │ pub                        │ Run pub commands (get, upgrade, etc.)                      │
+    │ analyze_files              │ Run Dart analyzer on files                                 │
+    │ lsp                        │ Language Server Protocol operations                        │
+    └────────────────────────────┴────────────────────────────────────────────────────────────┘
+
+  KEY TOOL PARAMETERS:
+
+    hot_reload:
+      - appUri (optional): VM Service URI (required if multiple apps connected)
+      - clearRuntimeErrors (optional): Clear old errors before reloading
+
+    pub_dev_search:
+      - query (required): Search query supporting:
+        - "exact phrase": Exact match
+        - dependency:<pkg>: Packages that reference <pkg>
+        - topic:<name>: Packages with specific topic
+        - publisher:<domain>: By publisher
+        - sdk:flutter / sdk:dart
+        - runtime:web / runtime:native-jit / runtime:native-aot
+        - updated:3d / 2w / 6m / 2y
+        - has:executable
+
+    analyze_files:
+      - files (required): List of file paths to analyze
+
+────────────────────────────────────────────────────────────────────────────────
+  MCP SERVER 4: firebase-mcp-server
+────────────────────────────────────────────────────────────────────────────────
+  Path: C:\Users\yash\.gemini\antigravity-ide\mcp\firebase-mcp-server\
+  Loading: Lazy
+  Tools: 29 (largest MCP server)
+
+  TOOL LIST BY CATEGORY:
+
+    AUTH (3 tools):
+    ┌──────────────────────────────┬─────────────────────────────────────────────────┐
+    │ Tool                         │ Description                                     │
+    ├──────────────────────────────┼─────────────────────────────────────────────────┤
+    │ auth_get_users               │ Get Firebase Auth users                         │
+    │ auth_update_user             │ Update a Firebase Auth user                     │
+    │ auth_set_sms_region_policy   │ Set SMS region policy for auth                  │
+    └──────────────────────────────┴─────────────────────────────────────────────────┘
+
+    FIREBASE CORE (17 tools):
+    ┌──────────────────────────────────────┬──────────────────────────────────────────────────────┐
+    │ Tool                                 │ Description                                          │
+    ├──────────────────────────────────────┼──────────────────────────────────────────────────────┤
+    │ firebase_login                       │ Authenticate with Firebase                           │
+    │ firebase_logout                      │ Sign out from Firebase                               │
+    │ firebase_get_project                 │ Get project details                                  │
+    │ firebase_list_projects               │ List all Firebase projects                           │
+    │ firebase_create_project              │ Create a new Firebase project                        │
+    │ firebase_list_apps                   │ List apps in a project                               │
+    │ firebase_create_app                  │ Create a new Firebase app                            │
+    │ firebase_create_android_sha          │ Add Android SHA certificate fingerprint               │
+    │ firebase_get_sdk_config              │ Get SDK configuration for an app                     │
+    │ firebase_get_environment             │ Get project environment settings                     │
+    │ firebase_update_environment          │ Update project environment settings                  │
+    │ firebase_init                        │ Initialize Firebase services in workspace             │
+    │ firebase_get_security_rules          │ Get security rules (Firestore/Storage)               │
+    │ firebase_validate_security_rules     │ Validate security rules                              │
+    │ firebase_read_resources              │ Read Firebase resource configurations                │
+    │ firebase_deploy                      │ Deploy Firebase services                             │
+    │ firebase_deploy_status               │ Check deployment status                              │
+    └──────────────────────────────────────┴──────────────────────────────────────────────────────┘
+
+    MESSAGING (1 tool):
+    ┌──────────────────────────────┬──────────────────────────────────────────────────────┐
+    │ Tool                         │ Description                                          │
+    ├──────────────────────────────┼──────────────────────────────────────────────────────┤
+    │ messaging_send_message       │ Send FCM push notification (to token or topic)       │
+    └──────────────────────────────┴──────────────────────────────────────────────────────┘
+
+    REALTIME DATABASE (2 tools):
+    ┌──────────────────────────────┬──────────────────────────────────────────────────────┐
+    │ Tool                         │ Description                                          │
+    ├──────────────────────────────┼──────────────────────────────────────────────────────┤
+    │ realtimedatabase_get_data    │ Read data from Realtime Database path                │
+    │ realtimedatabase_set_data    │ Write data to Realtime Database path                 │
+    └──────────────────────────────┴──────────────────────────────────────────────────────┘
+
+    REMOTE CONFIG (2 tools):
+    ┌──────────────────────────────┬──────────────────────────────────────────────────────┐
+    │ Tool                         │ Description                                          │
+    ├──────────────────────────────┼──────────────────────────────────────────────────────┤
+    │ remoteconfig_get_template    │ Get Remote Config template                           │
+    │ remoteconfig_update_template │ Update Remote Config template                        │
+    └──────────────────────────────┴──────────────────────────────────────────────────────┘
+
+    STORAGE (1 tool):
+    ┌──────────────────────────────────────┬──────────────────────────────────────────────┐
+    │ Tool                                 │ Description                                  │
+    ├──────────────────────────────────────┼──────────────────────────────────────────────┤
+    │ storage_get_object_download_url      │ Get download URL for a storage object        │
+    └──────────────────────────────────────┴──────────────────────────────────────────────┘
+
+    DEVELOPER KNOWLEDGE (3 tools):
+    ┌────────────────────────────────────────────┬──────────────────────────────────────────┐
+    │ Tool                                       │ Description                              │
+    ├────────────────────────────────────────────┼──────────────────────────────────────────┤
+    │ developerknowledge_search_documents        │ Search developer documentation           │
+    │ developerknowledge_answer_query            │ Get AI-powered answers to dev queries    │
+    │ developerknowledge_get_documents           │ Get specific developer documents         │
+    └────────────────────────────────────────────┴──────────────────────────────────────────┘
+
+  KEY TOOL PARAMETERS:
+
+    firebase_init (features object with optional services):
+      - firestore: { database_id, location_id, rules, rules_filename }
+      - database: { rules, rules_filename }
+      - hosting: { public_directory, single_page_app, site_id }
+      - storage: { rules, rules_filename }
+      - auth: { providers: { emailPassword, googleSignIn, anonymous } }
+      - dataconnect: { service_id, cloudsql_instance_id, provision_cloudsql }
+      - ailogic: { app_id }
+
+    messaging_send_message:
+      - title (required): Push notification title
+      - body (required): Push notification body
+      - registration_token OR topic: Target device or topic
+      - image (optional): URL of notification image
+
+────────────────────────────────────────────────────────────────────────────────
+  MCP SERVER 5: google-developer-knowledge
+────────────────────────────────────────────────────────────────────────────────
+  Path: C:\Users\yash\.gemini\antigravity-ide\mcp\google-developer-knowledge\
+  Loading: Lazy
+  Tools: 3
+
+  TOOL LIST:
+    ┌──────────────────────────────┬──────────────────────────────────────────────────────┐
+    │ Tool                         │ Description                                          │
+    ├──────────────────────────────┼──────────────────────────────────────────────────────┤
+    │ search_documents             │ Search Google developer documentation                │
+    │ answer_query                 │ Get AI-powered answers to developer queries           │
+    │ get_documents                │ Retrieve specific developer documentation             │
+    └──────────────────────────────┴──────────────────────────────────────────────────────┘
+
+
+================================================================================
+  11.4  MODERN WEB GUIDANCE EXTENSION
+================================================================================
+
+  Name:        modern-web-guidance
+  Version:     0.0.151
+  Author:      Google Chrome
+  Description: Keep your coding agent up to date with latest web best practices
+  Reference:   README.md (62KB comprehensive web development guide)
+  Repository:  https://github.com/GoogleChrome/modern-web-guidance
+
+
+================================================================================
+  11.5  FULL CAPABILITIES SUMMARY
+================================================================================
+
+  ┌─────────────────────────────────┬──────────────┬──────────────────────────────┐
+  │ Capability Layer                │ Count        │ What It Provides             │
+  ├─────────────────────────────────┼──────────────┼──────────────────────────────┤
+  │ Subagents                      │ 0            │ None configured              │
+  │ Skills                         │ 3            │ Android CLI, Supabase,       │
+  │                                │              │ Postgres Best Practices      │
+  │ Plugins                        │ 3            │ Android, Firebase, Web       │
+  │ MCP Servers                    │ 5            │ 63 total tools               │
+  │   - android-management-api     │ 9 tools      │ Device/enterprise management │
+  │   - cloudrun                   │ 8 tools      │ GCP Cloud Run deployment     │
+  │   - dart-mcp-server            │ 13 tools     │ Flutter/Dart development     │
+  │   - firebase-mcp-server        │ 29 tools     │ Firebase full suite          │
+  │   - google-developer-knowledge │ 3 tools      │ Documentation search         │
+  │ Extensions                     │ 1            │ Modern Web Guidance (Chrome) │
+  │ Slash Commands                 │ 3            │ /goal, /schedule, /grill-me  │
+  └─────────────────────────────────┴──────────────┴──────────────────────────────┘
+
+  SLASH COMMANDS AVAILABLE TO USER:
+    /goal      — Long-running tasks; agent won't stop until fully achieved
+    /schedule  — Recurring schedules or one-time timers
+    /grill-me  — Interactive interview to resolve design decisions
+
+
 ================================================================================
   END OF FILE
   Total project files tracked: ~250+ source files
@@ -1867,4 +2326,5 @@ Endpoints:
               Tailwind CSS 4 · Dexie.js · Zustand · Riverpod · Hive
   Deployment: Vercel (SaaS + Storefront) · Firebase Hosting (links)
               Electron Builder (Desktop) · Flutter APK (Android)
+  Agent:      3 Skills · 3 Plugins · 5 MCP Servers (63 tools) · 0 Subagents
 ================================================================================
