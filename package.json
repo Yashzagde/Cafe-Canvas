@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Multi-tenant SaaS platform for the Indian restaurant industry",
   "workspaces": [
-    "frontend"
+    "frontend",
+    "desktop"
   ],
   "scripts": {
     "dev": "npm run dev --prefix frontend",
@@ -11,6 +12,8 @@
     "start": "npm run start --prefix frontend",
     "test": "npm run test --prefix frontend",
     "type-check": "npm run type-check --prefix frontend",
+    "desktop": "npm run start --prefix desktop",
+    "desktop:build": "npm run build --prefix desktop",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"

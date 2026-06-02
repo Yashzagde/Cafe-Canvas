@@ -1,0 +1,52 @@
+{
+  "name": "cafecanvas-desktop",
+  "version": "1.0.0",
+  "description": "Native Windows desktop software wrapper for CafeCanvas SaaS restaurant applications.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "keywords": [
+    "cafecanvas",
+    "desktop",
+    "electron"
+  ],
+  "author": "CafeCanvas Dev Team",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^31.0.1"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.cafecanvas.storeadmin",
+    "productName": "CafeCanvas Store Admin",
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "files": [
+      "package.json",
+      "main.js",
+      "preload.js"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CafeCanvas Store Admin"
+    }
+  }
+}
