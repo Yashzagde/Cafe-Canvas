@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Code Hub | Premium Offline Docs & Config Builder</title>
+  
+  <!-- Premium Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- CDNs for Parsing and Syntax Highlighting -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
+  <!-- Lucide Icons for premium modern look -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Glowing Accent Bar -->
+    <div class="glow-bar"></div>
+
+    <!-- MAIN HEADER -->
+    <header class="main-header">
+      <div class="brand">
+        <div class="logo-orb">
+          <i data-lucide="terminal"></i>
+        </div>
+        <div class="brand-text">
+          <h1>Claude Code</h1>
+          <span class="sub-logo">Developer Command Hub</span>
+        </div>
+      </div>
+      
+      <!-- Primary Tab Navigation -->
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="docs-browser" id="btn-tab-docs">
+          <i data-lucide="book-open"></i> Docs Browser
+        </button>
+        <button class="tab-btn" data-tab="config-builder" id="btn-tab-config">
+          <i data-lucide="sliders"></i> Config Lab
+        </button>
+        <button class="tab-btn" data-tab="theme-builder" id="btn-tab-theme">
+          <i data-lucide="palette"></i> Terminal Theme Lab
+        </button>
+      </nav>
+      
+      <div class="header-actions">
+        <span class="badge badge-primary"><i data-lucide="cpu"></i> Agent teams active</span>
+      </div>
+    </header>
+
+    <!-- WRAPPER FOR TABS -->
+    <main class="content-wrapper">
+      
+      <!-- ==================== TAB 1: DOCS BROWSER ==================== -->
+      <section id="docs-browser" class="tab-content active">
+        <div class="docs-layout">
+          
+          <!-- LEFT SIDEBAR: NAV & SEARCH -->
+          <aside class="sidebar-left">
+            <!-- Glowing Search Bar -->
+            <div class="search-box">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="search-input" placeholder="Search docs, tags, hooks..." autocomplete="off">
+              <button class="search-clear-btn" id="search-clear-btn"><i data-lucide="x"></i></button>
+            </div>
+            
+            <!-- Category Accordeons / Document List -->
+            <div class="nav-container" id="nav-container">
+              <div class="nav-loading">
+                <div class="spinner"></div>
+                <p>Indexing documents...</p>
+              </div>
+            </div>
+          </aside>
+
+          <!-- CENTER: WRAPPER FOR DOCUMENT READER -->
+          <article class="reader-container">
+            <div id="reader-content" class="reader-content">
+              <!-- Default state when loading or empty -->
+              <div class="welcome-screen">
+                <i data-lucide="sparkles" class="welcome-icon"></i>
+                <h2>Welcome to Claude Code Hub</h2>
+                <p>Select a documentation page from the sidebar to begin exploring. You can search full text, tags, and topics instantly.</p>
+                <div class="quick-links">
+                  <button class="quick-link-card" id="ql-intro">
+                    <i data-lucide="rocket"></i>
+                    <span>Quickstart Guide</span>
+                  </button>
+                  <button class="quick-link-card" id="ql-teams">
+                    <i data-lucide="users"></i>
+                    <span>Orchestrating Teams</span>
+                  </button>
+                  <button class="quick-link-card" id="ql-subagents">
+                    <i data-lucide="bot"></i>
+                    <span>Custom Subagents</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- RIGHT SIDEBAR: TABLE OF CONTENTS -->
+          <aside class="sidebar-right">
+            <div class="toc-container">
+              <h3><i data-lucide="menu"></i> Table of Contents</h3>
+              <nav id="toc-nav" class="toc-nav">
+                <p class="toc-empty">No headings on this page</p>
+              </nav>
+            </div>
+          </aside>
+
+        </div>
+      </section>
+
+      <!-- ==================== TAB 2: CONFIG BUILDER ==================== -->
+      <section id="config-builder" class="tab-content">
+        <div class="config-layout">
+          
+          <!-- Control Panel Form -->
+          <div class="config-panel-left glass-card">
+            <h2><i data-lucide="settings-2"></i> Custom Configuration Generator</h2>
+            <p class="section-desc">Design and validate your Claude Code configuration variables, custom subagent blueprints, or event hooks.</p>
+            
+            <!-- Type Selector Tabs -->
+            <div class="config-sub-nav">
+              <button class="sub-tab-btn active" data-config="settings">settings.json</button>
+              <button class="sub-tab-btn" data-config="subagent">Subagent Definition</button>
+              <button class="sub-tab-btn" data-config="hooks">hooks.json</button>
+            </div>
+
+            <!-- Form fields wrapper -->
+            <div class="form-container">
+              <!-- Sub-Form: settings.json -->
+              <div class="sub-form-content active" id="form-settings">
+                <div class="form-group">
+                  <label for="set-teams">Enable Agent Teams (Experimental)</label>
+                  <select id="set-teams" class="form-control">
+                    <option value="1" selected>Enabled (1)</option>
+                    <option value="0">Disabled (0)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="set-mode">Teammate Display Mode</label>
+                  <select id="set-mode" class="form-control">
+                    <option value="in-process" selected>in-process (In terminal)</option>
+                    <option value="tmux">tmux (Split pane grid)</option>
+                    <option value="auto">auto (Tmux if active, else terminal)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="set-permission">Default Permission Mode</label>
+                  <select id="set-permission" class="form-control">
+                    <option value="ask" selected>ask (Prompt before action)</option>
+                    <option value="auto">auto (Classifier checks safe domains)</option>
+                    <option value="dangerously-skip-permissions">dangerously-skip-permissions (Caution! No prompts)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="set-model">Default Teammate Model</label>
+                  <select id="set-model" class="form-control">
+                    <option value="claude-3-5-sonnet" selected>Claude 3.5 Sonnet (Recommended)</option>
+                    <option value="leader-model">Follow Leader's Model</option>
+                    <option value="claude-3-opus">Claude 3.0 Opus (High-end)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Enabled Plugins</label>
+                  <div class="checkbox-group">
+                    <label class="checkbox-container">
+                      <input type="checkbox" id="plug-vercel" checked> vercel-plugin@vercel
+                      <span class="checkmark"></span>
+                    </label>
+                    <label class="checkbox-container">
+                      <input type="checkbox" id="plug-security" checked> security-guidance-plugin
+                      <span class="checkmark"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sub-Form: Subagent Definition -->
+              <div class="sub-form-content" id="form-subagent">
+                <div class="form-group">
+                  <label for="sub-name">Subagent Unique Key (Name)</label>
+                  <input type="text" id="sub-name" class="form-control" placeholder="e.g. security-reviewer">
+                </div>
+                <div class="form-group">
+                  <label for="sub-model">Model Override</label>
+                  <select id="sub-model" class="form-control">
+                    <option value="claude-3-5-sonnet" selected>Claude 3.5 Sonnet</option>
+                    <option value="claude-3-opus">Claude 3.0 Opus</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="sub-instructions">System Prompt Additions</label>
+                  <textarea id="sub-instructions" class="form-control" rows="4" placeholder="You are an expert security auditor. When auditing code, evaluate memory leaks, input validation, and SQL injections..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Tool Restrict Allowlist (Comma separated)</label>
+                  <input type="text" id="sub-tools" class="form-control" placeholder="view_file, grep_search, run_command">
+                </div>
+              </div>
+
+              <!-- Sub-Form: hooks.json -->
+              <div class="sub-form-content" id="form-hooks">
+                <div class="form-group">
+                  <label for="hook-type">Hook Event Trigger</label>
+                  <select id="hook-type" class="form-control">
+                    <option value="TeammateIdle" selected>TeammateIdle (Runs before teammate goes idle)</option>
+                    <option value="TaskCreated">TaskCreated (Intercepts task addition)</option>
+                    <option value="TaskCompleted">TaskCompleted (Intercepts task marking done)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="hook-command">Command execution / Script path</label>
+                  <input type="text" id="hook-command" class="form-control" placeholder="e.g. node scripts/verify-tests.js">
+                </div>
+                <div class="form-group">
+                  <label for="hook-action">If check fails (Exit code 2)</label>
+                  <select id="hook-action" class="form-control">
+                    <option value="feedback" selected>Send feedback to teammate and resume</option>
+                    <option value="block">Block execution completely</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Download & Export Buttons -->
+            <div class="config-actions">
+              <button class="btn btn-secondary" id="btn-reset-config">
+                <i data-lucide="refresh-cw"></i> Reset Form
+              </button>
+              <button class="btn btn-primary" id="btn-export-config">
+                <i data-lucide="download"></i> Export Configuration
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Output Preview -->
+          <div class="config-panel-right">
+            <div class="preview-header">
+              <div class="file-tab">
+                <i data-lucide="file-json" class="file-icon"></i>
+                <span id="preview-filename">settings.json</span>
+              </div>
+              <button class="btn btn-small" id="btn-copy-preview">
+                <i data-lucide="copy"></i> Copy Code
+              </button>
+            </div>
+            <pre class="preview-code"><code id="preview-code-block" class="language-json">{}</code></pre>
+            
+            <div class="export-instruction-card">
+              <h4><i data-lucide="info"></i> Quick Installation Instruction</h4>
+              <p id="export-info-text">Save the generated file above into your global config directory: <code class="terminal-inline">~/.claude/settings.json</code>. This enables experimental Agent Teams for all sessions.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ==================== TAB 3: TERMINAL THEME LAB ==================== -->
+      <section id="theme-builder" class="tab-content">
+        <div class="theme-layout">
+          
+          <!-- Theme Settings form -->
+          <div class="theme-panel-left glass-card">
+            <h2><i data-lucide="palette"></i> Terminal Theme Lab</h2>
+            <p class="section-desc">Build gorgeous, custom styling palettes for your terminal status line, matching your color identity.</p>
+            
+            <div class="form-group">
+              <label for="theme-preset">Base Color Preset</label>
+              <select id="theme-preset" class="form-control">
+                <option value="cyberpunk" selected>Cyberpunk Neon (Vibrant Indigo & Magenta)</option>
+                <option value="matrix">Matrix Code (Emerald & Dark Slate)</option>
+                <option value="aurora">Aurora Glow (Cyan & Sage Green)</option>
+                <option value="glass">Monochrome Sleek (Slate & Subtle White)</option>
+              </select>
+            </div>
+
+            <div class="color-pickers-grid">
+              <div class="form-group">
+                <label for="theme-primary">Primary Glow</label>
+                <input type="color" id="theme-primary" value="#6366f1" class="color-picker-input">
+              </div>
+              <div class="form-group">
+                <label for="theme-accent">Secondary Accent</label>
+                <input type="color" id="theme-accent" value="#d946ef" class="color-picker-input">
+              </div>
+              <div class="form-group">
+                <label for="theme-bg">Terminal Background</label>
+                <input type="color" id="theme-bg" value="#0f172a" class="color-picker-input">
+              </div>
+              <div class="form-group">
+                <label for="theme-text">Terminal Primary Text</label>
+                <input type="color" id="theme-text" value="#f8fafc" class="color-picker-input">
+              </div>
+            </div>
+
+            <div class="config-actions">
+              <button class="btn btn-primary" id="btn-export-theme">
+                <i data-lucide="download"></i> Apply & Export Theme
+              </button>
+            </div>
+          </div>
+
+          <!-- Terminal Live Preview Simulator -->
+          <div class="theme-panel-right">
+            <h3><i data-lucide="monitor"></i> Live Terminal Preview Simulator</h3>
+            
+            <div class="terminal-frame" id="sim-terminal-frame">
+              <div class="terminal-titlebar">
+                <div class="window-dot red"></div>
+                <div class="window-dot yellow"></div>
+                <div class="window-dot green"></div>
+                <span class="window-title">powershell — claude</span>
+              </div>
+              <div class="terminal-body" id="sim-terminal-body">
+                <div class="term-line prompt">D:\Cafe Canva&gt; claude</div>
+                <div class="term-line response">Starting Claude Code session v2.1.126...</div>
+                <div class="term-line success">✔ Connected to project: Cafe Canva</div>
+                <div class="term-line info">ℹ Loaded 2 custom agent skills from .agents/skills</div>
+                <br>
+                <!-- Teammate layout simulator -->
+                <div class="term-line font-bold">Spawning agent team (3 active teammates):</div>
+                <div class="teammate-status-bar">
+                  <div class="tm-pill active"><i data-lucide="bot"></i> Lead (Gemini 3.5 Flash)</div>
+                  <div class="tm-pill"><i data-lucide="shield"></i> Security Reviewer</div>
+                  <div class="tm-pill"><i data-lucide="zap"></i> Optimizer</div>
+                </div>
+                
+                <div class="term-line chat-msg"><span class="chat-user font-bold">[Lead]</span> Welcome security-reviewer and optimizer. Security-reviewer, please audit <code class="term-code">src/auth/</code>. Optimizer, run performance checks.</div>
+                <div class="term-line chat-msg"><span class="chat-user font-bold">[Security Reviewer]</span> Claimed task 1. Initiating static security scan.</div>
+                
+                <br>
+                <!-- Terminal Status Line Simulator -->
+                <div class="terminal-status-line" id="sim-status-line">
+                  <span class="stat-left"><i data-lucide="circle-dot"></i> auto-mode</span>
+                  <span class="stat-mid">Workspace: Cafe Canva</span>
+                  <span class="stat-right"><i data-lucide="dollar-sign"></i> 0.04 (Gemini 3.5 Flash)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings json display -->
+            <div class="theme-export-output mt-4">
+              <pre class="preview-code"><code id="theme-code-block" class="language-json">{}</code></pre>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>
