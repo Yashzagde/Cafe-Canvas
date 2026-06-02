@@ -164,6 +164,7 @@ CREATE TABLE orders (
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
   branch_id UUID REFERENCES branches(id) ON DELETE SET NULL,
   table_id UUID REFERENCES tables(id) ON DELETE SET NULL,
+  table_session_id UUID REFERENCES table_sessions(id) ON DELETE SET NULL,
   customer_name TEXT,
   customer_count INTEGER DEFAULT 1,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending','confirmed','preparing','ready','served','billed','paid','cancelled')),

@@ -71,6 +71,14 @@ CREATE POLICY "staff_read_users" ON users
   FOR SELECT TO authenticated
   USING (tenant_id = get_tenant_id());
 
+CREATE POLICY "user_read_own_profile" ON users
+  FOR SELECT TO authenticated
+  USING (auth.uid() = id);
+
+CREATE POLICY "user_insert_own_profile" ON users
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = id);
+
 CREATE POLICY "owner_write_users" ON users
   FOR ALL TO authenticated
   USING (tenant_id = get_tenant_id() AND get_user_role() = 'owner')

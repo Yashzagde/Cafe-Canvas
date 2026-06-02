@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
@@ -8,15 +8,17 @@ import {
 import {
   LayoutDashboard, Store, Users, Settings, Coffee,
   Receipt, Percent, BarChart3, Plus, Trash2, Printer,
-  Check, Search, CreditCard, Banknote, Smartphone, X
+  Check, Search, CreditCard, Banknote, Smartphone, X, AlertCircle
 } from 'lucide-react';
 import ReceiptPreviewModal from '@/components/billing/ReceiptPreviewModal';
 import type { ReceiptData } from '@/components/billing/types';
 import { DEFAULT_STORE_INFO } from '@/components/billing/types';
+import { createClient } from '@/utils/supabase/client';
 
 /* ═══════════════════════════════════════════════════════════
-   DESIGN TOKENS
-═══════════════════════════════════════════════════════════ */
+   DESIGN TOKENS & STYLES
+   (Preserving premium canvas styling)
+   ═══════════════════════════════════════════════════════════ */
 const T = {
   bg:    "#fbfbf9",
   card:  "#ffffff",
@@ -47,11 +49,11 @@ const fm = "'DM Mono', monospace";
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
-═══════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════════ */
 interface MenuItem {
   id: string;
   name: string;
-  price: number;
+  price: number; // in rupees
   cat: string;
   status: 'available' | 'unavailable' | 'hidden';
   desc: string;
@@ -70,7 +72,7 @@ interface BillItem {
   _key: string;
   itemId: string;
   name: string;
-  price: number;
+  price: number; // in rupees
   qty: number;
 }
 
@@ -80,11 +82,11 @@ interface BillHistoryEntry {
   section: string;
   time: string;
   method: string;
-  sub: number;
-  gst: number;
-  svc: number;
-  discount: number;
-  total: number;
+  sub: number; // rupees
+  gst: number; // rupees
+  svc: number; // rupees
+  discount: number; // percent
+  total: number; // rupees
   itemsCount: number;
   billItems: BillItem[];
 }
@@ -94,7 +96,7 @@ interface Customer {
   name: string;
   phone: string;
   visits: number;
-  spend: number;
+  spend: number; // rupees
   last: string;
   tier: 'Platinum' | 'Gold' | 'Silver' | 'Bronze';
 }
@@ -117,136 +119,93 @@ interface Coupon {
   active: boolean;
 }
 
+interface RecentOrder {
+  id: string;
+  tableId: string;
+  desc: string;
+  amount: number;
+  status: string;
+  age: string;
+}
+
 /* ═══════════════════════════════════════════════════════════
-   INITIAL DATA
-═══════════════════════════════════════════════════════════ */
+   MOCK/FALLBACK SANDBOX DATA
+   ═══════════════════════════════════════════════════════════ */
+const SEED_TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
 const MENU_CAT = ["All", "Coffee", "Tea", "Food", "Bakery", "Drinks"];
+
 const INIT_MENU: MenuItem[] = [
-  { id: "m1", name: "Classic Cappuccino", price: 290, cat: "Coffee", status: "available", desc: "Double ristretto, microfoam, 6oz" },
-  { id: "m2", name: "Specialty Cold Brew", price: 350, cat: "Coffee", status: "available", desc: "24-hr Ethiopian single origin" },
-  { id: "m3", name: "Matcha Latte Special", price: 320, cat: "Tea", status: "available", desc: "Ceremonial grade Uji matcha" },
-  { id: "m4", name: "Avocado Sourdough Toast", price: 390, cat: "Food", status: "available", desc: "Organic avocado, feta, dukkah" },
-  { id: "m5", name: "Almond Butter Croissant", price: 240, cat: "Bakery", status: "available", desc: "Flaky, house almond cream" },
-  { id: "m6", name: "Green Tea Mint Infusion", price: 210, cat: "Tea", status: "available", desc: "Loose-leaf Darjeeling, fresh mint" },
-  { id: "m7", name: "Chocolate Truffle Pastry", price: 180, cat: "Bakery", status: "unavailable", desc: "Dark Valrhona 72% ganache" },
-  { id: "m8", name: "Vegan Blueberry Muffin", price: 160, cat: "Bakery", status: "available", desc: "Plant-based, chia, organic flour" },
-  { id: "m9", name: "Aether Loaded Burrito", price: 420, cat: "Food", status: "available", desc: "Grilled chicken, chipotle, salsa" },
-  { id: "m10", name: "Hibiscus Rose Cooler", price: 230, cat: "Drinks", status: "available", desc: "House hibiscus, rose water, lime" },
+  { id: "e0000000-0000-0000-0000-000000000001", name: "Classic Cappuccino", price: 290, cat: "Coffee", status: "available", desc: "Double ristretto, microfoam, 6oz" },
+  { id: "e0000000-0000-0000-0000-000000000004", name: "Specialty Cold Brew", price: 350, cat: "Coffee", status: "available", desc: "24-hr Ethiopian single origin" },
+  { id: "e0000000-0000-0000-0000-000000000014", name: "Matcha Latte Special", price: 320, cat: "Tea", status: "available", desc: "Ceremonial grade Uji matcha" },
+  { id: "e0000000-0000-0000-0000-000000000011", name: "Avocado Sourdough Toast", price: 390, cat: "Food", status: "available", desc: "Organic avocado, feta, dukkah" },
+  { id: "e0000000-0000-0000-0000-000000000008", name: "Almond Butter Croissant", price: 240, cat: "Bakery", status: "available", desc: "Flaky, house almond cream" }
 ];
 
 const INIT_TABLES: Table[] = [
-  { id: "T01", name: "Table 01", section: "Indoor", cap: 2, status: "available" },
-  { id: "T02", name: "Table 02", section: "Indoor", cap: 4, status: "occupied" },
-  { id: "T03", name: "Table 03", section: "Indoor", cap: 4, status: "occupied" },
-  { id: "T04", name: "Table 04", section: "Indoor", cap: 6, status: "available" },
-  { id: "T05", name: "Table 05", section: "Outdoor", cap: 2, status: "reserved" },
-  { id: "T06", name: "Table 06", section: "Outdoor", cap: 4, status: "occupied" },
-  { id: "T07", name: "Table 07", section: "Outdoor", cap: 2, status: "available" },
-  { id: "T08", name: "Table 08", section: "Bar", cap: 1, status: "occupied" },
-  { id: "T09", name: "Table 09", section: "Bar", cap: 1, status: "cleaning" },
-  { id: "T10", name: "Table 10", section: "Indoor", cap: 6, status: "available" },
+  { id: "c0000000-0000-0000-0000-000000000001", name: "Table 1", section: "Indoor", cap: 2, status: "available" },
+  { id: "c0000000-0000-0000-0000-000000000002", name: "Table 2", section: "Indoor", cap: 4, status: "occupied" },
+  { id: "c0000000-0000-0000-0000-000000000003", name: "Table 3", section: "Indoor", cap: 4, status: "available" }
 ];
 
 const TABLE_ORDERS: Record<string, BillItem[]> = {
-  T02: [
-    { id: "oi1", _key: "oi1", itemId: "m1", name: "Classic Cappuccino", qty: 2, price: 290 },
-    { id: "oi2", _key: "oi2", itemId: "m4", name: "Avocado Sourdough Toast", qty: 2, price: 390 },
-    { id: "oi3", _key: "oi3", itemId: "m8", name: "Vegan Blueberry Muffin", qty: 1, price: 160 },
-  ],
-  T03: [
-    { id: "oi4", _key: "oi4", itemId: "m2", name: "Specialty Cold Brew", qty: 3, price: 350 },
-    { id: "oi5", _key: "oi5", itemId: "m5", name: "Almond Butter Croissant", qty: 2, price: 240 },
-  ],
-  T06: [
-    { id: "oi6", _key: "oi6", itemId: "m3", name: "Matcha Latte Special", qty: 1, price: 320 },
-    { id: "oi7", _key: "oi7", itemId: "m9", name: "Aether Loaded Burrito", qty: 2, price: 420 },
-    { id: "oi8", _key: "oi8", itemId: "m10", name: "Hibiscus Rose Cooler", qty: 2, price: 230 },
-  ],
-  T08: [
-    { id: "oi9", _key: "oi9", itemId: "m1", name: "Classic Cappuccino", qty: 1, price: 290 },
-    { id: "oia", _key: "oia", itemId: "m7", name: "Chocolate Truffle Pastry", qty: 2, price: 180 },
-  ],
+  "c0000000-0000-0000-0000-000000000002": [
+    { id: "oi1", _key: "oi1", itemId: "e0000000-0000-0000-0000-000000000001", name: "Classic Cappuccino", qty: 2, price: 290 },
+    { id: "oi2", _key: "oi2", itemId: "e0000000-0000-0000-0000-000000000011", name: "Avocado Sourdough Toast", qty: 1, price: 390 }
+  ]
 };
 
 const INIT_BILL_HISTORY: BillHistoryEntry[] = [
   {
-    id: "B-0041", table: "Table 03", section: "Indoor", time: "2:45 PM", method: "UPI", sub: 1480, gst: 74, svc: 74, discount: 0, total: 1628, itemsCount: 4,
+    id: "B-0041", table: "Table 3", section: "Indoor", time: "2:45 PM", method: "UPI", sub: 930, gst: 46, svc: 46, discount: 0, total: 1022, itemsCount: 3,
     billItems: [
-      { id: "oi4", _key: "oi4", itemId: "m2", name: "Specialty Cold Brew", qty: 3, price: 350 },
-      { id: "oi5", _key: "oi5", itemId: "m5", name: "Almond Butter Croissant", qty: 2, price: 240 },
+      { id: "oi4", _key: "oi4", itemId: "e0000000-0000-0000-0000-000000000004", name: "Specialty Cold Brew", qty: 2, price: 350 },
+      { id: "oi5", _key: "oi5", itemId: "e0000000-0000-0000-0000-000000000008", name: "Almond Butter Croissant", qty: 1, price: 240 }
     ]
-  },
-  {
-    id: "B-0040", table: "Table 07", section: "Outdoor", time: "1:20 PM", method: "CASH", sub: 860, gst: 43, svc: 43, discount: 0, total: 946, itemsCount: 3,
-    billItems: [
-      { id: "oi6", _key: "oi6", itemId: "m3", name: "Matcha Latte Special", qty: 1, price: 320 },
-      { id: "oi7", _key: "oi7", itemId: "m9", name: "Aether Loaded Burrito", qty: 1, price: 420 },
-    ]
-  },
-  {
-    id: "B-0039", table: "Table 01", section: "Indoor", time: "12:05 PM", method: "CARD", sub: 2340, gst: 117, svc: 117, discount: 0, total: 2574, itemsCount: 6,
-    billItems: [
-      { id: "oi2", _key: "oi2", itemId: "m4", name: "Avocado Sourdough Toast", qty: 6, price: 390 }
-    ]
-  },
+  }
 ];
 
 const INIT_CUSTOMERS: Customer[] = [
   { id: "c1", name: "Priya Sharma", phone: "9876543290", visits: 23, spend: 34250, last: "27 May 2026", tier: "Gold" },
-  { id: "c2", name: "Arjun Mehta", phone: "9812345634", visits: 14, spend: 19800, last: "25 May 2026", tier: "Silver" },
-  { id: "c3", name: "Kavya Nair", phone: "9934567856", visits: 8, spend: 10900, last: "22 May 2026", tier: "Bronze" },
-  { id: "c4", name: "Rohit Joshi", phone: "9845123412", visits: 31, spend: 52000, last: "27 May 2026", tier: "Platinum" },
-  { id: "c5", name: "Sneha Patel", phone: "9967778877", visits: 5, spend: 6800, last: "20 May 2026", tier: "Bronze" },
+  { id: "c2", name: "Arjun Mehta", phone: "9812345634", visits: 14, spend: 19800, last: "25 May 2026", tier: "Silver" }
 ];
 
-const INIT_ORDERS = [
-  { id: "#9281", tableId: "T02", desc: "Cappuccino ×2, Toast ×2, Muffin ×1", amount: 1360, status: "preparing", age: "8 min ago" },
-  { id: "#9280", tableId: "T06", desc: "Matcha ×1, Burrito ×2, Cooler ×2", amount: 1620, status: "ready", age: "14 min ago" },
-  { id: "#9279", tableId: "T03", desc: "Cold Brew ×3, Croissant ×2", amount: 1530, status: "confirmed", age: "22 min ago" },
-  { id: "#9278", tableId: "T08", desc: "Cappuccino ×1, Truffle Pastry ×2", amount: 650, status: "pending", age: "3 min ago" },
+const INIT_ORDERS: RecentOrder[] = [
+  { id: "#095", tableId: "Table 4", desc: "Avocado Toast x1, Flat White x2", amount: 970, status: "pending", age: "2 min ago" }
 ];
 
 const INIT_DISCOUNTS: Discount[] = [
-  { id: "d1", name: "Weekday Flash 15%", type: "percent", value: 15, validUntil: "30 May 2026", active: true },
-  { id: "d2", name: "Happy Hour 10%", type: "percent", value: 10, validUntil: "31 May 2026", active: true },
-  { id: "d3", name: "Student Discount", type: "flat", value: 50, validUntil: "31 Dec 2026", active: false },
+  { id: "d1", name: "Weekday Flash 15%", type: "percent", value: 15, validUntil: "30 June 2026", active: true }
 ];
 
 const INIT_COUPONS: Coupon[] = [
-  { id: "cp1", code: "AETHER20", discount: "20% OFF", uses: 48, maxUses: 100, active: true },
-  { id: "cp2", code: "FIRSTCUP", discount: "₹100 OFF", uses: 12, maxUses: 50, active: true },
+  { id: "cp1", code: "AETHER20", discount: "20% OFF", uses: 48, maxUses: 100, active: true }
 ];
 
 const dailyData = [
   { t: "8AM", v: 2100 }, { t: "9AM", v: 4800 }, { t: "10AM", v: 7200 }, { t: "11AM", v: 6400 },
-  { t: "12PM", v: 14200 }, { t: "1PM", v: 12800 }, { t: "2PM", v: 9600 }, { t: "3PM", v: 7100 },
-  { t: "4PM", v: 8400 }, { t: "5PM", v: 10200 }, { t: "6PM", v: 14800 }, { t: "7PM", v: 11600 },
+  { t: "12PM", v: 14200 }, { t: "1PM", v: 12800 }, { t: "2PM", v: 9600 }, { t: "3PM", v: 7100 }
 ];
 const weeklyData = [
   { t: "Mon", v: 42000 }, { t: "Tue", v: 38000 }, { t: "Wed", v: 51000 }, { t: "Thu", v: 44000 },
-  { t: "Fri", v: 62000 }, { t: "Sat", v: 78000 }, { t: "Sun", v: 71000 },
+  { t: "Fri", v: 62000 }, { t: "Sat", v: 78000 }, { t: "Sun", v: 71000 }
 ];
 const monthlyData = Array.from({ length: 30 }, (_, i) => ({
   t: `${i + 1}`, v: Math.floor(30000 + Math.random() * 40000)
 }));
 const topItems = [
   { name: "Classic Cappuccino", qty: 84, rev: 24360 },
-  { name: "Avocado Toast", qty: 56, rev: 21840 },
-  { name: "Cold Brew", qty: 48, rev: 16800 },
-  { name: "Loaded Burrito", qty: 31, rev: 13020 },
-  { name: "Matcha Latte", qty: 27, rev: 8640 },
+  { name: "Avocado Toast", qty: 56, rev: 21840 }
 ];
 const CATEGORY_CHART = [
-  { name: "Coffee", value: 42, color: "#6366f1" },
-  { name: "Food", value: 28, color: "#10b981" },
-  { name: "Bakery", value: 16, color: "#f59e0b" },
-  { name: "Tea", value: 8, color: "#3b82f6" },
-  { name: "Drinks", value: 6, color: "#f43f5e" },
+  { name: "Coffee", value: 65, color: "#d97706" },
+  { name: "Food", value: 25, color: "#16a34a" },
+  { name: "Bakery", value: 10, color: "#ca8a04" }
 ];
 
 /* ═══════════════════════════════════════════════════════════
-   UI PRIMITIVES (TypeScript adapted)
-═══════════════════════════════════════════════════════════ */
+   UI PRIMITIVES
+   ═══════════════════════════════════════════════════════════ */
 interface BtnProps {
   children: React.ReactNode;
   onClick?: () => void;
@@ -482,16 +441,18 @@ function Stat({ label, value, trend, up, icon, color }: StatProps) {
 
 /* ═══════════════════════════════════════════════════════════
    PAGE: DASHBOARD
-═══════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════════ */
 interface PageProps {
   toast: (msg: string, type?: "success" | "error" | "warning") => void;
   menu: MenuItem[];
   setMenu: React.Dispatch<React.SetStateAction<MenuItem[]>>;
   discounts: Discount[];
   setDiscounts: React.Dispatch<React.SetStateAction<Discount[]>>;
+  tables: Table[];
+  orders: RecentOrder[];
 }
 
-function DashboardPage({ toast, discounts, setDiscounts }: PageProps) {
+function DashboardPage({ toast, discounts, setDiscounts, tables, orders }: PageProps) {
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [chartType, setChartType] = useState<"area" | "bar">("area");
   const chartData = period === "daily" ? dailyData : period === "weekly" ? weeklyData : monthlyData;
@@ -511,12 +472,14 @@ function DashboardPage({ toast, discounts, setDiscounts }: PageProps) {
     );
   };
 
+  const totalTodayRupees = orders.reduce((sum, o) => sum + o.amount, 0);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <h2 style={{ fontSize: "20px", fontWeight: 800, color: T.tx, letterSpacing: "-0.02em", fontFamily: ff }}>Dashboard Overview</h2>
-          <p style={{ fontSize: "12px", color: T.mu2, marginTop: "4px" }}>Real-time performance for AETHER Cafe & Roastery</p>
+          <p style={{ fontSize: "12px", color: T.mu2, marginTop: "4px" }}>Real-time performance metrics</p>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           {(["daily", "weekly", "monthly"] as const).map(p => (
@@ -528,10 +491,10 @@ function DashboardPage({ toast, discounts, setDiscounts }: PageProps) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
-        <Stat label="Orders Today" value="124" trend="+14% vs yesterday" up icon="🛍" color={T.ind} />
-        <Stat label="Revenue Today" value="₹48,250" trend="+8.2% vs yesterday" up icon="₹" color={T.em} />
-        <Stat label="Avg Order Value" value="₹389" trend="-2.5% vs last week" icon="📊" color={T.amb} />
-        <Stat label="Live Occupancy" value="68%" trend="18/25 covers active" up icon="👥" color={T.ind} />
+        <Stat label="Orders Today" value={orders.length} trend="+14% vs yesterday" up icon="🛍" color={T.ind} />
+        <Stat label="Revenue Today" value={`₹${totalTodayRupees.toLocaleString()}`} trend="+8.2% vs yesterday" up icon="₹" color={T.em} />
+        <Stat label="Avg Order Value" value={`₹${orders.length > 0 ? Math.round(totalTodayRupees / orders.length) : 0}`} trend="-2.5% vs last week" icon="📊" color={T.amb} />
+        <Stat label="Live Occupancy" value={`${tables.length > 0 ? Math.round((tables.filter(t => t.status === 'occupied').length / tables.length) * 100) : 0}%`} trend={`${tables.filter(t => t.status === 'occupied').length}/${tables.length} tables active`} up icon="👥" color={T.ind} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "16px" }}>
@@ -616,7 +579,7 @@ function DashboardPage({ toast, discounts, setDiscounts }: PageProps) {
                 </tr>
               </thead>
               <tbody>
-                {INIT_ORDERS.map(o => (
+                {orders.map(o => (
                   <tr key={o.id} style={{ borderBottom: `1px solid ${T.bdr}` }}>
                     <td style={{ padding: "10px 0", fontSize: "12px", fontWeight: 700, color: T.tx, fontFamily: fm }}>{o.id}</td>
                     <td style={{ padding: "10px 0", fontSize: "11px", color: T.mu2 }}>{o.tableId}</td>
@@ -635,12 +598,11 @@ function DashboardPage({ toast, discounts, setDiscounts }: PageProps) {
             <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: T.rose }} />
             <div style={{ fontSize: "13px", fontWeight: 700, color: T.tx }}>Smart Suggestions</div>
           </div>
-          <div style={{ fontSize: "11px", color: T.mu2, marginBottom: "14px" }}>Low-selling items · boost now</div>
+          <div style={{ fontSize: "11px", color: T.mu2, marginBottom: "14px" }}>Boost sales on low-selling products</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {[
               { id: "d1", name: "Matcha Latte Special", pct: 15, sold: 2 },
-              { id: "d2", name: "Vegan Blueberry Muffin", pct: 20, sold: 1 },
-              { id: "d3", name: "Student Discount", pct: 10, sold: 3 },
+              { id: "d2", name: "Vegan Blueberry Muffin", pct: 20, sold: 1 }
             ].map(s => {
               const isApplied = discounts.find(d => d.id === s.id)?.active;
               return (
@@ -648,7 +610,7 @@ function DashboardPage({ toast, discounts, setDiscounts }: PageProps) {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
                     <div>
                       <div style={{ fontSize: "11px", fontWeight: 600, color: T.tx }}>{s.name}</div>
-                      <div style={{ fontSize: "10px", color: T.mu }}>{s.sold} orders in 7 days</div>
+                      <div style={{ fontSize: "10px", color: T.mu }}>{s.sold} orders this week</div>
                     </div>
                     <Badge color="rose">-{s.pct}% rec.</Badge>
                   </div>
@@ -671,8 +633,14 @@ function DashboardPage({ toast, discounts, setDiscounts }: PageProps) {
 
 /* ═══════════════════════════════════════════════════════════
    PAGE: MENU MANAGEMENT
-═══════════════════════════════════════════════════════════ */
-function MenuPage({ toast, menu, setMenu }: PageProps) {
+   ═══════════════════════════════════════════════════════════ */
+interface MenuPageProps extends PageProps {
+  dbPending: boolean;
+  tenantId: string;
+}
+
+function MenuPage({ toast, menu, setMenu, dbPending, tenantId }: MenuPageProps) {
+  const supabase = createClient();
   const [cat, setCat] = useState("All");
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -682,28 +650,129 @@ function MenuPage({ toast, menu, setMenu }: PageProps) {
 
   const filtered = menu.filter(i => (cat === "All" || i.cat === cat) && (!search || i.name.toLowerCase().includes(search.toLowerCase())));
 
-  const toggle = (id: string) => {
-    setMenu(p => p.map(i => i.id === id ? { ...i, status: i.status === "available" ? "unavailable" : "available" } : i));
-    toast("Item availability updated", "success");
+  const toggle = async (id: string) => {
+    const target = menu.find(i => i.id === id);
+    if (!target) return;
+    const nextStatus = target.status === "available" ? "unavailable" : "available";
+
+    try {
+      if (!dbPending) {
+        const { error } = await supabase
+          .from('menu_items')
+          .update({ status: nextStatus })
+          .eq('id', id);
+        if (error) throw error;
+      }
+      setMenu(p => p.map(i => i.id === id ? { ...i, status: nextStatus } : i));
+      toast("Item availability updated", "success");
+    } catch (err: any) {
+      toast(err.message, "error");
+    }
   };
-  const saveEdit = () => {
+
+  const saveEdit = async () => {
     if (!editItem) return;
-    setMenu(p => p.map(i => i.id === editItem.id ? editItem : i));
-    setEditItem(null);
-    toast("Menu item saved successfully", "success");
+    try {
+      if (!dbPending) {
+        // Find category ID
+        let { data: catData } = await supabase
+          .from('menu_categories')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('name', editItem.cat)
+          .maybeSingle();
+
+        const { error } = await supabase
+          .from('menu_items')
+          .update({
+            name: editItem.name,
+            price: Math.round(editItem.price * 100),
+            status: editItem.status,
+            description: editItem.desc,
+            category_id: catData?.id || null
+          })
+          .eq('id', editItem.id);
+        
+        if (error) throw error;
+      }
+
+      setMenu(p => p.map(i => i.id === editItem.id ? editItem : i));
+      setEditItem(null);
+      toast("Menu item saved successfully", "success");
+    } catch (err: any) {
+      toast(err.message, "error");
+    }
   };
-  const addItem = () => {
+
+  const addItem = async () => {
     if (!newItem.name || !newItem.price) { toast("Name and price are required", "error"); return; }
-    const id = "m" + (menu.length + 1);
-    setMenu(p => [...p, { ...newItem, id, price: Number(newItem.price) } as MenuItem]);
-    setShowAdd(false);
-    setNewItem({ name: "", price: 0, cat: "Coffee", status: "available", desc: "" });
-    toast("Menu item added!", "success");
+    
+    try {
+      let insertedId = "m" + Date.now();
+
+      if (!dbPending) {
+        // Resolve or create category
+        let { data: catData } = await supabase
+          .from('menu_categories')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('name', newItem.cat)
+          .maybeSingle();
+
+        let categoryId = catData?.id;
+
+        if (!categoryId) {
+          const { data: newCat, error: catErr } = await supabase
+            .from('menu_categories')
+            .insert({ tenant_id: tenantId, name: newItem.cat, is_visible: true })
+            .select('id')
+            .single();
+          if (catErr) throw catErr;
+          categoryId = newCat.id;
+        }
+
+        const { data: insertedItem, error } = await supabase
+          .from('menu_items')
+          .insert({
+            tenant_id: tenantId,
+            name: newItem.name,
+            price: Math.round(newItem.price * 100),
+            status: newItem.status,
+            description: newItem.desc,
+            category_id: categoryId
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        insertedId = insertedItem.id;
+      }
+
+      setMenu(p => [...p, { ...newItem, id: insertedId, price: Number(newItem.price) } as MenuItem]);
+      setShowAdd(false);
+      setNewItem({ name: "", price: 0, cat: "Coffee", status: "available", desc: "" });
+      toast("Menu item added!", "success");
+    } catch (err: any) {
+      toast(err.message, "error");
+    }
   };
-  const deleteItem = (id: string) => {
-    setMenu(p => p.filter(i => i.id !== id));
-    setDelId(null);
-    toast("Item removed from menu", "success");
+
+  const deleteItem = async (id: string) => {
+    try {
+      if (!dbPending) {
+        const { error } = await supabase
+          .from('menu_items')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', id);
+        if (error) throw error;
+      }
+
+      setMenu(p => p.filter(i => i.id !== id));
+      setDelId(null);
+      toast("Item removed from menu", "success");
+    } catch (err: any) {
+      toast(err.message, "error");
+    }
   };
 
   return (
@@ -735,19 +804,6 @@ function MenuPage({ toast, menu, setMenu }: PageProps) {
               </button>
             ))}
           </div>
-          <div style={{ borderTop: `1px solid ${T.bdr}`, marginTop: "12px", paddingTop: "12px" }}>
-            <div style={{ fontSize: "10px", color: T.mu, marginBottom: "8px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Stats</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px" }}>
-                <span style={{ color: T.mu2 }}>Available</span>
-                <span style={{ color: T.em, fontWeight: 700 }}>{menu.filter(i => i.status === "available").length}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px" }}>
-                <span style={{ color: T.mu2 }}>Unavailable</span>
-                <span style={{ color: T.rose, fontWeight: 700 }}>{menu.filter(i => i.status !== "available").length}</span>
-              </div>
-            </div>
-          </div>
         </Card>
 
         <div style={{ gridColumn: "span 3" }}>
@@ -774,9 +830,9 @@ function MenuPage({ toast, menu, setMenu }: PageProps) {
                   </div>
                   <div style={{ padding: "12px", flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
                     <p style={{ fontSize: "10px", color: T.mu2, lineHeight: 1.4, margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{item.desc}</p>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto" }}>
-                      <span style={{ fontSize: "14px", fontWeight: 800, color: T.tx, fontFamily: fm }}>₹{item.price}</span>
-                      <div style={{ display: "flex", gap: "5px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", width: "100%" }}>
+                      <span style={{ fontSize: "14px", fontWeight: 800, color: T.tx, fontFamily: fm }}>₹{item.price.toFixed(2)}</span>
+                      <div style={{ display: "flex", gap: "5px", marginLeft: "auto" }}>
                         <Btn size="sm" variant="ghost" onClick={() => toggle(item.id)}>
                           {item.status === "available" ? "Disable" : "Enable"}
                         </Btn>
@@ -847,18 +903,24 @@ function MenuPage({ toast, menu, setMenu }: PageProps) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   PAGE: BILLING OPERATING SYSTEM (POS THERMAL INTEGRATED)
-═══════════════════════════════════════════════════════════ */
+   PAGE: BILLING OPERATING SYSTEM
+   ═══════════════════════════════════════════════════════════ */
 interface BillingOSProps {
   toast: (msg: string, type?: "success" | "error" | "warning") => void;
   menu: MenuItem[];
   triggerReceipt: (data: ReceiptData) => void;
+  tables: Table[];
+  setTables: React.Dispatch<React.SetStateAction<Table[]>>;
+  tableOrders: Record<string, BillItem[]>;
+  setTableOrders: React.Dispatch<React.SetStateAction<Record<string, BillItem[]>>>;
+  billHistory: BillHistoryEntry[];
+  setBillHistory: React.Dispatch<React.SetStateAction<BillHistoryEntry[]>>;
+  dbPending: boolean;
+  tenantId: string;
 }
 
-function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
-  const [tables, setTables] = useState<Table[]>(INIT_TABLES);
-  const [tableOrders, setTableOrders] = useState<Record<string, BillItem[]>>(TABLE_ORDERS);
-  const [billHistory, setBillHistory] = useState<BillHistoryEntry[]>(INIT_BILL_HISTORY);
+function BillingOS({ toast, menu, triggerReceipt, tables, setTables, tableOrders, setTableOrders, billHistory, setBillHistory, dbPending, tenantId }: BillingOSProps) {
+  const supabase = createClient();
   const [view, setView] = useState<"floor" | "session" | "history">("floor");
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [billItems, setBillItems] = useState<BillItem[]>([]);
@@ -871,34 +933,24 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
   const [payStep, setPayStep] = useState<"review" | "success">("review");
   const [histSearch, setHistSearch] = useState("");
   const [menuAddOpen, setMenuAddOpen] = useState(false);
-  const [addItemId, setAddItemId] = useState("m1");
+  const [addItemId, setAddItemId] = useState(menu[0]?.id || "");
   const [addItemQty, setAddItemQty] = useState(1);
   const [billCounter, setBillCounter] = useState(42);
 
-  // Editable Tax & Billing Settings
-  const [billingSettings, setBillingSettings] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("cafe_canva_billing_settings");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {}
-      }
-    }
-    return {
-      cgstPercent: 2.5,
-      sgstPercent: 2.5,
-      serviceChargeType: "percent" as "percent" | "flat",
-      serviceChargeValue: 5,
-    };
+  const [billingSettings, setBillingSettings] = useState({
+    cgstPercent: 2.5,
+    sgstPercent: 2.5,
+    serviceChargeType: "percent" as "percent" | "flat",
+    serviceChargeValue: 5,
   });
   const [billingSettingsOpen, setBillingSettingsOpen] = useState(false);
 
+  useEffect(() => {
+    if (menu[0]) setAddItemId(menu[0].id);
+  }, [menu]);
+
   const saveBillingSettings = (newSettings: typeof billingSettings) => {
     setBillingSettings(newSettings);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cafe_canva_billing_settings", JSON.stringify(newSettings));
-    }
   };
 
   const selectTable = (tbl: Table) => {
@@ -914,13 +966,10 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
   };
 
   const subtotal = billItems.reduce((s, i) => s + (i.qty * i.price), 0);
-  
-  // Tax breakdown: CGST and SGST
   const cgstAmt = gstOn ? Math.round(subtotal * (billingSettings.cgstPercent / 100)) : 0;
   const sgstAmt = gstOn ? Math.round(subtotal * (billingSettings.sgstPercent / 100)) : 0;
   const gstAmt = cgstAmt + sgstAmt;
 
-  // Service charge: flat vs percent
   const svcAmt = svcOn
     ? (billingSettings.serviceChargeType === "flat"
         ? billingSettings.serviceChargeValue
@@ -935,8 +984,8 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
   const applyCoupon = () => {
     const found = INIT_COUPONS.find(c => c.code === couponCode.toUpperCase() && c.active);
     if (found) {
-      setDiscount(found.code === "AETHER20" ? 20 : 15);
-      toast(`Coupon ${found.code} applied! ${found.discount}`, "success");
+      setDiscount(20);
+      toast(`Coupon ${found.code} applied! 20% OFF`, "success");
     } else {
       toast("Invalid or expired coupon code", "error");
     }
@@ -965,136 +1014,182 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
     toast(`${mi.name} added to active bill`, "success");
   };
 
-  const buildReceiptData = (
-    billId: string,
-    tbl: Table | { name: string; section: string },
-    items: BillItem[],
-    payM: string,
-    sub: number,
-    gst: number,
-    svc: number,
-    disc: number,
-    total: number,
-    cashRec?: number,
-    cgstVal?: number,
-    sgstVal?: number
-  ): ReceiptData => {
-    const cgstAmount = cgstVal !== undefined ? cgstVal : (gstOn ? Math.round(gst / 2) : 0);
-    const sgstAmount = sgstVal !== undefined ? sgstVal : (gstOn ? (gst - cgstAmount) : 0);
-    const cgstP = gstOn ? (cgstVal !== undefined ? billingSettings.cgstPercent : 2.5) : 0;
-    const sgstP = gstOn ? (sgstVal !== undefined ? billingSettings.sgstPercent : 2.5) : 0;
+  const processPayment = async () => {
+    if (payMethod === "cash" && (!cashReceived || Number(cashReceived) < grandTotal)) {
+      toast("Cash received must be ≥ grand total", "error"); return;
+    }
+    if (!selectedTable) return;
 
-    return {
-      billId,
+    try {
+      const nextId = billCounter + 1;
+      setBillCounter(nextId);
+      const billId = `B-00${nextId}`;
+
+      if (!dbPending) {
+        // 1. Get active orders for this table
+        const { data: activeOrders } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('table_id', selectedTable.id)
+          .in('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed']);
+
+        const orderIds = (activeOrders || []).map(o => o.id);
+
+        // 2. Insert bill
+        const { error: billErr } = await supabase
+          .from('bills')
+          .insert({
+            tenant_id: tenantId,
+            table_id: selectedTable.id,
+            order_ids: orderIds,
+            subtotal: Math.round(subtotal * 100),
+            tax: Math.round(gstAmt * 100),
+            discount_amount: Math.round(discountAmt * 100),
+            total: Math.round(grandTotal * 100),
+            payment_method: payMethod.toUpperCase(),
+            status: 'paid',
+            paid_at: new Date().toISOString()
+          });
+
+        if (billErr) throw billErr;
+
+        // 3. Mark orders as paid
+        if (orderIds.length > 0) {
+          const { error: ordErr } = await supabase
+            .from('orders')
+            .update({ status: 'paid' })
+            .in('id', orderIds);
+          if (ordErr) throw ordErr;
+        }
+
+        // 4. Checkout table session
+        const { data: activeSession } = await supabase
+          .from('table_sessions')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('table_id', selectedTable.id)
+          .is('check_out_at', null)
+          .maybeSingle();
+
+        if (activeSession) {
+          await supabase
+            .from('table_sessions')
+            .update({
+              check_out_at: new Date().toISOString(),
+              total_revenue: Math.round(grandTotal * 100)
+            })
+            .eq('id', activeSession.id);
+        }
+
+        // 5. Update table status to available
+        await supabase
+          .from('tables')
+          .update({ status: 'available' })
+          .eq('id', selectedTable.id);
+      }
+
+      const newBill: BillHistoryEntry = {
+        id: billId,
+        table: selectedTable.name,
+        section: selectedTable.section,
+        time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+        method: payMethod.toUpperCase(),
+        sub: subtotal,
+        gst: gstAmt,
+        svc: svcAmt,
+        discount,
+        total: grandTotal,
+        itemsCount: billItems.length,
+        billItems: [...billItems]
+      };
+
+      setBillHistory(p => [newBill, ...p]);
+      setTables(p => p.map(t => t.id === selectedTable.id ? { ...t, status: "available" } : t));
+      setTableOrders(p => ({ ...p, [selectedTable.id]: [] }));
+      setPayStep("success");
+      toast("Payment complete! Bill settled.", "success");
+    } catch (err: any) {
+      toast(err.message, "error");
+    }
+  };
+
+  const handlePrint = () => {
+    if (!selectedTable) return;
+    const rData: ReceiptData = {
+      billId: `B-00${billCounter}`,
       storeName: DEFAULT_STORE_INFO.storeName,
       storeAddress: DEFAULT_STORE_INFO.storeAddress,
       storePhone: DEFAULT_STORE_INFO.storePhone,
       gstNumber: DEFAULT_STORE_INFO.gstNumber,
       fssaiNumber: DEFAULT_STORE_INFO.fssaiNumber,
-      tableName: tbl.name,
-      tableSection: tbl.section,
-      items: items.map(i => ({
+      tableName: selectedTable.name,
+      tableSection: selectedTable.section,
+      items: billItems.map(i => ({
         name: i.name,
         qty: i.qty,
         price: i.price,
         total: i.qty * i.price,
       })),
       customCharges: [],
-      subtotal: sub,
-      gstAmount: gst,
-      gstPercent: cgstP + sgstP,
-      cgstPercent: cgstP,
-      cgstAmount: cgstAmount,
-      sgstPercent: sgstP,
-      sgstAmount: sgstAmount,
-      serviceCharge: svc,
+      subtotal: subtotal,
+      gstAmount: gstAmt,
+      gstPercent: billingSettings.cgstPercent + billingSettings.sgstPercent,
+      cgstPercent: billingSettings.cgstPercent,
+      cgstAmount: cgstAmt,
+      sgstPercent: billingSettings.sgstPercent,
+      sgstAmount: sgstAmt,
+      serviceCharge: svcAmt,
       servicePercent: billingSettings.serviceChargeType === 'percent' ? billingSettings.serviceChargeValue : 0,
       serviceChargeType: billingSettings.serviceChargeType,
-      discountPercent: disc,
-      discountAmount: disc > 0 ? Math.round((sub + gst + svc) * (disc / 100)) : 0,
-      couponCode: disc > 0 ? (disc === 20 ? 'AETHER20' : 'PROMO') : '',
-      grandTotal: total,
-      paymentMethod: payM,
-      cashReceived: cashRec,
-      changeDue: cashRec ? (cashRec - total) : undefined,
-      dateTime: new Date().toLocaleString('en-IN', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: true,
-      }),
-      footerMessage: DEFAULT_STORE_INFO.footerMessage,
+      discountPercent: discount,
+      discountAmount: discountAmt,
+      couponCode: couponCode,
+      grandTotal: grandTotal,
+      paymentMethod: payMethod.toUpperCase(),
+      cashReceived: payMethod === 'cash' ? Number(cashReceived) : undefined,
+      changeDue: payMethod === 'cash' ? change : undefined,
+      dateTime: new Date().toLocaleString('en-IN'),
+      footerMessage: DEFAULT_STORE_INFO.footerMessage
     };
-  };
-
-  const processPayment = () => {
-    if (payMethod === "cash" && (!cashReceived || Number(cashReceived) < grandTotal)) {
-      toast("Cash received must be ≥ grand total", "error"); return;
-    }
-    if (!selectedTable) return;
-
-    const nextId = billCounter + 1;
-    setBillCounter(nextId);
-    const billId = `B-00${nextId}`;
-
-    const newBill: BillHistoryEntry = {
-      id: billId,
-      table: selectedTable.name,
-      section: selectedTable.section,
-      time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
-      method: payMethod.toUpperCase(),
-      sub: subtotal,
-      gst: gstAmt,
-      svc: svcAmt,
-      discount,
-      total: grandTotal,
-      itemsCount: billItems.length,
-      billItems: [...billItems]
-    };
-
-    setBillHistory(p => [newBill, ...p]);
-    setTables(p => p.map(t => t.id === selectedTable.id ? { ...t, status: "available" } : t));
-    setTableOrders(p => ({ ...p, [selectedTable.id]: [] }));
-    setPayStep("success");
-    toast("Payment complete! Bill settled.", "success");
-  };
-
-  const handlePrint = () => {
-    if (!selectedTable) return;
-    const rData = buildReceiptData(
-      `B-00${billCounter}`,
-      selectedTable,
-      billItems,
-      payMethod.toUpperCase(),
-      subtotal,
-      gstAmt,
-      svcAmt,
-      discount,
-      grandTotal,
-      payMethod === 'cash' ? Number(cashReceived) : undefined,
-      cgstAmt,
-      sgstAmt
-    );
     triggerReceipt(rData);
   };
 
   const handleHistoryPrint = (entry: BillHistoryEntry) => {
-    // Reconstruct CGST & SGST based on typical 50-50 split for historical records
-    const historicalCgst = gstOn ? Math.round(entry.gst / 2) : 0;
-    const historicalSgst = gstOn ? (entry.gst - historicalCgst) : 0;
-
-    const rData = buildReceiptData(
-      entry.id,
-      { name: entry.table, section: entry.section },
-      entry.billItems,
-      entry.method,
-      entry.sub,
-      entry.gst,
-      entry.svc,
-      entry.discount,
-      entry.total,
-      entry.method === 'CASH' ? entry.total : undefined,
-      historicalCgst,
-      historicalSgst
-    );
+    const rData: ReceiptData = {
+      billId: entry.id,
+      storeName: DEFAULT_STORE_INFO.storeName,
+      storeAddress: DEFAULT_STORE_INFO.storeAddress,
+      storePhone: DEFAULT_STORE_INFO.storePhone,
+      gstNumber: DEFAULT_STORE_INFO.gstNumber,
+      fssaiNumber: DEFAULT_STORE_INFO.fssaiNumber,
+      tableName: entry.table,
+      tableSection: entry.section,
+      items: entry.billItems.map(i => ({
+        name: i.name,
+        qty: i.qty,
+        price: i.price,
+        total: i.qty * i.price,
+      })),
+      customCharges: [],
+      subtotal: entry.sub,
+      gstAmount: entry.gst,
+      gstPercent: 5,
+      cgstPercent: 2.5,
+      cgstAmount: Math.round(entry.gst / 2),
+      sgstPercent: 2.5,
+      sgstAmount: entry.gst - Math.round(entry.gst / 2),
+      serviceCharge: entry.svc,
+      servicePercent: 5,
+      serviceChargeType: 'percent',
+      discountPercent: entry.discount,
+      discountAmount: entry.discount > 0 ? Math.round((entry.sub + entry.gst + entry.svc) * (entry.discount / 100)) : 0,
+      couponCode: '',
+      grandTotal: entry.total,
+      paymentMethod: entry.method,
+      dateTime: entry.time,
+      footerMessage: DEFAULT_STORE_INFO.footerMessage
+    };
     triggerReceipt(rData);
   };
 
@@ -1111,11 +1206,11 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <h2 style={{ fontSize: "20px", fontWeight: 800, color: T.tx, letterSpacing: "-0.02em", fontFamily: ff }}>POS Billing System</h2>
-          <p style={{ fontSize: "12px", color: T.mu2, marginTop: "4px" }}>Full-cycle POS — table management · direct printing · payment capture</p>
+          <p style={{ fontSize: "12px", color: T.mu2, marginTop: "4px" }}>Full-cycle POS — tables billing · payment settlement</p>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <Btn onClick={() => setBillingSettingsOpen(true)} variant="ghost" size="sm" style={{ border: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: "6px" }}>
-            ⚙️ Settings-Billing
+          <Btn onClick={() => setBillingSettingsOpen(true)} variant="ghost" size="sm" style={{ border: `1px solid ${T.bdr}` }}>
+            ⚙️ Billing settings
           </Btn>
           {[{ v: "floor", l: "Floor View" }, { v: "session", l: "Bill Builder" }, { v: "history", l: "Bill History" }].map(tab => (
             <Btn key={tab.v} onClick={() => setView(tab.v as any)} variant={view === tab.v ? "primary" : "ghost"} size="sm">
@@ -1159,12 +1254,11 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
                     <div style={{
                       width: "8px", height: "8px", borderRadius: "50%",
                       background: tableStatusColor[tbl.status] || T.mu,
-                      boxShadow: occ ? `0 0 6px ${T.rose}` : "none"
                     }} />
                   </div>
                   <div style={{ fontSize: "10px", color: T.mu, marginBottom: "6px" }}>{tbl.section} · {tbl.cap} pax</div>
                   {occ && tblTotal > 0 ? (
-                    <div style={{ fontSize: "14px", fontWeight: 800, color: T.tx, fontFamily: fm }}>₹{tblTotal.toLocaleString()}</div>
+                    <div style={{ fontSize: "14px", fontWeight: 800, color: T.tx, fontFamily: fm }}>₹{tblTotal.toFixed(2)}</div>
                   ) : (
                     <div style={{ fontSize: "10px", color: T.mu, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>{tbl.status}</div>
                   )}
@@ -1193,10 +1287,10 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
               }}>✓</div>
               <div style={{ fontSize: "18px", fontWeight: 800, color: T.tx, marginBottom: "6px" }}>Payment Successful</div>
               <p style={{ fontSize: "12px", color: T.mu2, marginBottom: "4px" }}>{selectedTable?.name} · {payMethod.toUpperCase()}</p>
-              <div style={{ fontSize: "28px", fontWeight: 800, color: T.em, fontFamily: fm, margin: "16px 0" }}>₹{grandTotal.toLocaleString()}</div>
+              <div style={{ fontSize: "28px", fontWeight: 800, color: T.em, fontFamily: fm, margin: "16px 0" }}>₹{grandTotal.toFixed(2)}</div>
               {payMethod === "cash" && change > 0 && (
                 <div style={{ padding: "12px", borderRadius: "8px", background: T.aA(0.1), border: `1px solid ${T.aA(0.25)}`, marginBottom: "16px" }}>
-                  <span style={{ fontSize: "12px", color: T.amb, fontWeight: 700 }}>Change Due: ₹{change.toLocaleString()}</span>
+                  <span style={{ fontSize: "12px", color: T.amb, fontWeight: 700 }}>Change Due: ₹{change.toFixed(2)}</span>
                 </div>
               )}
               <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>
@@ -1234,7 +1328,7 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
                           {billItems.map(item => (
                             <tr key={item._key} style={{ borderBottom: `1px solid ${T.bdr}` }}>
                               <td style={{ padding: "10px 0", fontSize: "12px", color: T.tx, fontWeight: 500 }}>{item.name}</td>
-                              <td style={{ padding: "10px 0", fontSize: "12px", color: T.mu2, fontFamily: fm }}>₹{item.price}</td>
+                              <td style={{ padding: "10px 0", fontSize: "12px", color: T.mu2, fontFamily: fm }}>₹{item.price.toFixed(2)}</td>
                               <td style={{ padding: "10px 0" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                                   <button onClick={() => updateQty(item._key, -1)} style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${T.bdr}`, borderRadius: "4px", color: T.mu2, cursor: "pointer", width: "22px", height: "22px", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
@@ -1242,7 +1336,7 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
                                   <button onClick={() => updateQty(item._key, 1)} style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${T.bdr}`, borderRadius: "4px", color: T.mu2, cursor: "pointer", width: "22px", height: "22px", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
                                 </div>
                               </td>
-                              <td style={{ padding: "10px 0", fontSize: "12px", fontWeight: 700, color: T.tx, fontFamily: fm }}>₹{(item.qty * item.price).toLocaleString()}</td>
+                              <td style={{ padding: "10px 0", fontSize: "12px", fontWeight: 700, color: T.tx, fontFamily: fm }}>₹{(item.qty * item.price).toFixed(2)}</td>
                               <td style={{ padding: "10px 0" }}><Btn size="sm" variant="danger" onClick={() => setBillItems(p => p.filter(i => i._key !== item._key))}>✕</Btn></td>
                             </tr>
                           ))}
@@ -1259,24 +1353,24 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
                   <div style={{ fontSize: "13px", fontWeight: 700, color: T.tx, marginBottom: "14px" }}>Bill Summary</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "12px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", color: T.mu2 }}>
-                      <span>Subtotal</span><span style={{ color: T.tx, fontWeight: 600, fontFamily: fm }}>₹{subtotal.toLocaleString()}</span>
+                      <span>Subtotal</span><span style={{ color: T.tx, fontWeight: 600, fontFamily: fm }}>₹{subtotal.toFixed(2)}</span>
                     </div>
-                     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", color: T.mu2 }}>
                         <span className="flex items-center gap-1" style={{ fontWeight: 600 }}>
                           <input type="checkbox" checked={gstOn} onChange={e => setGstOn(e.target.checked)} /> Taxes ({(billingSettings.cgstPercent + billingSettings.sgstPercent)}%)
                         </span>
-                        <span style={{ color: T.tx, fontFamily: fm, fontWeight: 600 }}>₹{gstAmt.toLocaleString()}</span>
+                        <span style={{ color: T.tx, fontFamily: fm, fontWeight: 600 }}>₹{gstAmt.toFixed(2)}</span>
                       </div>
                       {gstOn && (
                         <div style={{ paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", color: T.mu2 }}>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span>CGST ({billingSettings.cgstPercent}%)</span>
-                            <span style={{ fontFamily: fm }}>₹{cgstAmt.toLocaleString()}</span>
+                            <span style={{ fontFamily: fm }}>₹{cgstAmt.toFixed(2)}</span>
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span>SGST ({billingSettings.sgstPercent}%)</span>
-                            <span style={{ fontFamily: fm }}>₹{sgstAmt.toLocaleString()}</span>
+                            <span style={{ fontFamily: fm }}>₹{sgstAmt.toFixed(2)}</span>
                           </div>
                         </div>
                       )}
@@ -1285,15 +1379,15 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
                       <span className="flex items-center gap-1">
                         <input type="checkbox" checked={svcOn} onChange={e => setSvcOn(e.target.checked)} /> Service Charge ({billingSettings.serviceChargeType === 'percent' ? `${billingSettings.serviceChargeValue}%` : `₹${billingSettings.serviceChargeValue}`})
                       </span>
-                      <span style={{ color: T.tx, fontFamily: fm }}>₹{svcAmt.toLocaleString()}</span>
+                      <span style={{ color: T.tx, fontFamily: fm }}>₹{svcAmt.toFixed(2)}</span>
                     </div>
                     {discount > 0 && (
                       <div style={{ display: "flex", justifyContent: "space-between", color: T.em }}>
-                        <span>Discount ({discount}%)</span><span style={{ fontFamily: fm }}>-₹{discountAmt.toLocaleString()}</span>
+                        <span>Discount ({discount}%)</span><span style={{ fontFamily: fm }}>-₹{discountAmt.toFixed(2)}</span>
                       </div>
                     )}
                     <div style={{ borderTop: `1px solid ${T.bdr}`, paddingTop: "10px", marginTop: "4px", display: "flex", justifyContent: "space-between", fontSize: "16px", fontWeight: 800, color: T.tx }}>
-                      <span>Total</span><span style={{ fontFamily: fm }}>₹{grandTotal.toLocaleString()}</span>
+                      <span>Total</span><span style={{ fontFamily: fm }}>₹{grandTotal.toFixed(2)}</span>
                     </div>
                   </div>
                 </Card>
@@ -1321,7 +1415,7 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
                 </Card>
 
                 <Btn variant="emerald" size="lg" fullWidth onClick={processPayment} disabled={billItems.length === 0}>
-                  Settle Bill — ₹{grandTotal.toLocaleString()}
+                  Settle Bill — ₹{grandTotal.toFixed(2)}
                 </Btn>
               </div>
             </div>
@@ -1352,10 +1446,10 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
                       <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{b.table}</td>
                       <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{b.time}</td>
                       <td style={{ padding: "12px 14px" }}><Badge color={b.method === "UPI" ? "indigo" : b.method === "CARD" ? "blue" : "gray"}>{b.method}</Badge></td>
-                      <td style={{ padding: "12px 14px", fontSize: "12px", color: T.tx, fontFamily: fm }}>₹{b.sub.toLocaleString()}</td>
-                      <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2, fontFamily: fm }}>₹{b.gst}</td>
-                      <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2, fontFamily: fm }}>₹{b.svc}</td>
-                      <td style={{ padding: "12px 14px", fontSize: "13px", fontWeight: 800, color: T.em, fontFamily: fm }}>₹{b.total.toLocaleString()}</td>
+                      <td style={{ padding: "12px 14px", fontSize: "12px", color: T.tx, fontFamily: fm }}>₹{b.sub.toFixed(2)}</td>
+                      <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2, fontFamily: fm }}>₹{b.gst.toFixed(2)}</td>
+                      <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2, fontFamily: fm }}>₹{b.svc.toFixed(2)}</td>
+                      <td style={{ padding: "12px 14px", fontSize: "13px", fontWeight: 800, color: T.em, fontFamily: fm }}>₹{b.total.toFixed(2)}</td>
                       <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{b.itemsCount}</td>
                       <td style={{ padding: "12px 14px" }}>
                         <Btn size="sm" variant="ghost" onClick={() => handleHistoryPrint(b)}>
@@ -1448,9 +1542,17 @@ function BillingOS({ toast, menu, triggerReceipt }: BillingOSProps) {
 
 /* ═══════════════════════════════════════════════════════════
    PAGE: CUSTOMER CRM
-═══════════════════════════════════════════════════════════ */
-function CustomerPage({ toast }: { toast: (msg: string, type?: "success" | "error" | "warning") => void }) {
-  const [customers, setCustomers] = useState<Customer[]>(INIT_CUSTOMERS);
+   ═══════════════════════════════════════════════════════════ */
+interface CustomerPageProps {
+  toast: (msg: string, type?: "success" | "error" | "warning") => void;
+  customers: Customer[];
+  setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
+  dbPending: boolean;
+  tenantId: string;
+}
+
+function CustomerPage({ toast, customers, setCustomers, dbPending, tenantId }: CustomerPageProps) {
+  const supabase = createClient();
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState("All");
   const [showAdd, setShowAdd] = useState(false);
@@ -1465,13 +1567,36 @@ function CustomerPage({ toast }: { toast: (msg: string, type?: "success" | "erro
     return matchSearch && matchTier;
   });
 
-  const addCustomer = () => {
+  const addCustomer = async () => {
     if (!newCust.name || !newCust.phone) { toast("Name and phone are required", "error"); return; }
-    const id = "c" + (customers.length + 1);
-    setCustomers(p => [...p, { id, name: newCust.name, phone: newCust.phone, visits: 0, spend: 0, last: "Today", tier: newCust.tier }]);
-    setShowAdd(false);
-    setNewCust({ name: "", phone: "", tier: "Bronze" });
-    toast("Customer added!", "success");
+    
+    try {
+      let insertedId = "c" + Date.now();
+
+      if (!dbPending) {
+        const { data, error } = await supabase
+          .from('customers')
+          .insert({
+            tenant_id: tenantId,
+            name: newCust.name,
+            phone: newCust.phone,
+            visit_count: 1,
+            total_spend: 0
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        insertedId = data.id;
+      }
+
+      setCustomers(p => [...p, { id: insertedId, name: newCust.name, phone: newCust.phone, visits: 1, spend: 0, last: "Today", tier: newCust.tier }]);
+      setShowAdd(false);
+      setNewCust({ name: "", phone: "", tier: "Bronze" });
+      toast("Customer added!", "success");
+    } catch (err: any) {
+      toast(err.message, "error");
+    }
   };
 
   const totalSpend = customers.reduce((s, c) => s + c.spend, 0);
@@ -1491,7 +1616,7 @@ function CustomerPage({ toast }: { toast: (msg: string, type?: "success" | "erro
         <Stat label="Total Customers" value={customers.length} icon="👥" color={T.ind} />
         <Stat label="Total Visits" value={totalVisits.toLocaleString()} icon="📊" color={T.em} />
         <Stat label="Total Spend" value={`₹${totalSpend.toLocaleString()}`} icon="₹" color={T.amb} />
-        <Stat label="Avg Spend" value={`₹${Math.round(totalSpend / customers.length).toLocaleString()}`} icon="📈" color={T.ind} />
+        <Stat label="Avg Spend" value={`₹${customers.length > 0 ? Math.round(totalSpend / customers.length).toLocaleString() : 0}`} icon="📈" color={T.ind} />
       </div>
 
       <div style={{ display: "flex", gap: "12px", alignItems: "end", flexWrap: "wrap" }}>
@@ -1522,7 +1647,7 @@ function CustomerPage({ toast }: { toast: (msg: string, type?: "success" | "erro
                   <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2, fontFamily: fm }}>{c.phone}</td>
                   <td style={{ padding: "12px 14px" }}><Badge color={tierColors[c.tier]}>{c.tier}</Badge></td>
                   <td style={{ padding: "12px 14px", fontSize: "12px", color: T.tx, fontFamily: fm }}>{c.visits}</td>
-                  <td style={{ padding: "12px 14px", fontSize: "12px", fontWeight: 700, color: T.em, fontFamily: fm }}>₹{c.spend.toLocaleString()}</td>
+                  <td style={{ padding: "12px 14px", fontSize: "12px", fontWeight: 700, color: T.em, fontFamily: fm }}>₹{c.spend.toFixed(2)}</td>
                   <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{c.last}</td>
                 </tr>
               ))}
@@ -1550,7 +1675,7 @@ function CustomerPage({ toast }: { toast: (msg: string, type?: "success" | "erro
 
 /* ═══════════════════════════════════════════════════════════
    PAGE: DISCOUNTS & COUPONS
-═══════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════════ */
 function DiscountsPage({ toast, discounts, setDiscounts }: PageProps) {
   const [coupons, setCoupons] = useState<Coupon[]>(INIT_COUPONS);
   const [showAddDiscount, setShowAddDiscount] = useState(false);
@@ -1583,7 +1708,6 @@ function DiscountsPage({ toast, discounts, setDiscounts }: PageProps) {
         <p style={{ fontSize: "12px", color: T.mu2, marginTop: "4px" }}>Manage promotions, flash sales, and coupon codes</p>
       </div>
 
-      {/* Discounts Section */}
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <div style={{ fontSize: "14px", fontWeight: 700, color: T.tx }}>Active Discounts</div>
@@ -1613,7 +1737,6 @@ function DiscountsPage({ toast, discounts, setDiscounts }: PageProps) {
         </div>
       </div>
 
-      {/* Coupons Section */}
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <div style={{ fontSize: "14px", fontWeight: 700, color: T.tx }}>Coupon Codes</div>
@@ -1690,7 +1813,7 @@ function DiscountsPage({ toast, discounts, setDiscounts }: PageProps) {
 
 /* ═══════════════════════════════════════════════════════════
    PAGE: ANALYTICS
-═══════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════════ */
 function AnalyticsPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
@@ -1756,23 +1879,249 @@ function AnalyticsPage() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MAIN APP (SHELL + NAVIGATION)
-═══════════════════════════════════════════════════════════ */
+   MAIN APP SHELL
+   ═══════════════════════════════════════════════════════════ */
 export default function CafeCanvaAdmin() {
+  const supabase = createClient();
+  
   const [page, setPage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [toastItem, toast] = useToast();
-  const [menu, setMenu] = useState<MenuItem[]>(INIT_MENU);
-  const [discounts, setDiscounts] = useState<Discount[]>(INIT_DISCOUNTS);
   const [mounted, setMounted] = useState(false);
+
+  // Dynamic states linked to live database
+  const [loading, setLoading] = useState(true);
+  const [tenantId, setTenantId] = useState(SEED_TENANT_ID);
+  const [tenantName, setTenantName] = useState("AETHER Café");
+  const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [discounts, setDiscounts] = useState<Discount[]>(INIT_DISCOUNTS);
+  const [tables, setTables] = useState<Table[]>([]);
+  const [tableOrders, setTableOrders] = useState<Record<string, BillItem[]>>({});
+  const [billHistory, setBillHistory] = useState<BillHistoryEntry[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [orders, setOrders] = useState<RecentOrder[]>([]);
+  const [dbPending, setDbPending] = useState(false);
 
   // Receipt Modal State
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
+  const fetchDbData = async () => {
+    try {
+      // 1. Resolve user session & tenant ID
+      const { data: { user } } = await supabase.auth.getUser();
+      let activeTenantId = SEED_TENANT_ID;
+
+      if (user && user.app_metadata && user.app_metadata.tenant_id) {
+        activeTenantId = user.app_metadata.tenant_id;
+      }
+      setTenantId(activeTenantId);
+
+      // Fetch tenant name
+      const { data: tenData } = await supabase
+        .from('tenants')
+        .select('name')
+        .eq('id', activeTenantId)
+        .maybeSingle();
+
+      if (tenData) setTenantName(tenData.name);
+
+      // 2. Fetch categories to map to menu items
+      const { data: catData, error: catErr } = await supabase
+        .from('menu_categories')
+        .select('id, name')
+        .eq('tenant_id', activeTenantId)
+        .is('deleted_at', null);
+
+      if (catErr) throw catErr;
+      const catsMap = new Map((catData || []).map(c => [c.id, c.name]));
+
+      // 3. Fetch menu items
+      const { data: itemsData, error: itemsErr } = await supabase
+        .from('menu_items')
+        .select('id, name, price, status, description, category_id')
+        .eq('tenant_id', activeTenantId)
+        .is('deleted_at', null)
+        .order('sort_order', { ascending: true });
+
+      if (itemsErr) throw itemsErr;
+
+      const mappedMenu: MenuItem[] = (itemsData || []).map(i => ({
+        id: i.id,
+        name: i.name,
+        price: i.price / 100, // convert paise to rupees
+        cat: catsMap.get(i.category_id) || "Coffee",
+        status: i.status === 'available' ? 'available' : i.status === 'hidden' ? 'hidden' : 'unavailable',
+        desc: i.description || ""
+      }));
+      setMenu(mappedMenu);
+
+      // 4. Fetch tables
+      const { data: tableData, error: tableErr } = await supabase
+        .from('tables')
+        .select('id, name, capacity, section, status')
+        .eq('tenant_id', activeTenantId)
+        .is('deleted_at', null)
+        .order('name', { ascending: true });
+
+      if (tableErr) throw tableErr;
+      const mappedTables: Table[] = (tableData || []).map(t => ({
+        id: t.id,
+        name: t.name,
+        section: t.section || "Indoor",
+        cap: t.capacity || 4,
+        status: t.status === 'occupied' ? 'occupied' : t.status === 'reserved' ? 'reserved' : t.status === 'cleaning' ? 'cleaning' : 'available'
+      }));
+      setTables(mappedTables);
+
+      // 5. Fetch table active orders & items
+      const { data: activeOrders, error: actOrdErr } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          table_id,
+          status,
+          created_at,
+          total,
+          order_items (
+            id,
+            menu_item_id,
+            item_name,
+            unit_price,
+            quantity
+          )
+        `)
+        .eq('tenant_id', activeTenantId)
+        .in('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed']);
+
+      if (actOrdErr) throw actOrdErr;
+
+      const ordersByTable: Record<string, BillItem[]> = {};
+      const recentOrdersList: RecentOrder[] = [];
+
+      (activeOrders || []).forEach(o => {
+        if (o.table_id) {
+          if (!ordersByTable[o.table_id]) ordersByTable[o.table_id] = [];
+          
+          (o.order_items || []).forEach((i: any) => {
+            ordersByTable[o.table_id].push({
+              id: i.id,
+              _key: i.id,
+              itemId: i.menu_item_id || "",
+              name: i.item_name,
+              price: i.unit_price / 100, // paise to rupees
+              qty: i.quantity
+            });
+          });
+        }
+
+        // Map to recent transaction feed
+        const orderSummary = (o.order_items || []).map((i: any) => `${i.item_name} x${i.quantity}`).join(', ');
+        const diffMs = Date.now() - new Date(o.created_at).getTime();
+        const mins = Math.max(1, Math.floor(diffMs / 60000));
+
+        recentOrdersList.push({
+          id: `#${o.id.substring(0, 4).toUpperCase()}`,
+          tableId: mappedTables.find(t => t.id === o.table_id)?.name || "Table Guest",
+          desc: orderSummary.length > 30 ? orderSummary.substring(0, 27) + "..." : orderSummary,
+          amount: o.total / 100, // paise to rupees
+          status: o.status,
+          age: `${mins}m ago`
+        });
+      });
+
+      setTableOrders(ordersByTable);
+      setOrders(recentOrdersList);
+
+      // 6. Fetch historical bills
+      const { data: billsData, error: billsErr } = await supabase
+        .from('bills')
+        .select('*')
+        .eq('tenant_id', activeTenantId)
+        .order('paid_at', { ascending: false })
+        .limit(10);
+
+      if (billsErr) throw billsErr;
+
+      const mappedHistory: BillHistoryEntry[] = (billsData || []).map(b => ({
+        id: b.id.substring(0, 8).toUpperCase(),
+        table: mappedTables.find(t => t.id === b.table_id)?.name || "Table",
+        section: mappedTables.find(t => t.id === b.table_id)?.section || "Indoor",
+        time: new Date(b.paid_at || b.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+        method: b.payment_method || "CASH",
+        sub: b.subtotal / 100,
+        gst: b.tax / 100,
+        svc: 0,
+        discount: b.discount_amount > 0 ? 10 : 0,
+        total: b.total / 100,
+        itemsCount: 1,
+        billItems: []
+      }));
+      setBillHistory(mappedHistory);
+
+      // 7. Fetch customers
+      const { data: custData, error: custErr } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('tenant_id', activeTenantId)
+        .is('deleted_at', null)
+        .limit(20);
+
+      if (custErr) throw custErr;
+      const mappedCustomers: Customer[] = (custData || []).map(c => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone || "—",
+        visits: c.visit_count || 1,
+        spend: (c.total_spend || 0) / 100,
+        last: new Date(c.created_at).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' }),
+        tier: (c.total_spend || 0) / 100 > 5000 ? "Platinum" : (c.total_spend || 0) / 100 > 2500 ? "Gold" : (c.total_spend || 0) / 100 > 1000 ? "Silver" : "Bronze"
+      }));
+      setCustomers(mappedCustomers);
+
+      setDbPending(false);
+    } catch (err: any) {
+      console.error("Dashboard database fetch failed. Operating in offline simulation mode:", err.message);
+      // Fallback
+      setMenu(INIT_MENU);
+      setTables(INIT_TABLES);
+      setTableOrders(TABLE_ORDERS);
+      setBillHistory(INIT_BILL_HISTORY);
+      setCustomers(INIT_CUSTOMERS);
+      setOrders(INIT_ORDERS);
+      setDbPending(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
+    fetchDbData();
   }, []);
+
+  // Sync real-time updates for new active orders
+  useEffect(() => {
+    if (dbPending) return;
+
+    const channel = supabase
+      .channel('admin-pos-dashboard-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
+        () => { fetchDbData(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'order_items' },
+        () => { fetchDbData(); }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, dbPending]);
 
   const triggerReceiptPrint = (data: ReceiptData) => {
     setReceiptData(data);
@@ -1787,6 +2136,15 @@ export default function CafeCanvaAdmin() {
     { id: "discounts", label: "Discounts", icon: "🏷" },
     { id: "analytics", label: "Analytics", icon: "📈" },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] flex flex-col justify-center items-center gap-4">
+        <Coffee className="w-12 h-12 text-[#e05e35] animate-spin" />
+        <span className="font-extrabold text-sm tracking-widest uppercase opacity-75">Booting Admin Panel...</span>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", height: "100vh", background: T.bg, fontFamily: ff, color: T.tx, overflow: "hidden" }}>
@@ -1846,8 +2204,8 @@ export default function CafeCanvaAdmin() {
                 YZ
               </div>
               <div>
-                <div style={{ fontSize: "11px", fontWeight: 600, color: T.tx }}>Yash Z.</div>
-                <div style={{ fontSize: "9px", color: T.mu }}>Owner · Admin</div>
+                <div style={{ fontSize: "11px", fontWeight: 600, color: T.tx }}>Admin User</div>
+                <div style={{ fontSize: "9px", color: T.mu }}>{tenantName}</div>
               </div>
             </div>
           </div>
@@ -1855,14 +2213,25 @@ export default function CafeCanvaAdmin() {
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, overflow: "auto", padding: "28px 32px" }}>
+      <main style={{ flex: 1, overflow: "auto", padding: "28px 32px", position: "relative" }}>
+        
+        {/* Database Warning Alert Banner */}
+        {dbPending && (
+          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 text-amber-700 rounded-2xl text-xs font-bold flex items-center justify-between shadow-sm animate-scale-up">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={16} />
+              <span>Admin offline sandbox active. Please run <code>node db_setup.js</code> to initialize the tables on your remote Supabase instance.</span>
+            </div>
+          </div>
+        )}
+
         {mounted && (
           <>
-            {page === "dashboard" && <DashboardPage toast={toast} menu={menu} setMenu={setMenu} discounts={discounts} setDiscounts={setDiscounts} />}
-            {page === "menu" && <MenuPage toast={toast} menu={menu} setMenu={setMenu} discounts={discounts} setDiscounts={setDiscounts} />}
-            {page === "billing" && <BillingOS toast={toast} menu={menu} triggerReceipt={triggerReceiptPrint} />}
-            {page === "customers" && <CustomerPage toast={toast} />}
-            {page === "discounts" && <DiscountsPage toast={toast} menu={menu} setMenu={setMenu} discounts={discounts} setDiscounts={setDiscounts} />}
+            {page === "dashboard" && <DashboardPage toast={toast} menu={menu} setMenu={setMenu} discounts={discounts} setDiscounts={setDiscounts} tables={tables} orders={orders} />}
+            {page === "menu" && <MenuPage toast={toast} menu={menu} setMenu={setMenu} discounts={discounts} setDiscounts={setDiscounts} tables={tables} orders={orders} dbPending={dbPending} tenantId={tenantId} />}
+            {page === "billing" && <BillingOS toast={toast} menu={menu} triggerReceipt={triggerReceiptPrint} tables={tables} setTables={setTables} tableOrders={tableOrders} setTableOrders={setTableOrders} billHistory={billHistory} setBillHistory={setBillHistory} dbPending={dbPending} tenantId={tenantId} />}
+            {page === "customers" && <CustomerPage toast={toast} customers={customers} setCustomers={setCustomers} dbPending={dbPending} tenantId={tenantId} />}
+            {page === "discounts" && <DiscountsPage toast={toast} menu={menu} setMenu={setMenu} discounts={discounts} setDiscounts={setDiscounts} tables={tables} orders={orders} />}
             {page === "analytics" && <AnalyticsPage />}
           </>
         )}
