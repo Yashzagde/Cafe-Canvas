@@ -2,21 +2,15 @@
   "name": "cafe-canva",
   "version": "1.0.0",
   "description": "Multi-tenant SaaS platform for the Indian restaurant industry",
-  "main": "Backend-Software/dist/Backend-Software/Store-Admin/electron/main.js",
   "workspaces": [
-    "frontend",
-    "Backend-Software/Store-Admin/store-front",
-    "Backend-Software/Store-Admin/frontend"
+    "frontend"
   ],
   "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "start": "npm run start --prefix frontend",
     "test": "npm run test --prefix frontend",
-    "dev:frontend": "npm run dev --prefix frontend",
-    "dev:storefront": "npm run dev --prefix Backend-Software/Store-Admin/store-front",
-    "dev:backend": "tsx Backend-Software/src/server.ts",
-    "dev:store-admin": "npm run dev --prefix Backend-Software/Store-Admin/frontend -- -p 3005",
-    "desktop:run": "npx electron Backend-Software/dist/Backend-Software/Store-Admin/electron/main.js",
-    "desktop:build": "npm run build --prefix Backend-Software/Store-Admin/frontend",
-    "desktop:package": "npm run desktop:build && npx tsc -p Backend-Software/tsconfig.json && npx electron-builder",
+    "type-check": "npm run type-check --prefix frontend",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
@@ -35,29 +29,18 @@
   ],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Yashzagde/Cafe-Canva/issues"
-  },
-  "homepage": "https://github.com/Yashzagde/Cafe-Canva#readme",
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
-    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
-    "express": "^5.2.1",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
     "@types/node": "^25.9.1",
     "drizzle-kit": "^0.31.10",
-    "electron": "^42.3.0",
-    "electron-builder": "^26.8.1",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3"
   }
