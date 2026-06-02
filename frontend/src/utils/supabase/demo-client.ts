@@ -1,16 +1,16 @@
-// Cafe Canva - Mock Supabase Client for Demo Mode
-// Provides pre-seeded mock responses for UI routes to function fully without Supabase backend connection.
+// Cafe Canva - Mock Supabase Client for Testing Mode
+// Provides pre-seeded mock responses with real PostgreSQL UUIDs to allow full integration verification.
 
 export const mockUser = {
-  id: 'demo-user-1234-5678',
-  email: 'demo@cafecanvas.bar',
+  id: 'u0000000-0000-0000-0000-000000000001', // Valid user UUID
+  email: 'admin@cafecanvas.bar',
   app_metadata: {
-    tenant_id: 'demo-tenant-5555',
-    branch_id: 'demo-branch-7777',
+    tenant_id: 'a0000000-0000-0000-0000-000000000001', // Valid tenant UUID
+    branch_id: 'ab000000-0000-0000-0000-000000000001', // Valid branch UUID
     role: 'owner'
   },
   user_metadata: {
-    full_name: 'Demo Admin'
+    full_name: 'Canvas Admin Tester'
   }
 };
 
@@ -43,32 +43,32 @@ export function createClient() {
       }
     },
     from: (table: string) => {
-      // Return beautiful mock tables
+      // Return mock tables using authentic UUIDs mapped to 003_seed_demo.sql
       if (table === 'menu_categories') {
         return createMockChain([
-          { id: '1', name: 'Specialty Coffee', is_visible: true },
-          { id: '2', name: 'All-Day Breakfast', is_visible: true },
-          { id: '3', name: 'Artisanal Desserts', is_visible: true }
+          { id: 'd0000000-0000-0000-0000-000000000001', name: 'Specialty Coffee', is_visible: true },
+          { id: 'd0000000-0000-0000-0000-000000000005', name: 'All-Day Breakfast', is_visible: true },
+          { id: 'd0000000-0000-0000-0000-000000000004', name: 'Artisanal Desserts', is_visible: true }
         ]);
       }
       if (table === 'menu_items') {
         return createMockChain([
-          { id: '101', name: 'Pour Over V60', price: 280, status: 'available', category_id: '1' },
-          { id: '102', name: 'Cold Brew Classic', price: 240, status: 'available', category_id: '1' },
-          { id: '103', name: 'Avocado Sourdough Toast', price: 380, status: 'available', category_id: '2' },
-          { id: '104', name: 'New York Cheesecake', price: 320, status: 'available', category_id: '3' }
+          { id: 'e0000000-0000-0000-0000-000000000001', name: 'Classic Cappuccino', price: 290, status: 'available', category_id: 'd0000000-0000-0000-0000-000000000001' },
+          { id: 'e0000000-0000-0000-0000-000000000004', name: 'Signature Cold Brew', price: 350, status: 'available', category_id: 'd0000000-0000-0000-0000-000000000001' },
+          { id: 'e0000000-0000-0000-0000-000000000011', name: 'Avocado Sourdough Toast', price: 390, status: 'available', category_id: 'd0000000-0000-0000-0000-000000000005' },
+          { id: 'e0000000-0000-0000-0000-000000000010', name: 'Vegan Blueberry Muffin', price: 160, status: 'available', category_id: 'd0000000-0000-0000-0000-000000000004' }
         ]);
       }
       if (table === 'tables') {
         return createMockChain([
-          { id: 't1', table_number: 'Table 1', status: 'available', capacity: 2 },
-          { id: 't2', table_number: 'Table 2', status: 'occupied', capacity: 4 },
-          { id: 't3', table_number: 'Table 3', status: 'available', capacity: 4 }
+          { id: 'c0000000-0000-0000-0000-000000000001', table_number: 'Table 1', status: 'available', capacity: 2 },
+          { id: 'c0000000-0000-0000-0000-000000000002', table_number: 'Table 2', status: 'occupied', capacity: 4 },
+          { id: 'c0000000-0000-0000-0000-000000000003', table_number: 'Table 3', status: 'available', capacity: 4 }
         ]);
       }
       if (table === 'orders') {
         return createMockChain([
-          { id: 'o1', status: 'pending', total: 600, table_id: 't2', created_at: new Date().toISOString() }
+          { id: 'f0000000-0000-0000-0000-000000000001', status: 'pending', total: 60000, table_id: 'c0000000-0000-0000-0000-000000000002', created_at: new Date().toISOString() }
         ]);
       }
       // Fallback

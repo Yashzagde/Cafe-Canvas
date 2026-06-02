@@ -1,0 +1,137 @@
+openapi: 3.0.3
+info:
+  title: CafeCanvas API Specification
+  description: REST API contract for the CafeCanvas multi-tenant restaurant operating system. All client operations scope to specific subdomains and authenticate using Supabase JWT tokens containing injected tenant and branch claims.
+  version: 1.0.0
+servers:
+  - url: https://api.cafecanvas.bar/v1
+    description: Production API Server
+  - url: http://localhost:3000/api
+    description: Local Development Server
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate User
+      description: Logs in a user (Owner, Manager, Staff, Cashier) and returns a session JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: OBJECT
+              properties:
+                email:
+                  type: STRING
+                  format: email
+                password:
+                  type: STRING
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: Authentication successful.
+        '401':
+          description: Invalid email or password.
+
+  /menu/categories:
+    get:
+      summary: List Menu Categories
+      description: Returns visible menu categories. Authenticated staff see all, anonymous users see only visible categories.
+      responses:
+        '200':
+          description: List of categories.
+
+  /menu/items:
+    get:
+      summary: List Menu Items
+      description: Fetches available menu items. Can filter by category.
+      parameters:
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of menu items.
+
+  /orders:
+    post:
+      summary: Create Order
+      description: Places a new table order. Anonymous self-ordering requires valid table sessions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: OBJECT
+              properties:
+                tableId:
+                  type: STRING
+                customerId:
+                  type: STRING
+                items:
+                  type: ARRAY
+                  items:
+                    type: OBJECT
+                    properties:
+                      menuItemId:
+                        type: STRING
+                      quantity:
+                        type: INTEGER
+                      notes:
+                        type: STRING
+      responses:
+        '201':
+          description: Order created successfully.
+
+  /bills/generate:
+    post:
+      summary: Generate Bill (Edge Function)
+      description: Invokes the Deno Edge Function to aggregate all pending table orders, apply CGST (2.5%) + SGST (2.5%), compute service charge, and lock bill status.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: OBJECT
+              properties:
+                tableId:
+                  type: STRING
+                tenantId:
+                  type: STRING
+                branchId:
+                  type: STRING
+                createdBy:
+                  type: STRING
+      responses:
+        '200':
+          description: Bill generated successfully.
+
+  /payments/verify:
+    post:
+      summary: Verify Payment (Edge Function)
+      description: HMAC-SHA256 signature verification webhook triggered by Razorpay payment gateway callbacks to mark a bill and its associated orders as paid.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: OBJECT
+              properties:
+                razorpay_order_id:
+                  type: STRING
+                razorpay_payment_id:
+                  type: STRING
+                razorpay_signature:
+                  type: STRING
+                billId:
+                  type: STRING
+                tenantId:
+                  type: STRING
+      responses:
+        '200':
+          description: Payment signature verified and checkout completed.
+        '400':
+          description: Invalid crypto signature.

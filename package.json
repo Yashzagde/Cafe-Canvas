@@ -9,7 +9,7 @@
     "Backend-Software/Store-Admin/frontend"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npm run test --prefix frontend",
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:storefront": "npm run dev --prefix Backend-Software/Store-Admin/store-front",
     "dev:backend": "tsx Backend-Software/src/server.ts",
