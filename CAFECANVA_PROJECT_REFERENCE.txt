@@ -1,0 +1,1870 @@
+================================================================================
+  CAFECANVA — COMPLETE PROJECT REFERENCE
+  Multi-Tenant SaaS Restaurant Operating System
+  Generated: 2026-06-02
+================================================================================
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 1: COMPLETE FOLDER STRUCTURE
+████████████████████████████████████████████████████████████████████████████████
+
+d:\Cafe Canva\
+│
+├── .agents/
+│   └── skills/
+│       ├── supabase/                     # Supabase agent skill
+│       │   └── SKILL.md
+│       └── supabase-postgres-best-practices/
+│           └── SKILL.md
+│
+├── .env                                  # Root environment variables
+├── .env.local                            # Local environment overrides
+├── .git/                                 # Git repository
+│
+├── .github/
+│   └── workflows/
+│       └── deploy.yml                    # CI/CD pipeline (GitHub Actions)
+│
+├── .gitignore                            # Git ignore rules
+│
+├── .vscode/
+│   ├── launch.json                       # Debug configurations
+│   └── settings.json                     # Editor settings
+│
+├── Backend-Software/                     # ★ EXPRESS BACKEND + MODULE ROUTES
+│   ├── tsconfig.json                     # TypeScript config for backend
+│   │
+│   ├── src/                              # Core backend server
+│   │   ├── app.ts                        # Express app setup + route mounting
+│   │   ├── server.ts                     # Server entry point (port 5000)
+│   │   ├── config/
+│   │   │   └── db.ts                     # Drizzle + Postgres connection
+│   │   ├── controllers/
+│   │   │   └── userController.ts         # User CRUD controller
+│   │   ├── middleware/
+│   │   │   └── errorHandler.ts           # Global error handler
+│   │   ├── routes/
+│   │   │   └── api.ts                    # Base API routes (/api/health, /api/users)
+│   │   └── services/
+│   │       └── userService.ts            # User data service layer
+│   │
+│   ├── Super-admin/                      # Super Admin module
+│   │   └── routes.ts                     # /api/super-admin/* (tenant CRUD, stats)
+│   │
+│   ├── Store-Admin/                      # ★ STORE ADMIN MODULE (largest)
+│   │   ├── .gitkeep
+│   │   ├── routes.ts                     # /api/store-admin/* (9 modules, 40+ endpoints)
+│   │   ├── middleware.ts                 # JWT auth + tenant RLS scoping
+│   │   │
+│   │   ├── controllers/
+│   │   │   ├── billingController.ts      # Billing endpoints
+│   │   │   ├── dashboardController.ts    # Dashboard metrics
+│   │   │   ├── menuController.ts         # Menu CRUD + modifiers + image upload
+│   │   │   └── remainingControllers.ts   # Marketing, Customer, Order, Analytics, Table, Settings
+│   │   │
+│   │   ├── electron/                     # ★ ELECTRON DESKTOP APP
+│   │   │   ├── main.ts                   # Electron main process entry
+│   │   │   ├── preload.ts                # Context bridge (print, notification)
+│   │   │   ├── window-manager.ts         # BrowserWindow factory
+│   │   │   ├── ipc-handlers.ts           # IPC: thermal printing + notifications
+│   │   │   └── next-server.ts            # Static file server for production
+│   │   │
+│   │   ├── frontend/                     # ★ STORE ADMIN NEXT.JS DASHBOARD
+│   │   │   ├── .babelrc
+│   │   │   ├── .env.local
+│   │   │   ├── next.config.js
+│   │   │   ├── package.json
+│   │   │   ├── postcss.config.js
+│   │   │   ├── tailwind.config.js
+│   │   │   ├── tsconfig.json
+│   │   │   │
+│   │   │   ├── app/
+│   │   │   │   ├── layout.tsx            # Root layout (SyncProvider + LayoutShell)
+│   │   │   │   ├── page.tsx              # Dashboard redirect
+│   │   │   │   ├── global.css            # Global styles
+│   │   │   │   │
+│   │   │   │   ├── context/
+│   │   │   │   │   └── SyncContext.tsx    # Offline sync context provider
+│   │   │   │   │
+│   │   │   │   ├── types/
+│   │   │   │   │   └── index.ts          # All TypeScript interfaces
+│   │   │   │   │
+│   │   │   │   ├── utils/
+│   │   │   │   │   ├── api.ts            # Express API client
+│   │   │   │   │   ├── supabase.ts       # Supabase client singleton
+│   │   │   │   │   └── offline-sync.ts   # Dexie.js IndexedDB sync engine
+│   │   │   │   │
+│   │   │   │   └── store-admin/          # Dashboard pages
+│   │   │   │       ├── analytics/
+│   │   │   │       ├── billing/
+│   │   │   │       ├── customers/
+│   │   │   │       ├── dashboard/
+│   │   │   │       ├── kds/
+│   │   │   │       ├── marketing/
+│   │   │   │       ├── menu/
+│   │   │   │       ├── orders/
+│   │   │   │       ├── settings/
+│   │   │   │       ├── staff/
+│   │   │   │       ├── storefront/
+│   │   │   │       └── tables/
+│   │   │   │
+│   │   │   └── components/
+│   │   │       ├── billing/
+│   │   │       │   ├── ReceiptPreviewModal.tsx
+│   │   │       │   ├── ReceiptTemplate.tsx
+│   │   │       │   ├── escpos.ts
+│   │   │       │   ├── index.ts
+│   │   │       │   └── types.ts
+│   │   │       └── layout/
+│   │   │           └── LayoutShell.tsx   # Sidebar + header shell
+│   │   │
+│   │   └── store-front/                  # ★ CUSTOMER STOREFRONT (Next.js)
+│   │       ├── .env.local
+│   │       ├── .env.example
+│   │       ├── AGENTS.md
+│   │       ├── CLAUDE.md
+│   │       ├── README.md
+│   │       ├── eslint.config.mjs
+│   │       ├── jsconfig.json
+│   │       ├── next.config.mjs
+│   │       ├── package.json
+│   │       ├── postcss.config.mjs
+│   │       ├── vercel.json               # Vercel deployment config
+│   │       │
+│   │       ├── app/
+│   │       │   ├── HomeClient.js
+│   │       │   ├── layout.js
+│   │       │   ├── page.js
+│   │       │   ├── globals.css
+│   │       │   ├── favicon.ico
+│   │       │   ├── blog/
+│   │       │   ├── cart/
+│   │       │   ├── dine-in/
+│   │       │   ├── item/
+│   │       │   └── items/
+│   │       │
+│   │       ├── components/
+│   │       │   ├── cart/
+│   │       │   ├── home/
+│   │       │   ├── layout/
+│   │       │   ├── menu/
+│   │       │   ├── product/
+│   │       │   └── ui/
+│   │       │
+│   │       ├── utils/
+│   │       │   ├── api.js                # Supabase API client
+│   │       │   ├── billGenerator.js      # Client-side bill PDF
+│   │       │   └── razorpay.js           # Razorpay payment integration
+│   │       │
+│   │       ├── stores/
+│   │       │   ├── cartStore.js          # Zustand cart state
+│   │       │   ├── orderStore.js         # Zustand order state
+│   │       │   └── themeStore.js         # Zustand theme state
+│   │       │
+│   │       └── storefront-themes/
+│   │           ├── master-theme-prompt.md
+│   │           ├── theme-styles.css
+│   │           └── themes.json           # 10 storefront theme definitions
+│   │
+│   ├── Staff/                            # Staff module
+│   │   └── routes.ts                     # /api/staff/* (health check)
+│   │
+│   ├── KOS/                              # Kitchen Order Screen module
+│   │   └── routes.ts                     # /api/kos/* (health check)
+│   │
+│   └── dist/                             # Compiled TypeScript output
+│
+├── cafecanva_flutter/                    # ★ FLUTTER MONOREPO (Melos)
+│   ├── .git/
+│   ├── .github/
+│   ├── Makefile
+│   ├── melos.yaml                        # Melos workspace config
+│   ├── pubspec.yaml                      # Root pubspec (SDK >=3.12.1)
+│   ├── pubspec_overrides.yaml
+│   │
+│   ├── apps/                             # 5 Flutter applications
+│   │   ├── staff_pos/                    # Staff POS App (Android)
+│   │   │   ├── pubspec.yaml
+│   │   │   └── lib/
+│   │   │       ├── main.dart             # Entry: Supabase + Firebase + Hive + Billing
+│   │   │       ├── app.dart
+│   │   │       ├── router.dart
+│   │   │       ├── features/
+│   │   │       └── src/
+│   │   │
+│   │   ├── kitchen_display/              # Kitchen Display System (Android tablet)
+│   │   │   ├── pubspec.yaml
+│   │   │   └── lib/
+│   │   │       ├── main.dart             # Entry: Supabase + Firebase + Wakelock
+│   │   │       ├── app.dart
+│   │   │       └── features/
+│   │   │
+│   │   ├── customer_storefront/          # Customer Storefront (mobile web/app)
+│   │   │   ├── pubspec.yaml
+│   │   │   └── lib/
+│   │   │       ├── main.dart             # Entry: Supabase + Hive cart
+│   │   │       ├── app.dart
+│   │   │       ├── router.dart
+│   │   │       └── features/
+│   │   │
+│   │   ├── store_admin_desktop/          # Store Admin Desktop (Windows/macOS/Linux)
+│   │   │   ├── pubspec.yaml
+│   │   │   └── lib/
+│   │   │       ├── main.dart             # Entry: Supabase + window_manager
+│   │   │       ├── app.dart
+│   │   │       ├── router.dart
+│   │   │       └── features/
+│   │   │
+│   │   └── store_admin_mobile/           # Store Admin Mobile (Android/iOS)
+│   │       ├── pubspec.yaml
+│   │       └── lib/
+│   │           ├── main.dart             # Entry: Supabase + Firebase push
+│   │           ├── app.dart
+│   │           ├── router.dart
+│   │           └── features/
+│   │
+│   └── packages/                         # 4 shared Flutter packages
+│       ├── cafecanva_core/               # ★ Core shared package
+│       │   ├── pubspec.yaml
+│       │   └── lib/
+│       │       ├── cafecanva_core.dart   # Barrel export (models, services, repos, providers, utils)
+│       │       ├── auth/
+│       │       │   └── secure_cache_keys.dart
+│       │       ├── config/
+│       │       │   └── env_config.dart
+│       │       ├── models/               # 22 data models
+│       │       │   ├── models.dart       # Legacy combined models
+│       │       │   ├── tenant.dart
+│       │       │   ├── branch.dart
+│       │       │   ├── user_profile.dart
+│       │       │   ├── menu_category.dart
+│       │       │   ├── menu_item.dart
+│       │       │   ├── modifier_group.dart
+│       │       │   ├── modifier_option.dart
+│       │       │   ├── table_model.dart
+│       │       │   ├── table_session.dart
+│       │       │   ├── order.dart
+│       │       │   ├── order_item.dart
+│       │       │   ├── bill.dart
+│       │       │   ├── customer.dart
+│       │       │   ├── discount.dart
+│       │       │   ├── coupon.dart
+│       │       │   ├── store_settings.dart
+│       │       │   ├── staff_call.dart
+│       │       │   ├── attendance.dart
+│       │       │   ├── notification_log_entry.dart
+│       │       │   ├── branding.dart
+│       │       │   └── storefront_config.dart
+│       │       ├── providers/
+│       │       │   ├── auth_providers.dart
+│       │       │   ├── connectivity_provider.dart
+│       │       │   ├── network_status_provider.dart
+│       │       │   └── supabase_providers.dart
+│       │       ├── repositories/         # 8 data repositories
+│       │       │   ├── analytics_repository.dart
+│       │       │   ├── billing_repository.dart
+│       │       │   ├── customer_repository.dart
+│       │       │   ├── menu_repository.dart
+│       │       │   ├── order_repository.dart
+│       │       │   ├── settings_repository.dart
+│       │       │   ├── staff_repository.dart
+│       │       │   └── table_repository.dart
+│       │       ├── services/
+│       │       │   ├── auth_service.dart
+│       │       │   ├── realtime_service.dart
+│       │       │   └── supabase_service.dart
+│       │       ├── supabase/             # Supabase auth/realtime/service
+│       │       │   ├── auth_service.dart
+│       │       │   ├── realtime_service.dart
+│       │       │   └── supabase_service.dart
+│       │       └── utils/
+│       │           ├── cc_error.dart
+│       │           ├── constants.dart
+│       │           ├── currency_formatter.dart
+│       │           ├── date_formatter.dart
+│       │           ├── delivery_fee_calculator.dart
+│       │           └── validators.dart
+│       │
+│       ├── cafecanva_ui/                 # UI components & theme
+│       │   ├── pubspec.yaml
+│       │   └── lib/
+│       │       ├── cafecanva_ui.dart
+│       │       ├── theme/
+│       │       └── widgets/
+│       │
+│       ├── cafecanva_billing/            # Billing & payment package
+│       │   ├── pubspec.yaml
+│       │   └── lib/
+│       │       ├── cafecanva_billing.dart
+│       │       └── src/
+│       │
+│       └── cafecanva_analytics/          # Analytics widgets
+│           ├── pubspec.yaml
+│           └── lib/
+│               ├── cafecanva_analytics.dart
+│               └── widgets.dart
+│
+├── db/                                   # (empty — placeholder)
+│
+├── DEPLOY_CHECKLIST.md                   # Deployment runbook
+│
+├── dist-desktop/                         # Electron build output
+│
+├── drizzle/
+│   └── schema.ts                         # ★ Drizzle ORM schema (22 tables)
+│
+├── electron-builder.json                 # Electron Builder config
+│
+├── frontend/                             # ★ SAAS PLATFORM (Next.js 16)
+│   ├── .env.local
+│   ├── .env.example
+│   ├── AGENTS.md
+│   ├── CLAUDE.md
+│   ├── README.md
+│   ├── eslint.config.mjs
+│   ├── next-env.d.ts
+│   ├── next.config.ts
+│   ├── package.json
+│   ├── postcss.config.mjs
+│   ├── tsconfig.json
+│   ├── vercel.json                       # Vercel config (CSP, crons, redirects)
+│   │
+│   └── src/
+│       ├── middleware.ts                 # Next.js middleware (auth + session)
+│       │
+│       ├── app/
+│       │   ├── layout.tsx                # Root layout (Inter font)
+│       │   ├── page.tsx                  # Landing page
+│       │   ├── globals.css
+│       │   ├── favicon.ico
+│       │   │
+│       │   ├── [store_slug]/             # Dynamic store pages
+│       │   │   └── page.tsx
+│       │   ├── admin/
+│       │   │   └── page.tsx              # Admin dashboard (99KB)
+│       │   ├── api/
+│       │   │   └── payment/
+│       │   ├── comingsoon/
+│       │   │   └── layout.tsx
+│       │   ├── demo/
+│       │   │   └── layout.tsx
+│       │   ├── download/
+│       │   │   └── page.tsx
+│       │   ├── kos/
+│       │   │   └── page.tsx
+│       │   ├── login/
+│       │   │   └── page.tsx
+│       │   ├── staff/
+│       │   │   └── page.tsx              # Staff dashboard (76KB)
+│       │   └── superadmin/
+│       │       └── page.tsx              # Super admin panel (40KB)
+│       │
+│       ├── components/
+│       │   └── billing/
+│       │       ├── ReceiptPreviewModal.tsx
+│       │       ├── ReceiptTemplate.tsx
+│       │       ├── escpos.ts
+│       │       ├── index.ts
+│       │       └── types.ts
+│       │
+│       └── utils/
+│           └── supabase/
+│               ├── client.ts             # Browser Supabase client
+│               ├── server.ts             # Server Supabase client
+│               ├── middleware.ts          # Session refresh middleware
+│               └── demo-client.ts        # Demo mode mock client
+│
+├── homepage.cafecanvas.bar/              # ★ MARKETING HOMEPAGE (static)
+│   ├── .gitignore
+│   ├── dev-server.js
+│   ├── index.html                        # Main homepage (134KB)
+│   ├── store-admin-downloding.html
+│   ├── hero-video.mp4
+│   ├── vercel.json
+│   ├── CafeCanvas-Staff-POS.apk
+│   ├── downloads/
+│   │
+│   └── theme-01.html through theme-10.html  # 10 storefront theme previews
+│
+├── implementation_plan.md
+│
+├── link.cafecanvas.bar/                  # ★ DOWNLOAD LINK SITE (Firebase Hosted)
+│   ├── .firebase/
+│   ├── firebase.json
+│   ├── index.html
+│   ├── CafeCanvas-Staff-POS.zip
+│   └── CafeCanvas-Store-Admin-Setup-1.0.0.zip  (~103MB)
+│
+├── node_modules/                         # NPM dependencies
+├── package.json                          # ★ Root workspace package.json
+├── package-lock.json
+├── skills-lock.json
+│
+└── supabase/                             # ★ SUPABASE DIRECTORY
+    ├── functions/                        # Edge Functions (Deno)
+    │   ├── call-staff/
+    │   │   └── index.ts                  # Staff call + FCM notification
+    │   ├── generate-bill/
+    │   │   └── index.ts                  # Bill generation + tax calculation
+    │   └── verify-payment/
+    │       └── index.ts                  # Razorpay HMAC signature verification
+    │
+    └── migrations/                       # SQL migrations
+        ├── 001_schema.sql                # Full DB schema (22 tables + indexes)
+        ├── 002_rls_policies.sql          # Row Level Security policies
+        ├── 003_seed_demo.sql             # Demo seed data
+        └── 004_fix_rls_anon_insert.sql   # RLS fix for anon inserts
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 2: PLUGIN & EXTENSION CONFIGURATIONS
+████████████████████████████████████████████████████████████████████████████████
+
+================================================================================
+  PLUGINS (C:\Users\yash\.gemini\config\plugins\)
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  PLUGIN 1: android-cli-plugin
+────────────────────────────────────────────────────────────────────────────────
+Path: C:\Users\yash\.gemini\config\plugins\android-cli-plugin\
+
+plugin.json:
+{
+  "name": "android-cli-plugin",
+  "version": "1.0.0",
+  "description": "Core tools and knowledge required to develop for Android",
+  "author": {
+    "name": "Android developer tools team"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "android",
+    "mobile",
+    "device",
+    "sdk",
+    "journeys",
+    "device"
+  ]
+}
+
+Skills: android-cli (SKILL.md) — Orchestrates Android development tasks including
+project creation, deployment, SDK management, and environment diagnostics.
+
+────────────────────────────────────────────────────────────────────────────────
+  PLUGIN 2: firebase
+────────────────────────────────────────────────────────────────────────────────
+Path: C:\Users\yash\.gemini\config\plugins\firebase\
+
+plugin.json:
+{
+  "name": "firebase"
+}
+
+────────────────────────────────────────────────────────────────────────────────
+  PLUGIN 3: modern-web-guidance-plugin
+────────────────────────────────────────────────────────────────────────────────
+Path: C:\Users\yash\.gemini\config\plugins\modern-web-guidance-plugin\
+
+plugin.json:
+{
+  "name": "modern-web-guidance-plugin",
+  "version": "1.0.4",
+  "description": "Curated collection of agent skills for modern web development.",
+  "author": {
+    "name": "Google"
+  },
+  "repository": "https://github.com/GoogleChrome/modern-web-guidance",
+  "license": "Apache-2.0"
+}
+
+Additional files:
+  - gemini-extension.json (196 bytes)
+  - README.md (62KB) — Full web development guidance reference
+
+
+================================================================================
+  AGENT SKILLS (d:\Cafe Canva\.agents\skills\)
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  SKILL 1: supabase
+────────────────────────────────────────────────────────────────────────────────
+Trigger: ANY Supabase task (Database, Auth, Edge Functions, Realtime, Storage,
+         client libraries, SSR, auth issues, CLI, MCP server, schema changes,
+         migrations, security audits, Postgres extensions)
+
+Core Principles:
+  1. Verify against changelog and current docs before implementing
+  2. Verify your work after implementing
+  3. Recover from errors, don't loop
+  4. Tables may need explicit GRANT for Data API access
+  5. Enable RLS on every table in exposed schemas
+  6. Security checklist for auth, RLS, views, storage
+
+────────────────────────────────────────────────────────────────────────────────
+  SKILL 2: supabase-postgres-best-practices
+────────────────────────────────────────────────────────────────────────────────
+Trigger: Writing, reviewing, or optimizing Postgres queries, schema designs,
+         or database configurations
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 3: MCP SERVER CONFIGURATIONS
+████████████████████████████████████████████████████████████████████████████████
+
+MCP Root: C:\Users\yash\.gemini\antigravity-ide\mcp\
+
+================================================================================
+  MCP SERVER 1: android-management-api
+================================================================================
+Path: C:\Users\yash\.gemini\antigravity-ide\mcp\android-management-api\
+
+Available Tools (9):
+  - get_application.json
+  - get_device.json
+  - get_enterprise.json
+  - get_policy.json
+  - get_web_app.json
+  - list_devices.json
+  - list_enterprises.json
+  - list_policies.json
+  - list_web_apps.json
+
+================================================================================
+  MCP SERVER 2: cloudrun
+================================================================================
+Path: C:\Users\yash\.gemini\antigravity-ide\mcp\cloudrun\
+
+Available Tools (8):
+  - create_project.json
+  - deploy_container_image.json
+  - deploy_file_contents.json
+  - deploy_local_folder.json
+  - get_service.json
+  - get_service_log.json
+  - list_projects.json
+  - list_services.json
+
+================================================================================
+  MCP SERVER 3: dart-mcp-server
+================================================================================
+Path: C:\Users\yash\.gemini\antigravity-ide\mcp\dart-mcp-server\
+
+instructions.md:
+  This server exposes resources for Flutter and Dart development. Be sure to
+  list these resources especially when dealing with errors or unfamiliar packages.
+  
+  Whenever attempting to investigate a package dependency, use the
+  `read_package_uris` and `rip_grep_packages` tools to explore their files.
+  
+  In addition to `package:` URIs, the server also supports `package-root:` URIs,
+  which resolve to the root of the package instead of the `lib/` directory.
+
+Available Tools (14):
+  - analyze_files.json
+  - dtd.json
+  - flutter_driver_command.json
+  - get_runtime_errors.json
+  - hot_reload.json
+  - hot_restart.json
+  - lsp.json
+  - pub.json
+  - pub_dev_search.json
+  - read_package_uris.json
+  - rip_grep_packages.json
+  - roots.json
+  - widget_inspector.json
+  - instructions.md
+
+================================================================================
+  MCP SERVER 4: firebase-mcp-server
+================================================================================
+Path: C:\Users\yash\.gemini\antigravity-ide\mcp\firebase-mcp-server\
+
+Available Tools (29):
+  Auth:
+    - auth_get_users.json
+    - auth_set_sms_region_policy.json
+    - auth_update_user.json
+  Developer Knowledge:
+    - developerknowledge_answer_query.json
+    - developerknowledge_get_documents.json
+    - developerknowledge_search_documents.json
+  Firebase Core:
+    - firebase_create_android_sha.json
+    - firebase_create_app.json
+    - firebase_create_project.json
+    - firebase_deploy.json
+    - firebase_deploy_status.json
+    - firebase_get_environment.json
+    - firebase_get_project.json
+    - firebase_get_sdk_config.json
+    - firebase_get_security_rules.json
+    - firebase_init.json
+    - firebase_list_apps.json
+    - firebase_list_projects.json
+    - firebase_login.json
+    - firebase_logout.json
+    - firebase_read_resources.json
+    - firebase_update_environment.json
+    - firebase_validate_security_rules.json
+  Messaging:
+    - messaging_send_message.json
+  Realtime Database:
+    - realtimedatabase_get_data.json
+    - realtimedatabase_set_data.json
+  Remote Config:
+    - remoteconfig_get_template.json
+    - remoteconfig_update_template.json
+  Storage:
+    - storage_get_object_download_url.json
+
+================================================================================
+  MCP SERVER 5: google-developer-knowledge
+================================================================================
+Path: C:\Users\yash\.gemini\antigravity-ide\mcp\google-developer-knowledge\
+
+Available Tools (3):
+  - answer_query.json
+  - get_documents.json
+  - search_documents.json
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 4: ROOT & CONFIG FILES
+████████████████████████████████████████████████████████████████████████████████
+
+================================================================================
+  FILE: package.json (Root Workspace)
+================================================================================
+{
+  "name": "cafe-canva",
+  "version": "1.0.0",
+  "description": "Multi-tenant SaaS platform for the Indian restaurant industry",
+  "main": "Backend-Software/dist/Backend-Software/Store-Admin/electron/main.js",
+  "workspaces": [
+    "frontend",
+    "Backend-Software/Store-Admin/store-front",
+    "Backend-Software/Store-Admin/frontend"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:storefront": "npm run dev --prefix Backend-Software/Store-Admin/store-front",
+    "dev:backend": "tsx Backend-Software/src/server.ts",
+    "dev:store-admin": "npm run dev --prefix Backend-Software/Store-Admin/frontend -- -p 3005",
+    "desktop:run": "npx electron Backend-Software/dist/Backend-Software/Store-Admin/electron/main.js",
+    "desktop:build": "npm run build --prefix Backend-Software/Store-Admin/frontend",
+    "desktop:package": "npm run desktop:build && npx tsc -p Backend-Software/tsconfig.json && npx electron-builder",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yashzagde/Cafe-Canva.git"
+  },
+  "keywords": ["saas", "restaurant", "pos", "nextjs", "supabase", "drizzle"],
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.2",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "express": "^5.2.1",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.1",
+    "drizzle-kit": "^0.31.10",
+    "electron": "^42.3.0",
+    "electron-builder": "^26.8.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  }
+}
+
+================================================================================
+  FILE: electron-builder.json
+================================================================================
+{
+  "appId": "com.cafecanvas.storeadmin",
+  "productName": "CafeCanvas Store Admin",
+  "electronDist": "node_modules/electron/dist",
+  "directories": { "output": "dist-desktop" },
+  "files": [
+    "package.json",
+    "Backend-Software/dist/Backend-Software/Store-Admin/electron/**/*",
+    "Backend-Software/Store-Admin/frontend/out/**/*",
+    "Backend-Software/Store-Admin/frontend/public/**/*",
+    "Backend-Software/Store-Admin/frontend/package.json"
+  ],
+  "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+  "mac": { "target": ["dmg"], "category": "public.app-category.business" },
+  "linux": { "target": ["AppImage", "deb"] },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "CafeCanvas Store Admin"
+  }
+}
+
+================================================================================
+  FILE: .gitignore
+================================================================================
+# Cafe Canva - Root Git Ignore File
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js Build Outputs & Cache
+.next/
+out/
+tsconfig.tsbuildinfo
+
+# Electron & Backend Build Outputs
+dist/
+Backend-Software/dist/
+dist-desktop/
+*.exe
+*.dmg
+*.deb
+*.AppImage
+
+# Environment & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# System & OS Files
+.DS_Store
+Thumbs.db
+
+# Vercel Deploy Directories
+.vercel/
+.vercel-backup/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+================================================================================
+  FILE: Backend-Software/tsconfig.json
+================================================================================
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "../",
+    "resolveJsonModule": true
+  },
+  "include": ["**/*"],
+  "exclude": [
+    "**/frontend/**/*",
+    "**/store-front/**/*",
+    "**/node_modules/**/*",
+    "**/.next/**/*",
+    "dist/**/*"
+  ]
+}
+
+================================================================================
+  FILE: frontend/package.json
+================================================================================
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^1.17.0",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+
+================================================================================
+  FILE: frontend/next.config.ts
+================================================================================
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: '**.supabase.co' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' }
+    ],
+  },
+  serverExternalPackages: ['drizzle-orm'],
+};
+
+export default nextConfig;
+
+================================================================================
+  FILE: frontend/vercel.json
+================================================================================
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "regions": ["bom1"],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options",  "value": "nosniff" },
+        { "key": "X-Frame-Options",          "value": "DENY" },
+        { "key": "X-XSS-Protection",         "value": "1; mode=block" },
+        { "key": "Referrer-Policy",          "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",       "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://api.razorpay.com; frame-src https://api.razorpay.com;" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/payment/:path*", "destination": "/api/payment/:path*" },
+    { "source": "/demo/:path*", "destination": "/demo/:path*" }
+  ],
+  "redirects": [
+    { "source": "/login", "has": [{ "type": "cookie", "key": "sb-access-token" }], "destination": "/dashboard", "permanent": false }
+  ],
+  "crons": [
+    { "path": "/api/cron/cleanup-expired-sessions", "schedule": "0 2 * * *" }
+  ]
+}
+
+================================================================================
+  FILE: cafecanva_flutter/melos.yaml
+================================================================================
+name: cafecanva_flutter
+repository: https://github.com/Yashzagde/Cafe-Canva
+
+packages:
+  - apps/*
+  - packages/*
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
+
+scripts:
+  analyze:
+    run: melos exec -- flutter analyze --no-fatal-infos
+  test:
+    run: melos exec -- flutter test
+  build:android:staff:
+    run: cd apps/staff_app && flutter build apk --release
+  build:android:admin:
+    run: cd apps/store_admin && flutter build apk --release
+  build:windows:admin:
+    run: cd apps/store_admin && flutter build windows --release
+  clean:
+    run: melos exec -- flutter clean
+
+================================================================================
+  FILE: cafecanva_flutter/pubspec.yaml
+================================================================================
+name: cafecanva_flutter
+environment:
+  sdk: ">=3.12.1 <4.0.0"
+dev_dependencies:
+  melos: ^7.8.0
+workspace:
+  - packages/cafecanva_analytics
+  - packages/cafecanva_billing
+  - packages/cafecanva_core
+  - packages/cafecanva_ui
+  - apps/customer_storefront
+  - apps/kitchen_display
+  - apps/staff_pos
+  - apps/store_admin_desktop
+  - apps/store_admin_mobile
+
+================================================================================
+  FILE: .vscode/launch.json
+================================================================================
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach to Chrome",
+            "port": 9222,
+            "request": "attach",
+            "type": "chrome",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost",
+            "url": "http://localhost:8080",
+            "webRoot": "${workspaceFolder}"
+        }
+    ]
+}
+
+================================================================================
+  FILE: link.cafecanvas.bar/firebase.json
+================================================================================
+{
+  "hosting": {
+    "public": ".",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "redirects": [
+      { "source": "/download", "destination": "https://www.cafecanvas.bar/download", "type": 301 }
+    ],
+    "headers": [
+      { "source": "**", "headers": [{ "key": "Cache-Control", "value": "max-age=3600" }] }
+    ]
+  }
+}
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 5: IMPORTANT CODE FILES
+████████████████████████████████████████████████████████████████████████████████
+
+================================================================================
+  FILE: Backend-Software/src/server.ts — Express Server Entry Point
+================================================================================
+import app from './app.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const PORT = process.env.PORT || 5000;
+
+const server = app.listen(PORT, () => {
+  console.log(`\n======================================================`);
+  console.log(`🚀 Cafe Canva Backend running on http://localhost:${PORT}`);
+  console.log(`📊 API endpoints prefixed with /api`);
+  console.log(`   - Health check: http://localhost:${PORT}/api/health`);
+  console.log(`   - Users:        http://localhost:${PORT}/api/users`);
+  console.log(`======================================================\n`);
+});
+
+const gracefulShutdown = () => {
+  console.log('Closing HTTP server gracefully...');
+  server.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+================================================================================
+  FILE: Backend-Software/src/app.ts — Express App Setup
+================================================================================
+import express from 'express';
+import cors from 'cors';
+import apiRouter from './routes/api.js';
+import { errorHandler } from './middleware/errorHandler.js';
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+import superAdminRoutes from '../Super-admin/routes.js';
+import storeAdminRoutes from '../Store-Admin/routes.js';
+import staffRoutes from '../Staff/routes.js';
+import kosRoutes from '../KOS/routes.js';
+
+app.use('/api', apiRouter);
+app.use('/api/super-admin', superAdminRoutes);
+app.use('/api/store-admin', storeAdminRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/kos', kosRoutes);
+
+app.use(errorHandler);
+
+export default app;
+
+================================================================================
+  FILE: Backend-Software/src/config/db.ts — Database Connection
+================================================================================
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from '../../../drizzle/schema.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not set in environmental variables');
+}
+
+const client = postgres(connectionString, { prepare: false });
+export const db = drizzle(client, { schema });
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/middleware.ts — JWT Auth + Tenant RLS
+================================================================================
+import { Request, Response, NextFunction } from 'express';
+import { db } from '../src/config/db.js';
+import { sql } from 'drizzle-orm';
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        tenant_id: string;
+        branch_id: string | null;
+        role: 'PLATFORM_ADMIN' | 'TENANT_OWNER' | 'BRANCH_ADMIN' | 'MANAGER' | 'STAFF' | 'KOS';
+      };
+      txQuery?: <T>(callback: (tx: any) => Promise<T>) => Promise<T>;
+    }
+  }
+}
+
+function decodeJWT(token: string) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payloadJson = Buffer.from(parts[1], 'base64').toString('utf8');
+    return JSON.parse(payloadJson);
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function storeAdminAuth(req: Request, res: Response, next: NextFunction) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // Fallback to dev headers
+      const devTenantId = req.headers['x-tenant-id'] as string;
+      const devBranchId = req.headers['x-branch-id'] as string;
+      const devRole = req.headers['x-role'] as string;
+      const devUserId = req.headers['x-user-id'] as string;
+
+      if (devTenantId && devRole) {
+        req.user = {
+          id: devUserId || '00000000-0000-0000-0000-000000000000',
+          tenant_id: devTenantId,
+          branch_id: devBranchId || null,
+          role: devRole as any
+        };
+      } else {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+        return;
+      }
+    } else {
+      const token = authHeader.split(' ')[1];
+      const payload = decodeJWT(token);
+
+      if (!payload) {
+        res.status(401).json({ success: false, error: 'Invalid JWT' });
+        return;
+      }
+
+      const appMetadata = payload.app_metadata || {};
+      const tenantId = appMetadata.tenant_id;
+      const branchId = appMetadata.branch_id || null;
+      const role = appMetadata.role;
+
+      if (!tenantId || !role) {
+        res.status(403).json({ success: false, error: 'Missing tenant_id or role' });
+        return;
+      }
+
+      req.user = {
+        id: payload.sub || '00000000-0000-0000-0000-000000000000',
+        tenant_id: tenantId,
+        branch_id: branchId,
+        role: role
+      };
+    }
+
+    const allowedRoles = ['TENANT_OWNER', 'BRANCH_ADMIN', 'MANAGER'];
+    if (!allowedRoles.includes(req.user.role)) {
+      res.status(403).json({ success: false, error: 'Insufficient privileges' });
+      return;
+    }
+
+    // Inject Transaction Query Runner with RLS
+    const user = req.user;
+    req.txQuery = async <T>(callback: (tx: any) => Promise<T>): Promise<T> => {
+      return await db.transaction(async (tx) => {
+        await tx.execute(sql`SET LOCAL app.current_tenant_id = ${user.tenant_id}`);
+        if (user.branch_id) {
+          await tx.execute(sql`SET LOCAL app.current_branch_id = ${user.branch_id}`);
+        }
+        await tx.execute(sql`SET LOCAL app.current_role = ${user.role}`);
+        return await callback(tx);
+      });
+    };
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/routes.ts — 40+ Store Admin API Endpoints
+================================================================================
+import { Router } from 'express';
+import { storeAdminAuth } from './middleware.js';
+import { DashboardController } from './controllers/dashboardController.js';
+import { MenuController } from './controllers/menuController.js';
+import { BillingController } from './controllers/billingController.js';
+import { 
+  MarketingController, CustomerController, OrderController, 
+  AnalyticsController, TableController, SettingsController 
+} from './controllers/remainingControllers.js';
+
+const router = Router();
+
+router.get('/health', (req, res) => {
+  res.json({ module: 'Store-Admin', status: 'OK', timestamp: new Date() });
+});
+
+router.use(storeAdminAuth);
+
+// MODULE 1: DASHBOARD
+router.get('/dashboard/summary', DashboardController.getSummary);
+router.get('/dashboard/top-items', DashboardController.getTopItems);
+router.get('/dashboard/recent-orders', DashboardController.getRecentOrders);
+router.get('/dashboard/revenue-chart', DashboardController.getRevenueChart);
+router.get('/dashboard/low-selling', DashboardController.getLowSelling);
+router.post('/dashboard/quick-discount', DashboardController.createQuickDiscount);
+
+// MODULE 2: MENU MANAGEMENT
+router.get('/menu/categories', MenuController.getCategories);
+router.post('/menu/categories', MenuController.createCategory);
+router.patch('/menu/categories/:id', MenuController.updateCategory);
+router.delete('/menu/categories/:id', MenuController.deleteCategory);
+router.get('/menu/items', MenuController.getItems);
+router.post('/menu/items', MenuController.createItem);
+router.patch('/menu/items/:id', MenuController.updateItem);
+router.patch('/menu/items/:id/toggle', MenuController.toggleItemAvailability);
+router.delete('/menu/items/:id', MenuController.deleteItem);
+router.post('/menu/items/:id/image', MenuController.uploadImage);
+router.get('/menu/items/:id/modifiers', MenuController.getItemModifiers);
+router.post('/menu/items/:id/modifiers', MenuController.createModifierGroup);
+router.patch('/menu/modifiers/:groupId', MenuController.updateModifierGroup);
+router.delete('/menu/modifiers/:groupId', MenuController.deleteModifierGroup);
+
+// MODULE 3: BILLING SYSTEM
+router.get('/billing/orders', BillingController.getActiveOrders);
+router.get('/billing/orders/:id', BillingController.getOrderDetail);
+router.get('/billing/table/:tableId/bill', BillingController.getTableBill);
+router.post('/billing/bill/generate', BillingController.generateBill);
+router.get('/billing/bill/:id/print', BillingController.getPrintTemplate);
+router.post('/billing/bill/:id/send', BillingController.sendBillNotification);
+router.post('/billing/bill/:id/pay', BillingController.recordPayment);
+router.get('/billing/bill/history', BillingController.getBillHistory);
+
+// MODULE 4: MARKETING
+router.get('/marketing/discounts', MarketingController.getDiscounts);
+router.post('/marketing/discounts', MarketingController.createDiscount);
+router.get('/marketing/coupons', MarketingController.getCoupons);
+router.post('/marketing/coupons', MarketingController.createCoupon);
+router.get('/marketing/coupons/:code/validate', MarketingController.validateCoupon);
+router.get('/marketing/notifications', MarketingController.getNotifications);
+router.post('/marketing/notifications', MarketingController.createNotification);
+router.get('/marketing/suggestions', MarketingController.getSmartSuggestions);
+
+// MODULE 5: CUSTOMERS
+router.get('/customers', CustomerController.getCustomers);
+router.get('/customers/:id', CustomerController.getCustomerDetail);
+router.post('/customers', CustomerController.createCustomer);
+
+// MODULE 6: ORDERS
+router.get('/orders', OrderController.getOrders);
+router.get('/orders/live', OrderController.getLiveQueue);
+
+// MODULE 7: ANALYTICS
+router.get('/analytics/summary', AnalyticsController.getSummaryStats);
+
+// MODULE 8: TABLE MANAGEMENT
+router.get('/tables', TableController.getTables);
+router.post('/tables', TableController.createTable);
+router.patch('/tables/:id', TableController.updateTable);
+router.delete('/tables/:id', TableController.deleteTable);
+
+// MODULE 9: SETTINGS
+router.get('/settings/store', SettingsController.getStoreDetails);
+router.patch('/settings/store', SettingsController.updateStoreDetails);
+router.post('/settings/payments/razorpay', SettingsController.saveRazorpay);
+router.get('/settings/blogs', SettingsController.getBlogs);
+router.post('/settings/blogs', SettingsController.createBlog);
+
+export default router;
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/electron/main.ts — Electron Main Process
+================================================================================
+import { app, session, BrowserWindow, protocol, net } from 'electron';
+import { createMainWindow } from './window-manager';
+import { registerIpcHandlers } from './ipc-handlers';
+import * as path from 'path';
+import * as fs from 'fs';
+import { pathToFileURL } from 'url';
+
+const isDev = !app.isPackaged;
+let mainWindow: BrowserWindow | null = null;
+
+protocol.registerSchemesAsPrivileged([{
+  scheme: 'app',
+  privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, allowServiceWorkers: true }
+}]);
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
+  app.whenReady().then(async () => {
+    setupCSP();
+    const appRoot = app.getAppPath();
+    const outDir = path.join(appRoot, 'Backend-Software', 'Store-Admin', 'frontend', 'out');
+
+    if (!isDev) {
+      protocol.handle('app', (request) => {
+        // ... custom protocol handler for production static files
+      });
+    }
+
+    mainWindow = createMainWindow();
+    registerIpcHandlers(mainWindow);
+
+    try {
+      if (isDev) {
+        const devUrl = process.env.ELECTRON_DEV_URL || 'http://localhost:3005';
+        await mainWindow.loadURL(devUrl);
+      } else {
+        await mainWindow.loadURL('app://local/');
+      }
+    } catch (error: any) {
+      // Load error page
+    }
+
+    if (isDev) mainWindow.webContents.openDevTools({ mode: 'detach' });
+    mainWindow.on('closed', () => { mainWindow = null; });
+  });
+}
+
+// CSP, graceful shutdown, error handlers...
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/electron/ipc-handlers.ts
+================================================================================
+import { ipcMain, BrowserWindow, Notification } from 'electron';
+
+export function registerIpcHandlers(mainWindow: BrowserWindow | null) {
+  // Handle silent thermal receipt printing
+  ipcMain.handle('print-receipt', async (event, htmlContent: string) => {
+    if (!mainWindow) return { success: false, error: 'Main window not initialized' };
+    try {
+      const printWindow = new BrowserWindow({
+        show: false,
+        webPreferences: { nodeIntegration: true, contextIsolation: false },
+      });
+      await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+      printWindow.webContents.print({
+        silent: true, printBackground: true, margins: { marginType: 'none' },
+      }, (success, errorType) => { printWindow.destroy(); });
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Handle local push notifications
+  ipcMain.on('send-notification', (event, { title, body }) => {
+    if (Notification.isSupported()) {
+      new Notification({ title, body }).show();
+    }
+  });
+}
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/electron/preload.ts
+================================================================================
+import { contextBridge, ipcRenderer } from 'electron';
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  printReceipt: (html: string) => ipcRenderer.invoke('print-receipt', html),
+  sendNotification: (title: string, body: string) => ipcRenderer.send('send-notification', { title, body }),
+});
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/electron/window-manager.ts
+================================================================================
+import { BrowserWindow } from 'electron';
+import * as path from 'path';
+
+export function createMainWindow(): BrowserWindow {
+  const win = new BrowserWindow({
+    width: 1280, height: 800, minWidth: 1024, minHeight: 768,
+    title: 'Cafe Canvas — Store Admin Desktop',
+    backgroundColor: '#0a0a0c',
+    webPreferences: {
+      nodeIntegration: false, contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+    show: true,
+  });
+  return win;
+}
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/electron/next-server.ts
+================================================================================
+import * as http from 'http';
+import * as fs from 'fs';
+import * as path from 'path';
+
+let server: http.Server | null = null;
+
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
+  '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
+  '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf',
+};
+
+export async function startNextServer(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const outDir = path.join(__dirname, '..', '..', '..', 'Store-Admin', 'frontend', 'out');
+    server = http.createServer((req, res) => {
+      // Static file serving with SPA fallback
+    });
+    server.listen(3000, '127.0.0.1', () => resolve('http://localhost:3000'));
+  });
+}
+
+export function stopNextServer() {
+  if (server) { server.close(); server = null; }
+}
+
+================================================================================
+  FILE: drizzle/schema.ts — Drizzle ORM Schema (22 Tables)
+================================================================================
+// (352 lines — Full schema included in folder structure section)
+// Tables: tenants, branches, users, preRegistrations, menuCategories, menuItems,
+// modifierGroups, modifierOptions, tables, customers, orders, orderItems, bills,
+// tableSessions, extraChargeTemplates, customerVisits, discounts, coupons,
+// couponUses, storefrontNotifications, storeSettings, branding, storefrontConfig,
+// paymentIntegrations, blogs
+
+================================================================================
+  FILE: frontend/src/middleware.ts — Next.js Auth Middleware
+================================================================================
+import { type NextRequest, NextResponse } from 'next/server'
+import { updateSession } from '@/utils/supabase/middleware'
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Skip static assets
+  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon.ico') ||
+      pathname.match(/\.(?:svg|png|jpg|jpeg|gif|webp)$/)) {
+    return NextResponse.next()
+  }
+
+  // Demo Mode Bypass
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+  if (isDemoMode && pathname.startsWith('/demo')) return NextResponse.next()
+
+  // Skip public webhooks
+  if (pathname.startsWith('/api/payment/verify')) return NextResponse.next()
+
+  // Session management for protected routes
+  return await updateSession(request)
+}
+
+================================================================================
+  FILE: frontend/src/app/layout.tsx — Root Layout
+================================================================================
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+
+export const metadata: Metadata = {
+  title: 'Cafe Canva - Next-Gen Cafe Management',
+  description: 'Manage your cafe, orders, and digital menu with beautiful ease.',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body className={`${inter.variable} antialiased bg-mesh text-foreground`}>
+        {children}
+      </body>
+    </html>
+  );
+}
+
+================================================================================
+  FILE: frontend/src/utils/supabase/client.ts — Browser Client
+================================================================================
+import { createBrowserClient } from '@supabase/ssr'
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'placeholder'
+  )
+}
+
+================================================================================
+  FILE: frontend/src/utils/supabase/server.ts — Server Client
+================================================================================
+import 'server-only'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export async function createClient() {
+  const cookieStore = await cookies()
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'placeholder',
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options)
+            })
+          } catch (error) { /* Server Component context */ }
+        },
+      },
+    }
+  )
+}
+
+================================================================================
+  FILE: frontend/src/utils/supabase/middleware.ts — Session Refresh
+================================================================================
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'placeholder',
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options))
+        },
+      },
+    }
+  )
+  await supabase.auth.getUser()
+  return supabaseResponse
+}
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/frontend/app/types/index.ts — All Types
+================================================================================
+// (282 lines — Full TypeScript interfaces)
+// Types: UserRole, OrderStatus, PaymentMethod, TableStatus, KdsStatus, TableShape
+// Interfaces: Tenant, User, FloorSection, FloorTable, MenuCategory, ModifierOption,
+// MenuModifier, MenuItem, Order, OrderItem, SelectedModifier, Bill, Promotion,
+// StorefrontConfig, StaffPerformance, SyncQueueItem, ReceiptData, DashboardMetrics,
+// RevenuePoint, TopItem, HourlyData
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/frontend/app/utils/offline-sync.ts — Sync Engine
+================================================================================
+// (309 lines — Full Dexie.js IndexedDB sync engine)
+// CafeCanvasDB class with tables: syncQueue, menuItems, menuCategories,
+// floorSections, floorTables, orders, orderItems, bills
+// Functions: enqueueOperation, getSyncQueueLength, getPendingSyncItems,
+// flushQueue (with retry/conflict handling), cleanSyncedItems,
+// fetchWithCache, updateLocalCache, addToLocalCache, getFromLocalCache,
+// hasPendingSync, getPendingSyncItemIds
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/frontend/app/context/SyncContext.tsx
+================================================================================
+// (223 lines — Full sync context provider)
+// SyncContextValue: isOnline, isSimulatedOffline, effectivelyOnline,
+// syncQueueLength, lastSyncedAt, syncStatus, queueAction, fetchWithSync,
+// toggleSimulatedOffline, forceSync
+// Auto-flush on reconnect, debounced, poll queue length every 3s
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/frontend/app/utils/api.ts — API Client
+================================================================================
+// (93 lines — Express backend API client)
+// apiRequest<T>() with JWT auth or dev headers fallback
+// Uses x-tenant-id, x-branch-id, x-role for local development
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/frontend/app/utils/supabase.ts
+================================================================================
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: { persistSession: true, autoRefreshToken: true },
+});
+
+================================================================================
+  FILE: Backend-Software/Store-Admin/frontend/app/layout.tsx
+================================================================================
+import React from 'react';
+import './global.css';
+import { SyncProvider } from '@/app/context/SyncContext';
+import { LayoutShell } from '@/components/layout/LayoutShell';
+
+export const metadata = {
+  title: 'CafeCanvas — Store Admin',
+  description: 'Multi-Tenant SaaS Hospitality Operating System',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className="dark">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:..&family=JetBrains+Mono:...&family=Sora:...&display=swap" rel="stylesheet" />
+      </head>
+      <body className="min-h-screen antialiased">
+        <SyncProvider>
+          <LayoutShell>{children}</LayoutShell>
+        </SyncProvider>
+      </body>
+    </html>
+  );
+}
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 6: SUPABASE EDGE FUNCTIONS
+████████████████████████████████████████████████████████████████████████████████
+
+================================================================================
+  FILE: supabase/functions/call-staff/index.ts
+================================================================================
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+)
+
+Deno.serve(async (req) => {
+  // CORS handling
+  // 1. Check 2-minute cooldown per table
+  // 2. Insert staff_calls record
+  // 3. Get FCM tokens for active staff
+  // 4. Send FCM push notification
+  // Returns: { success: true, callId } or { cooldown: true, remainingSeconds }
+})
+
+================================================================================
+  FILE: supabase/functions/generate-bill/index.ts
+================================================================================
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+Deno.serve(async (req) => {
+  // 1. Fetch active orders for table
+  // 2. Fetch store settings (tax rates)
+  // 3. Calculate: subtotal, CGST, SGST, service charge, total
+  // 4. Insert bill record with extra_charges JSON
+  // 5. Update orders to 'billed' status
+  // Returns: { bill }
+})
+
+================================================================================
+  FILE: supabase/functions/verify-payment/index.ts
+================================================================================
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+Deno.serve(async (req) => {
+  // 1. Get Razorpay secret from payment_integrations table
+  // 2. Verify HMAC-SHA256 signature (Web Crypto API)
+  // 3. Update bill status to 'paid'
+  // 4. Settle associated orders
+  // 5. Free the table + close table session
+  // Returns: { valid: true } or { valid: false, error }
+})
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 7: FLUTTER APP ENTRY POINTS
+████████████████████████████████████████████████████████████████████████████████
+
+================================================================================
+  FILE: cafecanva_flutter/packages/cafecanva_core/lib/cafecanva_core.dart
+================================================================================
+/// CafeCanva Core — shared models, services, repositories, and providers.
+library cafecanva_core;
+
+// Models (22 exports)
+export 'models/tenant.dart';
+export 'models/branch.dart';
+export 'models/user_profile.dart';
+export 'models/menu_category.dart';
+export 'models/menu_item.dart';
+export 'models/modifier_group.dart';
+export 'models/modifier_option.dart';
+export 'models/table_model.dart';
+export 'models/table_session.dart';
+export 'models/order.dart';
+export 'models/order_item.dart';
+export 'models/bill.dart';
+export 'models/customer.dart';
+export 'models/discount.dart';
+export 'models/coupon.dart';
+export 'models/store_settings.dart';
+export 'models/staff_call.dart';
+export 'models/attendance.dart';
+export 'models/notification_log_entry.dart';
+export 'models/branding.dart';
+export 'models/storefront_config.dart';
+
+// Services (3)
+export 'services/supabase_service.dart';
+export 'services/auth_service.dart';
+export 'services/realtime_service.dart';
+
+// Repositories (8)
+export 'repositories/menu_repository.dart';
+export 'repositories/order_repository.dart';
+export 'repositories/table_repository.dart';
+export 'repositories/billing_repository.dart';
+export 'repositories/customer_repository.dart';
+export 'repositories/settings_repository.dart';
+export 'repositories/staff_repository.dart';
+export 'repositories/analytics_repository.dart';
+
+// Providers (3)
+export 'providers/supabase_providers.dart';
+export 'providers/auth_providers.dart';
+export 'providers/connectivity_provider.dart';
+
+// Utils (4)
+export 'utils/currency_formatter.dart';
+export 'utils/date_formatter.dart';
+export 'utils/validators.dart';
+export 'utils/constants.dart';
+
+================================================================================
+  FILE: cafecanva_flutter/apps/staff_pos/lib/main.dart
+================================================================================
+// Staff POS Entry Point
+// Init: Hive, Supabase, Firebase Messaging, SupabaseService, AuthService,
+//       RazorpayPaymentGateway, BluetoothPrintService
+// Launch: ProviderScope > StaffPosApp
+
+================================================================================
+  FILE: cafecanva_flutter/apps/kitchen_display/lib/main.dart
+================================================================================
+// Kitchen Display Entry Point
+// Init: WakelockPlus (keep screen on), Hive, Supabase, Firebase Messaging
+// Launch: ProviderScope > KdsApp
+
+================================================================================
+  FILE: cafecanva_flutter/apps/customer_storefront/lib/main.dart
+================================================================================
+// Customer Storefront Entry Point
+// Init: Hive (cart + session), Supabase (no Firebase)
+// Launch: ProviderScope > StorefrontApp
+
+================================================================================
+  FILE: cafecanva_flutter/apps/store_admin_desktop/lib/main.dart
+================================================================================
+// Store Admin Desktop Entry Point
+// Init: Hive, Supabase, window_manager (min 1200x700)
+// Launch: ProviderScope > StoreAdminDesktopApp
+
+================================================================================
+  FILE: cafecanva_flutter/apps/store_admin_mobile/lib/main.dart
+================================================================================
+// Store Admin Mobile Entry Point
+// Init: Hive, Supabase, Firebase Messaging
+// Launch: ProviderScope > StoreAdminMobileApp
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 8: CI/CD & DEPLOYMENT
+████████████████████████████████████████████████████████████████████████████████
+
+================================================================================
+  FILE: .github/workflows/deploy.yml
+================================================================================
+name: Cafe Canva - Multi-App Deployment Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - Checkout, Setup Node 20, Install deps, Lint, Type-check
+
+  database-migrations:
+    needs: validation
+    steps:
+      - Setup Supabase CLI, Apply DB migrations
+
+  deploy-saas-platform:
+    needs: [validation, database-migrations]
+    steps:
+      - Install deps, Vercel pull, build, deploy --prod (frontend/)
+
+  deploy-storefront:
+    needs: [validation, database-migrations]
+    steps:
+      - Install deps, Vercel pull, build, deploy --prod (store-front/)
+
+Pipeline: lint → type-check → db-push → build → deploy (parallel platform + storefront)
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 9: SQL SCHEMA (Migration 001)
+████████████████████████████████████████████████████████████████████████████████
+
+22 Tables Created:
+  1.  tenants            — Cafe businesses (multi-tenant)
+  2.  branches           — Multiple locations per tenant
+  3.  users              — Staff (owner/manager/cashier/staff/kitchen)
+  4.  menu_categories    — Menu groupings
+  5.  menu_items         — Individual menu items (price in paise)
+  6.  modifier_groups    — Customization groups (e.g., Milk Type)
+  7.  modifier_options   — Individual customization options
+  8.  tables             — Floor layout (position, shape, status)
+  9.  table_sessions     — Check-in/out tracking
+  10. orders             — Customer orders with status workflow
+  11. order_items        — Line items with KDS status
+  12. bills              — Invoices with tax/charge breakdown
+  13. staff_calls        — Customer-initiated staff assistance
+  14. customers          — Customer directory with visit tracking
+  15. discounts          — Percent/flat discounts with targeting
+  16. coupons            — Shareable discount codes
+  17. store_settings     — Tax rates, receipt config
+  18. storefront_config  — Theme, colors, fonts
+  19. blogs              — Blog posts
+  20. payment_integrations — Razorpay credentials
+  21. attendance         — Staff time tracking
+  22. notification_log   — Push notification history
+
+Custom Auth Hook:
+  inject_tenant_claims() — Injects tenant_id, branch_id, role into JWT claims
+
+Indexes (8):
+  idx_menu_items_tenant, idx_menu_items_status, idx_orders_tenant_status,
+  idx_order_items_order, idx_order_items_kds, idx_bills_tenant_status,
+  idx_tables_tenant_status, idx_staff_calls_table
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 10: SUPER ADMIN ROUTES (268 lines)
+████████████████████████████████████████████████████████████████████████████████
+
+Endpoints:
+  GET  /api/super-admin/stats                    — Platform-wide stats
+  GET  /api/super-admin/tenants                  — List all tenants
+  POST /api/super-admin/tenants                  — Create tenant + branch + auth user
+  PATCH /api/super-admin/tenants/:id/status      — Activate/suspend tenant
+  GET  /api/super-admin/tenants/:tenantId/details — Branches + staff for tenant
+  POST /api/super-admin/tenants/:tenantId/staff  — Create staff (max 50 per tenant)
+  DELETE /api/super-admin/staff/:userId          — Delete staff + Supabase auth
+
+
+================================================================================
+  END OF FILE
+  Total project files tracked: ~250+ source files
+  Tech Stack: Next.js 16 · React 19 · Express 5 · Electron 42 · Flutter 3.12
+              Supabase · Drizzle ORM · Postgres · Razorpay · Firebase FCM
+              Tailwind CSS 4 · Dexie.js · Zustand · Riverpod · Hive
+  Deployment: Vercel (SaaS + Storefront) · Firebase Hosting (links)
+              Electron Builder (Desktop) · Flutter APK (Android)
+================================================================================
