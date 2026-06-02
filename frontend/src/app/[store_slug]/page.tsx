@@ -97,10 +97,10 @@ const SEED_CATEGORIES: MenuCategory[] = [
 ];
 
 const SEED_MENU: MenuItem[] = [
-  { id: 'e0000000-0000-0000-0000-000000000001', category_id: 'd0000000-0000-0000-0000-000000000001', name: 'Classic Cappuccino', price: 29000, description: 'Double espresso with silky steamed milk and foam art.', status: 'available', tags: ['bestseller', 'hot'] },
-  { id: 'e0000000-0000-0000-0000-000000000004', category_id: 'd0000000-0000-0000-0000-000000000001', name: 'Signature Cold Brew', price: 35000, description: '24-hour slow-dripped single origin organic cold brew.', status: 'available', tags: ['bestseller', 'cold'] },
-  { id: 'e0000000-0000-0000-0000-000000000011', category_id: 'd0000000-0000-0000-0000-000000000005', name: 'Avocado Sourdough Toast', price: 39000, description: 'Creamy avocado mash on sourdough, dressed with organic spices.', status: 'available', tags: ['bestseller', 'veg'] },
-  { id: 'e0000000-0000-0000-0000-000000000008', category_id: 'd0000000-0000-0000-0000-000000000004', name: 'Almond Butter Croissant', price: 24000, description: 'Buttery flaky pastry filled with roasted sweet almond cream.', status: 'available', tags: ['bestseller', 'bakery'] }
+  { id: 'e0000000-0000-0000-0000-000000000001', category_id: 'd0000000-0000-0000-0000-000000000001', name: 'Classic Cappuccino', price: 29000, description: 'Double espresso with silky steamed milk and foam art.', status: 'available', tags: ['bestseller', 'hot'], image_url: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=400&q=80' },
+  { id: 'e0000000-0000-0000-0000-000000000004', category_id: 'd0000000-0000-0000-0000-000000000001', name: 'Signature Cold Brew', price: 35000, description: '24-hour slow-dripped single origin organic cold brew.', status: 'available', tags: ['bestseller', 'cold'], image_url: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=400&q=80' },
+  { id: 'e0000000-0000-0000-0000-000000000011', category_id: 'd0000000-0000-0000-0000-000000000005', name: 'Avocado Sourdough Toast', price: 39000, description: 'Creamy avocado mash on sourdough, dressed with organic spices.', status: 'available', tags: ['bestseller', 'veg'], image_url: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?auto=format&fit=crop&w=400&q=80' },
+  { id: 'e0000000-0000-0000-0000-000000000008', category_id: 'd0000000-0000-0000-0000-000000000004', name: 'Almond Butter Croissant', price: 24000, description: 'Buttery flaky pastry filled with roasted sweet almond cream.', status: 'available', tags: ['bestseller', 'bakery'], image_url: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=400&q=80' }
 ];
 
 const SEED_TABLES: Table[] = [
@@ -349,9 +349,10 @@ export default function Storefront() {
 
   return (
     <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] pb-32 relative overflow-x-hidden">
-      {/* Background blobs simulating living artist's canvas */}
-      <div className="absolute top-20 -left-20 w-80 h-80 bg-[#e05e35]/10 rounded-full blur-[80px] pointer-events-none"></div>
-      <div className="absolute bottom-20 -right-20 w-80 h-80 bg-[#ca8a04]/10 rounded-full blur-[80px] pointer-events-none"></div>
+      {/* Luxury Liquid Floating Background Gradients */}
+      <div className="liquid-blob-1 top-10 left-10"></div>
+      <div className="liquid-blob-2 top-1/3 right-10"></div>
+      <div className="liquid-blob-3 bottom-10 left-20"></div>
 
       {/* Database Warning Alert */}
       {dbPending && (
@@ -365,9 +366,9 @@ export default function Storefront() {
       <div className="h-56 relative bg-stone-900 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-[#23120b] via-[#23120b]/40 to-transparent z-10"></div>
         <img 
-          src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1200&q=80" 
+          src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80" 
           alt="AETHER Cover" 
-          className="w-full h-full object-cover opacity-80"
+          className="w-full h-full object-cover opacity-85"
         />
         <div className="absolute bottom-5 left-6 right-6 z-20 flex justify-between items-end">
           <div>

@@ -2214,6 +2214,9 @@ export default function CafeCanvaAdmin() {
 
       {/* Main Content */}
       <main style={{ flex: 1, overflow: "auto", padding: "28px 32px", position: "relative" }}>
+        {/* Luxury Liquid Floating Background Gradients */}
+        <div className="liquid-blob-1 top-20 left-10"></div>
+        <div className="liquid-blob-2 top-1/2 right-10"></div>
         
         {/* Database Warning Alert Banner */}
         {dbPending && (

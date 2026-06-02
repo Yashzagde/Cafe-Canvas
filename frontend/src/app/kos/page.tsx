@@ -222,7 +222,11 @@ export default function KOSDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f11] flex flex-col text-zinc-100 font-sans antialiased overflow-hidden select-none">
+    <div className="min-h-screen bg-[#0f0f11] flex flex-col text-zinc-100 font-sans antialiased overflow-hidden select-none relative">
+      {/* Luxury Liquid Floating Background Gradients */}
+      <div className="liquid-blob-1 top-20 left-10"></div>
+      <div className="liquid-blob-2 top-1/2 right-10"></div>
+
       {/* Database Warning Alert */}
       {dbPending && (
         <div className="bg-amber-500 text-stone-950 px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-1.5 z-50 shadow-md">
@@ -232,7 +236,7 @@ export default function KOSDashboard() {
       )}
 
       {/* Header */}
-      <header className="bg-[#16161a] border-b border-zinc-800 p-4 flex justify-between items-center z-10 shadow-lg">
+      <header className="bg-[#16161a] border-b border-zinc-800 p-4 flex justify-between items-center z-10 shadow-lg relative">
         <div className="flex items-center gap-4">
           <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-widest flex items-center gap-2">
             <Coffee className="text-[#e05e35]" />
