@@ -84,7 +84,7 @@ export default function StaffPOS() {
 
   /* ─── Mode and Auth States ─── */
   const [profile, setProfile] = useState<any>(null);
-  const [demoMode, setDemoMode] = useState(false);
+  const demoMode = false;
   const [loading, setLoading] = useState(true);
 
   /* ─── Screen Tab Navigation ─── */
@@ -148,34 +148,14 @@ export default function StaffPOS() {
   ──────────────────────────────────────────────────────── */
   useEffect(() => {
     async function loadData() {
-      // Set a 3.5 second global connection timeout to prevent infinite loading screens
-      const globalTimeout = setTimeout(() => {
-        console.warn("Global database connection timeout reached. Initiating Demo Mode.");
-        setDemoMode(true);
-        loadFallbacks();
-        setLoading(false);
-      }, 3500);
-
       try {
         setLoading(true);
         // A. Validate Supabase Session
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
-          clearTimeout(globalTimeout);
-          // No logged-in user: Trigger development demo fallback mode
-          console.warn("No active Supabase user found. Initiating Demo Mode.");
-          setDemoMode(true);
-          setProfile({
-            id: 'c36a8d7a-1111-2222-3333-444455556666',
-            full_name: 'Yash Zagde (Demo Waiter)',
-            email: 'yash@cafecanvas.bar',
-            role: 'STAFF',
-            tenant_id: 'd3b07384-d113-495d-a5d6-ec25c7e1b54a',
-            branch_id: 'b78e24c5-09cd-4a5f-a320-f56f3458ef23'
-          });
-          loadFallbacks();
-          setLoading(false);
+          console.warn("No active Supabase user found. Redirecting to login.");
+          router.push('/login');
           return;
         }
 
@@ -187,11 +167,8 @@ export default function StaffPOS() {
           .single();
 
         if (profileErr || !userProfile) {
-          clearTimeout(globalTimeout);
           console.error("Error retrieving user profile from DB:", profileErr);
-          setDemoMode(true);
-          loadFallbacks();
-          setLoading(false);
+          router.push('/login');
           return;
         }
 
@@ -232,7 +209,7 @@ export default function StaffPOS() {
           .order('name');
         
         if (dbItems && dbItems.length > 0) {
-          // Normalize prices (stored in cents/paise in DB; convert to main currency)
+          // Normalize prices (stored in paise in DB; convert to ₹)
           const normalized = dbItems.map(i => ({
             ...i,
             price: i.price / 100, // stored in paise, convert to ₹
@@ -260,7 +237,6 @@ export default function StaffPOS() {
           )
           .subscribe();
 
-        clearTimeout(globalTimeout);
         setLoading(false);
 
         return () => {
@@ -268,11 +244,8 @@ export default function StaffPOS() {
         };
 
       } catch (err) {
-        clearTimeout(globalTimeout);
-        console.error("Database connection failed. Loading Demo Fallback Mode:", err);
-        setDemoMode(true);
-        loadFallbacks();
-        setLoading(false);
+        console.error("Database connection or loading failed:", err);
+        router.push('/login');
       }
     }
 
