@@ -37,7 +37,8 @@
     "@supabase/supabase-js": "^2.106.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
