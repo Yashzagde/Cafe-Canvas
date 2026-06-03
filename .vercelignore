@@ -1,0 +1,31 @@
+# Vercel Ignore File for CafeCanvas Root
+
+# Ignore git and CI/CD config
+.git
+.github
+
+# Ignore other sub-projects and environments
+cafecanva_flutter/
+desktop/
+claude-docs-hub/
+scratch/
+
+# Ignore documentation, assets, and tests
+docs/
+tests/
+CafeCanvas-Store-Admin-Setup-1.0.0.exe
+
+# Ignore local tool metadata/caches
+.agents/
+.claude/
+.cursor/
+.vscode/
+
+# Ignore database migrations or drizzle local setup (not needed for Next.js build)
+drizzle/
+db/
+db_setup.js
+
+# Ignore dependency directories
+node_modules/
+**/node_modules/
