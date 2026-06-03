@@ -72,10 +72,21 @@ export default function SuperadminDashboard() {
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'tenants' | 'subscriptions' | 'billing' | 'security' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'tenants' | 'registrations' | 'subscriptions' | 'billing' | 'security' | 'settings'>('dashboard');
 
   // Core Data
   const [tenantsList, setTenantsList] = useState<Tenant[]>([]);
+  const [registrationsList, setRegistrationsList] = useState<any[]>([]);
+
+  // Approval Modal States
+  const [selectedRegRequest, setSelectedRegRequest] = useState<any | null>(null);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [approvalForm, setApprovalForm] = useState({
+    subdomain: '',
+    password: ''
+  });
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
   const [stats, setStats] = useState({
     totalTenants: 0,
     activeTenants: 0,
@@ -166,9 +177,19 @@ export default function SuperadminDashboard() {
         totalTenants: localTenants.length,
         activeTenants: localTenants.filter(t => t.status === 'ACTIVE').length,
       }));
-    } finally {
-      setLoading(false);
     }
+
+    try {
+      const response = await fetch('/api/super-admin/registrations');
+      const result = await response.json();
+      if (result.success) {
+        setRegistrationsList(result.registrations || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch live registrations list:", err);
+    }
+
+    setLoading(false);
 
     // Static queues for demo
     setTicketsQueue([
@@ -229,6 +250,117 @@ export default function SuperadminDashboard() {
     setTenantsList(updated);
     if (selectedTenant?.id === tenant.id) {
       setSelectedTenant({ ...selectedTenant, status: newStatus });
+    }
+  };
+
+  const slugify = (text: string): string => {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  };
+
+  const handleOpenApproval = (req: any) => {
+    setSelectedRegRequest(req);
+    setApprovalForm({
+      subdomain: slugify(req.business_name),
+      password: 'Pass@' + Math.random().toString(36).substring(2, 8) + '1!'
+    });
+    setShowApprovalModal(true);
+  };
+
+  const handleApproveRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRegRequest) return;
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const response = await fetch('/api/super-admin/tenants/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: selectedRegRequest.id,
+          subdomain: approvalForm.subdomain,
+          ownerPassword: approvalForm.password
+        })
+      });
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to approve request.');
+      }
+      
+      // Update registration status in local state
+      setRegistrationsList(prev => prev.map(r => r.id === selectedRegRequest.id ? { ...r, status: 'approved' } : r));
+      
+      // Add new tenant to list
+      const newTenant: Tenant = {
+        id: result.tenant.id,
+        name: result.tenant.name,
+        subdomain: result.tenant.subdomain,
+        plan: result.tenant.plan,
+        status: result.tenant.active ? 'ACTIVE' : 'SUSPENDED',
+        createdAt: result.tenant.createdAt || new Date().toISOString()
+      };
+      setTenantsList(prev => [newTenant, ...prev]);
+      
+      // Update stats
+      setStats(prev => ({
+        ...prev,
+        totalTenants: prev.totalTenants + 1,
+        activeTenants: prev.activeTenants + 1
+      }));
+
+      // Show success modal info
+      setGeneratedTenantUrl(`${result.tenant.subdomain}.cafecanvas.bar`);
+      setShowApprovalModal(false);
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || 'An error occurred during tenant approval.');
+      alert(err.message || 'An error occurred during tenant approval.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenRejection = (req: any) => {
+    setSelectedRegRequest(req);
+    setRejectionReason('');
+    setShowRejectionModal(true);
+  };
+
+  const handleRejectRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRegRequest) return;
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const response = await fetch('/api/super-admin/registrations', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: selectedRegRequest.id,
+          status: 'rejected',
+          rejectionReason: rejectionReason
+        })
+      });
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to reject request.');
+      }
+      
+      // Update local state
+      setRegistrationsList(prev => prev.map(r => r.id === selectedRegRequest.id ? { ...r, status: 'rejected', rejection_reason: rejectionReason } : r));
+      setShowRejectionModal(false);
+      setRejectionReason('');
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || 'An error occurred during rejection.');
+      alert(err.message || 'An error occurred during rejection.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -380,8 +512,9 @@ export default function SuperadminDashboard() {
             {[
               { id: 'dashboard', label: 'Platform Dashboard', icon: <BarChart3 size={16} /> },
               { id: 'tenants', label: 'Tenants Directory', icon: <Building2 size={16} /> },
+              { id: 'registrations', label: 'Registrations Review', icon: <FileText size={16} /> },
               { id: 'subscriptions', label: 'Limits & Engine', icon: <Settings size={16} /> },
-              { id: 'billing', label: 'Support & Invoices', icon: <FileText size={16} /> },
+              { id: 'billing', label: 'Support & Invoices', icon: <HelpCircle size={16} /> },
               { id: 'security', label: 'Security & Passkeys', icon: <Lock size={16} /> },
               { id: 'settings', label: 'System Settings', icon: <Globe size={16} /> },
             ].map(item => (
@@ -667,6 +800,123 @@ export default function SuperadminDashboard() {
                     Select a tenant from the directory to inspect its metrics, branches, and staff registers.
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: REGISTRATIONS REVIEW */}
+          {activeTab === 'registrations' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-stone-200 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-black text-stone-900 uppercase tracking-wider">Tenant Registration Queue</h3>
+                    <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mt-1">Review self-onboarded business verification details</p>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md font-bold border border-amber-200">
+                    {registrationsList.filter(r => r.status === 'pending').length} Pending Requests
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-stone-50 border-b border-stone-200 text-stone-500 uppercase font-black text-[9px] tracking-wider">
+                        <th className="p-4">Business Details</th>
+                        <th className="p-4">Owner / Contact</th>
+                        <th className="p-4">Plan / Limits</th>
+                        <th className="p-4">Govt Reg Credentials</th>
+                        <th className="p-4">Address</th>
+                        <th className="p-4">Status</th>
+                        <th className="p-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-150">
+                      {registrationsList.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-stone-400 font-bold text-xs">
+                            No registration requests found in the system queue.
+                          </td>
+                        </tr>
+                      ) : (
+                        registrationsList.map((req) => (
+                          <tr key={req.id} className="hover:bg-stone-50/50 transition-colors">
+                            <td className="p-4">
+                              <div className="font-bold text-stone-900">{req.business_name}</div>
+                              <div className="text-[9px] text-amber-600 font-bold uppercase mt-1 px-1.5 py-0.5 bg-amber-50 rounded border border-amber-100 inline-block">
+                                {req.business_type}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="font-bold text-stone-700">{req.owner_name}</div>
+                              <div className="text-[10px] text-stone-500 mt-0.5">{req.email}</div>
+                              <div className="text-[10px] text-stone-400 font-mono mt-0.5">{req.phone}</div>
+                            </td>
+                            <td className="p-4">
+                              <div className="font-bold text-stone-850 px-2 py-0.5 bg-stone-100 border border-stone-200 rounded inline-block capitalize mb-1">
+                                {req.plan_key}
+                              </div>
+                              <div className="text-[10px] text-stone-500">
+                                Staff: {req.expected_staff_count} | Branches: {req.expected_branch_count}
+                              </div>
+                            </td>
+                            <td className="p-4 space-y-1">
+                              <div>
+                                <span className="text-[9px] font-black text-stone-400 uppercase mr-1">GSTIN:</span>
+                                <span className="font-mono text-stone-700 font-bold">{req.gstin || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] font-black text-stone-400 uppercase mr-1">FSSAI:</span>
+                                <span className="font-mono text-stone-700 font-bold">{req.fssai_number || 'N/A'}</span>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="text-stone-700 font-semibold max-w-[180px] truncate">{req.address || 'N/A'}</div>
+                              <div className="text-[9px] text-stone-400 font-bold mt-0.5">
+                                {req.city}, {req.state}, {req.country}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                req.status === 'approved' 
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                                  : req.status === 'rejected'
+                                  ? 'bg-red-50 text-red-700 border border-red-200'
+                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
+                              }`}>
+                                {req.status}
+                              </span>
+                              {req.status === 'rejected' && req.rejection_reason && (
+                                <div className="text-[9px] text-red-500 max-w-[120px] truncate mt-1" title={req.rejection_reason}>
+                                  Reason: {req.rejection_reason}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-4 text-right">
+                              {req.status === 'pending' ? (
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => handleOpenApproval(req)}
+                                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm cursor-pointer"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenRejection(req)}
+                                    className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-stone-400 font-bold">Processed</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -1029,6 +1279,113 @@ export default function SuperadminDashboard() {
             >
               Return to directory
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: APPROVE TENANT REQUEST */}
+      {showApprovalModal && selectedRegRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-3xl border border-stone-200 p-8 shadow-2xl relative text-left">
+            <button 
+              onClick={() => setShowApprovalModal(false)}
+              className="absolute top-6 right-6 text-stone-400 hover:text-stone-900 p-2 hover:bg-stone-50 rounded-xl transition-all cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center">
+                <CheckCircle2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-stone-900 uppercase tracking-wider">Approve Onboarding</h3>
+                <p className="text-xs text-stone-500 mt-1">Configure live routing and security for {selectedRegRequest.business_name}</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleApproveRequest} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">Assigned Subdomain Node</label>
+                <div className="flex items-center">
+                  <input 
+                    type="text" 
+                    required
+                    value={approvalForm.subdomain}
+                    onChange={e => setApprovalForm({ ...approvalForm, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                    className="w-full bg-[#fdfcf7] border border-stone-200 rounded-l-xl px-4 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-amber-600/50 text-right"
+                  />
+                  <span className="bg-stone-100 border-y border-r border-stone-200 rounded-r-xl px-3 py-2.5 text-[10px] text-stone-500 font-mono font-bold">
+                    .cafecanvas.bar
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">Generated Owner Password</label>
+                <input 
+                  type="text" 
+                  required
+                  value={approvalForm.password}
+                  onChange={e => setApprovalForm({ ...approvalForm, password: e.target.value })}
+                  className="w-full bg-[#fdfcf7] border border-stone-200 rounded-xl px-4 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-amber-600/50"
+                />
+                <span className="text-[9px] text-stone-400 font-semibold block">Please note down this password; it will be displayed only once.</span>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md mt-4 cursor-pointer"
+              >
+                {loading ? 'Onboarding Live Tenant Node...' : 'Approve & Initialize Database'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: REJECT REQUEST */}
+      {showRejectionModal && selectedRegRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-3xl border border-stone-200 p-8 shadow-2xl relative text-left">
+            <button 
+              onClick={() => setShowRejectionModal(false)}
+              className="absolute top-6 right-6 text-stone-400 hover:text-stone-900 p-2 hover:bg-stone-50 rounded-xl transition-all cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-700 border border-red-200 flex items-center justify-center">
+                <AlertOctagon size={24} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-stone-900 uppercase tracking-wider">Reject Registration</h3>
+                <p className="text-xs text-stone-500 mt-1">Decline request for {selectedRegRequest.business_name}</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleRejectRequest} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">Reason for Rejection</label>
+                <textarea 
+                  required
+                  placeholder="e.g. Invalid GSTIN / Unverifiable business details"
+                  value={rejectionReason}
+                  onChange={e => setRejectionReason(e.target.value)}
+                  className="w-full bg-[#fdfcf7] border border-stone-200 rounded-xl px-4 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-amber-600/50 min-h-[100px]"
+                />
+              </div>
+
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 bg-red-650 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-md mt-4 cursor-pointer"
+              >
+                {loading ? 'Decline Processing...' : 'Decline Onboarding Request'}
+              </button>
+            </form>
           </div>
         </div>
       )}
