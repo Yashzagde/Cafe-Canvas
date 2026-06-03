@@ -34,7 +34,7 @@ interface Staff {
   status: string;
 }
 
-const BACKEND_URL = 'http://localhost:5000/api/super-admin';
+const API_BASE = '/api/super-admin';
 
 // Local storage helper for dev fallback
 const getLocalData = <T,>(key: string, defaultValue: T): T => {
@@ -98,22 +98,27 @@ export default function SuperadminDashboard() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      // Try to fetch stats
-      const statsRes = await fetch(`${BACKEND_URL}/stats`);
+      const [statsRes, tenantsRes] = await Promise.all([
+        fetch(`${API_BASE}/stats`),
+        fetch(`${API_BASE}/tenants`),
+      ]);
+
+      if (!statsRes.ok || !tenantsRes.ok) {
+        throw new Error('Super-admin API unavailable');
+      }
+
       const statsData = await statsRes.json();
-      
-      const tenantsRes = await fetch(`${BACKEND_URL}/tenants`);
       const tenantsData = await tenantsRes.json();
-      
+
       if (statsData.success && tenantsData.success) {
         setStats(statsData.stats);
         setTenantsList(tenantsData.tenants);
         setIsDemoMode(false);
       } else {
-        throw new Error('API failed');
+        throw new Error(statsData.error ?? tenantsData.error ?? 'API failed');
       }
     } catch (e) {
-      console.warn('Backend offline, using localStorage fallback simulation mode.');
+      console.warn('Supabase super-admin API unavailable, using localStorage demo mode.', e);
       setIsDemoMode(true);
       
       // Load fallback mock data
@@ -162,7 +167,7 @@ export default function SuperadminDashboard() {
       setLoading(false);
     } else {
       try {
-        const res = await fetch(`${BACKEND_URL}/tenants/${tenant.id}/details`);
+        const res = await fetch(`${API_BASE}/tenants/${tenant.id}/details`);
         const data = await res.json();
         if (data.success) {
           setTenantDetails({
@@ -193,7 +198,7 @@ export default function SuperadminDashboard() {
     }
 
     try {
-      const res = await fetch(`${BACKEND_URL}/tenants/${tenant.id}/status`, {
+      const res = await fetch(`${API_BASE}/tenants/${tenant.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -283,7 +288,7 @@ export default function SuperadminDashboard() {
     }
 
     try {
-      const res = await fetch(`${BACKEND_URL}/tenants`, {
+      const res = await fetch(`${API_BASE}/tenants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tenantForm)
@@ -352,7 +357,7 @@ export default function SuperadminDashboard() {
     }
 
     try {
-      const res = await fetch(`${BACKEND_URL}/tenants/${selectedTenant.id}/staff`, {
+      const res = await fetch(`${API_BASE}/tenants/${selectedTenant.id}/staff`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -391,7 +396,7 @@ export default function SuperadminDashboard() {
     }
 
     try {
-      const res = await fetch(`${BACKEND_URL}/staff/${userId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/staff/${userId}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success && selectedTenant) {
         loadTenantDetails(selectedTenant);

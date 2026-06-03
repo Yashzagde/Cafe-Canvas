@@ -314,8 +314,8 @@ export default function StaffPOS() {
                   id: i.id,
                   itemName: i.item_name,
                   quantity: i.quantity,
-                  itemNotes: i.item_notes,
-                  status: i.status || order.status
+                  itemNotes: i.notes ?? '',
+                  status: i.kds_status || order.status
                 }))
               : []
           };
@@ -549,16 +549,10 @@ export default function StaffPOS() {
           table_id: selectedTable.id,
           created_by: profile.id,
           status: 'pending',
-          source: 'staff_app',
           subtotal: subtotalInPaise,
           discount_amount: 0,
           total: grandTotalInPaise,
           notes: orderNotes || '',
-          extra_charges: [
-            { label: 'CGST', type: 'percent', value: billingSettings.cgstPercent, amount: cgstAmt * 100 },
-            { label: 'SGST', type: 'percent', value: billingSettings.sgstPercent, amount: sgstAmt * 100 },
-            { label: 'Service Charge', type: billingSettings.serviceChargeType, value: billingSettings.serviceChargeValue, amount: svcAmt * 100 }
-          ]
         })
         .select()
         .single();
@@ -571,14 +565,12 @@ export default function StaffPOS() {
         const baseItemId = i.id.split('_')[0];
         return {
           order_id: newOrder.id,
-          menu_item_id: baseItemId.length > 5 ? baseItemId : null, // only set if it's a real DB uuid
+          menu_item_id: baseItemId.length > 5 ? baseItemId : null,
           quantity: i.qty,
-          unit_price: Math.round(i.price * 100), // stored in paise
-          itemName: i.name, // maps to item_name in database
+          unit_price: Math.round(i.price * 100),
           item_name: i.name,
-          itemNotes: i.notes || '', // maps to item_notes
-          item_notes: i.notes || '',
-          modifier_selections: i.modifier_selections || []
+          notes: i.notes || '',
+          modifiers: i.modifier_selections ?? [],
         };
       });
 
@@ -769,7 +761,7 @@ export default function StaffPOS() {
             </h1>
             <p className="text-[11px] text-stone-500 flex items-center gap-1">
               <User size={12} className="text-stone-400" />
-              {profile?.full_name || 'Staff User'}
+              {profile?.name || 'Staff User'}
             </p>
           </div>
         </div>

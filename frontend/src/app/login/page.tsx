@@ -44,10 +44,10 @@ export default function LoginPage() {
             id: data.user.id,
             tenant_id: 'a0000000-0000-0000-0000-000000000001', // Mapped to seeded AETHER Cafe Tenant
             branch_id: 'ab000000-0000-0000-0000-000000000001', // Mapped to seeded Branch
-            full_name: fullName || 'Test Store Owner',
+            name: fullName || 'Test Store Owner',
             email: email,
             role: 'owner',
-            status: 'ACTIVE'
+            active: true
           });
 
         if (insertError) {
@@ -92,10 +92,10 @@ export default function LoginPage() {
               id: data.user.id,
               tenant_id: 'a0000000-0000-0000-0000-000000000001',
               branch_id: 'ab000000-0000-0000-0000-000000000001',
-              full_name: 'Store Owner',
+              name: 'Store Owner',
               email: email,
               role: 'owner',
-              status: 'ACTIVE'
+              active: true
             });
 
           if (profileFixError) {
