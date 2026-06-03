@@ -216,7 +216,7 @@ export default function Storefront() {
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTableId || !customerName.trim()) {
+    if (!selectedTableId || !customerName.trim() || !tenant) {
       alert("Please enter your name and select a table");
       return;
     }

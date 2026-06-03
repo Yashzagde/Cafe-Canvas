@@ -21,16 +21,22 @@ export async function getStaffListAction() {
   );
 
   const { data, error } = await supabase
-    .from('profiles')
+    .from('users')
     .select('*')
     .eq('tenant_id', profile.tenant_id)
-    .order('full_name', { ascending: true });
+    .order('name', { ascending: true });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return data;
+  const mapped = (data || []).map(u => ({
+    ...u,
+    full_name: u.name,
+    is_active: u.active
+  }));
+
+  return mapped;
 }
 
 /**

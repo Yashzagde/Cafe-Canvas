@@ -135,16 +135,25 @@ export async function requirePermission(permission: Permission) {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) redirect('/admin/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, tenant_id, branch_id, role, full_name, is_active')
+  const { data: userRow } = await supabase
+    .from('users')
+    .select('id, tenant_id, branch_id, role, name, active')
     .eq('id', user.id)
     .single()
 
-  if (!profile || !profile.is_active)  redirect('/admin/login')
-  if (!canAccess(profile.role as StaffRole, permission)) {
-    throw new Error(`Forbidden: role "${profile.role}" lacks "${permission}"`)
+  if (!userRow || !userRow.active)  redirect('/admin/login')
+  if (!canAccess(userRow.role as StaffRole, permission)) {
+    throw new Error(`Forbidden: role "${userRow.role}" lacks "${permission}"`)
   }
+
+  const profile = {
+    id: userRow.id,
+    tenant_id: userRow.tenant_id,
+    branch_id: userRow.branch_id,
+    role: userRow.role,
+    full_name: userRow.name,
+    is_active: userRow.active
+  };
 
   return profile;
 }

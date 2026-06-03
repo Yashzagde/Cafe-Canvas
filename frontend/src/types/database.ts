@@ -362,15 +362,20 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['daily_sales_analytics']['Insert']>;
         Relationships: [];
       };
-      profiles: {
+      users: {
         Row: {
           id: string;
           tenant_id: string;
           branch_id: string | null;
           role: 'owner' | 'manager' | 'cashier' | 'kitchen' | 'staff';
-          full_name: string;
+          name: string;
+          email: string;
           phone: string | null;
-          is_active: boolean;
+          pin_hash: string | null;
+          avatar_url: string | null;
+          active: boolean;
+          fcm_token: string | null;
+          permissions: any;
           created_at: string;
         };
         Insert: {
@@ -378,12 +383,17 @@ export interface Database {
           tenant_id: string;
           branch_id?: string | null;
           role?: 'owner' | 'manager' | 'cashier' | 'kitchen' | 'staff';
-          full_name: string;
+          name: string;
+          email: string;
           phone?: string | null;
-          is_active?: boolean;
+          pin_hash?: string | null;
+          avatar_url?: string | null;
+          active?: boolean;
+          fcm_token?: string | null;
+          permissions?: any;
           created_at?: string;
         };
-        Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
+        Update: Partial<Database['public']['Tables']['users']['Insert']>;
         Relationships: [];
       };
       tenants: {

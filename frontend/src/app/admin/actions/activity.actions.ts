@@ -64,12 +64,12 @@ export async function getActivityFeedAction(
 
   if (staffIds.length > 0) {
     const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name')
+      .from('users')
+      .select('id, name')
       .in('id', staffIds as string[]);
 
     staffMap = (profiles ?? []).reduce((acc, p) => {
-      acc[p.id] = p.full_name || 'Unknown Staff';
+      acc[p.id] = p.name || 'Unknown Staff';
       return acc;
     }, {} as Record<string, string>);
   }
