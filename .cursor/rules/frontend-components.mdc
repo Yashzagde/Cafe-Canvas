@@ -1,0 +1,59 @@
+---
+description: Frontend component rules — apply when building UI components, pages, or layouts in the Next.js app
+globs:
+  - "frontend/src/components/**"
+  - "frontend/src/app/**/*.tsx"
+alwaysApply: false
+---
+
+# Frontend Component Rules
+
+## Component Architecture
+
+```
+frontend/src/components/
+├── ui/           ← Base design system (Button, Input, Card, Modal, Badge, Toast)
+├── layout/       ← Navbar, Sidebar, Footer, Shell
+├── auth/         ← LoginForm, OtpInput
+├── menu/         ← MenuGrid, ItemCard, CategoryChip, CartDrawer
+├── order/        ← OrderCard, OrderStatus, KDSCard
+├── billing/      ← BillPreview, ReceiptTemplate, PaymentButton ✅ EXISTS
+├── admin/        ← DashboardStats, RevenueChart, QuickActions
+├── storefront/   ← HeroCarousel, GoogleReviews, InstagramFeed
+└── common/       ← SearchBar, ImageUpload, PriceDisplay
+```
+
+## Must Follow
+
+- **React Server Components** by default. Use `"use client"` only when needed
+- **Tailwind CSS 4** for all styling. NO inline `style={{}}` props
+- **Lucide React** for icons. No other icon libraries
+- **`@/` imports** only. No `../../` relative paths
+- **Mobile-first** design. Test at 375px minimum
+- **Semantic HTML** with proper heading hierarchy
+- **ARIA labels** on all icon-only buttons
+- **Dark mode** via `class="dark"` strategy
+
+## Price Display
+
+Always format prices from paise:
+```typescript
+// Price is stored in paise in DB
+const displayPrice = `₹${(priceInPaise / 100).toFixed(2)}`
+
+// For calculations, stay in paise (integers)
+const subtotalPaise = items.reduce((sum, item) => sum + item.price * item.qty, 0)
+const cgstPaise = Math.round(subtotalPaise * 0.025) // 2.5%
+const sgstPaise = Math.round(subtotalPaise * 0.025) // 2.5%
+const totalPaise = subtotalPaise + cgstPaise + sgstPaise
+```
+
+## State Management
+
+Use Zustand stores (to be created):
+```typescript
+// stores/cart.ts — Cart items, total, tenant context
+// stores/order.ts — Active orders, status tracking
+// stores/theme.ts — Current tenant theme tokens
+// stores/table.ts — Selected table, session info
+```

@@ -1,0 +1,77 @@
+---
+description: Supabase skill — read BEFORE any Supabase Auth, RLS, Edge Functions, Storage, CLI, or MCP work
+globs:
+  - "supabase/**"
+  - "frontend/src/utils/supabase/**"
+  - "frontend/src/app/api/**"
+  - "frontend/src/middleware.ts"
+alwaysApply: false
+---
+
+# Supabase Skill Reference
+
+**Full skill docs**: `.agents/skills/supabase/SKILL.md`
+
+## Quick Reference
+
+### Security (CRITICAL)
+- **Never use `user_metadata`** for auth decisions (user-editable). Use `app_metadata`
+- **Enable RLS** on every table in exposed schemas
+- **UPDATE policies** need both `USING` and `WITH CHECK`
+- **`SECURITY DEFINER`** bypasses RLS — avoid unless justified
+- **Views bypass RLS** by default — use `security_invoker = true`
+- **`auth.role()` is deprecated** — use the `TO` clause instead
+- **Storage upsert** requires INSERT + SELECT + UPDATE policies
+
+### Client Patterns
+```typescript
+// Server Components / Server Actions
+import { createClient } from '@/utils/supabase/server'
+
+// Client Components
+import { createClient } from '@/utils/supabase/client'
+
+// Edge Functions (Deno)
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+```
+
+### JWT Claims (CafeCanvas-specific)
+```sql
+-- Helper functions available in DB:
+get_tenant_id()   → UUID from JWT app_metadata
+get_user_role()   → TEXT role from JWT app_metadata
+```
+
+### RLS Policy Template
+```sql
+CREATE POLICY "{table}_read" ON {table}
+  FOR SELECT TO authenticated
+  USING (tenant_id = get_tenant_id());
+
+CREATE POLICY "{table}_write" ON {table}
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    tenant_id = get_tenant_id()
+    AND get_user_role() IN ('owner','manager')
+  );
+```
+
+### Edge Function Template
+```typescript
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
+
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+  // Auth check → business logic → response
+})
+```
+
+### CLI Commands
+```bash
+supabase --help                     # Discover commands
+supabase migration new <name>       # Create migration file
+supabase db push --linked           # Push to remote
+```

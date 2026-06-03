@@ -1,0 +1,63 @@
+---
+description: Postgres best practices skill — apply when writing SQL queries, migrations, RLS policies, or optimizing database performance
+globs:
+  - "supabase/migrations/**"
+  - "**/*.sql"
+alwaysApply: false
+---
+
+# Postgres Best Practices Skill
+
+**Full skill docs**: `.agents/skills/supabase-postgres-best-practices/SKILL.md`
+
+## Priority Categories
+
+| Priority | Category | Impact |
+|----------|----------|--------|
+| 1 | Query Performance | CRITICAL |
+| 2 | Connection Management | CRITICAL |
+| 3 | Security & RLS | CRITICAL |
+| 4 | Schema Design | HIGH |
+| 5 | Concurrency & Locking | MEDIUM-HIGH |
+| 6 | Data Access Patterns | MEDIUM |
+| 7 | Monitoring & Diagnostics | LOW-MEDIUM |
+| 8 | Advanced Features | LOW |
+
+## Quick Rules
+
+### Indexes
+- Add indexes for columns used in WHERE, JOIN, ORDER BY
+- Use partial indexes for filtered queries (e.g., `WHERE status = 'paid'`)
+- Use composite indexes for multi-column filters (tenant_id + created_at)
+- Use `CREATE INDEX CONCURRENTLY` to avoid table locks
+
+### Queries
+- Always scope by `tenant_id` first in multi-tenant queries
+- Use `EXPLAIN ANALYZE` to verify query plans
+- Avoid `SELECT *` — list columns explicitly
+- Use prepared statements (Supabase client handles this)
+
+### Schema
+- Use UUIDs for primary keys (gen_random_uuid())
+- Store monetary values as INTEGER (paise)
+- Use TIMESTAMPTZ for all timestamps
+- Add soft-delete columns (deleted_at) instead of hard deletes
+
+### RLS Performance
+- Wrap `auth.uid()` and `auth.jwt()` in subqueries: `(SELECT auth.uid())`
+- This prevents per-row recalculation
+```sql
+-- ✅ Good (evaluated once)
+USING (user_id = (SELECT auth.uid()))
+
+-- ❌ Bad (evaluated per row)
+USING (user_id = auth.uid())
+```
+
+### CafeCanvas-Specific Indexes
+```sql
+idx_orders_created_at     ON orders(tenant_id, created_at DESC)
+idx_bills_paid_at         ON bills(tenant_id, paid_at DESC) WHERE status = 'paid'
+idx_customers_phone       ON customers(tenant_id, phone)
+idx_menu_items_featured   ON menu_items(tenant_id, is_featured) WHERE is_available = true
+```

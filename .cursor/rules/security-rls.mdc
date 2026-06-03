@@ -1,0 +1,47 @@
+---
+description: Security and RLS rules — apply during security audits, RLS policy writing, and pre-deployment reviews
+globs:
+  - "supabase/migrations/*rls*"
+  - "supabase/migrations/*policy*"
+  - "security_report.md"
+alwaysApply: false
+---
+
+# Security & RLS Rules
+
+## Pre-Deployment Security Checklist
+
+### Supabase RLS
+- [ ] Every table in `public` schema has RLS enabled
+- [ ] No policy uses `user_metadata` (user-editable, not trusted)
+- [ ] UPDATE policies have both `USING` and `WITH CHECK`
+- [ ] SECURITY DEFINER functions explicitly justified
+- [ ] Views use `security_invoker = true`
+- [ ] Storage: private buckets require auth
+
+### Authentication
+- [ ] JWT access tokens short-lived (1 hour max)
+- [ ] No sensitive data in localStorage
+- [ ] Auth state checked in middleware for protected routes
+
+### Multi-Tenancy
+- [ ] Every DB query scoped by `tenant_id`
+- [ ] No endpoint returns cross-tenant data
+- [ ] Subdomain slug validated against tenant table
+
+### Payments
+- [ ] Razorpay `key_secret` NEVER in client code
+- [ ] HMAC verification on every webhook
+- [ ] Payment amounts validated server-side
+- [ ] Idempotent webhook processing
+
+### API Security
+- [ ] Rate limiting on auth endpoints (5 req/min)
+- [ ] Rate limiting on OTP endpoints (3 req/15 min)
+- [ ] No stack traces in production errors
+- [ ] CORS: `*.cafecanvas.bar` only
+
+## Known Vulnerability
+
+🚨 `payment_integrations` table — RLS allows any authenticated staff to read Razorpay secrets.
+Fix: restrict SELECT to `owner`/`manager` roles only.

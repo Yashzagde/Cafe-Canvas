@@ -1,0 +1,175 @@
+# CafeCanvas — Cursor Project Rules
+# Multi-Tenant SaaS Restaurant Operating System
+# Stack: Next.js 16 · Supabase · Tailwind CSS 4 · TypeScript (strict)
+
+## PROJECT IDENTITY
+
+CafeCanvas is a multi-tenant SaaS restaurant OS for the Indian market.
+- Super Admin creates tenant (restaurant) accounts
+- Tenants get: admin dashboard, menu management, billing, analytics
+- Customers see: public digital storefront at [slug].cafecanvas.bar
+- Staff use: POS + Kitchen Display System (KDS)
+
+## CANONICAL TECH STACK (DO NOT DEVIATE)
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 16 (App Router), React 19, TypeScript strict |
+| Styling | Tailwind CSS 4 with CSS variables (NO inline styles) |
+| Auth | Supabase Auth with JWT tenant claims hook |
+| Database | Supabase PostgreSQL (22 tables, RLS enforced) |
+| Edge Functions | Supabase Deno functions |
+| State | Zustand (cart, order, theme, table stores) |
+| Icons | Lucide React only |
+| Charts | Recharts |
+| Toast | Sonner |
+| Animation | Framer Motion (respect prefers-reduced-motion) |
+| Fonts | Google Fonts (Inter, Outfit) |
+| Hosting | Vercel (Mumbai bom1 region) |
+
+## GLOBAL RULES (NON-NEGOTIABLE)
+
+1. **TypeScript strict** — NO `any` types, ever
+2. **Supabase only** — NO direct Postgres connections in app code
+3. **Tailwind CSS 4** — NO inline styles. Use CSS variables
+4. **`@/` imports** — NO relative `../../` imports
+5. **Server Components default** — Client components marked `"use client"`
+6. **RLS is security** — Every table has RLS. Tenant scoping via JWT claims
+7. **i18n** — All user-facing strings support en + hi (Hindi)
+8. **INR currency** — GST in paise (integer). CGST + SGST split required
+9. **Mobile-first** — All UI works at 375px minimum
+10. **Tests** — Write tests in `/tests/` for every new file
+
+## AGENT TEAM (9 SPECIALISTS)
+
+This project has 9 specialized agents defined in:
+- `AGENTS.md` (root) — Full role definitions
+- `.agents/agents/*/prompt.md` — Detailed prompts per agent
+- `.cursor/agents/*.md` — Cursor-specific agent configs
+
+| Agent | Trigger Keywords |
+|-------|-----------------|
+| `pm-agent` | Planning, sprints, user stories, task breakdown |
+| `backend-agent` | API routes, Edge Functions, auth, payments, server actions |
+| `frontend-agent` | UI components, pages, Tailwind, Zustand, themes |
+| `db-agent` | Migrations, RLS policies, schema, SQL, indexes |
+| `cloud-agent` | Edge Functions, FCM, Realtime, Storage, CDN |
+| `devops-agent` | CI/CD, Vercel, GitHub Actions, env vars |
+| `qa-agent` | Unit tests, E2E, API tests, accessibility |
+| `security-agent` | RLS audit, auth review, OWASP, vulnerability checks |
+| `docs-agent` | API docs, README, guides, OpenAPI |
+
+## SKILLS (ALWAYS REFERENCE BEFORE SUPABASE WORK)
+
+### Skill: supabase
+Location: `.agents/skills/supabase/SKILL.md`
+Use for: ANY Supabase task — Auth, RLS, Edge Functions, Storage, CLI, MCP
+Key rules:
+- Verify against changelog before implementing (Supabase changes frequently)
+- Never use `user_metadata` for authorization (use `app_metadata`)
+- Enable RLS on every table in exposed schemas
+- UPDATE policies need both USING and WITH CHECK
+- SECURITY DEFINER functions bypass RLS — avoid unless justified
+- Views bypass RLS by default — use `security_invoker = true`
+- auth.role() is deprecated — use the TO clause instead
+
+### Skill: supabase-postgres-best-practices
+Location: `.agents/skills/supabase-postgres-best-practices/SKILL.md`
+Use for: Query optimization, schema design, index strategy
+Categories: query performance, connection management, security/RLS, schema design, concurrency, data access, monitoring, advanced features
+
+## DATABASE SCHEMA (22 TABLES)
+
+All defined in `/supabase/migrations/001_schema.sql`:
+tenants, branches, users, menu_categories, menu_items,
+modifier_groups, modifier_options, tables, table_sessions,
+orders, order_items, bills, staff_calls, customers,
+discounts, coupons, store_settings, storefront_config,
+blogs, payment_integrations, attendance, notification_log
+
+Prices stored in **paise** (₹1 = 100 paise). Integer math only.
+
+## JWT TENANT CLAIMS
+
+The `inject_tenant_claims` function adds to every JWT:
+```json
+{
+  "app_metadata": {
+    "tenant_id": "uuid",
+    "branch_id": "uuid",
+    "role": "owner|manager|cashier|staff|kitchen"
+  }
+}
+```
+
+RLS helper functions:
+- `get_tenant_id()` — extracts tenant_id from JWT
+- `get_user_role()` — extracts role from JWT
+
+## KEY ARCHITECTURE PATTERNS
+
+### Supabase Client Usage
+```typescript
+// Server Components / Server Actions
+import { createClient } from '@/utils/supabase/server'
+
+// Client Components
+import { createClient } from '@/utils/supabase/client'
+
+// Edge Functions (Deno)
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+```
+
+### Order Flow
+pending → confirmed → preparing → ready → served → billed → paid
+
+### File Structure Convention
+```
+frontend/src/app/          — Next.js pages (App Router)
+frontend/src/components/   — Reusable React components
+frontend/src/utils/        — Supabase client utilities
+supabase/migrations/       — SQL migrations (numbered)
+supabase/functions/        — Deno Edge Functions
+tests/                     — Vitest unit + E2E tests
+docs/                      — Project documentation
+```
+
+## CURRENT SPRINT STATUS
+
+- Sprint 1 (Foundation): ✅ COMPLETE
+- Sprint 2 (Admin Dashboard): ✅ COMPLETE
+- Sprint 3 (POS & Ordering): 📋 NEXT UP
+- Sprint 4-6: BACKLOG
+
+## KNOWN ISSUES TO FIX
+
+1. `payment_integrations` RLS — any staff can read Razorpay secrets
+2. Admin page is 2,257-line monolith — needs decomposition
+3. Inline styles in admin — must convert to Tailwind
+4. Hardcoded tenant ID in login — needs dynamic resolution
+5. Legacy `drizzle-orm` + `postgres` in root package.json — remove
+
+## FORBIDDEN PATTERNS
+
+```typescript
+// ❌ Direct postgres
+import postgres from 'postgres'
+
+// ❌ Express
+import express from 'express'
+
+// ❌ Service role key on client
+const supabase = createClient(url, SERVICE_ROLE_KEY) // in browser!
+
+// ❌ any types
+const data: any = ...
+
+// ❌ Inline styles
+style={{ color: 'red', padding: '10px' }}
+
+// ❌ Relative imports
+import { foo } from '../../utils/bar'
+
+// ❌ user_metadata for auth decisions
+auth.jwt() -> 'user_metadata' ->> 'role'
+```

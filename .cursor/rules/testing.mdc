@@ -1,0 +1,58 @@
+---
+description: Testing rules — apply when writing tests or test utilities
+globs:
+  - "tests/**"
+  - "frontend/tests/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+alwaysApply: false
+---
+
+# Testing Rules
+
+## Stack
+- **Unit tests**: Vitest + React Testing Library
+- **E2E tests**: Playwright
+- **API tests**: Supertest / direct fetch
+- **Config**: `frontend/vitest.config.ts`
+
+## Directory Structure
+
+```
+tests/
+├── unit/
+│   ├── components/       ← Component unit tests
+│   ├── lib/              ← Utility function tests
+│   └── hooks/            ← Custom hook tests
+├── integration/
+│   ├── api/              ← API route tests
+│   └── supabase/         ← Database query tests
+└── e2e/
+    ├── auth.spec.ts
+    ├── menu.spec.ts
+    ├── order.spec.ts
+    ├── billing.spec.ts
+    └── storefront.spec.ts
+```
+
+## Critical Test Scenarios
+
+1. **Tenant admin can create menu item** → appears on storefront
+2. **Customer can scan QR, order, and pay**
+3. **Tenant A cannot see Tenant B data** (multi-tenant isolation)
+4. **API returns 401 without auth**
+5. **CGST + SGST calculation is correct** (paise math)
+
+## Accessibility (run on every page)
+- All images have `alt` text
+- Color contrast ≥ 4.5:1
+- Keyboard-accessible interactive elements
+- ARIA labels on icon-only buttons
+- Form inputs have associated labels
+
+## Commands
+```bash
+npm run test              # Run all tests
+npm run test -- --watch   # Watch mode
+```

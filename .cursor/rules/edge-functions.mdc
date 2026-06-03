@@ -1,0 +1,71 @@
+---
+description: Edge Functions rules — apply when writing Supabase Deno functions
+globs:
+  - "supabase/functions/**"
+alwaysApply: false
+---
+
+# Supabase Edge Functions Rules
+
+## Function Structure (MANDATORY)
+
+Every Edge Function must follow this template:
+
+```typescript
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+)
+
+Deno.serve(async (req: Request) => {
+  // 1. CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    // 2. Auth validation
+    const authHeader = req.headers.get('Authorization')!
+    const { data: { user }, error } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    )
+    if (error || !user) throw new Error('Unauthorized')
+
+    // 3. Business logic
+    const body = await req.json()
+
+    // 4. Success response
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (err) {
+    return new Response(JSON.stringify({ error: (err as Error).message }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+})
+```
+
+## Functions Directory
+
+| Function | Status | Purpose |
+|----------|--------|---------|
+| `call-staff/` | ✅ Built | Staff alert with cooldown |
+| `generate-bill/` | ✅ Built | Calculate totals, create bill |
+| `verify-payment/` | ✅ Built | Razorpay HMAC verification |
+| `send-notification/` | ❌ TODO | WhatsApp/SMS dispatch |
+| `capture-phone/` | ❌ TODO | OTP verify + customer create |
+| `cron-cleanup/` | ❌ TODO | Daily session cleanup |
+
+## Rules
+
+- Always handle CORS preflight
+- Always validate auth tokens
+- Never expose service role key to client
+- Use TypeScript (no `any`)
+- Return JSON with proper Content-Type
+- Log errors but don't expose stack traces
