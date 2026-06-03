@@ -33,7 +33,7 @@ Integrations:       Razorpay API (payments), MSG91 Flow (WhatsApp alerts)
 ## 📂 Project Directory Structure
 
 ```
-d:\Cafe Canva\
+d:\Cafe Canva/
 ├── apps/
 │   └── cafecanvas/            ← Next.js 15 App (Turbopack, Tailwind 4)
 │       ├── src/
