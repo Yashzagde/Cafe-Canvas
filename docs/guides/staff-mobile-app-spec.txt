@@ -1,0 +1,112 @@
+================================================================================
+  CAFECANVAS — STAFF MOBILE APP SPECIFICATION, TOOLS, PIPELINE & CONNECTIONS
+================================================================================
+
+1. STAFF MOBILE APPLICATIONS & FUNCTIONS
+--------------------------------------------------------------------------------
+The CafeCanvas Flutter monorepo hosts dedicated applications tailored to staff roles, 
+ensuring real-time collaboration between front-of-house (waiters), back-of-house 
+(chefs), and store management.
+
+A. Staff POS App (apps/staff_pos)
+   * Main Target: Waiter tablets and handheld Android terminal systems.
+   * Functions:
+     - Table Check-In & Sessions: Scan unique dining QR codes or select tables from
+       the floor arrangement layout grid to initiate customer dining sessions.
+     - Cart & Order Building: Select categories, configure base items, and apply
+       modifier selections (e.g., custom milk types, add-on toppings).
+     - Ticket Dispatch: Dispatch orders directly to the KDS via Supabase Realtime.
+     - Bill Printing: Trigger CGST (2.5%) + SGST (2.5%) bill generation calculations 
+       via Edge Functions and print drafts to thermal printers.
+     - Cash Drawers & Shifts: Clock staff shifts and log starting floats vs closing
+       cash drawer counts.
+
+B. Kitchen Display System (apps/kitchen_display)
+   * Main Target: Android tablet monitors mounted in the kitchen.
+   * Functions:
+     - Real-time Kanban Screen: Displays order items categorized by status: 
+       Pending -> Confirmed -> Preparing -> Ready.
+     - Chef Action Controls: Mark items or full tickets as "Preparing" or "Ready", 
+       updating waitstaff screens instantly.
+     - Wakelock Integration: Keeps the tablet display screen active continuously
+       during operational hours.
+
+C. Store Admin Mobile App (apps/store_admin_mobile)
+   * Main Target: Owner and Manager Android/iOS mobile devices.
+   * Functions:
+     - Mobile Dashboard: Real-time monitoring of live sales, active tables,
+       AOV (Average Order Value), and occupancy rates.
+     - Staff Performance Tracker: Review active shifts, tips collected, and order 
+       serving speed averages.
+     - Staff Call Alerts: Receive vibration-based alarms when customers trigger
+       "Call Staff" table buttons.
+
+
+2. WORKING TOOLS & TECHNOLOGY STACK
+--------------------------------------------------------------------------------
+The mobile apps are built utilizing a modern, highly optimized stack:
+
+* Language: Dart & Flutter SDK (version >=3.12.1 <4.0.0).
+* Workspace Orchestrator: Melos (melos.yaml) — manages shared packages and apps
+  within the monorepo.
+* Core Shared Libraries:
+  - packages/cafecanva_core: Houses shared models (22 tables), database access
+    repositories, authentication providers, and offline synchronization services.
+  - packages/cafecanva_ui: Design system and 52 CSS themes.
+  - packages/cafecanva_billing: Handles Paise-integer tax rounding, splits,
+    discount configurations, and Razorpay payment interfaces.
+  - packages/cafecanva_analytics: Renders performance reports and visual charts.
+* Data & Auth Providers:
+  - Supabase Dart SDK: Communicates with Postgres DB using secure Row-Level 
+    Security (RLS) policies and tenant JWT claims.
+  - Supabase Channels (Realtime): Powers instant synchronization of orders.
+* Hardware & Push Services:
+  - Firebase Cloud Messaging (FCM): Dispatches instant push notifications.
+  - Hive DB: Fast local storage for caching active carts and staff profiles.
+  - Bluetooth Print Service: Prints receipts to ESC/POS thermal printers.
+  - WakelockPlus: Keeps kitchen screens active.
+
+
+3. CI/CD DEPLOYMENT PIPELINE
+--------------------------------------------------------------------------------
+All application builds, updates, and database migrations are managed via automated
+workflows in GitHub Actions:
+
+* Trigger Event: Pull requests or direct commits merged into the "main" branch.
+* Pipeline Jobs Flow:
+  1. Validation:
+     - Installs root dependencies.
+     - Runs Dart/Flutter code analysis (melos run analyze) and unit tests.
+     - Runs Next.js ESLint and type-checking (npm run type-check).
+  2. Database Migrations:
+     - Restores Supabase database container if suspended.
+     - Performs dry-run check, then applies SQL scripts via Supabase CLI.
+  3. Parallel App Deployment:
+     - Vercel Web Deploy: Deploys the SaaS Platform Web admin and the dynamic
+       customer storefront.
+     - Flutter Mobile APK Build: Builds release binaries for POS and KDS apps.
+       Command: "flutter build apk --release".
+     - Store Admin Desktop Build: Packages Windows installer using window_manager.
+       Command: "flutter build windows --release".
+
+
+4. BRANCH CONNECTIONS & URL ROUTING
+--------------------------------------------------------------------------------
+The platform uses a robust branching strategy coupled with domain routing to target
+specific runtime servers:
+
+A. Branch Connections
+   - dev branch: Used for staging features, testing Edge Functions, and executing
+     E2E Playwright tests on preview urls.
+   - main branch: Linked directly to production releases. Triggers automatic building
+     of mobile APKs, desktop EXEs, and production Web app builds.
+
+B. Domain & Subdomain Routing (Vercel & Firebase Hosting)
+   - cafecanvas.bar         -> Public marketing landing page.
+   - app.cafecanvas.bar     -> Gateway for Super Admins and Tenant Admin Web dashboards.
+   - [slug].cafecanvas.bar  -> Dynamic customer storefront (resolved via subdomain slug).
+   - link.cafecanvas.bar    -> Firebase Hosting hub providing direct downloads for:
+       * cafecanvas.bar/download/staff_pos.apk
+       * cafecanvas.bar/download/kitchen_display.apk
+       * cafecanvas.bar/download/store_admin_setup.exe
+================================================================================
