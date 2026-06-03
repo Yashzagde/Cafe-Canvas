@@ -179,42 +179,55 @@ ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.super_admin_api_keys ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies: Allow super admins full access to everything in super_admin schemas
+DROP POLICY IF EXISTS super_admin_users_all ON public.super_admin_users;
 CREATE POLICY super_admin_users_all ON public.super_admin_users
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS super_admin_passkeys_all ON public.super_admin_passkeys;
 CREATE POLICY super_admin_passkeys_all ON public.super_admin_passkeys
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS super_admin_sessions_all ON public.super_admin_sessions;
 CREATE POLICY super_admin_sessions_all ON public.super_admin_sessions
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS subscription_plans_all ON public.subscription_plans;
 CREATE POLICY subscription_plans_all ON public.subscription_plans
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS feature_limits_all ON public.feature_limits;
 CREATE POLICY feature_limits_all ON public.feature_limits
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS tenant_subscriptions_all ON public.tenant_subscriptions;
 CREATE POLICY tenant_subscriptions_all ON public.tenant_subscriptions
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS custom_domains_all ON public.custom_domains;
 CREATE POLICY custom_domains_all ON public.custom_domains
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS tenant_usage_all ON public.tenant_usage;
 CREATE POLICY tenant_usage_all ON public.tenant_usage
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS support_tickets_all ON public.support_tickets;
 CREATE POLICY support_tickets_all ON public.support_tickets
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS security_events_all ON public.security_events;
 CREATE POLICY security_events_all ON public.security_events
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS billing_invoices_all ON public.billing_invoices;
 CREATE POLICY billing_invoices_all ON public.billing_invoices
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS platform_settings_all ON public.platform_settings;
 CREATE POLICY platform_settings_all ON public.platform_settings
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS super_admin_api_keys_all ON public.super_admin_api_keys;
 CREATE POLICY super_admin_api_keys_all ON public.super_admin_api_keys
   FOR ALL USING (true) WITH CHECK (true);
 
