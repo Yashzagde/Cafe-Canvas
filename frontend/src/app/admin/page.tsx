@@ -1,11 +1,15 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { Coffee, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Coffee, AlertCircle, LogOut, ChevronDown, User, Layers, ShieldAlert, Award } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import ReceiptPreviewModal from '@/components/billing/ReceiptPreviewModal';
-import type { ReceiptData } from '@/components/billing/types';
+import { useRouter } from 'next/navigation';
 
+// Zustand stores
+import { useBranchStore } from '@/store/branch';
+import { useStaffPresenceStore } from '@/store/staff-realtime';
+
+// Visual Tabs
 import Sidebar from '@/components/admin/Sidebar';
 import DashboardTab from '@/components/admin/DashboardTab';
 import MenuTab from '@/components/admin/MenuTab';
@@ -15,9 +19,16 @@ import DiscountsTab from '@/components/admin/DiscountsTab';
 import AnalyticsTab from '@/components/admin/AnalyticsTab';
 import { useToast, Toast, T, ff } from '@/components/admin/UIPrimitives';
 
-/* ═══════════════════════════════════════════════════════════
-   TYPES
-   ═══════════════════════════════════════════════════════════ */
+// Phase 6 new tabs
+import AuditLogViewer from '@/components/admin/AuditLogViewer';
+import StorefrontEditor from '@/components/admin/StorefrontEditor';
+import TableQRManager from '@/components/admin/TableQRManager';
+import StaffManager from '@/components/admin/StaffManager';
+import MenuEditor from '@/components/admin/MenuEditor';
+
+import ReceiptPreviewModal from '@/components/billing/ReceiptPreviewModal';
+import type { ReceiptData } from '@/components/billing/types';
+
 interface MenuItem {
   id: string;
   name: string;
@@ -30,9 +41,12 @@ interface MenuItem {
 interface Table {
   id: string;
   name: string;
-  section: string;
-  cap: number;
+  capacity: number;
+  section: string | null;
   status: 'available' | 'occupied' | 'reserved' | 'cleaning';
+  floor_x: number;
+  floor_y: number;
+  qr_version: number;
 }
 
 interface BillItem {
@@ -40,7 +54,7 @@ interface BillItem {
   _key: string;
   itemId: string;
   name: string;
-  price: number; // in rupees
+  price: number;
   qty: number;
 }
 
@@ -50,11 +64,11 @@ interface BillHistoryEntry {
   section: string;
   time: string;
   method: string;
-  sub: number; // rupees
-  gst: number; // rupees
-  svc: number; // rupees
-  discount: number; // percent
-  total: number; // rupees
+  sub: number;
+  gst: number;
+  svc: number;
+  discount: number;
+  total: number;
   itemsCount: number;
   billItems: BillItem[];
 }
@@ -64,7 +78,7 @@ interface Customer {
   name: string;
   phone: string;
   visits: number;
-  spend: number; // rupees
+  spend: number;
   last: string;
   tier: 'Platinum' | 'Gold' | 'Silver' | 'Bronze';
 }
@@ -87,69 +101,30 @@ interface RecentOrder {
   age: string;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MOCK/FALLBACK SANDBOX DATA
-   ═══════════════════════════════════════════════════════════ */
 const SEED_TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
 
-const INIT_MENU: MenuItem[] = [
-  { id: "e0000000-0000-0000-0000-000000000001", name: "Classic Cappuccino", price: 290, cat: "Coffee", status: "available", desc: "Double ristretto, microfoam, 6oz" },
-  { id: "e0000000-0000-0000-0000-000000000004", name: "Specialty Cold Brew", price: 350, cat: "Coffee", status: "available", desc: "24-hr Ethiopian single origin" },
-  { id: "e0000000-0000-0000-0000-000000000014", name: "Matcha Latte Special", price: 320, cat: "Tea", status: "available", desc: "Ceremonial grade Uji matcha" },
-  { id: "e0000000-0000-0000-0000-000000000011", name: "Avocado Sourdough Toast", price: 390, cat: "Food", status: "available", desc: "Organic avocado, feta, dukkah" },
-  { id: "e0000000-0000-0000-0000-000000000008", name: "Almond Butter Croissant", price: 240, cat: "Bakery", status: "available", desc: "Flaky, house almond cream" }
-];
-
-const INIT_TABLES: Table[] = [
-  { id: "c0000000-0000-0000-0000-000000000001", name: "Table 1", section: "Indoor", cap: 2, status: "available" },
-  { id: "c0000000-0000-0000-0000-000000000002", name: "Table 2", section: "Indoor", cap: 4, status: "occupied" },
-  { id: "c0000000-0000-0000-0000-000000000003", name: "Table 3", section: "Indoor", cap: 4, status: "available" }
-];
-
-const TABLE_ORDERS: Record<string, BillItem[]> = {
-  "c0000000-0000-0000-0000-000000000002": [
-    { id: "oi1", _key: "oi1", itemId: "e0000000-0000-0000-0000-000000000001", name: "Classic Cappuccino", qty: 2, price: 290 },
-    { id: "oi2", _key: "oi2", itemId: "e0000000-0000-0000-0000-000000000011", name: "Avocado Sourdough Toast", qty: 1, price: 390 }
-  ]
-};
-
-const INIT_BILL_HISTORY: BillHistoryEntry[] = [
-  {
-    id: "B-0041", table: "Table 3", section: "Indoor", time: "2:45 PM", method: "UPI", sub: 930, gst: 46, svc: 46, discount: 0, total: 1022, itemsCount: 3,
-    billItems: [
-      { id: "oi4", _key: "oi4", itemId: "e0000000-0000-0000-0000-000000000004", name: "Specialty Cold Brew", qty: 2, price: 350 },
-      { id: "oi5", _key: "oi5", itemId: "e0000000-0000-0000-0000-000000000008", name: "Almond Butter Croissant", qty: 1, price: 240 }
-    ]
-  }
-];
-
-const INIT_CUSTOMERS: Customer[] = [
-  { id: "c1", name: "Priya Sharma", phone: "9876543290", visits: 23, spend: 34250, last: "27 May 2026", tier: "Gold" },
-  { id: "c2", name: "Arjun Mehta", phone: "9812345634", visits: 14, spend: 19800, last: "25 May 2026", tier: "Silver" }
-];
-
-const INIT_ORDERS: RecentOrder[] = [
-  { id: "#095", tableId: "Table 4", desc: "Avocado Toast x1, Flat White x2", amount: 970, status: "pending", age: "2 min ago" }
-];
-
-const INIT_DISCOUNTS: Discount[] = [
-  { id: "d1", name: "Weekday Flash 15%", type: "percent", value: 15, validUntil: "30 June 2026", active: true }
-];
-
 export default function CafeCanvaAdmin() {
+  const router = useRouter();
   const supabase = createClient();
-  
+
+  const { activeBranch, branches, setActiveBranch, setBranches } = useBranchStore();
+  const { setOnline, setOffline } = useStaffPresenceStore();
+
   const [page, setPage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [toastItem, toast] = useToast();
   const [mounted, setMounted] = useState(false);
 
-  // Dynamic states linked to live database
+  // Auth profile states
+  const [userRole, setUserRole] = useState<'owner' | 'manager' | 'cashier' | 'kitchen' | 'staff'>('staff');
+  const [userName, setUserName] = useState('Staff Operator');
+
+  // Dynamic states
   const [loading, setLoading] = useState(true);
   const [tenantId, setTenantId] = useState(SEED_TENANT_ID);
   const [tenantName, setTenantName] = useState("AETHER Café");
   const [menu, setMenu] = useState<MenuItem[]>([]);
-  const [discounts, setDiscounts] = useState<Discount[]>(INIT_DISCOUNTS);
+  const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
   const [tableOrders, setTableOrders] = useState<Record<string, BillItem[]>>({});
   const [billHistory, setBillHistory] = useState<BillHistoryEntry[]>([]);
@@ -157,22 +132,57 @@ export default function CafeCanvaAdmin() {
   const [orders, setOrders] = useState<RecentOrder[]>([]);
   const [dbPending, setDbPending] = useState(false);
 
-  // Receipt Modal State
+  // Receipt Preview
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/admin/login');
+    router.refresh();
+  };
+
   const fetchDbData = async () => {
     try {
-      // 1. Resolve user session & tenant ID
+      // 1. Resolve user profile session
       const { data: { user } } = await supabase.auth.getUser();
-      let activeTenantId = SEED_TENANT_ID;
-
-      if (user?.app_metadata?.tenant_id) {
-        activeTenantId = user.app_metadata.tenant_id;
+      if (!user) {
+        router.push('/admin/login');
+        return;
       }
-      setTenantId(activeTenantId);
 
-      // Fetch tenant name
+      setUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Operator');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setUserRole(profile.role as any);
+        setTenantId(profile.tenant_id);
+        if (profile.full_name) {
+          setUserName(profile.full_name);
+        }
+      }
+
+      const activeTenantId = profile?.tenant_id || SEED_TENANT_ID;
+
+      // Fetch branches list
+      const { data: branchList } = await supabase
+        .from('branches')
+        .select('*')
+        .eq('tenant_id', activeTenantId)
+        .eq('active', true);
+
+      if (branchList) {
+        setBranches(branchList as any[]);
+      }
+
+      const currentBranchId = activeBranch?.id || branchList?.[0]?.id || '';
+
+      // Fetch tenant metadata
       const { data: tenData } = await supabase
         .from('tenants')
         .select('name')
@@ -181,63 +191,61 @@ export default function CafeCanvaAdmin() {
 
       if (tenData) setTenantName(tenData.name);
 
-      // 2. Fetch categories to map to menu items
-      const { data: catData, error: catErr } = await supabase
+      // Fetch menu categories
+      const { data: catData } = await supabase
         .from('menu_categories')
         .select('id, name')
         .eq('tenant_id', activeTenantId)
         .is('deleted_at', null);
 
-      if (catErr) throw catErr;
       const catsMap = new Map((catData || []).map(c => [c.id, c.name]));
 
-      // 3. Fetch menu items
-      const { data: itemsData, error: itemsErr } = await supabase
+      // Fetch items
+      const { data: itemsData } = await supabase
         .from('menu_items')
-        .select('id, name, price, status, description, category_id')
+        .select('*')
         .eq('tenant_id', activeTenantId)
         .is('deleted_at', null)
         .order('sort_order', { ascending: true });
 
-      if (itemsErr) throw itemsErr;
-
       const mappedMenu: MenuItem[] = (itemsData || []).map(i => ({
         id: i.id,
         name: i.name,
-        price: i.price / 100, // paise to rupees
+        price: i.price_paise ? i.price_paise / 100 : 0,
         cat: catsMap.get(i.category_id || "") || "Uncategorized",
-        status: i.status,
+        status: i.is_available ? 'available' : 'unavailable',
         desc: i.description || ""
       }));
       setMenu(mappedMenu);
 
-      // 4. Fetch tables
-      const { data: tablesData, error: tablesErr } = await supabase
+      // Fetch tables
+      const { data: tablesData } = await supabase
         .from('tables')
-        .select('id, name, capacity, section, status')
+        .select('*')
         .eq('tenant_id', activeTenantId)
+        .eq('branch_id', currentBranchId)
         .is('deleted_at', null)
         .order('name', { ascending: true });
-
-      if (tablesErr) throw tablesErr;
 
       const mappedTables: Table[] = (tablesData || []).map(t => ({
         id: t.id,
         name: t.name,
-        cap: t.capacity,
-        section: t.section || "Indoor",
-        status: t.status
+        capacity: t.capacity,
+        section: t.section,
+        status: t.status as any,
+        floor_x: t.floor_x,
+        floor_y: t.floor_y,
+        qr_version: t.qr_version
       }));
       setTables(mappedTables);
 
-      // 5. Fetch active orders
-      const { data: activeOrders, error: ordersErr } = await supabase
+      // Fetch active orders & order items
+      const { data: activeOrders } = await supabase
         .from('orders')
         .select('*, order_items(*)')
         .eq('tenant_id', activeTenantId)
+        .eq('branch_id', currentBranchId)
         .in('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed']);
-
-      if (ordersErr) throw ordersErr;
 
       const ordersByTable: Record<string, BillItem[]> = {};
       const recentOrdersList: RecentOrder[] = [];
@@ -252,13 +260,12 @@ export default function CafeCanvaAdmin() {
               _key: i.id,
               itemId: i.menu_item_id || "",
               name: i.item_name,
-              price: i.unit_price / 100, // paise to rupees
+              price: i.unit_price_paise / 100,
               qty: i.quantity
             });
           });
         }
 
-        // Map to recent transaction feed
         const orderSummary = (o.order_items || []).map((i: any) => `${i.item_name} x${i.quantity}`).join(', ');
         const diffMs = Date.now() - new Date(o.created_at).getTime();
         const mins = Math.max(1, Math.floor(diffMs / 60000));
@@ -267,7 +274,7 @@ export default function CafeCanvaAdmin() {
           id: `#${o.id.substring(0, 4).toUpperCase()}`,
           tableId: mappedTables.find(t => t.id === o.table_id)?.name || "Table Guest",
           desc: orderSummary.length > 30 ? orderSummary.substring(0, 27) + "..." : orderSummary,
-          amount: o.total / 100, // paise to rupees
+          amount: (o.total_amount_paise || 0) / 100,
           status: o.status,
           age: `${mins}m ago`
         });
@@ -276,41 +283,38 @@ export default function CafeCanvaAdmin() {
       setTableOrders(ordersByTable);
       setOrders(recentOrdersList);
 
-      // 6. Fetch historical bills
-      const { data: billsData, error: billsErr } = await supabase
+      // Fetch bills
+      const { data: billsData } = await supabase
         .from('bills')
         .select('*')
         .eq('tenant_id', activeTenantId)
-        .order('paid_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(10);
-
-      if (billsErr) throw billsErr;
 
       const mappedHistory: BillHistoryEntry[] = (billsData || []).map(b => ({
         id: b.id.substring(0, 8).toUpperCase(),
         table: mappedTables.find(t => t.id === b.table_id)?.name || "Table",
         section: mappedTables.find(t => t.id === b.table_id)?.section || "Indoor",
-        time: new Date(b.paid_at || b.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+        time: new Date(b.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
         method: b.payment_method || "CASH",
-        sub: b.subtotal / 100,
-        gst: b.tax / 100,
-        svc: 0,
-        discount: b.discount_amount > 0 ? 10 : 0,
-        total: b.total / 100,
+        sub: b.subtotal_paise / 100,
+        gst: (b.cgst_paise + b.sgst_paise) / 100,
+        svc: b.service_charge_paise / 100,
+        discount: b.discount_paise / 100,
+        total: b.total_paise / 100,
         itemsCount: 1,
         billItems: []
       }));
       setBillHistory(mappedHistory);
 
-      // 7. Fetch customers
-      const { data: custData, error: custErr } = await supabase
+      // Fetch customers
+      const { data: custData } = await supabase
         .from('customers')
         .select('*')
         .eq('tenant_id', activeTenantId)
         .is('deleted_at', null)
         .limit(20);
 
-      if (custErr) throw custErr;
       const mappedCustomers: Customer[] = (custData || []).map(c => ({
         id: c.id,
         name: c.name,
@@ -324,14 +328,7 @@ export default function CafeCanvaAdmin() {
 
       setDbPending(false);
     } catch (err: any) {
-      console.error("Dashboard database fetch failed. Operating in offline simulation mode:", err.message);
-      // Fallback
-      setMenu(INIT_MENU);
-      setTables(INIT_TABLES);
-      setTableOrders(TABLE_ORDERS);
-      setBillHistory(INIT_BILL_HISTORY);
-      setCustomers(INIT_CUSTOMERS);
-      setOrders(INIT_ORDERS);
+      console.error("Supabase sync issue. Running client preview sandbox:", err.message);
       setDbPending(true);
     } finally {
       setLoading(false);
@@ -341,9 +338,9 @@ export default function CafeCanvaAdmin() {
   useEffect(() => {
     setMounted(true);
     fetchDbData();
-  }, []);
+  }, [activeBranch]);
 
-  // Sync real-time updates for new active orders
+  // Real-time Order Subscriptions
   useEffect(() => {
     if (dbPending) return;
 
@@ -373,15 +370,15 @@ export default function CafeCanvaAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] flex flex-col justify-center items-center gap-4">
-        <Coffee className="w-12 h-12 text-[#e05e35] animate-spin" />
-        <span className="font-extrabold text-sm tracking-widest uppercase opacity-75">Booting Admin Panel...</span>
+      <div className="min-h-screen bg-[#0d0f12] text-[#fcfaf4] flex flex-col justify-center items-center gap-4">
+        <Coffee className="w-12 h-12 text-[#e28743] animate-spin" />
+        <span className="font-extrabold text-xs tracking-widest uppercase opacity-75">Syncing OS Core...</span>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: T.bg, fontFamily: ff, color: T.tx, overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: "#0d0f12", fontFamily: ff, color: "#fcfaf4", overflow: "hidden" }}>
       {/* Sidebar Navigation */}
       <Sidebar
         page={page}
@@ -391,79 +388,122 @@ export default function CafeCanvaAdmin() {
         tenantName={tenantName}
       />
 
-      {/* Main Content Viewport */}
-      <main style={{ flex: 1, overflow: "auto", padding: "28px 32px", position: "relative" }}>
-        {/* Luxury Liquid Floating Background Gradients */}
-        <div className="liquid-blob-1 top-20 left-10"></div>
-        <div className="liquid-blob-2 top-1/2 right-10"></div>
-        
-        {/* Database Warning Alert Banner */}
-        {dbPending && (
-          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 text-amber-700 rounded-2xl text-xs font-bold flex items-center justify-between shadow-sm animate-scale-up">
-            <div className="flex items-center gap-2">
-              <AlertCircle size={16} />
-              <span>Admin offline sandbox active. Please run <code>node db_setup.js</code> to initialize the tables on your remote Supabase instance.</span>
-            </div>
+      {/* Main content frame */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* Top Header Bar */}
+        <header className="h-16 border-b border-[#262b38]/50 px-6 flex items-center justify-between bg-[#151820]/40 relative z-20">
+          <div className="flex items-center gap-4">
+            <span className="font-extrabold text-sm tracking-wide font-display">{tenantName} Operations</span>
+            
+            {/* Active Branch Select Dropdown */}
+            {branches.length > 0 && (
+              <div className="relative group">
+                <button className="px-3.5 py-1.5 bg-[#1e222d] border border-[#262b38] rounded-xl text-xs font-bold text-[#fcfaf4]/70 flex items-center gap-1.5 hover:text-[#fcfaf4] transition-all">
+                  <span>{activeBranch?.name || 'Select Location'}</span>
+                  <ChevronDown size={14} />
+                </button>
+                <div className="absolute top-full left-0 mt-1.5 w-48 bg-[#151820] border border-[#262b38] rounded-2xl p-1.5 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                  {branches.map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => setActiveBranch(b)}
+                      className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl hover:bg-[#1e222d] hover:text-[#e28743] transition-all"
+                    >
+                      {b.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
 
-        {mounted && (
-          <>
-            {page === "dashboard" && (
-              <DashboardTab
-                toast={toast}
-                discounts={discounts}
-                setDiscounts={setDiscounts}
-                tables={tables}
-                orders={orders}
-              />
-            )}
-            {page === "menu" && (
-              <MenuTab
-                toast={toast}
-                menu={menu}
-                setMenu={setMenu}
-                dbPending={dbPending}
-                tenantId={tenantId}
-              />
-            )}
-            {page === "billing" && (
-              <BillingTab
-                toast={toast}
-                menu={menu}
-                triggerReceipt={triggerReceiptPrint}
-                tables={tables}
-                setTables={setTables}
-                tableOrders={tableOrders}
-                setTableOrders={setTableOrders}
-                billHistory={billHistory}
-                setBillHistory={setBillHistory}
-                dbPending={dbPending}
-                tenantId={tenantId}
-              />
-            )}
-            {page === "customers" && (
-              <CustomersTab
-                toast={toast}
-                customers={customers}
-                setCustomers={setCustomers}
-                dbPending={dbPending}
-                tenantId={tenantId}
-              />
-            )}
-            {page === "discounts" && (
-              <DiscountsTab
-                toast={toast}
-                discounts={discounts}
-                setDiscounts={setDiscounts}
-              />
-            )}
-            {page === "analytics" && <AnalyticsTab />}
-          </>
-        )}
-      </main>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-[#e28743]/10 border border-[#e28743]/30 text-[#e28743] rounded-full flex items-center justify-center font-extrabold text-xs">
+                {userName.substring(0, 2).toUpperCase()}
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-xs font-extrabold">{userName}</span>
+                <span className="text-[10px] text-[#e28743] font-bold uppercase tracking-wider scale-[0.9] origin-left">{userRole}</span>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 hover:bg-[#1e222d] border border-[#262b38] rounded-xl text-[#fcfaf4]/40 hover:text-red-400 cursor-pointer transition-all"
+              title="Logout session"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </header>
 
-      {/* Thermal Receipt Preview Modal */}
+        {/* Dashboard inner content viewport */}
+        <main className="flex-1 overflow-auto p-8 relative">
+          <div className="absolute top-20 left-10 w-[40%] h-[40%] bg-[#e28743]/5 rounded-full blur-[100px] pointer-events-none"></div>
+          
+          {mounted && (
+            <>
+              {page === "dashboard" && (
+                <DashboardTab
+                  toast={toast}
+                  discounts={discounts}
+                  setDiscounts={setDiscounts}
+                  tables={tables}
+                  orders={orders}
+                />
+              )}
+              {page === "menu" && (
+                <MenuTab
+                  toast={toast}
+                  menu={menu}
+                  setMenu={setMenu}
+                  dbPending={dbPending}
+                  tenantId={tenantId}
+                />
+              )}
+              {page === "modifiers" && <MenuEditor />}
+              {page === "tables" && <TableQRManager branchId={activeBranch?.id || ''} />}
+              {page === "billing" && (
+                <BillingTab
+                  toast={toast}
+                  menu={menu}
+                  triggerReceipt={triggerReceiptPrint}
+                  tables={tables}
+                  setTables={setTables}
+                  tableOrders={tableOrders}
+                  setTableOrders={setTableOrders}
+                  billHistory={billHistory}
+                  setBillHistory={setBillHistory}
+                  dbPending={dbPending}
+                  tenantId={tenantId}
+                />
+              )}
+              {page === "customers" && (
+                <CustomersTab
+                  toast={toast}
+                  customers={customers}
+                  setCustomers={setCustomers}
+                  dbPending={dbPending}
+                  tenantId={tenantId}
+                />
+              )}
+              {page === "discounts" && (
+                <DiscountsTab
+                  toast={toast}
+                  discounts={discounts}
+                  setDiscounts={setDiscounts}
+                />
+              )}
+              {page === "analytics" && <AnalyticsTab />}
+              {page === "staff" && <StaffManager branchId={activeBranch?.id || ''} />}
+              {page === "storefront" && <StorefrontEditor />}
+              {page === "audit" && <AuditLogViewer />}
+            </>
+          )}
+        </main>
+      </div>
+
+      {/* Receipt Modal */}
       {receiptData && (
         <ReceiptPreviewModal
           show={showReceipt}
@@ -472,7 +512,7 @@ export default function CafeCanvaAdmin() {
         />
       )}
 
-      {/* Toast Notification Container */}
+      {/* Global toast notification system */}
       {toastItem && <Toast msg={toastItem.msg} type={toastItem.type} onClose={() => { }} />}
     </div>
   );

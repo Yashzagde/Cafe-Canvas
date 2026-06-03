@@ -19,9 +19,12 @@ interface MenuItem {
 interface Table {
   id: string;
   name: string;
-  section: string;
-  cap: number;
+  capacity: number;
+  section: string | null;
   status: 'available' | 'occupied' | 'reserved' | 'cleaning';
+  floor_x: number;
+  floor_y: number;
+  qr_version: number;
 }
 
 interface BillItem {
@@ -251,7 +254,7 @@ export default function BillingTab({
       const newBill: BillHistoryEntry = {
         id: billId,
         table: selectedTable.name,
-        section: selectedTable.section,
+        section: selectedTable.section || 'Indoor',
         time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
         method: payMethod.toUpperCase(),
         sub: subtotal,
@@ -283,7 +286,7 @@ export default function BillingTab({
       gstNumber: DEFAULT_STORE_INFO.gstNumber,
       fssaiNumber: DEFAULT_STORE_INFO.fssaiNumber,
       tableName: selectedTable.name,
-      tableSection: selectedTable.section,
+      tableSection: selectedTable.section || 'Indoor',
       items: billItems.map(i => ({
         name: i.name,
         qty: i.qty,
@@ -415,7 +418,7 @@ export default function BillingTab({
                       background: tableStatusColor[tbl.status] || T.mu,
                     }} />
                   </div>
-                  <div style={{ fontSize: "10px", color: T.mu, marginBottom: "6px" }}>{tbl.section} · {tbl.cap} pax</div>
+                  <div style={{ fontSize: "10px", color: T.mu, marginBottom: "6px" }}>{tbl.section} · {tbl.capacity} pax</div>
                   {occ && tblTotal > 0 ? (
                     <div style={{ fontSize: "14px", fontWeight: 800, color: T.tx, fontFamily: fm }}>₹{tblTotal.toFixed(2)}</div>
                   ) : (

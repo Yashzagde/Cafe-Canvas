@@ -1,0 +1,308 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getTablesAction, createTableAction, updateTableAction, deleteTableAction, regenerateTableQRAction } from '@/app/admin/actions/table.actions';
+import { useToast } from '@/components/admin/UIPrimitives';
+import { Layers, Plus, RefreshCw, Trash2, Printer, MapPin } from 'lucide-react';
+
+interface Table {
+  id: string;
+  name: string;
+  capacity: number;
+  section: string | null;
+  status: 'available' | 'occupied' | 'reserved' | 'cleaning';
+  floor_x: number;
+  floor_y: number;
+  qr_version: number;
+}
+
+interface TableQRManagerProps {
+  branchId: string;
+}
+
+export default function TableQRManager({ branchId }: TableQRManagerProps) {
+  const [tables, setTables] = useState<Table[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'floor' | 'list'>('floor');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [tableName, setTableName] = useState('');
+  const [capacity, setCapacity] = useState(4);
+  const [section, setSection] = useState('Indoor');
+
+  const [toastItem, toast] = useToast();
+
+  const loadTables = async () => {
+    setLoading(true);
+    try {
+      const data = await getTablesAction(branchId);
+      setTables(data as Table[]);
+    } catch (err) {
+      console.error('Failed to load tables:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (branchId) {
+      loadTables();
+    }
+  }, [branchId]);
+
+  const handleAddTable = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const newTable = await createTableAction({
+        name: tableName,
+        capacity,
+        section,
+        shape: 'square',
+        status: 'available',
+        floor_x: 10,
+        floor_y: 10,
+        branch_id: branchId
+      });
+      if (newTable) {
+        setTables([...tables, newTable as Table]);
+        setShowAddModal(false);
+        setTableName('');
+        toast('Table created successfully!', 'success');
+      }
+    } catch (err) {
+      toast('Failed to create table.', 'error');
+    }
+  };
+
+  const handleRegenerateQR = async (tableId: string) => {
+    try {
+      const updated = await regenerateTableQRAction(tableId) as any;
+      if (updated) {
+        setTables(tables.map(t => t.id === tableId ? { ...t, qr_version: updated.qr_version } : t));
+        toast('Table QR code regenerated!', 'success');
+      }
+    } catch (err) {
+      toast('Failed to regenerate QR.', 'error');
+    }
+  };
+
+  const handleDeleteTable = async (tableId: string) => {
+    if (!confirm('Are you sure you want to delete this table?')) return;
+    try {
+      const deleted = await deleteTableAction(tableId);
+      if (deleted) {
+        setTables(tables.filter(t => t.id !== tableId));
+        toast('Table deleted.', 'success');
+      }
+    } catch (err) {
+      toast('Failed to delete table.', 'error');
+    }
+  };
+
+  return (
+    <div className="space-y-6 text-[#fcfaf4] animate-fade-in">
+      <div className="flex items-center justify-between border-b border-[#262b38]/50 pb-4">
+        <div>
+          <h2 className="text-xl font-extrabold font-display">Floor Plan & Table QR Manager</h2>
+          <p className="text-xs text-[#fcfaf4]/50">Position physical tables and export encrypted customer-ordering QR codes.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-[#1e222d] border border-[#262b38] rounded-xl p-1 text-xs font-bold">
+            <button
+              onClick={() => setActiveTab('floor')}
+              className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
+                activeTab === 'floor' ? 'bg-[#e28743] text-[#151820]' : 'text-[#fcfaf4]/40 hover:text-[#fcfaf4]/70'
+              }`}
+            >
+              <MapPin size={12} className="inline mr-1" />
+              <span>Floor Plan</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
+                activeTab === 'list' ? 'bg-[#e28743] text-[#151820]' : 'text-[#fcfaf4]/40 hover:text-[#fcfaf4]/70'
+              }`}
+            >
+              <Layers size={12} className="inline mr-1" />
+              <span>List View</span>
+            </button>
+          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-gradient-to-r from-[#e28743] to-[#f0a050] hover:opacity-95 text-[#151820] font-extrabold rounded-2xl text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Plus size={14} />
+            <span>Add Table</span>
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="py-8 text-center text-[#fcfaf4]/40">
+          <span className="inline-block w-6 h-6 border-2 border-[#e28743] border-t-transparent rounded-full animate-spin"></span>
+        </div>
+      ) : activeTab === 'floor' ? (
+        /* Interactive Floor plan view grid */
+        <div className="relative w-full h-[500px] bg-[#0d0f12] border border-[#262b38] rounded-3xl overflow-hidden shadow-2xl p-6 flex items-center justify-center">
+          <div className="absolute inset-0 bg-[radial-gradient(#262b38_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+          {tables.length === 0 ? (
+            <span className="text-xs text-[#fcfaf4]/30 uppercase tracking-widest font-semibold relative z-10">
+              No tables placed. Add tables to design your layout.
+            </span>
+          ) : (
+            <div className="relative w-full h-full">
+              {tables.map((t) => {
+                const statusColors = {
+                  available: 'border-green-500/30 bg-green-500/10 text-green-400',
+                  occupied: 'border-red-500/30 bg-red-500/10 text-red-400',
+                  reserved: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
+                  cleaning: 'border-purple-500/30 bg-purple-500/10 text-purple-400'
+                };
+                return (
+                  <div
+                    key={t.id}
+                    className={`absolute p-4 border rounded-2xl w-28 h-28 flex flex-col justify-between shadow-lg hover:border-[#e28743]/50 transition-all ${statusColors[t.status]}`}
+                    style={{
+                      left: `${t.floor_x}%`,
+                      top: `${t.floor_y}%`
+                    }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <span className="font-extrabold text-sm">{t.name}</span>
+                      <span className="text-[10px] opacity-50">{t.capacity}P</span>
+                    </div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-65">
+                      {t.status}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Detailed List data table view */
+        <div className="bg-[#151820] border border-[#262b38] rounded-3xl overflow-hidden shadow-xl">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[#262b38]/50 bg-[#1e222d]/30 text-xs font-bold text-[#fcfaf4]/40 tracking-wider uppercase">
+                  <th className="py-4 px-6">Table Identifier</th>
+                  <th className="py-4 px-6">Layout Zone</th>
+                  <th className="py-4 px-6">Guest Cap</th>
+                  <th className="py-4 px-6">QR Version</th>
+                  <th className="py-4 px-6">QR Code Link</th>
+                  <th className="py-4 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#262b38]/30 text-sm">
+                {tables.map((t) => {
+                  const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(
+                    `https://cafecanvas.bar/table/${t.id}?v=${t.qr_version}`
+                  )}`;
+                  return (
+                    <tr key={t.id} className="hover:bg-[#1e222d]/20 transition-all">
+                      <td className="py-4 px-6 font-bold text-[#fcfaf4]/85">{t.name}</td>
+                      <td className="py-4 px-6 font-mono text-xs text-[#fcfaf4]/50">{t.section || 'Indoor'}</td>
+                      <td className="py-4 px-6 font-semibold">{t.capacity} Diner seats</td>
+                      <td className="py-4 px-6 font-mono text-xs text-[#e28743] font-bold">V.{t.qr_version}</td>
+                      <td className="py-4 px-6">
+                        <a
+                          href={qrUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[#e28743] hover:underline text-xs font-bold"
+                        >
+                          View QR Image
+                        </a>
+                      </td>
+                      <td className="py-4 px-6 text-right space-x-2">
+                        <button
+                          onClick={() => handleRegenerateQR(t.id)}
+                          className="p-2 bg-[#1e222d] border border-[#262b38] hover:border-[#e28743]/50 text-[#fcfaf4]/60 hover:text-[#e28743] rounded-xl cursor-pointer"
+                          title="Regenerate QR (Voids old code)"
+                        >
+                          <RefreshCw size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTable(t.id)}
+                          className="p-2 bg-[#1e222d] border border-red-950 hover:bg-red-500/10 text-red-400 rounded-xl cursor-pointer"
+                          title="Delete Table"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Add Table Modal Popup */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50 animate-fade-in">
+          <form onSubmit={handleAddTable} className="w-full max-w-md bg-[#151820] border border-[#262b38] rounded-3xl p-6 shadow-2xl space-y-4">
+            <h3 className="text-base font-extrabold font-display border-b border-[#262b38]/50 pb-2">Add Layout Table</h3>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#fcfaf4]/50">Table Name/Number</label>
+              <input
+                type="text"
+                required
+                value={tableName}
+                onChange={(e) => setTableName(e.target.value)}
+                placeholder="e.g. Table 15"
+                className="w-full px-4 py-3 bg-[#1e222d] border border-[#262b38] rounded-xl text-sm focus:outline-none focus:border-[#e28743]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#fcfaf4]/50">Seating Capacity</label>
+              <input
+                type="number"
+                required
+                value={capacity}
+                onChange={(e) => setCapacity(parseInt(e.target.value))}
+                min={1}
+                className="w-full px-4 py-3 bg-[#1e222d] border border-[#262b38] rounded-xl text-sm focus:outline-none focus:border-[#e28743]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#fcfaf4]/50">Floor Zone Section</label>
+              <input
+                type="text"
+                required
+                value={section}
+                onChange={(e) => setSection(e.target.value)}
+                placeholder="e.g. Terrace"
+                className="w-full px-4 py-3 bg-[#1e222d] border border-[#262b38] rounded-xl text-sm focus:outline-none focus:border-[#e28743]"
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end pt-3">
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 bg-[#1e222d] hover:bg-[#1e222d]/80 text-[#fcfaf4]/70 font-bold rounded-2xl text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-gradient-to-r from-[#e28743] to-[#f0a050] text-[#151820] font-extrabold rounded-2xl text-xs cursor-pointer"
+              >
+                Save Table
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Toast Notification Container */}
+      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#1e222d] border border-[#262b38] rounded-2xl text-xs font-bold">{toastItem.msg}</div>}
+    </div>
+  );
+}

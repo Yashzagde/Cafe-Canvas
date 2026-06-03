@@ -1,15 +1,15 @@
 import React from 'react';
 
-// Design tokens
+// Premium Dark Design tokens
 const T = {
-  card: "#ffffff",
-  bdr: "#e7e5e4",
-  ind: "#d97706",
-  em: "#16a34a",
-  tx: "#1c1917",
-  mu: "#78716c",
-  mu2: "#57534e",
-  iA: (o: number) => `rgba(217,119,6,${o})`,
+  card: "#151820",
+  bdr: "#262b38",
+  ind: "#e28743", // Warm terracotta
+  em: "#10b981",  // Sage success
+  tx: "#fcfaf4",  // Warm white text
+  mu: "#8c96a3",  // Muted gray
+  mu2: "#6b7582", // Darker muted
+  iA: (o: number) => `rgba(226,135,67,${o})`,
 };
 
 interface SidebarProps {
@@ -22,11 +22,16 @@ interface SidebarProps {
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "📊" },
-  { id: "menu", label: "Menu", icon: "🍽" },
+  { id: "menu", label: "Menu Catalog", icon: "🍽" },
+  { id: "modifiers", label: "Modifiers", icon: "⚙️" },
+  { id: "tables", label: "Tables & QRs", icon: "🪑" },
   { id: "billing", label: "Billing OS", icon: "🧾" },
   { id: "customers", label: "Customers", icon: "👥" },
   { id: "discounts", label: "Discounts", icon: "🏷" },
   { id: "analytics", label: "Analytics", icon: "📈" },
+  { id: "staff", label: "Staffing", icon: "👥" },
+  { id: "storefront", label: "Storefront", icon: "🏪" },
+  { id: "audit", label: "Audit Logs", icon: "📋" },
 ];
 
 export default function Sidebar({
@@ -68,21 +73,21 @@ export default function Sidebar({
           justifyContent: "center",
           fontSize: "16px",
           fontWeight: 800,
-          color: "#fff",
+          color: "#151820",
           flexShrink: 0
         }}>
           C
         </div>
         {sidebarOpen && (
           <div>
-            <div style={{ fontSize: "14px", fontWeight: 800, letterSpacing: "-0.02em" }}>CafeCanva</div>
+            <div style={{ fontSize: "14px", fontWeight: 800, letterSpacing: "-0.02em", color: T.tx }}>CafeCanva</div>
             <div style={{ fontSize: "9px", color: T.mu, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>Admin Panel</div>
           </div>
         )}
       </div>
 
       {/* Nav Items */}
-      <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: "4px" }}>
+      <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: "4px", overflowY: "auto" }}>
         {NAV.map(n => {
           const active = page === n.id;
           return (
@@ -102,7 +107,7 @@ export default function Sidebar({
                 width: "100%",
                 textAlign: "left",
                 background: active ? T.iA(0.15) : "transparent",
-                color: active ? T.tx : T.mu2,
+                color: active ? T.ind : T.mu,
                 justifyContent: sidebarOpen ? "flex-start" : "center"
               }}>
               <span style={{ fontSize: "16px", flexShrink: 0 }}>{n.icon}</span>
@@ -128,10 +133,10 @@ export default function Sidebar({
               fontWeight: 800,
               color: T.ind
             }}>
-              YZ
+              CC
             </div>
             <div>
-              <div style={{ fontSize: "11px", fontWeight: 600, color: T.tx }}>Admin User</div>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: T.tx }}>Operations</div>
               <div style={{ fontSize: "9px", color: T.mu }}>{tenantName}</div>
             </div>
           </div>

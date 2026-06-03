@@ -20,9 +20,12 @@ interface RecentOrder {
 interface Table {
   id: string;
   name: string;
-  section: string;
-  cap: number;
+  capacity: number;
+  section: string | null;
   status: 'available' | 'occupied' | 'reserved' | 'cleaning';
+  floor_x: number;
+  floor_y: number;
+  qr_version: number;
 }
 
 interface Discount {
