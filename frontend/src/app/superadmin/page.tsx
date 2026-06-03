@@ -135,41 +135,42 @@ export default function SuperadminDashboard() {
     checkAuth();
   }, []);
 
-  const fetchInitialData = () => {
+  const fetchInitialData = async () => {
     setLoading(true);
     setErrorMsg(null);
 
-    // Populate local mock state representing production metrics
-    const localTenants = [
-      { id: 't1', name: 'AETHER Café & Roastery', subdomain: 'aether', plan: 'professional', status: 'ACTIVE', createdAt: new Date().toISOString() },
-      { id: 't2', name: 'Bandra Brews Coffeehouse', subdomain: 'bandra', plan: 'growth', status: 'ACTIVE', createdAt: new Date().toISOString() },
-      { id: 't3', name: 'Downtown Mug Roasters', subdomain: 'downtown', plan: 'starter', status: 'SUSPENDED', createdAt: new Date().toISOString() }
-    ];
-    const localBranches = [
-      { id: 'b1', tenantId: 't1', name: 'Bandra Flagship Roastery', status: 'ACTIVE', createdAt: new Date().toISOString() },
-      { id: 'b2', tenantId: 't1', name: 'Khar Boutique Espresso Bar', status: 'ACTIVE', createdAt: new Date().toISOString() },
-      { id: 'b3', tenantId: 't2', name: 'Bandra West Outlet', status: 'ACTIVE', createdAt: new Date().toISOString() },
-      { id: 'b4', tenantId: 't3', name: 'Downtown Corner', status: 'ACTIVE', createdAt: new Date().toISOString() }
-    ];
-    const localStaff = [
-      { id: 's1', tenantId: 't1', branchId: 'b1', fullName: 'Yash Zagde', email: 'yash@cafecanvas.bar', role: 'owner', status: 'ACTIVE' },
-      { id: 's2', tenantId: 't1', branchId: 'b1', fullName: 'Amit Patel', email: 'amit@cafecanvas.bar', role: 'manager', status: 'ACTIVE' },
-      { id: 's3', tenantId: 't2', branchId: 'b3', fullName: 'Preeti Sharma', email: 'preeti@bandra.in', role: 'owner', status: 'ACTIVE' }
-    ];
+    try {
+      const response = await fetch('/api/super-admin/tenants');
+      const result = await response.json();
+      
+      if (result.success) {
+        setTenantsList(result.tenants || []);
+        setStats(prev => ({
+          ...prev,
+          totalTenants: result.tenants.length,
+          activeTenants: result.tenants.filter((t: any) => t.status === 'ACTIVE').length,
+        }));
+      } else {
+        throw new Error(result.error || 'Failed to fetch tenants.');
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch live tenants list, using fallback:", err);
+      const localTenants = [
+        { id: 't1', name: 'AETHER Café & Roastery', subdomain: 'aether', plan: 'professional', status: 'ACTIVE', createdAt: new Date().toISOString() },
+        { id: 't2', name: 'Bandra Brews Coffeehouse', subdomain: 'bandra', plan: 'growth', status: 'ACTIVE', createdAt: new Date().toISOString() },
+        { id: 't3', name: 'Downtown Mug Roasters', subdomain: 'downtown', plan: 'starter', status: 'SUSPENDED', createdAt: new Date().toISOString() }
+      ];
+      setTenantsList(localTenants);
+      setStats(prev => ({
+        ...prev,
+        totalTenants: localTenants.length,
+        activeTenants: localTenants.filter(t => t.status === 'ACTIVE').length,
+      }));
+    } finally {
+      setLoading(false);
+    }
 
-    setTenantsList(localTenants);
-    setStats({
-      totalTenants: localTenants.length,
-      activeTenants: localTenants.filter(t => t.status === 'ACTIVE').length,
-      trialTenants: 0,
-      totalBranches: localBranches.length,
-      totalUsers: localStaff.length,
-      systemHealth: '100% Operational',
-      mrr: 85000,
-      arr: 1020000,
-      growth: 15.4
-    });
-
+    // Static queues for demo
     setTicketsQueue([
       { id: 'tk1', tenantName: 'AETHER Café', title: 'Webhook callback signature failure on Razorpay', priority: 'high', status: 'open', created_at: '2h ago' },
       { id: 'tk2', tenantName: 'Bandra Brews', title: 'Thermal receipt layout formatting issues', priority: 'medium', status: 'in_progress', created_at: '5h ago' }
@@ -179,32 +180,47 @@ export default function SuperadminDashboard() {
       { id: 'sec1', event_type: 'passkey_login_success', description: 'biometric authentication validated from host 103.88.92.11', ip_address: '103.88.92.11', created_at: 'Just now' },
       { id: 'sec2', event_type: 'custom_domain_verify', description: 'custom domain link validated: secure.aether.bar', ip_address: '127.0.0.1', created_at: '3h ago' }
     ]);
-
-    setLoading(false);
   };
 
   // Fetch tenant details
-  const loadTenantDetails = (tenant: Tenant) => {
+  const loadTenantDetails = async (tenant: Tenant) => {
     setSelectedTenant(tenant);
+    setLoading(true);
     
-    // Simulate query branches/staff mapped to tenant ID
-    const mockBranches = [
-      { id: 'b1', tenantId: 't1', name: 'Bandra Flagship Roastery', status: 'ACTIVE', createdAt: new Date().toISOString() },
-      { id: 'b2', tenantId: 't1', name: 'Khar Boutique Espresso Bar', status: 'ACTIVE', createdAt: new Date().toISOString() },
-      { id: 'b3', tenantId: 't2', name: 'Bandra West Outlet', status: 'ACTIVE', createdAt: new Date().toISOString() },
-      { id: 'b4', tenantId: 't3', name: 'Downtown Corner', status: 'ACTIVE', createdAt: new Date().toISOString() }
-    ].filter(b => b.tenantId === tenant.id);
+    try {
+      const response = await fetch(`/api/super-admin/tenants/${tenant.id}/details`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setTenantDetails({
+          branches: result.branches || [],
+          staff: result.staff || []
+        });
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch tenant details, using fallback:", err);
+      const mockBranches = [
+        { id: 'b1', tenantId: 't1', name: 'Bandra Flagship Roastery', status: 'ACTIVE', createdAt: new Date().toISOString() },
+        { id: 'b2', tenantId: 't1', name: 'Khar Boutique Espresso Bar', status: 'ACTIVE', createdAt: new Date().toISOString() },
+        { id: 'b3', tenantId: 't2', name: 'Bandra West Outlet', status: 'ACTIVE', createdAt: new Date().toISOString() },
+        { id: 'b4', tenantId: 't3', name: 'Downtown Corner', status: 'ACTIVE', createdAt: new Date().toISOString() }
+      ].filter(b => b.tenantId === tenant.id);
 
-    const mockStaff = [
-      { id: 's1', tenantId: 't1', branchId: 'b1', fullName: 'Yash Zagde', email: 'yash@cafecanvas.bar', role: 'owner', status: 'ACTIVE' },
-      { id: 's2', tenantId: 't1', branchId: 'b1', fullName: 'Amit Patel', email: 'amit@cafecanvas.bar', role: 'manager', status: 'ACTIVE' },
-      { id: 's3', tenantId: 't2', branchId: 'b3', fullName: 'Preeti Sharma', email: 'preeti@bandra.in', role: 'owner', status: 'ACTIVE' }
-    ].filter(s => s.tenantId === tenant.id);
+      const mockStaff = [
+        { id: 's1', tenantId: 't1', branchId: 'b1', fullName: 'Yash Zagde', email: 'yash@cafecanvas.bar', role: 'owner', status: 'ACTIVE' },
+        { id: 's2', tenantId: 't1', branchId: 'b1', fullName: 'Amit Patel', email: 'amit@cafecanvas.bar', role: 'manager', status: 'ACTIVE' },
+        { id: 's3', tenantId: 't2', branchId: 'b3', fullName: 'Preeti Sharma', email: 'preeti@bandra.in', role: 'owner', status: 'ACTIVE' }
+      ].filter(s => s.tenantId === tenant.id);
 
-    setTenantDetails({
-      branches: mockBranches,
-      staff: mockStaff
-    });
+      setTenantDetails({
+        branches: mockBranches,
+        staff: mockStaff
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleToggleTenantStatus = (tenant: Tenant) => {
@@ -216,42 +232,68 @@ export default function SuperadminDashboard() {
     }
   };
 
-  const handleCreateTenant = (e: React.FormEvent) => {
+  const handleCreateTenant = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg(null);
 
-    const generatedUrl = `${tenantForm.subdomain}.cafecanvas.bar`;
+    try {
+      const response = await fetch('/api/super-admin/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantName: tenantForm.tenantName,
+          subdomain: tenantForm.subdomain,
+          plan: tenantForm.plan,
+          ownerName: tenantForm.ownerName,
+          ownerEmail: tenantForm.ownerEmail,
+          ownerPassword: tenantForm.ownerPassword,
+        }),
+      });
 
-    const newTenant: Tenant = {
-      id: 't_' + Math.random().toString(36).substring(2, 9),
-      name: tenantForm.tenantName,
-      subdomain: tenantForm.subdomain,
-      plan: tenantForm.plan,
-      status: 'ACTIVE',
-      createdAt: new Date().toISOString()
-    };
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create tenant records in database.');
+      }
 
-    setTenantsList([...tenantsList, newTenant]);
-    setStats(prev => ({
-      ...prev,
-      totalTenants: prev.totalTenants + 1,
-      activeTenants: prev.activeTenants + 1
-    }));
+      const generatedUrl = `${tenantForm.subdomain}.cafecanvas.bar`;
 
-    setGeneratedTenantUrl(generatedUrl);
-    setShowAddTenant(false);
-    setShowSuccessModal(true);
-    setLoading(false);
+      const newTenant: Tenant = {
+        id: result.tenant.id,
+        name: result.tenant.name,
+        subdomain: result.tenant.subdomain,
+        plan: result.tenant.plan,
+        status: result.tenant.active ? 'ACTIVE' : 'SUSPENDED',
+        createdAt: result.tenant.createdAt || new Date().toISOString()
+      };
 
-    // Reset Form
-    setTenantForm({
-      tenantName: '',
-      subdomain: '',
-      plan: 'starter',
-      ownerName: '',
-      ownerEmail: '',
-      ownerPassword: ''
-    });
+      setTenantsList(prev => [newTenant, ...prev]);
+      setStats(prev => ({
+        ...prev,
+        totalTenants: prev.totalTenants + 1,
+        activeTenants: prev.activeTenants + 1
+      }));
+
+      setGeneratedTenantUrl(generatedUrl);
+      setShowAddTenant(false);
+      setShowSuccessModal(true);
+
+      // Reset Form
+      setTenantForm({
+        tenantName: '',
+        subdomain: '',
+        plan: 'starter',
+        ownerName: '',
+        ownerEmail: '',
+        ownerPassword: ''
+      });
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || 'An error occurred during tenant initialization.');
+      alert(err.message || 'An error occurred during tenant initialization.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddStaff = (e: React.FormEvent) => {
