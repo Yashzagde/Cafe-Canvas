@@ -10,34 +10,14 @@ const sql = postgres(dbUrl, {
 
 async function run() {
   try {
-    console.log("Listing all tables in public schema...");
-    const tables = await sql`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-      ORDER BY table_name;
+    console.log("Searching catalog for profiles...");
+    const rels = await sql`
+      SELECT n.nspname as schema_name, c.relname as name, c.relkind as kind
+      FROM pg_catalog.pg_class c
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relname = 'profiles';
     `;
-    console.log("Tables in public schema:");
-    tables.forEach(t => console.log(`- ${t.table_name}`));
-
-    console.log("\nChecking details for users table...");
-    const usersCols = await sql`
-      SELECT column_name, data_type 
-      FROM information_schema.columns 
-      WHERE table_schema = 'public' AND table_name = 'users'
-      ORDER BY ordinal_position;
-    `;
-    console.log("users table columns:");
-    usersCols.forEach(c => console.log(`  ${c.column_name} (${c.data_type})`));
-
-    console.log("\nChecking details for profiles table if any...");
-    const profilesCols = await sql`
-      SELECT column_name, data_type 
-      FROM information_schema.columns 
-      WHERE table_schema = 'public' AND table_name = 'profiles'
-      ORDER BY ordinal_position;
-    `;
-    console.log("profiles table columns:", profilesCols);
+    console.log("Catalog objects named 'profiles':", rels);
 
   } catch (error) {
     console.error("Query failed:", error.message || error);

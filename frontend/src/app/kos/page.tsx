@@ -25,7 +25,7 @@ interface Order {
   order_items: OrderItem[];
 }
 
-const SEED_TENANT_ID = 'a0000000-0000-0000-0000-000000000001'; // AETHER Café
+
 
 const SEED_ORDERS: Order[] = [
   {
@@ -61,7 +61,8 @@ export default function KOSDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [tenantId, setTenantId] = useState(SEED_TENANT_ID);
+  const [tenantId, setTenantId] = useState('');
+  const [unauthorized, setUnauthorized] = useState(false);
   const [dbPending, setDbPending] = useState(false);
   const [time, setTime] = useState('');
 
@@ -81,11 +82,14 @@ export default function KOSDashboard() {
     try {
       // Find current user tenant first if logged in
       const { data: { user } } = await supabase.auth.getUser();
-      let activeTenantId = SEED_TENANT_ID;
       
-      if (user && user.app_metadata && user.app_metadata.tenant_id) {
-        activeTenantId = user.app_metadata.tenant_id;
+      if (!user || !user.app_metadata || !user.app_metadata.tenant_id) {
+        setUnauthorized(true);
+        setLoading(false);
+        return;
       }
+      
+      const activeTenantId = user.app_metadata.tenant_id;
       setTenantId(activeTenantId);
 
       const { data, error } = await supabase
@@ -135,8 +139,8 @@ export default function KOSDashboard() {
       setOrders(typedOrders);
       setDbPending(false);
     } catch (err: any) {
-      console.error("KDS database fetch failed. Running in simulated state:", err.message);
-      setOrders(SEED_ORDERS);
+      console.error("KDS database fetch failed:", err.message);
+      setOrders([]);
       setDbPending(true);
     } finally {
       setLoading(false);
@@ -217,6 +221,28 @@ export default function KOSDashboard() {
       <div className="min-h-screen bg-[#0f0f11] text-zinc-400 flex flex-col justify-center items-center gap-4">
         <Coffee className="w-12 h-12 text-[#e05e35] animate-spin" />
         <span className="font-black text-xs tracking-widest uppercase opacity-75">Booting Kitchen Core...</span>
+      </div>
+    );
+  }
+
+  if (unauthorized) {
+    return (
+      <div className="min-h-screen bg-[#0f0f11] text-zinc-400 flex flex-col justify-center items-center p-6 text-center">
+        <div className="max-w-md bg-[#16161a] p-8 rounded-3xl border border-zinc-800 shadow-xl space-y-6">
+          <div className="w-16 h-16 bg-[#e05e35]/15 rounded-2xl flex items-center justify-center text-[#e05e35] mx-auto">
+            <Coffee size={32} />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight text-white uppercase tracking-wider">Kitchen Access Denied</h1>
+          <p className="text-sm text-zinc-500 leading-relaxed">
+            You must be logged in as a KDS operator or kitchen staff to access the Kitchen Display System feed.
+          </p>
+          <a
+            href="/login"
+            className="inline-block bg-[#e05e35] text-white font-extrabold px-6 py-3.5 rounded-xl hover:opacity-90 transition-all text-xs tracking-wider uppercase shadow-md"
+          >
+            Sign In to KDS
+          </a>
+        </div>
       </div>
     );
   }

@@ -26,10 +26,6 @@ export async function middleware(request: NextRequest) {
     if (parts.length > 2) {
       tenantSlug = parts[0]
     }
-  } else {
-    // Localhost development fallback values
-    tenantSlug = 'aether'
-    tenantId = 'a0000000-0000-0000-0000-000000000001'
   }
 
   // 3. Initialize Supabase Response & Client

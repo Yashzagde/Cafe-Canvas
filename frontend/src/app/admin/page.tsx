@@ -102,8 +102,6 @@ interface RecentOrder {
   age: string;
 }
 
-const SEED_TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
-
 export default function CafeCanvaAdmin() {
   const router = useRouter();
   const supabase = createClient();
@@ -122,8 +120,8 @@ export default function CafeCanvaAdmin() {
 
   // Dynamic states
   const [loading, setLoading] = useState(true);
-  const [tenantId, setTenantId] = useState(SEED_TENANT_ID);
-  const [tenantName, setTenantName] = useState("AETHER Café");
+  const [tenantId, setTenantId] = useState("");
+  const [tenantName, setTenantName] = useState("My Cafe");
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
@@ -155,20 +153,24 @@ export default function CafeCanvaAdmin() {
       setUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Operator');
 
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (profile) {
-        setUserRole(profile.role as any);
-        setTenantId(profile.tenant_id);
-        if (profile.full_name) {
-          setUserName(profile.full_name);
-        }
+      if (!profile || !profile.tenant_id) {
+        console.error("User profile or tenant_id not found.");
+        router.push('/admin/login');
+        return;
       }
 
-      const activeTenantId = profile?.tenant_id || SEED_TENANT_ID;
+      setUserRole(profile.role as any);
+      setTenantId(profile.tenant_id);
+      if (profile.name) {
+        setUserName(profile.name);
+      }
+
+      const activeTenantId = profile.tenant_id;
 
       // Fetch branches list
       const { data: branchList } = await supabase

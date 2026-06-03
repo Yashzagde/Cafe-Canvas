@@ -84,34 +84,11 @@ const TRANSLATIONS = {
   }
 };
 
-const SEED_TENANT: Tenant = {
-  id: 'a0000000-0000-0000-0000-000000000001',
-  name: 'AETHER Café & Roastery',
-  subdomain: 'demo'
-};
 
-const SEED_CATEGORIES: MenuCategory[] = [
-  { id: 'd0000000-0000-0000-0000-000000000001', name: 'Specialty Coffee', sort_order: 0 },
-  { id: 'd0000000-0000-0000-0000-000000000005', name: 'All-Day Breakfast', sort_order: 1 },
-  { id: 'd0000000-0000-0000-0000-000000000004', name: 'Artisanal Desserts', sort_order: 2 }
-];
-
-const SEED_MENU: MenuItem[] = [
-  { id: 'e0000000-0000-0000-0000-000000000001', category_id: 'd0000000-0000-0000-0000-000000000001', name: 'Classic Cappuccino', price: 29000, description: 'Double espresso with silky steamed milk and foam art.', status: 'available', tags: ['bestseller', 'hot'], image_url: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=400&q=80' },
-  { id: 'e0000000-0000-0000-0000-000000000004', category_id: 'd0000000-0000-0000-0000-000000000001', name: 'Signature Cold Brew', price: 35000, description: '24-hour slow-dripped single origin organic cold brew.', status: 'available', tags: ['bestseller', 'cold'], image_url: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=400&q=80' },
-  { id: 'e0000000-0000-0000-0000-000000000011', category_id: 'd0000000-0000-0000-0000-000000000005', name: 'Avocado Sourdough Toast', price: 39000, description: 'Creamy avocado mash on sourdough, dressed with organic spices.', status: 'available', tags: ['bestseller', 'veg'], image_url: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?auto=format&fit=crop&w=400&q=80' },
-  { id: 'e0000000-0000-0000-0000-000000000008', category_id: 'd0000000-0000-0000-0000-000000000004', name: 'Almond Butter Croissant', price: 24000, description: 'Buttery flaky pastry filled with roasted sweet almond cream.', status: 'available', tags: ['bestseller', 'bakery'], image_url: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=400&q=80' }
-];
-
-const SEED_TABLES: Table[] = [
-  { id: 'c0000000-0000-0000-0000-000000000001', name: 'Table 1', capacity: 2, section: 'Indoor', status: 'available' },
-  { id: 'c0000000-0000-0000-0000-000000000002', name: 'Table 2', capacity: 4, section: 'Indoor', status: 'available' },
-  { id: 'c0000000-0000-0000-0000-000000000003', name: 'Table 3', capacity: 4, section: 'Indoor', status: 'available' }
-];
 
 export default function Storefront() {
   const params = useParams();
-  const storeSlug = (params?.store_slug as string) || 'demo';
+  const storeSlug = (params?.store_slug as string) || '';
   const supabase = createClient();
 
   const [lang, setLang] = useState<'en' | 'hi'>('en');
@@ -120,7 +97,7 @@ export default function Storefront() {
   
   // Dynamic database states
   const [loading, setLoading] = useState(true);
-  const [tenant, setTenant] = useState<Tenant>(SEED_TENANT);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
@@ -153,14 +130,19 @@ export default function Storefront() {
 
         if (tenantError) throw tenantError;
 
-        const resolvedTenant = tenantData || SEED_TENANT;
-        setTenant(resolvedTenant);
+        if (!tenantData) {
+          setTenant(null);
+          setLoading(false);
+          return;
+        }
+
+        setTenant(tenantData);
 
         // 2. Fetch categories
         const { data: catData, error: catError } = await supabase
           .from('menu_categories')
           .select('id, name, icon, sort_order')
-          .eq('tenant_id', resolvedTenant.id)
+          .eq('tenant_id', tenantData.id)
           .eq('is_visible', true)
           .is('deleted_at', null)
           .order('sort_order', { ascending: true });
@@ -172,7 +154,7 @@ export default function Storefront() {
         const { data: itemData, error: itemError } = await supabase
           .from('menu_items')
           .select('id, category_id, name, description, price, status, tags')
-          .eq('tenant_id', resolvedTenant.id)
+          .eq('tenant_id', tenantData.id)
           .eq('status', 'available')
           .is('deleted_at', null)
           .order('sort_order', { ascending: true });
@@ -184,7 +166,7 @@ export default function Storefront() {
         const { data: tableData, error: tableError } = await supabase
           .from('tables')
           .select('id, name, capacity, section, status')
-          .eq('tenant_id', resolvedTenant.id)
+          .eq('tenant_id', tenantData.id)
           .is('deleted_at', null)
           .order('name', { ascending: true });
 
@@ -196,14 +178,9 @@ export default function Storefront() {
 
         setDbPending(false);
       } catch (err: any) {
-        console.error("Database fetch failed. Falling back to sandbox/demo data:", err.message);
-        // Fall back gracefully
-        setTenant(SEED_TENANT);
-        setCategories(SEED_CATEGORIES);
-        setMenuItems(SEED_MENU);
-        setTables(SEED_TABLES);
-        setSelectedTableId(SEED_TABLES[0].id);
-        setDbPending(true);
+        console.error("Database fetch failed:", err.message);
+        setErrorMsg(err.message || "Failed to load store catalog.");
+        setTenant(null);
       } finally {
         setLoading(false);
       }
@@ -343,6 +320,70 @@ export default function Storefront() {
       <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] flex flex-col justify-center items-center gap-4">
         <Coffee className="w-12 h-12 text-[#e05e35] animate-spin" />
         <span className="font-extrabold text-sm tracking-widest uppercase opacity-75">Loading Menu Canvas...</span>
+      </div>
+    );
+  }
+
+  if (!tenant) {
+    return (
+      <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] flex flex-col justify-center items-center p-6 text-center">
+        <div className="max-w-md bg-white p-8 rounded-3xl border border-[#eae5d8] shadow-md space-y-6">
+          <div className="w-16 h-16 bg-[#fbeee7] rounded-2xl flex items-center justify-center text-[#e05e35] mx-auto">
+            <Coffee size={32} />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight text-[#4a2d22]">Store Not Found</h1>
+          <p className="text-sm text-stone-500 leading-relaxed">
+            The restaurant store you are trying to access does not exist or has been disabled. Please check the URL or contact the owner.
+          </p>
+          <a
+            href="https://cafecanvas.bar"
+            className="inline-block bg-[#e05e35] text-[#fcfaf4] font-extrabold px-6 py-3.5 rounded-xl hover:opacity-90 transition-all text-xs tracking-wider uppercase shadow-md"
+          >
+            Go to CafeCanva Home
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (menuItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] flex flex-col justify-between relative overflow-x-hidden">
+        {/* Luxury Liquid Floating Background Gradients */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#e05e35]/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+        {/* Header Banner */}
+        <div className="h-56 relative bg-stone-900 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-t from-[#23120b] via-[#23120b]/40 to-transparent z-10"></div>
+          <img 
+            src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80" 
+            alt="Cover" 
+            className="w-full h-full object-cover opacity-85"
+          />
+          <div className="absolute bottom-5 left-6 right-6 z-20 flex justify-between items-end">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-black text-[#fcfaf4] tracking-tight flex items-center gap-2">
+                {tenant.name} <Sparkles size={20} className="text-[#ca8a04] animate-pulse" />
+              </h1>
+            </div>
+          </div>
+        </div>
+
+        <main className="max-w-md mx-auto px-4 py-16 text-center flex-1 flex flex-col justify-center items-center gap-6 relative z-20">
+          <div className="w-16 h-16 bg-[#fbeee7] rounded-2xl flex items-center justify-center text-[#e05e35] mx-auto border border-[#e05e35]/10">
+            <Sparkles size={32} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-black tracking-tight text-[#4a2d22]">Menu Under Construction</h2>
+            <p className="text-stone-500 text-xs leading-relaxed px-4">
+              We are working hard to set up our digital menu catalog. Please check back soon or ask our staff for assistance!
+            </p>
+          </div>
+        </main>
+
+        <footer className="text-center py-8 text-[10px] text-stone-500/80">
+          <div>{t.powered} · {tenant.name}</div>
+        </footer>
       </div>
     );
   }
