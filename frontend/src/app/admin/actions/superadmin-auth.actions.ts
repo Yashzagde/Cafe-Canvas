@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { createClient as createServerClient } from '@/utils/supabase/server';
 
 const COOKIE_NAME = 'super_admin_token';
 
@@ -232,4 +233,98 @@ export async function logoutSuperAdmin() {
 
   cookieStore.delete(COOKIE_NAME);
   return { success: true };
+}
+
+/** Authenticates super admin using email and password */
+export async function loginSuperAdmin(payload: {
+  email: string;
+  password?: string;
+  deviceFingerprint?: string;
+  userAgent?: string;
+  ipAddress?: string;
+}) {
+  const admin = createAdminClient();
+  if (!admin) {
+    return { success: false, error: 'Database service offline. Please ensure SUPABASE_SERVICE_ROLE_KEY is set on Vercel.' };
+  }
+
+  // 1. Authenticate with Supabase Auth using the standard server client
+  const supabase = await createServerClient();
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    email: payload.email,
+    password: payload.password || '',
+  });
+
+  if (authError || !authData.user) {
+    await admin.from('security_events').insert({
+      actor_type: 'system',
+      event_type: 'failed_login_attempt',
+      description: `Failed login attempt (invalid password) for super admin: ${payload.email}`,
+      ip_address: payload.ipAddress || '127.0.0.1',
+      user_agent: payload.userAgent || 'unknown',
+      metadata: { email: payload.email, error: authError?.message }
+    });
+    return { success: false, error: authError?.message || 'Invalid email or password' };
+  }
+
+  // 2. Resolve Super Admin User inside public.super_admin_users
+  const { data: user, error: userError } = await admin
+    .from('super_admin_users')
+    .select('id, role')
+    .eq('id', authData.user.id)
+    .single();
+
+  if (userError || !user) {
+    await admin.from('security_events').insert({
+      actor_type: 'system',
+      event_type: 'failed_login_attempt',
+      description: `Failed login attempt for non-existent super admin: ${payload.email}`,
+      ip_address: payload.ipAddress || '127.0.0.1',
+      user_agent: payload.userAgent || 'unknown',
+      metadata: { email: payload.email }
+    });
+    return { success: false, error: 'Unauthorized credentials (not a super admin)' };
+  }
+
+  // 3. Create Session Record
+  const riskScore = 0.05;
+  const { data: session, error: sessionError } = await admin
+    .from('super_admin_sessions')
+    .insert({
+      user_id: user.id,
+      device_fingerprint: payload.deviceFingerprint || 'Unknown Browser',
+      ip_address: payload.ipAddress || '127.0.0.1',
+      user_agent: payload.userAgent || 'Mozilla',
+      risk_score: riskScore,
+      active: true,
+    })
+    .select('id')
+    .single();
+
+  if (sessionError || !session) {
+    return { success: false, error: 'Session creation failed' };
+  }
+
+  // 4. Log successful audit event
+  await admin.from('security_events').insert({
+    actor_id: user.id,
+    actor_type: 'super_admin',
+    event_type: 'successful_login',
+    description: `Super admin ${payload.email} authenticated via Password. Risk score: ${riskScore}`,
+    ip_address: payload.ipAddress || '127.0.0.1',
+    user_agent: payload.userAgent || 'unknown',
+    metadata: { session_id: session.id, risk: riskScore }
+  });
+
+  // 5. Set session cookie
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_NAME, session.id, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 2, // 2 Hour session limit
+    path: '/superadmin',
+  });
+
+  return { success: true, role: user.role };
 }

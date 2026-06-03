@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Shield, Fingerprint, RefreshCw, Key, ShieldAlert, ArrowRight } from 'lucide-react';
-import { verifyPasskeyLogin } from '@/app/admin/actions/superadmin-auth.actions';
-import { getAssertionOptions } from '@/lib/superadmin/passkey';
+import { Shield, Lock, RefreshCw, Key, ShieldAlert, ArrowRight } from 'lucide-react';
+import { loginSuperAdmin } from '@/app/admin/actions/superadmin-auth.actions';
 
 export default function SuperAdminLoginPage() {
   const [email, setEmail] = useState('');
-  const [isSimulated, setIsSimulated] = useState(true);
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({
     type: 'idle',
@@ -16,8 +15,8 @@ export default function SuperAdminLoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      setStatus({ type: 'error', message: 'Please enter your administrator email.' });
+    if (!email || !password) {
+      setStatus({ type: 'error', message: 'Please enter both email and password.' });
       return;
     }
 
@@ -25,49 +24,28 @@ export default function SuperAdminLoginPage() {
     setStatus({ type: 'idle', message: '' });
 
     try {
-      let assertion = null;
-
-      if (!isSimulated) {
-        // Trigger real WebAuthn authentication challenge flow
-        const response = await fetch('/api/super-admin/auth/challenge', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-        const challengeData = await response.json();
-        
-        if (!challengeData.success) {
-          throw new Error(challengeData.error || 'Failed to retrieve auth challenge');
-        }
-
-        // Trigger biometrics popup on browser
-        assertion = await getAssertionOptions(challengeData.options);
-      }
-
-      // Verify the credential signature via Server Action
-      const result = await verifyPasskeyLogin({
+      const result = await loginSuperAdmin({
         email,
-        isSimulated,
-        assertion,
+        password,
         deviceFingerprint: typeof window !== 'undefined' ? navigator.userAgent : 'Server Runner',
       });
 
       if (result.success) {
         setStatus({
           type: 'success',
-          message: 'Biometric authorization validated. Redirecting to platform control...',
+          message: 'Credential validation successful. Redirecting to platform control...',
         });
         setTimeout(() => {
           window.location.href = '/superadmin';
         }, 1500);
       } else {
-        setStatus({ type: 'error', message: result.error || 'Biometric verification failed.' });
+        setStatus({ type: 'error', message: result.error || 'Authentication failed.' });
       }
     } catch (err: any) {
       console.error(err);
       setStatus({
         type: 'error',
-        message: err.message || 'WebAuthn request cancelled or device unsupported.',
+        message: err.message || 'Connection timeout or internal server error.',
       });
     } finally {
       setLoading(false);
@@ -127,28 +105,21 @@ export default function SuperAdminLoginPage() {
               />
             </div>
 
-            {/* Mode Switcher */}
-            <div className="bg-[#fdfcf7] border border-stone-200 p-3 rounded-2xl flex items-center justify-between">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] font-black uppercase text-stone-600">Authentication Mode</span>
-                <span className="text-[9px] text-stone-400">
-                  {isSimulated ? 'Local Hardware Simulator' : 'Physical Biometric Key'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsSimulated(!isSimulated)}
-                className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                  isSimulated
-                    ? 'bg-amber-50 border-amber-200 text-amber-700'
-                    : 'bg-stone-50 border-stone-250 text-stone-600'
-                }`}
-              >
-                {isSimulated ? 'Simulation ON' : 'Biometrics Only'}
-              </button>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                Operator Password
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-[#fdfcf7] border border-stone-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-600/50 text-stone-900 placeholder-stone-400 font-medium"
+              />
             </div>
 
-            {/* Biometric trigger button */}
+            {/* Login button */}
             <button
               type="submit"
               disabled={loading}
@@ -157,9 +128,9 @@ export default function SuperAdminLoginPage() {
               {loading ? (
                 <RefreshCw size={16} className="animate-spin" />
               ) : (
-                <Fingerprint size={16} className="text-amber-500" />
+                <Lock size={16} className="text-amber-500" />
               )}
-              {isSimulated ? 'Simulate Passkey Login' : 'Authenticate with Passkey'}
+              Log In as Administrator
             </button>
           </form>
 
@@ -167,10 +138,10 @@ export default function SuperAdminLoginPage() {
           <div className="border-t border-stone-150 pt-5 text-left space-y-3">
             <h4 className="font-bold text-[10px] text-stone-700 uppercase tracking-wide flex items-center gap-1">
               <Key size={12} className="text-amber-600" />
-              WebAuthn Biometric Protocol
+              Secure Protocol Authentication
             </h4>
             <p className="text-[9px] text-stone-500 leading-normal">
-              CafeCanvas Platform Security standard strictly mandates Passkeys validation for operators. Password logins, OTP validation, and email magic links are deactivated to block lateral credential exploits.
+              CafeCanvas Platform Security standard strictly mandates authorized operators to log in. Security events and login attempts are logged, and device fingerprints are audited to block unauthorized credentials.
             </p>
           </div>
         </div>
@@ -178,7 +149,7 @@ export default function SuperAdminLoginPage() {
         {/* Warning Indicator */}
         <div className="bg-amber-50/50 border border-amber-200/50 p-4 rounded-2xl flex gap-3 text-[10px] text-amber-800 font-semibold items-start leading-relaxed">
           <ShieldAlert size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
-          <span>Biometric login credentials are hardware encrypted. If setting up a new device, please contact a Platform Owner to register your new Touch ID/Face ID key.</span>
+          <span>If you cannot authenticate or forgot your operator password, please contact the lead DevOps architect.</span>
         </div>
       </div>
     </main>
