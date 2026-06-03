@@ -17,8 +17,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // 2. Tenant Subdomain Resolution
-  let tenantSlug = 'aether' // default fallback slug for development
-  let tenantId = 'a0000000-0000-0000-0000-000000000001' // default fallback id
+  let tenantSlug = ''
+  let tenantId = ''
 
   // Parse subdomain (e.g. brewhouse.cafecanvas.bar -> brewhouse)
   if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
@@ -26,6 +26,10 @@ export async function middleware(request: NextRequest) {
     if (parts.length > 2) {
       tenantSlug = parts[0]
     }
+  } else {
+    // Localhost development fallback values
+    tenantSlug = 'aether'
+    tenantId = 'a0000000-0000-0000-0000-000000000001'
   }
 
   // 3. Initialize Supabase Response & Client
@@ -104,8 +108,18 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  const isGlobalRoute =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/superadmin') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/staff') ||
+    pathname.startsWith('/kos') ||
+    pathname.startsWith('/download') ||
+    pathname.startsWith('/comingsoon')
+
   // 5. Rewrite tenant subdomain requests to the dynamic tenant route /[store_slug]
   if (
+    !isGlobalRoute &&
     tenantSlug &&
     tenantSlug !== 'app' &&
     tenantSlug !== 'www' &&
