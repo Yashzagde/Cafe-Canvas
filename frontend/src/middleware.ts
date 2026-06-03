@@ -104,6 +104,33 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // 5. Rewrite tenant subdomain requests to the dynamic tenant route /[store_slug]
+  if (
+    tenantSlug &&
+    tenantSlug !== 'app' &&
+    tenantSlug !== 'www' &&
+    host &&
+    !host.includes('localhost') &&
+    !host.includes('127.0.0.1')
+  ) {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${tenantSlug}${pathname}`
+    
+    const rewriteResponse = NextResponse.rewrite(url)
+    
+    // Propagate headers (including tenant claims and refresh tokens)
+    supabaseResponse.headers.forEach((value, key) => {
+      rewriteResponse.headers.set(key, value)
+    })
+    
+    // Propagate cookies
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      rewriteResponse.cookies.set(cookie.name, cookie.value)
+    })
+    
+    return rewriteResponse
+  }
+
   return supabaseResponse
 }
 
