@@ -1,0 +1,146 @@
+================================================================================
+                       CAFECANVA ADMIN PANEL DOCUMENTATION
+================================================================================
+Version: 1.0.0
+Framework: Next.js 16 (App Router)
+Theme Stack: Tailwind CSS 4 + CSS custom variables (Premium Canvas Styling)
+Database Layer: Supabase PostgreSQL (RLS Enforced)
+State Manager: Zustand Stores
+
+OVERVIEW:
+CafeCanvas is a next-generation multi-tenant SaaS operating system for the
+Indian restaurant industry. The Admin Panel is the control center for branch 
+managers and tenant owners to administer menus,POS billing sessions, GST tax 
+settings, customer loyalty metrics, active campaign coupon codes, and sales 
+analytics.
+
+================================================================================
+                       FILE STRUCTURE & ARCHITECTURE
+================================================================================
+The admin panel codebase is modularized as follows:
+
+- Main Routing Shell:
+  src/app/admin/page.tsx
+  Serves as the root layout, manages authentication state, pulls live records 
+  from Supabase, resolves JWT tenant details, and mounts components.
+
+- Shared Base UI Elements:
+  src/components/admin/UIPrimitives.tsx
+  Maintains shared design tokens, variables, and common buttons, modals, input 
+  fields, select boxes, alerts, and toasts.
+
+- Sidebar Navigation:
+  src/components/admin/Sidebar.tsx
+  Collapsible navigation bar with expanded/collapsed states, tenant branding, 
+  and active user status.
+
+- Tabs & Modules:
+  - Dashboard: src/components/admin/DashboardTab.tsx
+  - Menu Config: src/components/admin/MenuTab.tsx
+  - POS Billing OS: src/components/admin/BillingTab.tsx
+  - Customers CRM: src/components/admin/CustomersTab.tsx
+  - Promotions: src/components/admin/DiscountsTab.tsx
+  - Analytical Reports: src/components/admin/AnalyticsTab.tsx
+
+- Zustand State Stores (Sprint 3 Prep):
+  - Shopping Cart: src/store/cart.ts
+  - POS Orders Queue: src/store/order.ts
+  - Visual Theme Config: src/store/theme.ts
+  - Floor Plan Tables: src/store/table.ts
+
+================================================================================
+                       TAB MODULE DETAILS & OPERATIONS
+================================================================================
+
+1. SIDEBAR NAVIGATION (Sidebar.tsx)
+----------------------------------
+- Collapses from 220px to 64px width on click.
+- Displays CafeCanvas logo with color gradients.
+- Renders tenant company branding title dynamically (e.g. AETHER Café).
+- Displays logged-in operator details with uppercase initials avatar.
+- Handles smooth local layout state swapping.
+
+2. DASHBOARD OVERVIEW (DashboardTab.tsx)
+---------------------------------------
+- KPI Metric widgets:
+  * Orders Today: Counts the active transaction array.
+  * Revenue Today: Sums all order totals (converted from paise).
+  * Average Order Value (AOV): Revenue split by order volume.
+  * Live Occupancy: Occupied table ratio in current floor sections.
+- Recharts Graphs:
+  * Toggles between Area Chart (with watercolor gradient) and Bar Chart.
+  * Period selector adjusts metrics dynamically (Daily, Weekly, Monthly).
+- Top-Selling Items Widget:
+  * Indexes highest selling categories and dishes.
+  * Renders a styled ratio meter.
+- Recent Transactions Feed:
+  * Lists invoice reference IDs, table sections, status badges, and ages.
+- Smart Suggestions Panel:
+  * Toggles promo suggestions for low-selling items with an "Apply" handler.
+
+3. MENU CONFIGURATION (MenuTab.tsx)
+----------------------------------
+- Category Selector:
+  * Filters items by category (All, Coffee, Tea, Food, Bakery, Drinks).
+  * Displays item counters next to category titles.
+- Item search:
+  * Filters cards by matching name inputs.
+- Operations:
+  * Status Toggle: Enables/disables items, synchronizing to "menu_items".
+  * Edit Dialog: Modifies pricing (in Rupees), descriptions, and names.
+  * Add Dialog: Registers new items (automatically resolves category IDs).
+  * Delete Dialog: Performs soft-delete by writing a "deleted_at" timestamp.
+
+4. POS BILLING OPERATING SYSTEM (BillingTab.tsx)
+-----------------------------------------------
+- Floor Plan View:
+  * Lists tables grouped by sections (Indoor, Outdoor, Bar).
+  * Table states color-coded: Available (Green), Occupied (Red),
+    Reserved (Yellow), Cleaning (Orange).
+- POS Invoice Builder (Active Table Session):
+  * Itemizer: Toggles menu items, counts, and quantities.
+  * GST Calculation: CGST (2.5%) + SGST (2.5%) splits.
+  * Service Charges: Configured as flat rate (INR) or percentage (%).
+  * Coupons: Verifies promo codes (e.g., AETHER20) for instant flat deductions.
+  * Payment Methods: Cash (cash-received change due calculator), Card, UPI.
+  * Settle Button: Triggers Supabase inserts to the "bills" table, resets table 
+    status, and prints thermal checkout receipts.
+- Thermal Printer Receipt Preview (ReceiptPreviewModal.tsx):
+  * Renders receipt preview, supporting direct print commands.
+- Invoice Ledger:
+  * Lists previous invoices with search queries and reprint actions.
+- Tax Settings Modal:
+  * Set tax percentages and service charge configurations on-the-fly.
+
+5. CUSTOMER CRM (CustomersTab.tsx)
+----------------------------------
+- Summary metrics: Lifetime LTV, visit logs, customer count, LTV averages.
+- Tier filter buttons: All, Platinum, Gold, Silver, Bronze.
+- CRM Ledger Table: Displays name, phone number, visits count, spend history.
+- Quick-Add Modal: Connects walk-in guests to loyalty entries.
+
+6. PROMOTIONS & CAMPAIGNS (DiscountsTab.tsx)
+-------------------------------------------
+- Discounts Manager: Active promotions list with toggle deactivation.
+- Coupon Ledger: Uppercase codes index tracking max usages and uses count.
+- Campaign Modals: Quick forms to submit new coupons or discount rules.
+
+7. DEEP-DIVE ANALYTICS (AnalyticsTab.tsx)
+----------------------------------------
+- Revenue Trend Chart: 30-day Line Chart displaying performance curves.
+- Category Split Pie: Custom Pie Chart showing category share breakdown.
+- Comparison Chart: Bar Chart detailing weekly performance metrics.
+
+================================================================================
+                       SECURITY & COMPLIANCE ARCHITECTURE
+================================================================================
+- Scoped multi-tenancy:
+  * Scoping is handled via Custom JWT Claims Hook get_tenant_id() on Supabase.
+  * Staff are blocked from cross-tenant operations.
+- Secrets protection:
+  * payment_integrations table RLS policies dropped the old open policy
+    authenticated_payments and restricted select/insert/update/delete to
+    owner and manager roles only.
+- Double-entry integer accuracy:
+  * Financial totals are saved in the database as integer paise (1 INR = 100 
+    paise) to prevent decimal floating-point inaccuracy.
