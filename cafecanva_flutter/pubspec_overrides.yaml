@@ -1,0 +1,3 @@
+# Melos automatically generates local overrides for path dependencies, 
+# ensuring local packages utilize absolute path-resolutions during bootstrapping.
+dependency_overrides: {}

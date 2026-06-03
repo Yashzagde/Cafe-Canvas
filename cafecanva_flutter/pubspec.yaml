@@ -1,0 +1,16 @@
+name: cafecanva_flutter
+environment:
+  sdk: ">=3.12.1 <4.0.0"
+dev_dependencies:
+  melos: ^7.8.0
+workspace:
+  - packages/cafecanva_analytics
+  - packages/cafecanva_billing
+  - packages/cafecanva_core
+  - packages/cafecanva_ui
+  - apps/customer_storefront
+  - apps/kitchen_display
+  - apps/staff_pos
+  - apps/store_admin_desktop
+  - apps/store_admin_mobile
+melos: 
