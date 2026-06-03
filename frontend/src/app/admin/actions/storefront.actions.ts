@@ -8,6 +8,16 @@ import { getSupabaseAnonKey, getSupabaseUrl } from '@/utils/supabase/env';
 import type { Database } from '@/types/database';
 import { revalidateTag } from 'next/cache';
 
+/** Create an authenticated Supabase server client */
+async function getSupabase() {
+  const cookieStore = await cookies();
+  return createServerClient<Database>(
+    getSupabaseUrl(),
+    getSupabaseAnonKey() || 'placeholder',
+    { cookies: { get(n) { return cookieStore.get(n)?.value } } }
+  );
+}
+
 /**
  * Fetch the storefront configuration for the active tenant.
  * Only owners and managers are allowed.
@@ -15,13 +25,7 @@ import { revalidateTag } from 'next/cache';
  */
 export async function getStorefrontConfigAction() {
   const profile = await requirePermission('storefront.view');
-  
-  const cookieStore = await cookies();
-  const supabase = createServerClient<Database>(
-    getSupabaseUrl(),
-    getSupabaseAnonKey() || 'placeholder',
-    { cookies: { get(n) { return cookieStore.get(n)?.value } } }
-  );
+  const supabase = await getSupabase();
 
   const { data, error } = await supabase
     .from('storefront_config')
@@ -45,13 +49,7 @@ export async function getStorefrontConfigAction() {
  */
 export async function updateStorefrontConfigAction(configId: string, updateData: Partial<Database['public']['Tables']['storefront_config']['Update']>) {
   const profile = await requirePermission('storefront.edit');
-  
-  const cookieStore = await cookies();
-  const supabase = createServerClient<Database>(
-    getSupabaseUrl(),
-    getSupabaseAnonKey() || 'placeholder',
-    { cookies: { get(n) { return cookieStore.get(n)?.value } } }
-  );
+  const supabase = await getSupabase();
 
   // Fetch current details for audit logging
   const { data: oldData } = await supabase
@@ -92,3 +90,97 @@ export async function updateStorefrontConfigAction(configId: string, updateData:
   (revalidateTag as any)(`storefront-${profile.tenant_id}`);
   return newData;
 }
+
+/**
+ * Publish the current storefront configuration as a new version.
+ * Takes a snapshot of the current settings and stores it in publish history.
+ * @param note - Optional note describing what changed in this publish
+ * @returns The publish history record
+ */
+export async function publishStorefrontAction(note?: string) {
+  const profile = await requirePermission('storefront.edit');
+  const supabase = await getSupabase();
+
+  const { data, error } = await supabase.rpc('publish_storefront', {
+    p_tenant_id: profile.tenant_id,
+    p_publisher_id: profile.id,
+    p_note: note ?? null
+  });
+
+  if (error) {
+    throw new Error(`Publish failed: ${error.message}`);
+  }
+
+  await logAuditEvent({
+    tenantId: profile.tenant_id,
+    branchId: profile.branch_id || undefined,
+    actorId: profile.id,
+    actorRole: profile.role,
+    action: 'storefront.publish',
+    entityType: 'storefront_publish_history',
+    entityId: (data as Record<string, unknown>)?.id as string ?? null,
+    newData: data as Record<string, unknown> ?? undefined
+  });
+
+  (revalidateTag as any)(`storefront-${profile.tenant_id}`);
+  return data;
+}
+
+/**
+ * Rollback storefront to a specific previously published version.
+ * Restores the snapshot from the specified version and creates a new version.
+ * @param version - The version number to roll back to
+ * @returns The newly created publish history record (rollback version)
+ */
+export async function rollbackStorefrontAction(version: number) {
+  const profile = await requirePermission('storefront.edit');
+  const supabase = await getSupabase();
+
+  const { data, error } = await supabase.rpc('rollback_storefront', {
+    p_tenant_id: profile.tenant_id,
+    p_version: version,
+    p_publisher_id: profile.id
+  });
+
+  if (error) {
+    throw new Error(`Rollback failed: ${error.message}`);
+  }
+
+  await logAuditEvent({
+    tenantId: profile.tenant_id,
+    branchId: profile.branch_id || undefined,
+    actorId: profile.id,
+    actorRole: profile.role,
+    action: 'storefront.rollback',
+    entityType: 'storefront_publish_history',
+    entityId: (data as Record<string, unknown>)?.id as string ?? null,
+    newData: { rollback_to_version: version, ...(data as Record<string, unknown> ?? {}) }
+  });
+
+  (revalidateTag as any)(`storefront-${profile.tenant_id}`);
+  return data;
+}
+
+/**
+ * Fetch the publish history for the storefront (latest first).
+ * @param limit - Number of records to fetch (default: 20)
+ * @returns Array of publish history records
+ */
+export async function getPublishHistoryAction(limit = 20) {
+  const profile = await requirePermission('storefront.view');
+  const supabase = await getSupabase();
+
+  const { data, error } = await supabase
+    .from('storefront_publish_history')
+    .select('*')
+    .eq('tenant_id', profile.tenant_id)
+    .order('version', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ?? [];
+}
+

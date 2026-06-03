@@ -5,34 +5,41 @@
 }
 
 :root {
-  /* Warm Premium Artist's Canvas Palette (Zero Near-Black Colors) */
-  --background: #fcfaf4;      /* Soft textured canvas cream */
-  --foreground: #4a2d22;      /* Deep rich espresso brown for highly readable text */
-  --brand: #e05e35;           /* Terracotta orange, organic paint feeling */
-  --brand-light: #fbeee7;     /* Light terracotta cream */
+  /* Professional Light Canvas Palette (Zero Black/Near-Black Colors) */
+  --background: #fdfcf7;      /* Clean textured cream background */
+  --foreground: #1e293b;      /* Elegant deep slate for readability */
+  --brand: #d97706;           /* Corporate amber/gold primary brand accent */
+  --brand-light: #fef3c7;     /* Light gold cream background */
   
   --accent: #ca8a04;          /* Warm honey amber */
-  --sage: #5f7a68;            /* Sage green accent */
-  --sage-light: #eef2ef;      /* Soft sage cream */
+  --sage: #16a34a;            /* Clean green success */
+  --sage-light: #f0fdf4;      /* Soft success cream background */
   
-  --card-bg: #ffffff;
-  --border-color: #eae5d8;    /* Warm beige border */
-  --border-focus: #c5b293;    /* Golden wheat focus state */
+  --card-bg: #ffffff;         /* Pure white card backgrounds */
+  --border-color: #e2e8f0;    /* Clean light slate border */
+  --border-focus: #ca8a04;    /* Brand color focus borders */
   
-  --shadow-warm: 0 4px 20px rgba(74, 45, 34, 0.04);
-  --shadow-hover: 0 10px 30px rgba(74, 45, 34, 0.08);
+  --shadow-warm: 0 4px 20px rgba(30, 41, 59, 0.04);
+  --shadow-hover: 0 10px 30px rgba(30, 41, 59, 0.08);
 }
 
-/* Dark Mode (Espresso canvas instead of pure/near-black) */
+/* Enforce the same professional light theme even in dark mode */
 .dark, [data-theme="dark"] {
-  --background: #23120b;      /* Velvet espresso dark brown */
-  --foreground: #fcfaf4;      /* High contrast soft cream text */
-  --card-bg: #2d1810;         /* Medium roasted coffee card background */
-  --border-color: #3f251c;    /* Deep warm brown border */
-  --border-focus: #e05e35;
+  --background: #fdfcf7;
+  --foreground: #1e293b;
+  --brand: #d97706;
+  --brand-light: #fef3c7;
   
-  --shadow-warm: 0 4px 20px rgba(0, 0, 0, 0.3);
-  --shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --accent: #ca8a04;
+  --sage: #16a34a;
+  --sage-light: #f0fdf4;
+  
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0;
+  --border-focus: #ca8a04;
+  
+  --shadow-warm: 0 4px 20px rgba(30, 41, 59, 0.04);
+  --shadow-hover: 0 10px 30px rgba(30, 41, 59, 0.08);
 }
 
 body {

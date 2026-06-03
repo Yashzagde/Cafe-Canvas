@@ -25,6 +25,7 @@ import StorefrontEditor from '@/components/admin/StorefrontEditor';
 import TableQRManager from '@/components/admin/TableQRManager';
 import StaffManager from '@/components/admin/StaffManager';
 import MenuEditor from '@/components/admin/MenuEditor';
+import ActivityFeedTab from '@/components/admin/ActivityFeedTab';
 
 import ReceiptPreviewModal from '@/components/billing/ReceiptPreviewModal';
 import type { ReceiptData } from '@/components/billing/types';
@@ -370,15 +371,15 @@ export default function CafeCanvaAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d0f12] text-[#fcfaf4] flex flex-col justify-center items-center gap-4">
-        <Coffee className="w-12 h-12 text-[#e28743] animate-spin" />
+      <div className="min-h-screen bg-[#fdfcf7] text-[#1e293b] flex flex-col justify-center items-center gap-4">
+        <Coffee className="w-12 h-12 text-[#d97706] animate-spin" />
         <span className="font-extrabold text-xs tracking-widest uppercase opacity-75">Syncing OS Core...</span>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#0d0f12", fontFamily: ff, color: "#fcfaf4", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: "#fdfcf7", fontFamily: ff, color: "#1e293b", overflow: "hidden" }}>
       {/* Sidebar Navigation */}
       <Sidebar
         page={page}
@@ -391,23 +392,23 @@ export default function CafeCanvaAdmin() {
       {/* Main content frame */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Top Header Bar */}
-        <header className="h-16 border-b border-[#262b38]/50 px-6 flex items-center justify-between bg-[#151820]/40 relative z-20">
+        <header className="h-16 border-b border-[#e2e8f0] px-6 flex items-center justify-between bg-[#ffffff] relative z-20">
           <div className="flex items-center gap-4">
-            <span className="font-extrabold text-sm tracking-wide font-display">{tenantName} Operations</span>
+            <span className="font-extrabold text-sm tracking-wide font-display text-[#1e293b]">{tenantName} Operations</span>
             
             {/* Active Branch Select Dropdown */}
             {branches.length > 0 && (
               <div className="relative group">
-                <button className="px-3.5 py-1.5 bg-[#1e222d] border border-[#262b38] rounded-xl text-xs font-bold text-[#fcfaf4]/70 flex items-center gap-1.5 hover:text-[#fcfaf4] transition-all">
+                <button className="px-3.5 py-1.5 bg-[#ffffff] border border-[#e2e8f0] rounded-xl text-xs font-bold text-[#1e293b]/70 flex items-center gap-1.5 hover:text-[#1e293b] transition-all">
                   <span>{activeBranch?.name || 'Select Location'}</span>
                   <ChevronDown size={14} />
                 </button>
-                <div className="absolute top-full left-0 mt-1.5 w-48 bg-[#151820] border border-[#262b38] rounded-2xl p-1.5 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                <div className="absolute top-full left-0 mt-1.5 w-48 bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-1.5 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                   {branches.map((b) => (
                     <button
                       key={b.id}
                       onClick={() => setActiveBranch(b)}
-                      className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl hover:bg-[#1e222d] hover:text-[#e28743] transition-all"
+                      className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl hover:bg-[#fdfcf7] hover:text-[#d97706] transition-all"
                     >
                       {b.name}
                     </button>
@@ -419,17 +420,17 @@ export default function CafeCanvaAdmin() {
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#e28743]/10 border border-[#e28743]/30 text-[#e28743] rounded-full flex items-center justify-center font-extrabold text-xs">
+              <div className="w-8 h-8 bg-[#d97706]/10 border border-[#d97706]/30 text-[#d97706] rounded-full flex items-center justify-center font-extrabold text-xs">
                 {userName.substring(0, 2).toUpperCase()}
               </div>
               <div className="flex flex-col text-left">
-                <span className="text-xs font-extrabold">{userName}</span>
-                <span className="text-[10px] text-[#e28743] font-bold uppercase tracking-wider scale-[0.9] origin-left">{userRole}</span>
+                <span className="text-xs font-extrabold text-[#1e293b]">{userName}</span>
+                <span className="text-[10px] text-[#d97706] font-bold uppercase tracking-wider scale-[0.9] origin-left">{userRole}</span>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="p-2 hover:bg-[#1e222d] border border-[#262b38] rounded-xl text-[#fcfaf4]/40 hover:text-red-400 cursor-pointer transition-all"
+              className="p-2 hover:bg-[#fdfcf7] border border-[#e2e8f0] rounded-xl text-[#64748b] hover:text-red-500 cursor-pointer transition-all"
               title="Logout session"
             >
               <LogOut size={16} />
@@ -439,7 +440,7 @@ export default function CafeCanvaAdmin() {
 
         {/* Dashboard inner content viewport */}
         <main className="flex-1 overflow-auto p-8 relative">
-          <div className="absolute top-20 left-10 w-[40%] h-[40%] bg-[#e28743]/5 rounded-full blur-[100px] pointer-events-none"></div>
+          <div className="absolute top-20 left-10 w-[40%] h-[40%] bg-[#d97706]/3 rounded-full blur-[100px] pointer-events-none"></div>
           
           {mounted && (
             <>
@@ -498,6 +499,7 @@ export default function CafeCanvaAdmin() {
               {page === "staff" && <StaffManager branchId={activeBranch?.id || ''} />}
               {page === "storefront" && <StorefrontEditor />}
               {page === "audit" && <AuditLogViewer />}
+              {page === "activity" && <ActivityFeedTab />}
             </>
           )}
         </main>

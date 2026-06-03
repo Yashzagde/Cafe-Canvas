@@ -27,7 +27,7 @@ export type AuditAction =
   | 'table.create' | 'table.update' | 'table.delete'
   | 'table.qr_regenerate' | 'table.floor_rearrange'
   // Storefront
-  | 'storefront.update' | 'storefront.theme_change'
+  | 'storefront.update' | 'storefront.theme_change' | 'storefront.publish' | 'storefront.rollback'
   // Auth
   | 'auth.login' | 'auth.logout' | 'auth.password_change'
   // Inventory
@@ -37,7 +37,7 @@ export type AuditEntityType =
   | 'menu_item' | 'category' | 'modifier_group' | 'modifier_option'
   | 'order' | 'bill' | 'order_item'
   | 'staff' | 'shift' | 'attendance' | 'leave'
-  | 'table' | 'storefront' | 'inventory'
+  | 'table' | 'storefront' | 'inventory' | 'storefront_publish_history'
   | 'auth'
 
 export interface AuditEventParams {

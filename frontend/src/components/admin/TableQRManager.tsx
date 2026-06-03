@@ -99,18 +99,18 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
   };
 
   return (
-    <div className="space-y-6 text-[#fcfaf4] animate-fade-in">
-      <div className="flex items-center justify-between border-b border-[#262b38]/50 pb-4">
+    <div className="space-y-6 text-[#1e293b] animate-fade-in">
+      <div className="flex items-center justify-between border-b border-[#e2e8f0]/50 pb-4">
         <div>
           <h2 className="text-xl font-extrabold font-display">Floor Plan & Table QR Manager</h2>
-          <p className="text-xs text-[#fcfaf4]/50">Position physical tables and export encrypted customer-ordering QR codes.</p>
+          <p className="text-xs text-[#1e293b]/50">Position physical tables and export encrypted customer-ordering QR codes.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-[#1e222d] border border-[#262b38] rounded-xl p-1 text-xs font-bold">
+          <div className="flex bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl p-1 text-xs font-bold">
             <button
               onClick={() => setActiveTab('floor')}
               className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
-                activeTab === 'floor' ? 'bg-[#e28743] text-[#151820]' : 'text-[#fcfaf4]/40 hover:text-[#fcfaf4]/70'
+                activeTab === 'floor' ? 'bg-[#d97706] text-[#ffffff]' : 'text-[#1e293b]/40 hover:text-[#1e293b]/70'
               }`}
             >
               <MapPin size={12} className="inline mr-1" />
@@ -119,7 +119,7 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
             <button
               onClick={() => setActiveTab('list')}
               className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
-                activeTab === 'list' ? 'bg-[#e28743] text-[#151820]' : 'text-[#fcfaf4]/40 hover:text-[#fcfaf4]/70'
+                activeTab === 'list' ? 'bg-[#d97706] text-[#ffffff]' : 'text-[#1e293b]/40 hover:text-[#1e293b]/70'
               }`}
             >
               <Layers size={12} className="inline mr-1" />
@@ -128,7 +128,7 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-gradient-to-r from-[#e28743] to-[#f0a050] hover:opacity-95 text-[#151820] font-extrabold rounded-2xl text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2 bg-gradient-to-r from-[#d97706] to-[#ca8a04] hover:opacity-95 text-[#ffffff] font-extrabold rounded-2xl text-xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Plus size={14} />
             <span>Add Table</span>
@@ -137,30 +137,30 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
       </div>
 
       {loading ? (
-        <div className="py-8 text-center text-[#fcfaf4]/40">
-          <span className="inline-block w-6 h-6 border-2 border-[#e28743] border-t-transparent rounded-full animate-spin"></span>
+        <div className="py-8 text-center text-[#1e293b]/40">
+          <span className="inline-block w-6 h-6 border-2 border-[#d97706] border-t-transparent rounded-full animate-spin"></span>
         </div>
       ) : activeTab === 'floor' ? (
         /* Interactive Floor plan view grid */
-        <div className="relative w-full h-[500px] bg-[#0d0f12] border border-[#262b38] rounded-3xl overflow-hidden shadow-2xl p-6 flex items-center justify-center">
-          <div className="absolute inset-0 bg-[radial-gradient(#262b38_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+        <div className="relative w-full h-[500px] bg-[#fdfcf7] border border-[#e2e8f0] rounded-3xl overflow-hidden shadow-2xl p-6 flex items-center justify-center">
+          <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
           {tables.length === 0 ? (
-            <span className="text-xs text-[#fcfaf4]/30 uppercase tracking-widest font-semibold relative z-10">
+            <span className="text-xs text-[#1e293b]/30 uppercase tracking-widest font-semibold relative z-10">
               No tables placed. Add tables to design your layout.
             </span>
           ) : (
             <div className="relative w-full h-full">
               {tables.map((t) => {
                 const statusColors = {
-                  available: 'border-green-500/30 bg-green-500/10 text-green-400',
-                  occupied: 'border-red-500/30 bg-red-500/10 text-red-400',
+                  available: 'border-green-500/30 bg-green-500/10 text-green-600',
+                  occupied: 'border-red-500/30 bg-red-500/10 text-red-600',
                   reserved: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
                   cleaning: 'border-purple-500/30 bg-purple-500/10 text-purple-400'
                 };
                 return (
                   <div
                     key={t.id}
-                    className={`absolute p-4 border rounded-2xl w-28 h-28 flex flex-col justify-between shadow-lg hover:border-[#e28743]/50 transition-all ${statusColors[t.status]}`}
+                    className={`absolute p-4 border rounded-2xl w-28 h-28 flex flex-col justify-between shadow-lg hover:border-[#d97706]/50 transition-all ${statusColors[t.status]}`}
                     style={{
                       left: `${t.floor_x}%`,
                       top: `${t.floor_y}%`
@@ -181,11 +181,11 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
         </div>
       ) : (
         /* Detailed List data table view */
-        <div className="bg-[#151820] border border-[#262b38] rounded-3xl overflow-hidden shadow-xl">
+        <div className="bg-[#ffffff] border border-[#e2e8f0] rounded-3xl overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#262b38]/50 bg-[#1e222d]/30 text-xs font-bold text-[#fcfaf4]/40 tracking-wider uppercase">
+                <tr className="border-b border-[#e2e8f0]/50 bg-[#f1f5f9]/30 text-xs font-bold text-[#1e293b]/40 tracking-wider uppercase">
                   <th className="py-4 px-6">Table Identifier</th>
                   <th className="py-4 px-6">Layout Zone</th>
                   <th className="py-4 px-6">Guest Cap</th>
@@ -194,23 +194,23 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#262b38]/30 text-sm">
+              <tbody className="divide-y divide-[#e2e8f0]/30 text-sm">
                 {tables.map((t) => {
                   const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(
                     `https://cafecanvas.bar/table/${t.id}?v=${t.qr_version}`
                   )}`;
                   return (
-                    <tr key={t.id} className="hover:bg-[#1e222d]/20 transition-all">
-                      <td className="py-4 px-6 font-bold text-[#fcfaf4]/85">{t.name}</td>
-                      <td className="py-4 px-6 font-mono text-xs text-[#fcfaf4]/50">{t.section || 'Indoor'}</td>
+                    <tr key={t.id} className="hover:bg-[#f1f5f9]/20 transition-all">
+                      <td className="py-4 px-6 font-bold text-[#1e293b]/85">{t.name}</td>
+                      <td className="py-4 px-6 font-mono text-xs text-[#1e293b]/50">{t.section || 'Indoor'}</td>
                       <td className="py-4 px-6 font-semibold">{t.capacity} Diner seats</td>
-                      <td className="py-4 px-6 font-mono text-xs text-[#e28743] font-bold">V.{t.qr_version}</td>
+                      <td className="py-4 px-6 font-mono text-xs text-[#d97706] font-bold">V.{t.qr_version}</td>
                       <td className="py-4 px-6">
                         <a
                           href={qrUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-[#e28743] hover:underline text-xs font-bold"
+                          className="text-[#d97706] hover:underline text-xs font-bold"
                         >
                           View QR Image
                         </a>
@@ -218,14 +218,14 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
                       <td className="py-4 px-6 text-right space-x-2">
                         <button
                           onClick={() => handleRegenerateQR(t.id)}
-                          className="p-2 bg-[#1e222d] border border-[#262b38] hover:border-[#e28743]/50 text-[#fcfaf4]/60 hover:text-[#e28743] rounded-xl cursor-pointer"
+                          className="p-2 bg-[#f1f5f9] border border-[#e2e8f0] hover:border-[#d97706]/50 text-[#1e293b]/60 hover:text-[#d97706] rounded-xl cursor-pointer"
                           title="Regenerate QR (Voids old code)"
                         >
                           <RefreshCw size={14} />
                         </button>
                         <button
                           onClick={() => handleDeleteTable(t.id)}
-                          className="p-2 bg-[#1e222d] border border-red-950 hover:bg-red-500/10 text-red-400 rounded-xl cursor-pointer"
+                          className="p-2 bg-[#f1f5f9] border border-red-950 hover:bg-red-500/10 text-red-600 rounded-xl cursor-pointer"
                           title="Delete Table"
                         >
                           <Trash2 size={14} />
@@ -243,42 +243,42 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
       {/* Add Table Modal Popup */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50 animate-fade-in">
-          <form onSubmit={handleAddTable} className="w-full max-w-md bg-[#151820] border border-[#262b38] rounded-3xl p-6 shadow-2xl space-y-4">
-            <h3 className="text-base font-extrabold font-display border-b border-[#262b38]/50 pb-2">Add Layout Table</h3>
+          <form onSubmit={handleAddTable} className="w-full max-w-md bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-6 shadow-2xl space-y-4">
+            <h3 className="text-base font-extrabold font-display border-b border-[#e2e8f0]/50 pb-2">Add Layout Table</h3>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#fcfaf4]/50">Table Name/Number</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#1e293b]/50">Table Name/Number</label>
               <input
                 type="text"
                 required
                 value={tableName}
                 onChange={(e) => setTableName(e.target.value)}
                 placeholder="e.g. Table 15"
-                className="w-full px-4 py-3 bg-[#1e222d] border border-[#262b38] rounded-xl text-sm focus:outline-none focus:border-[#e28743]"
+                className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#fcfaf4]/50">Seating Capacity</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#1e293b]/50">Seating Capacity</label>
               <input
                 type="number"
                 required
                 value={capacity}
                 onChange={(e) => setCapacity(parseInt(e.target.value))}
                 min={1}
-                className="w-full px-4 py-3 bg-[#1e222d] border border-[#262b38] rounded-xl text-sm focus:outline-none focus:border-[#e28743]"
+                className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#fcfaf4]/50">Floor Zone Section</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#1e293b]/50">Floor Zone Section</label>
               <input
                 type="text"
                 required
                 value={section}
                 onChange={(e) => setSection(e.target.value)}
                 placeholder="e.g. Terrace"
-                className="w-full px-4 py-3 bg-[#1e222d] border border-[#262b38] rounded-xl text-sm focus:outline-none focus:border-[#e28743]"
+                className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
               />
             </div>
 
@@ -286,13 +286,13 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 bg-[#1e222d] hover:bg-[#1e222d]/80 text-[#fcfaf4]/70 font-bold rounded-2xl text-xs cursor-pointer"
+                className="px-4 py-2 bg-[#f1f5f9] hover:bg-[#f1f5f9]/80 text-[#1e293b]/70 font-bold rounded-2xl text-xs cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-gradient-to-r from-[#e28743] to-[#f0a050] text-[#151820] font-extrabold rounded-2xl text-xs cursor-pointer"
+                className="px-4 py-2 bg-gradient-to-r from-[#d97706] to-[#ca8a04] text-[#ffffff] font-extrabold rounded-2xl text-xs cursor-pointer"
               >
                 Save Table
               </button>
@@ -302,7 +302,7 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
       )}
 
       {/* Toast Notification Container */}
-      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#1e222d] border border-[#262b38] rounded-2xl text-xs font-bold">{toastItem.msg}</div>}
+      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-2xl text-xs font-bold">{toastItem.msg}</div>}
     </div>
   );
 }

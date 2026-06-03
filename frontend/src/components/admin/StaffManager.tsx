@@ -84,17 +84,17 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
   };
 
   return (
-    <div className="space-y-6 text-[#fcfaf4] animate-fade-in">
-      <div className="flex items-center justify-between border-b border-[#262b38]/50 pb-4">
+    <div className="space-y-6 text-[#1e293b] animate-fade-in">
+      <div className="flex items-center justify-between border-b border-[#e2e8f0]/50 pb-4">
         <div>
           <h2 className="text-xl font-extrabold font-display">Staffing & Attendance</h2>
-          <p className="text-xs text-[#fcfaf4]/50">Manage terminal operators, register shifts, and approve leave calendars.</p>
+          <p className="text-xs text-[#1e293b]/50">Manage terminal operators, register shifts, and approve leave calendars.</p>
         </div>
-        <div className="flex bg-[#1e222d] border border-[#262b38] rounded-xl p-1 text-xs font-bold">
+        <div className="flex bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl p-1 text-xs font-bold">
           <button
             onClick={() => setActiveSubTab('roster')}
             className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
-              activeSubTab === 'roster' ? 'bg-[#e28743] text-[#151820]' : 'text-[#fcfaf4]/40 hover:text-[#fcfaf4]/70'
+              activeSubTab === 'roster' ? 'bg-[#d97706] text-[#ffffff]' : 'text-[#1e293b]/40 hover:text-[#1e293b]/70'
             }`}
           >
             <UserCheck size={12} className="inline mr-1" />
@@ -103,7 +103,7 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
           <button
             onClick={() => setActiveSubTab('leaves')}
             className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
-              activeSubTab === 'leaves' ? 'bg-[#e28743] text-[#151820]' : 'text-[#fcfaf4]/40 hover:text-[#fcfaf4]/70'
+              activeSubTab === 'leaves' ? 'bg-[#d97706] text-[#ffffff]' : 'text-[#1e293b]/40 hover:text-[#1e293b]/70'
             }`}
           >
             <Calendar size={12} className="inline mr-1" />
@@ -113,26 +113,26 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
       </div>
 
       {loading ? (
-        <div className="py-8 text-center text-[#fcfaf4]/40">
-          <span className="inline-block w-6 h-6 border-2 border-[#e28743] border-t-transparent rounded-full animate-spin"></span>
+        <div className="py-8 text-center text-[#1e293b]/40">
+          <span className="inline-block w-6 h-6 border-2 border-[#d97706] border-t-transparent rounded-full animate-spin"></span>
         </div>
       ) : activeSubTab === 'roster' ? (
         /* Staff Grid layout */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {staff.map((s) => (
-            <div key={s.id} className="bg-[#151820] border border-[#262b38] rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-[#262b38]/80 transition-all gap-4">
+            <div key={s.id} className="bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-[#e2e8f0]/80 transition-all gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#e28743]/10 flex items-center justify-center font-extrabold text-[#e28743]">
+                <div className="w-10 h-10 rounded-full bg-[#d97706]/10 flex items-center justify-center font-extrabold text-[#d97706]">
                   {s.full_name.substring(0, 2).toUpperCase()}
                 </div>
                 <div>
                   <h4 className="font-bold text-sm">{s.full_name}</h4>
-                  <span className="text-[10px] text-[#e28743] font-bold uppercase tracking-wider">{s.role}</span>
+                  <span className="text-[10px] text-[#d97706] font-bold uppercase tracking-wider">{s.role}</span>
                 </div>
               </div>
-              <div className="border-t border-[#262b38]/40 pt-3 flex justify-between items-center text-xs text-[#fcfaf4]/50">
+              <div className="border-t border-[#e2e8f0]/40 pt-3 flex justify-between items-center text-xs text-[#1e293b]/50">
                 <span>Phone: {s.phone || '—'}</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${s.is_active ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${s.is_active ? 'bg-green-500/15 text-green-600' : 'bg-red-500/15 text-red-600'}`}>
                   {s.is_active ? 'Active' : 'Suspended'}
                 </span>
               </div>
@@ -141,11 +141,11 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
         </div>
       ) : (
         /* Leaves Roster Table */
-        <div className="bg-[#151820] border border-[#262b38] rounded-3xl overflow-hidden shadow-xl">
+        <div className="bg-[#ffffff] border border-[#e2e8f0] rounded-3xl overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#262b38]/50 bg-[#1e222d]/30 text-xs font-bold text-[#fcfaf4]/40 tracking-wider uppercase">
+                <tr className="border-b border-[#e2e8f0]/50 bg-[#f1f5f9]/30 text-xs font-bold text-[#1e293b]/40 tracking-wider uppercase">
                   <th className="py-4 px-6">Employee</th>
                   <th className="py-4 px-6">Leave Type</th>
                   <th className="py-4 px-6">Date Coverage</th>
@@ -154,24 +154,24 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
                   <th className="py-4 px-6 text-right">Approve Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#262b38]/30 text-sm">
+              <tbody className="divide-y divide-[#e2e8f0]/30 text-sm">
                 {leaves.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-[#fcfaf4]/40">No leave requests submitted yet.</td>
+                    <td colSpan={6} className="py-6 text-center text-[#1e293b]/40">No leave requests submitted yet.</td>
                   </tr>
                 ) : (
                   leaves.map((l) => (
-                    <tr key={l.id} className="hover:bg-[#1e222d]/20 transition-all">
+                    <tr key={l.id} className="hover:bg-[#f1f5f9]/20 transition-all">
                       <td className="py-4 px-6 font-bold">{l.staff_name}</td>
-                      <td className="py-4 px-6 text-xs font-mono text-[#f0a050] font-bold uppercase">{l.leave_type}</td>
-                      <td className="py-4 px-6 text-xs text-[#fcfaf4]/60">
+                      <td className="py-4 px-6 text-xs font-mono text-[#ca8a04] font-bold uppercase">{l.leave_type}</td>
+                      <td className="py-4 px-6 text-xs text-[#1e293b]/60">
                         {new Date(l.start_date).toLocaleDateString()} - {new Date(l.end_date).toLocaleDateString()} ({l.days_count} days)
                       </td>
-                      <td className="py-4 px-6 text-xs text-[#fcfaf4]/60 max-w-[200px] truncate">{l.reason || '—'}</td>
+                      <td className="py-4 px-6 text-xs text-[#1e293b]/60 max-w-[200px] truncate">{l.reason || '—'}</td>
                       <td className="py-4 px-6">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider ${
-                          l.status === 'approved' ? 'bg-green-500/15 text-green-400' :
-                          l.status === 'rejected' ? 'bg-red-500/15 text-red-400' :
+                          l.status === 'approved' ? 'bg-green-500/15 text-green-600' :
+                          l.status === 'rejected' ? 'bg-red-500/15 text-red-600' :
                           'bg-amber-500/15 text-amber-400'
                         }`}>
                           {l.status}
@@ -182,13 +182,13 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
                           <>
                             <button
                               onClick={() => handleReviewLeave(l.id, 'approved')}
-                              className="px-2.5 py-1 bg-green-500 hover:bg-green-600 text-[#151820] text-xs font-extrabold rounded-lg cursor-pointer"
+                              className="px-2.5 py-1 bg-green-500 hover:bg-green-600 text-[#ffffff] text-xs font-extrabold rounded-lg cursor-pointer"
                             >
                               Approve
                             </button>
                             <button
                               onClick={() => handleReviewLeave(l.id, 'rejected')}
-                              className="px-2.5 py-1 bg-red-500 hover:bg-red-600 text-[#fcfaf4] text-xs font-extrabold rounded-lg cursor-pointer"
+                              className="px-2.5 py-1 bg-red-500 hover:bg-red-600 text-[#1e293b] text-xs font-extrabold rounded-lg cursor-pointer"
                             >
                               Reject
                             </button>
@@ -205,7 +205,7 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
       )}
 
       {/* Toast Notification Container */}
-      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#1e222d] border border-[#262b38] rounded-2xl text-xs font-bold">{toastItem.msg}</div>}
+      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-2xl text-xs font-bold">{toastItem.msg}</div>}
     </div>
   );
 }

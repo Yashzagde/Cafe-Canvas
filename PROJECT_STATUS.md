@@ -43,8 +43,13 @@
 - [x] **S2-T8** — Implementation Guides — docs-agent
   - Guides: walkthrough and architectural blueprints created
 
-### Sprint 3: POS & Ordering (Weeks 5-6) — 🚀 IN PROGRESS (Real-Time shifts & attendance active)
-### Sprint 4: Tenant Storefront (Weeks 7-8) — 📋 BACKLOG
+### Sprint 3: POS & Ordering (Weeks 5-6) — ✅ COMPLETED
+*   Database migrations `019_staff_auth_extensions` through `025_staff_activity_feed` successfully applied.
+*   Scaffolded and implemented the `staff_web_app` PWA in the Flutter monorepo (Auth, PIN, Clock-In, Tables, Menu, and Activity).
+*   Resolved duplicate typescript definitions and missing fields (attendance/bills) in `frontend/src/types/database.ts` ensuring clean compilation.
+*   All Next.js frontend pages and server actions fully typed and tested via strict `type-check`.
+
+### Sprint 4: Tenant Storefront (Weeks 7-8) — 🚀 IN PROGRESS
 ### Sprint 5: Payments & Notifications (Weeks 9-10) — 📋 BACKLOG
 ### Sprint 6: Analytics & Polish (Weeks 11-12) — 📋 BACKLOG
 

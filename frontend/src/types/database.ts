@@ -73,33 +73,72 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['pos_shifts']['Insert']>;
         Relationships: [];
       };
-      staff_attendance: {
+      bills: {
         Row: {
           id: string;
           tenant_id: string;
-          branch_id: string;
-          staff_id: string;
-          shift_id: string | null;
-          clock_in: string;
-          clock_out: string | null;
-          duration_minutes: number | null;
-          source: 'manual' | 'pos' | 'biometric';
-          notes: string | null;
+          branch_id: string | null;
+          table_id: string | null;
+          order_id: string | null;
+          order_ids: string[] | null;
+          subtotal: number | null;
+          tax: number | null;
+          discount_amount: number | null;
+          extra_charges: Record<string, unknown>[] | unknown[] | null;
+          total: number | null;
+          status: 'open' | 'paid' | 'voided' | null;
+          payment_method: string | null;
+          paid_at: string | null;
+          created_by: string | null;
           created_at: string;
+          updated_at: string;
+          table_session_id: string | null;
+          customer_session_id: string | null;
+          offer_code_id: string | null;
+          subtotal_paise: number;
+          discount_paise: number;
+          cgst_paise: number;
+          sgst_paise: number;
+          tip_paise: number;
+          round_off_paise: number;
+          total_paise: number;
+          total_amount_paise: number;
+          service_charge_paise: number;
+          is_void: boolean;
         };
         Insert: {
           id?: string;
           tenant_id: string;
-          branch_id: string;
-          staff_id: string;
-          shift_id?: string | null;
-          clock_in?: string;
-          clock_out?: string | null;
-          source?: 'manual' | 'pos' | 'biometric';
-          notes?: string | null;
+          branch_id?: string | null;
+          table_id?: string | null;
+          order_id?: string | null;
+          order_ids?: string[] | null;
+          subtotal?: number | null;
+          tax?: number | null;
+          discount_amount?: number | null;
+          extra_charges?: Record<string, unknown>[] | unknown[] | null;
+          total?: number | null;
+          status?: 'open' | 'paid' | 'voided' | null;
+          payment_method?: string | null;
+          paid_at?: string | null;
+          created_by?: string | null;
           created_at?: string;
+          updated_at?: string;
+          table_session_id?: string | null;
+          customer_session_id?: string | null;
+          offer_code_id?: string | null;
+          subtotal_paise?: number;
+          discount_paise?: number;
+          cgst_paise?: number;
+          sgst_paise?: number;
+          tip_paise?: number;
+          round_off_paise?: number;
+          total_paise?: number;
+          total_amount_paise?: number;
+          service_charge_paise?: number;
+          is_void?: boolean;
         };
-        Update: Partial<Database['public']['Tables']['staff_attendance']['Insert']>;
+        Update: Partial<Database['public']['Tables']['bills']['Insert']>;
         Relationships: [];
       };
       staff_leaves: {
@@ -479,6 +518,240 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['storefront_config']['Insert']>;
         Relationships: [];
       };
+      staff_attendance: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          branch_id: string;
+          staff_id: string;
+          clock_in: string;
+          clock_out: string | null;
+          clock_in_lat: number | null;
+          clock_in_lng: number | null;
+          clock_out_lat: number | null;
+          clock_out_lng: number | null;
+          clock_in_selfie_url: string | null;
+          clock_out_selfie_url: string | null;
+          clock_in_address: string | null;
+          device_id: string | null;
+          status: 'clocked_in' | 'clocked_out' | 'auto_closed';
+          total_minutes: number | null;
+          created_at: string;
+          shift_id: string | null;
+          duration_minutes: number | null;
+          source: 'manual' | 'pos' | 'biometric';
+          notes: string | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          branch_id: string;
+          staff_id: string;
+          clock_in?: string;
+          clock_out?: string | null;
+          clock_in_lat?: number | null;
+          clock_in_lng?: number | null;
+          clock_out_lat?: number | null;
+          clock_out_lng?: number | null;
+          clock_in_selfie_url?: string | null;
+          clock_out_selfie_url?: string | null;
+          clock_in_address?: string | null;
+          device_id?: string | null;
+          status?: 'clocked_in' | 'clocked_out' | 'auto_closed';
+          total_minutes?: number | null;
+          created_at?: string;
+          shift_id?: string | null;
+          duration_minutes?: number | null;
+          source?: 'manual' | 'pos' | 'biometric';
+          notes?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['staff_attendance']['Insert']>;
+        Relationships: [];
+      };
+      staff_devices: {
+        Row: {
+          id: string;
+          staff_id: string;
+          tenant_id: string;
+          device_id: string;
+          device_name: string | null;
+          platform: 'android' | 'ios' | 'web' | null;
+          fcm_token: string | null;
+          app_version: string | null;
+          is_active: boolean;
+          last_seen_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          staff_id: string;
+          tenant_id: string;
+          device_id: string;
+          device_name?: string | null;
+          platform?: 'android' | 'ios' | 'web' | null;
+          fcm_token?: string | null;
+          app_version?: string | null;
+          is_active?: boolean;
+          last_seen_at?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['staff_devices']['Insert']>;
+        Relationships: [];
+      };
+      table_sessions: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          branch_id: string;
+          table_id: string;
+          opened_by: string;
+          closed_by: string | null;
+          customer_count: number;
+          status: 'active' | 'billing' | 'closed' | 'voided';
+          session_start: string;
+          session_end: string | null;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          branch_id: string;
+          table_id: string;
+          opened_by: string;
+          closed_by?: string | null;
+          customer_count?: number;
+          status?: 'active' | 'billing' | 'closed' | 'voided';
+          session_start?: string;
+          session_end?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['table_sessions']['Insert']>;
+        Relationships: [];
+      };
+      customer_sessions: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          table_session_id: string;
+          name: string | null;
+          phone: string | null;
+          is_loyalty_member: boolean;
+          total_spent_paise: number;
+          visit_count: number;
+          preferences: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          table_session_id: string;
+          name?: string | null;
+          phone?: string | null;
+          is_loyalty_member?: boolean;
+          total_spent_paise?: number;
+          visit_count?: number;
+          preferences?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['customer_sessions']['Insert']>;
+        Relationships: [];
+      };
+      offer_codes: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          branch_id: string | null;
+          code: string;
+          description: string | null;
+          discount_type: 'percentage' | 'flat';
+          discount_value: number;
+          min_order_paise: number;
+          max_discount_paise: number | null;
+          applicable_to: 'all' | 'table' | 'customer' | 'category' | 'item';
+          target_ids: string[];
+          valid_from: string;
+          valid_until: string | null;
+          usage_limit: number | null;
+          used_count: number;
+          is_active: boolean;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          branch_id?: string | null;
+          code: string;
+          description?: string | null;
+          discount_type: 'percentage' | 'flat';
+          discount_value: number;
+          min_order_paise?: number;
+          max_discount_paise?: number | null;
+          applicable_to?: 'all' | 'table' | 'customer' | 'category' | 'item';
+          target_ids?: string[];
+          valid_from?: string;
+          valid_until?: string | null;
+          usage_limit?: number | null;
+          used_count?: number;
+          is_active?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['offer_codes']['Insert']>;
+        Relationships: [];
+      };
+      staff_activity_feed: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          branch_id: string | null;
+          staff_id: string | null;
+          activity_type: string;
+          entity_type: string | null;
+          entity_id: string | null;
+          display_text: string | null;
+          metadata: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          branch_id?: string | null;
+          staff_id?: string | null;
+          activity_type: string;
+          entity_type?: string | null;
+          entity_id?: string | null;
+          display_text?: string | null;
+          metadata?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['staff_activity_feed']['Insert']>;
+        Relationships: [];
+      };
+      storefront_publish_history: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          settings_snapshot: Record<string, unknown>;
+          version: number;
+          published_by: string | null;
+          published_at: string;
+          note: string | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          settings_snapshot: Record<string, unknown>;
+          version: number;
+          published_by?: string | null;
+          published_at?: string;
+          note?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['storefront_publish_history']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: {};
     Functions: {
@@ -488,6 +761,71 @@ export interface Database {
         };
         Returns: void;
       };
+      clock_in_staff: {
+        Args: {
+          p_staff_id: string;
+          p_branch_id: string;
+          p_lat?: number | null;
+          p_lng?: number | null;
+          p_selfie_url?: string | null;
+          p_address?: string | null;
+          p_device_id?: string | null;
+        };
+        Returns: Database['public']['Tables']['staff_attendance']['Row'];
+      };
+      clock_out_staff: {
+        Args: {
+          p_staff_id: string;
+          p_lat?: number | null;
+          p_lng?: number | null;
+          p_selfie_url?: string | null;
+        };
+        Returns: Database['public']['Tables']['staff_attendance']['Row'];
+      };
+      lookup_customer_by_phone: {
+        Args: {
+          p_tenant_id: string;
+          p_phone: string;
+        };
+        Returns: Record<string, unknown>;
+      };
+      validate_offer_code: {
+        Args: {
+          p_tenant_id: string;
+          p_code: string;
+          p_subtotal: number;
+        };
+        Returns: Record<string, unknown>;
+      };
+      generate_table_bill: {
+        Args: {
+          p_order_id: string;
+          p_payment_method: string;
+          p_offer_code_id?: string | null;
+          p_discount_paise?: number;
+          p_tip_paise?: number;
+          p_table_session_id?: string | null;
+          p_customer_session_id?: string | null;
+        };
+        Returns: Database['public']['Tables']['bills']['Row'];
+      };
+      publish_storefront: {
+        Args: {
+          p_tenant_id: string;
+          p_publisher_id: string;
+          p_note?: string | null;
+        };
+        Returns: Record<string, unknown>;
+      };
+      rollback_storefront: {
+        Args: {
+          p_tenant_id: string;
+          p_version: number;
+          p_publisher_id: string;
+        };
+        Returns: Record<string, unknown>;
+      };
     };
   };
 }
+

@@ -2,14 +2,14 @@ import React from 'react';
 
 // Premium Dark Design tokens
 const T = {
-  card: "#151820",
-  bdr: "#262b38",
-  ind: "#e28743", // Warm terracotta
-  em: "#10b981",  // Sage success
-  tx: "#fcfaf4",  // Warm white text
-  mu: "#8c96a3",  // Muted gray
-  mu2: "#6b7582", // Darker muted
-  iA: (o: number) => `rgba(226,135,67,${o})`,
+  card: "#ffffff",
+  bdr: "#e2e8f0",
+  ind: "#d97706", // Corporate gold/amber
+  em: "#16a34a",  // Clean success green
+  tx: "#1e293b",  // Slate-800 text
+  mu: "#64748b",  // Muted slate gray
+  mu2: "#475569", // Muted slate gray dark
+  iA: (o: number) => `rgba(217,119,6,${o})`,
 };
 
 interface SidebarProps {
@@ -32,6 +32,7 @@ const NAV = [
   { id: "staff", label: "Staffing", icon: "👥" },
   { id: "storefront", label: "Storefront", icon: "🏪" },
   { id: "audit", label: "Audit Logs", icon: "📋" },
+  { id: "activity", label: "Activity Feed", icon: "⚡" },
 ];
 
 export default function Sidebar({
@@ -73,7 +74,7 @@ export default function Sidebar({
           justifyContent: "center",
           fontSize: "16px",
           fontWeight: 800,
-          color: "#151820",
+          color: "#ffffff",
           flexShrink: 0
         }}>
           C

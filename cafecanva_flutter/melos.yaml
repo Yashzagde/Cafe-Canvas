@@ -19,16 +19,16 @@ scripts:
     description: Run flutter test in all packages
 
   build:android:staff:
-    run: cd apps/staff_app && flutter build apk --release
-    description: Build Staff App APK
+    run: cd apps/staff_pos && flutter build apk --release
+    description: Build Staff POS App APK
 
   build:android:admin:
-    run: cd apps/store_admin && flutter build apk --release
-    description: Build Store Admin APK
+    run: cd apps/store_admin_mobile && flutter build apk --release
+    description: Build Store Admin Mobile APK
 
   build:windows:admin:
-    run: cd apps/store_admin && flutter build windows --release
-    description: Build Store Admin Windows
+    run: cd apps/store_admin_desktop && flutter build windows --release
+    description: Build Store Admin Desktop Windows
 
   clean:
     run: melos exec -- flutter clean
