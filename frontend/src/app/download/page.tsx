@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function DownloadPage() {
   const [progress, setProgress] = useState(0);
   const [downloadStarted, setDownloadStarted] = useState(false);
-  const downloadUrl = "https://cafe-canvas-yash.web.app/CafeCanvas-Store-Admin-Setup-1.0.0.zip";
+  const downloadUrl = "/CafeCanvas-Store-Admin-Setup-1.0.0.exe";
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -30,7 +30,7 @@ export default function DownloadPage() {
   const triggerDownload = () => {
     const a = document.createElement('a');
     a.href = downloadUrl;
-    a.download = 'CafeCanvas-Store-Admin-Setup-1.0.0.zip';
+    a.download = 'CafeCanvas-Store-Admin-Setup-1.0.0.exe';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -113,9 +113,9 @@ export default function DownloadPage() {
           
           <div className="grid grid-cols-1 gap-4">
             {[
-              { step: '1', title: 'Extract the Archive', desc: 'Locate the downloaded `CafeCanvas-Store-Admin-Setup-1.0.0.zip` file in your Downloads folder and extract it.' },
-              { step: '2', title: 'Run the Setup Wizard', desc: 'Double-click the extracted setup `.exe` (or use the `.dmg` package on macOS) to launch the installer.' },
-              { step: '3', title: 'Launch and Operate', desc: 'Open the Cafe Canva desktop app from your shortcut to start taking orders with offline/online sync.' }
+              { step: '1', title: 'Open the Setup Wizard', desc: 'Double-click the downloaded `CafeCanvas-Store-Admin-Setup-1.0.0.exe` setup installer file in your Downloads folder.' },
+              { step: '2', title: 'Follow Installation', desc: 'Proceed through the installation screens to verify destination folders and create desktop shortcuts.' },
+              { step: '3', title: 'Launch and Operate', desc: 'Open the Cafe Canvas desktop app from your desktop shortcut to start managing store orders.' }
             ].map(s => (
               <div key={s.step} className="flex gap-4 bg-white p-4 border border-stone-200 rounded-2xl shadow-sm">
                 <span className="w-7 h-7 rounded-full bg-stone-150 border border-stone-200/50 flex items-center justify-center font-black text-xs text-stone-700 flex-shrink-0">

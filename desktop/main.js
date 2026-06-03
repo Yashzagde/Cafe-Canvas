@@ -1,16 +1,25 @@
 const { app, BrowserWindow, Menu, globalShortcut, session } = require('electron');
 const path = require('path');
 
-let mainWindow;
+/** @type {BrowserWindow | null} */
+let mainWindow = null;
+
+/** @type {'production' | 'local'} */
 let currentEnv = 'production'; // 'production' or 'local'
+
+/** @type {string} */
 let currentRoute = '/admin';   // active page path
 
 // Base targets
+/** @type {Record<'production' | 'local', string>} */
 const ENV_SERVERS = {
   production: 'https://frontend-eta-topaz-41.vercel.app',
   local: 'http://localhost:3000'
 };
 
+/**
+ * @returns {string}
+ */
 function getFullUrl() {
   return `${ENV_SERVERS[currentEnv]}${currentRoute}`;
 }
@@ -60,6 +69,9 @@ function loadCurrentUrl() {
   mainWindow.loadURL(target);
 }
 
+/**
+ * @param {'production' | 'local'} env
+ */
 function switchEnvironment(env) {
   if (currentEnv === env) return;
   currentEnv = env;
@@ -67,12 +79,16 @@ function switchEnvironment(env) {
   buildAppMenu(); // rebuild menu to show checkmarks
 }
 
+/**
+ * @param {string} route
+ */
 function navigateToRoute(route) {
   currentRoute = route;
   loadCurrentUrl();
 }
 
 function buildAppMenu() {
+  /** @type {Array<Electron.MenuItemConstructorOptions | Electron.MenuItem>} */
   const menuTemplate = [
     {
       label: 'CafeCanvas',
@@ -136,17 +152,17 @@ function buildAppMenu() {
     {
       label: 'Controls',
       submenu: [
-        { label: 'Reload Page', accelerator: 'CmdOrCtrl+R', click: () => mainWindow.webContents.reload() },
-        { label: 'Force Reload', accelerator: 'CmdOrCtrl+Shift+R', click: () => mainWindow.webContents.reloadIgnoringCache() },
+        { label: 'Reload Page', accelerator: 'CmdOrCtrl+R', click: () => { if (mainWindow) mainWindow.webContents.reload(); } },
+        { label: 'Force Reload', accelerator: 'CmdOrCtrl+Shift+R', click: () => { if (mainWindow) mainWindow.webContents.reloadIgnoringCache(); } },
         {
           label: 'Toggle Developer Tools',
           accelerator: 'CmdOrCtrl+Shift+I',
-          click: () => mainWindow.webContents.toggleDevTools()
+          click: () => { if (mainWindow) mainWindow.webContents.toggleDevTools(); }
         },
         { type: 'separator' },
-        { label: 'Actual Size', accelerator: 'CmdOrCtrl+0', click: () => mainWindow.webContents.setZoomLevel(0) },
-        { label: 'Zoom In', accelerator: 'CmdOrCtrl+Plus', click: () => mainWindow.webContents.setZoomLevel(mainWindow.webContents.getZoomLevel() + 0.5) },
-        { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', click: () => mainWindow.webContents.setZoomLevel(mainWindow.webContents.getZoomLevel() - 0.5) },
+        { label: 'Actual Size', accelerator: 'CmdOrCtrl+0', click: () => { if (mainWindow) mainWindow.webContents.setZoomLevel(0); } },
+        { label: 'Zoom In', accelerator: 'CmdOrCtrl+Plus', click: () => { if (mainWindow) mainWindow.webContents.setZoomLevel(mainWindow.webContents.getZoomLevel() + 0.5); } },
+        { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', click: () => { if (mainWindow) mainWindow.webContents.setZoomLevel(mainWindow.webContents.getZoomLevel() - 0.5); } },
         { type: 'separator' },
         { label: 'Toggle Full Screen', role: 'togglefullscreen' }
       ]

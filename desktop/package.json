@@ -14,15 +14,15 @@
   ],
   "author": "CafeCanvas Dev Team",
   "license": "ISC",
-  "dependencies": {
-    "electron": "^31.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "electron": "^31.0.1",
     "electron-builder": "^24.13.3"
   },
   "build": {
     "appId": "com.cafecanvas.storeadmin",
     "productName": "CafeCanvas Store Admin",
+    "compression": "maximum",
     "directories": {
       "output": "dist-desktop"
     },
