@@ -46,7 +46,7 @@ export default function LoginPage() {
             branch_id: 'ab000000-0000-0000-0000-000000000001', // Mapped to seeded Branch
             full_name: fullName || 'Test Store Owner',
             email: email,
-            role: 'admin',
+            role: 'owner',
             status: 'ACTIVE'
           });
 
@@ -94,7 +94,7 @@ export default function LoginPage() {
               branch_id: 'ab000000-0000-0000-0000-000000000001',
               full_name: 'Store Owner',
               email: email,
-              role: 'admin',
+              role: 'owner',
               status: 'ACTIVE'
             });
 
@@ -110,7 +110,7 @@ export default function LoginPage() {
         // Route based on role
         const role = userData.role;
         if (role === 'superadmin') router.push('/superadmin');
-        else if (role === 'admin') router.push('/admin');
+        else if (role === 'admin' || role === 'owner' || role === 'manager') router.push('/admin');
         else if (role === 'staff') router.push('/staff');
         else if (role === 'kos') router.push('/kos');
         else router.push('/admin');

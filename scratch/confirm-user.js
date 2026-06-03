@@ -11,35 +11,29 @@ const sql = postgres(dbUrl, {
 async function run() {
   console.log("Connecting to Supabase database...");
   try {
-    // 1. Update auth.users to confirm email
-    const result = await sql`
-      UPDATE auth.users 
-      SET confirmed_at = NOW(), 
-          email_confirmed_at = NOW(), 
-          updated_at = NOW()
-      WHERE email = 'admin@cafecanvas.com'
-      RETURNING id, email, email_confirmed_at;
+    // 1. Fetch user ID from auth.users
+    const users = await sql`
+      SELECT id FROM auth.users WHERE email = 'admin@cafecanvas.com';
     `;
-    console.log("Update user result:", result);
+    console.log("Auth user found:", users);
 
-    // 2. Also ensure that the profile exists in public.users
-    const profile = await sql`
-      SELECT id, role, tenant_id, branch_id FROM public.users 
-      WHERE email = 'admin@cafecanvas.com';
-    `;
-    console.log("Current user profile in public.users:", profile);
+    if (users.length > 0) {
+      const userId = users[0].id;
+      
+      // 2. Delete any bad profile if it exists (should not exist due to failure, but let's check)
+      await sql`DELETE FROM public.users WHERE id = ${userId}`;
 
-    if (profile.length === 0 && result.length > 0) {
-      console.log("Profile missing, creating profile in public.users...");
+      // 3. Create profile in public.users with valid role 'owner'
+      console.log("Creating profile with role 'owner' in public.users...");
       const insertProfile = await sql`
         INSERT INTO public.users (id, tenant_id, branch_id, name, email, role, active)
         VALUES (
-          ${result[0].id},
+          ${userId},
           'a0000000-0000-0000-0000-000000000001',
           'ab000000-0000-0000-0000-000000000001',
           'yash zagde',
           'admin@cafecanvas.com',
-          'admin',
+          'owner',
           true
         )
         RETURNING *;
@@ -47,9 +41,9 @@ async function run() {
       console.log("Profile created:", insertProfile);
     }
     
-    console.log("\n✓ User 'admin@cafecanvas.com' confirmed and profile synced successfully!");
+    console.log("\n✓ User 'admin@cafecanvas.com' database profile inserted successfully!");
   } catch (error) {
-    console.error("Failed to confirm user:", error.message || error);
+    console.error("Failed to insert user profile:", error.message || error);
   } finally {
     await sql.end();
   }
