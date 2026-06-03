@@ -1,0 +1,5 @@
+{
+  "name": "backend-agent",
+  "description": "Senior Software Engineer — API routes, Edge Functions, business logic, auth, server actions",
+  "skills": ["supabase", "supabase-postgres-best-practices"]
+}

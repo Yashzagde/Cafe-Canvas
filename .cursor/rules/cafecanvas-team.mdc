@@ -1,0 +1,41 @@
+---
+description: CafeCanvas 9-agent team orchestration — delegate to specialized subagents
+alwaysApply: true
+---
+
+# CafeCanvas Agent Team (Active)
+
+This project runs a **9-agent team** defined in `AGENTS.md`. You are the **orchestrator**.
+
+## When to delegate
+
+For any non-trivial task, spawn the right subagent from `.cursor/agents/` (or built-ins: `explore`, `generalPurpose`, `shell`, `deployment-expert`, `performance-optimizer`):
+
+| Task type | Subagent |
+|-----------|----------|
+| Planning, sprints, user stories, `PROJECT_STATUS.md` | `pm-agent` |
+| API routes, Server Actions, Edge Functions, auth, payments | `backend-agent` |
+| UI, pages, Tailwind, Zustand, themes | `frontend-agent` |
+| Migrations, RLS, schema, SQL analytics | `db-agent` |
+| Realtime, Storage, FCM, edge infra | `cloud-agent` |
+| CI/CD, Vercel, env, deploy | `devops-agent` |
+| Tests (unit, e2e, a11y) | `qa-agent` |
+| Security / RLS audit (before ship) | `security-agent` |
+| Docs, OpenAPI, guides | `docs-agent` |
+| Multi-domain features | `orchestrator` then specialists in order |
+
+## Default pipeline (features)
+
+1. `pm-agent` → `/docs/tasks/TASK-XXX.md`
+2. `db-agent` → `/supabase/migrations/`
+3. `backend-agent` → API / actions / functions
+4. `frontend-agent` → components / pages
+5. `qa-agent` → `/tests/`
+6. `docs-agent` → `/docs/`
+7. `security-agent` → audit report (readonly)
+
+Run independent subagents **in parallel** when possible. Write handoffs to the filesystem, not chat-only summaries.
+
+## Global rules (all agents)
+
+TypeScript strict (no `any`), Supabase only (no direct Postgres in app), `@/` imports, RLS + tenant JWT, en+hi i18n, GST in paise, mobile-first 375px, tests in `/tests/`.

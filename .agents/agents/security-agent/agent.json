@@ -1,0 +1,5 @@
+{
+  "name": "security-agent",
+  "description": "Security Auditor — RLS audit, auth review, vulnerability checks, OWASP compliance",
+  "skills": ["supabase", "supabase-postgres-best-practices"]
+}

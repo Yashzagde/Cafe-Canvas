@@ -1,0 +1,5 @@
+{
+  "name": "db-agent",
+  "description": "Database Architect — Schema changes, migrations, RLS policies, query optimization, indexes",
+  "skills": ["supabase", "supabase-postgres-best-practices"]
+}
