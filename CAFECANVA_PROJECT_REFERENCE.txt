@@ -664,7 +664,7 @@ Available Tools (3):
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Yashzagde/Cafe-Canva.git"
+    "url": "git+https://github.com/Yashzagde/Cafe-Canvas.git"
   },
   "keywords": ["saas", "restaurant", "pos", "nextjs", "supabase", "drizzle"],
   "type": "commonjs",
@@ -900,7 +900,7 @@ export default nextConfig;
   FILE: cafecanva_flutter/melos.yaml
 ================================================================================
 name: cafecanva_flutter
-repository: https://github.com/Yashzagde/Cafe-Canva
+repository: https://github.com/Yashzagde/Cafe-Canvas
 
 packages:
   - apps/*

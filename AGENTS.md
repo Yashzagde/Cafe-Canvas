@@ -11,7 +11,7 @@ reads this file and spawns sub-agents for specialized tasks.
 
 **Project**: CafeCanvas — Multi-Tenant SaaS Restaurant Operating System
 **Stack**: Next.js 15 · Supabase · Tailwind CSS 4 · TypeScript (strict)
-**Repo**: https://github.com/Yashzagde/Cafe-Canva
+**Repo**: https://github.com/Yashzagde/Cafe-Canvas
 
 ---
 
@@ -757,8 +757,8 @@ Mass Assignment: Explicitly list allowed columns in Supabase select/insert
 
 ## Quick Start
 \`\`\`bash
-git clone https://github.com/Yashzagde/Cafe-Canva.git
-cd Cafe-Canva
+git clone https://github.com/Yashzagde/Cafe-Canvas.git
+cd Cafe-Canvas
 npm install
 cp .env.example .env.local
 # Fill in Supabase keys

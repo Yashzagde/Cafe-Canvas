@@ -70,4 +70,4 @@ Please refer to **`/docs/SETUP.md`** for detailed local setup instructions.
 
 ## 📜 License
 
-Project distributed under the **ISC License**. Developed by Yash Zagde for Yashzagde/Cafe-Canva.
+Project distributed under the **ISC License**. Developed by Yash Zagde for Yashzagde/Cafe-Canvas.
