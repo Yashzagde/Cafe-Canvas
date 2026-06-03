@@ -1,0 +1,17 @@
+{
+  "name": "CafeCanvas Store Admin",
+  "short_name": "CC Admin",
+  "description": "Multi-Tenant SaaS Store Admin Panel for CafeCanvas",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#fdfcf7",
+  "theme_color": "#d97706",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/file.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

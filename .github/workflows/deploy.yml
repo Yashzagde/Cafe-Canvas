@@ -48,13 +48,46 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-  # Job 2: Deploy SaaS Platform to Vercel
+  # Job 2: Build Flutter Apps & Deploy SaaS Platform to Vercel
   deploy-saas-platform:
     runs-on: ubuntu-latest
     needs: [validation, database-migrations]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.22.0'
+
+      - name: Setup Melos
+        run: dart pub global activate melos
+
+      - name: Melos Bootstrap
+        run: $HOME/.pub-cache/bin/melos bootstrap
+        working-directory: ./cafecanva_flutter
+
+      - name: Build Staff POS APK
+        run: cd apps/staff_pos && flutter build apk --release
+        working-directory: ./cafecanva_flutter
+
+      - name: Build Store Admin Mobile APK
+        run: cd apps/store_admin_mobile && flutter build apk --release
+        working-directory: ./cafecanva_flutter
+
+      - name: Copy Compiled APKs to Static Assets
+        run: |
+          mkdir -p frontend/public/download
+          cp cafecanva_flutter/apps/staff_pos/build/app/outputs/flutter-apk/app-release.apk frontend/public/download/staff_pos.apk
+          cp cafecanva_flutter/apps/store_admin_mobile/build/app/outputs/flutter-apk/app-release.apk frontend/public/download/store_admin.apk
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -70,7 +103,7 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Info
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --project=cafe-canva-saas
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --project=frontend
         working-directory: ./frontend
 
       - name: Build Project Artifacts
@@ -80,5 +113,3 @@ jobs:
       - name: Deploy SaaS Project to Vercel
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./frontend
-
-  # Storefront lives under frontend tenant routes ([slug]/menu) until a separate app is restored.
