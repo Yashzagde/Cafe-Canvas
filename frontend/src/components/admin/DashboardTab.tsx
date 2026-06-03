@@ -4,7 +4,7 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer
 } from 'recharts';
 import {
-  Card, Btn, Stat, T, ff, fm, StatusBadge
+  Card, Btn, Stat, T, ff, fm, StatusBadge, Badge
 } from './UIPrimitives';
 
 // Type definitions matching admin/page.tsx
