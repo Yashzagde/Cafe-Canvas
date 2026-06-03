@@ -12,7 +12,8 @@ const migrationFiles = [
   '005_blogs.sql',
   '006_review_cache.sql',
   '007_analytics_views.sql',
-  '008_indexes.sql'
+  '008_indexes.sql',
+  '009_fix_payment_integrations_rls.sql'
 ];
 
 function askQuestion(query) {
