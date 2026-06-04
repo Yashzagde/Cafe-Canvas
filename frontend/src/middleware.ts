@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/api/') ||
-    pathname.match(/\.(?:svg|png|jpg|jpeg|gif|webp|css|js)$/)
+    pathname.match(/\.(?:svg|png|jpg|jpeg|gif|webp|css|js|exe|apk|mp4|blockmap)$/)
   ) {
     return NextResponse.next()
   }

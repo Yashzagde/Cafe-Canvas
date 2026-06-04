@@ -13,7 +13,7 @@ scratch/
 # Ignore documentation, assets, and tests
 docs/
 tests/
-CafeCanvas-Store-Admin-Setup-1.0.0.exe
+# CafeCanvas-Store-Admin-Setup-1.0.0.exe
 
 # Ignore local tool metadata/caches
 .agents/
