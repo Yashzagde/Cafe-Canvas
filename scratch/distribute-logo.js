@@ -1,3 +1,4 @@
+// @ts-nocheck
 const sharp = require('sharp');
 const pngToIco = require('png-to-ico');
 const fs = require('fs');

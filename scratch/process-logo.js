@@ -1,3 +1,4 @@
+// @ts-nocheck
 const sharp = require('../cafe-canvas-store-admin/node_modules/sharp');
 const fs = require('fs');
 const path = require('path');
