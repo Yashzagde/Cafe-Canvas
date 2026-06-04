@@ -13,7 +13,8 @@ scratch/
 # Ignore documentation, assets, and tests
 docs/
 tests/
-# CafeCanvas-Store-Admin-Setup-1.0.0.exe
+# Ignore root setup installer copy, but keep public folder copy
+/CafeCanvas-Store-Admin-Setup-1.0.0.exe
 
 # Ignore local tool metadata/caches
 .agents/
@@ -29,3 +30,5 @@ db_setup.js
 # Ignore dependency directories
 node_modules/
 **/node_modules/
+.next/
+**/.next/
