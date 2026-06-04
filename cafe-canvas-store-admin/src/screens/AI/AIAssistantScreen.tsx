@@ -13,6 +13,7 @@ export function AIAssistantScreen() {
   const [inputValue, setInputValue] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [isKeyMissing, setIsKeyMissing] = useState(false)
 
   const chatEndRef = useRef<HTMLDivElement>(null)
 
@@ -47,6 +48,10 @@ export function AIAssistantScreen() {
     // Listen to errors
     const unsubscribeError = window.electronAPI.onAiError((err: string) => {
       setIsGenerating(false)
+      // Detect missing API key error from main process
+      if (err.toLowerCase().includes('api key') || err.toLowerCase().includes('not configured')) {
+        setIsKeyMissing(true)
+      }
       setErrorMsg(err)
       // Append error message to assistant's text
       setMessages((prev) => {
@@ -125,6 +130,47 @@ Help with: menu optimization, staff scheduling, customer feedback analysis, mark
     'Create a summer beverage recipe list',
     'Draft a cashier welcoming speech'
   ]
+
+  // Graceful "no API key" configuration screen
+  if (isKeyMissing) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-120px)] gap-6 p-12 select-none font-body">
+        <div className="w-20 h-20 rounded-full bg-canvas-gold/20 flex items-center justify-center border border-canvas-gold/30">
+          <Sparkles className="w-10 h-10 text-canvas-gold" />
+        </div>
+        <div className="text-center max-w-md space-y-3">
+          <h2 className="font-display text-2xl font-bold text-canvas-brown">
+            AI Assistant Not Configured
+          </h2>
+          <p className="font-body text-canvas-brown_mid text-sm leading-relaxed">
+            To enable the AI Assistant, add your Anthropic API key to{' '}
+            <code className="bg-canvas-surface px-1.5 py-0.5 rounded text-xs font-mono border border-canvas-border">.env.local</code>
+          </p>
+          <pre className="mt-4 bg-canvas-surface border border-canvas-border rounded-xl p-4 text-left text-xs font-mono text-canvas-brown select-text">
+            ANTHROPIC_API_KEY=sk-ant-...
+          </pre>
+          <p className="mt-3 text-xs text-canvas-brown_light font-semibold">
+            Get your key at{' '}
+            <button
+              onClick={() => window.electronAPI.openExternal('https://console.anthropic.com')}
+              className="text-canvas-terracotta underline hover:text-canvas-terra_dark font-bold"
+            >
+              console.anthropic.com
+            </button>
+          </p>
+          <button
+            onClick={() => {
+              setIsKeyMissing(false)
+              setErrorMsg(null)
+            }}
+            className="mt-4 py-2 px-4 rounded-lg bg-canvas-terracotta hover:bg-canvas-terra_light text-white font-bold text-xs shadow-md transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] select-none font-body">

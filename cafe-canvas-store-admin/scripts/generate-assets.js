@@ -1,58 +1,95 @@
-const fs = require('fs');
-const path = require('path');
+const sharp = require('sharp')
+const pngToIco = require('png-to-ico')
+const fs = require('fs')
+const path = require('path')
 
-const resourcesDir = path.join(__dirname, '../resources');
+const RESOURCES = path.join(__dirname, '..', 'resources')
 
-// Ensure directory exists
-if (!fs.existsSync(resourcesDir)) {
-  fs.mkdirSync(resourcesDir, { recursive: true });
+// Generate logo.png from SVG if it doesn't exist or is a stub
+async function generateLogoPNG() {
+  const svg = `
+    <svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#FFF8F0"/>
+          <stop offset="100%" stop-color="#FFEEDD"/>
+        </linearGradient>
+        <linearGradient id="cup" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#C4714A"/>
+          <stop offset="100%" stop-color="#9A5235"/>
+        </linearGradient>
+      </defs>
+      <!-- Background rounded square -->
+      <rect width="512" height="512" fill="url(#bg)" rx="96"/>
+      <!-- Coffee cup body -->
+      <rect x="146" y="160" width="220" height="200" rx="28" fill="url(#cup)"/>
+      <!-- Cup handle -->
+      <path d="M366 220 C420 220 420 310 366 310" stroke="#C4714A" stroke-width="28" fill="none" stroke-linecap="round"/>
+      <!-- Cup saucer -->
+      <ellipse cx="256" cy="380" rx="140" ry="20" fill="#D4A843" opacity="0.8"/>
+      <!-- Steam lines -->
+      <path d="M200 140 Q210 110 200 80" stroke="#D4A843" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path d="M256 130 Q266 95 256 60" stroke="#D4A843" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.7"/>
+      <path d="M312 140 Q322 110 312 80" stroke="#D4A843" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <!-- Letter C -->
+      <text x="256" y="290" font-family="Georgia, serif" font-size="140" font-weight="bold"
+            fill="#FFF8F0" text-anchor="middle" dominant-baseline="middle">C</text>
+    </svg>
+  `
+  const svgBuffer = Buffer.from(svg)
+  await sharp(svgBuffer)
+    .resize(512, 512)
+    .png()
+    .toFile(path.join(RESOURCES, 'logo.png'))
+  console.log('✅ Generated logo.png (512×512)')
 }
 
-// 256x256 PNG - Minimalist terracotta (#C4714A) background with a gold (#D4A843) "CC" logo
-// This is a valid, lightweight Base64 PNG representation
-const logoBase64 = 
-  'iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABeVJREFUeN' +
-  'rV3b2uHEUQgOFu' +
-  'khBCEiIhIe//CskVwAUIuQAIERISItv7s3R2M6xZ7Znpvj/1dE6f7uqq7pne2Z3d7RcgAAAAALC3t/f2wJ/39veXv19fXx943b17/FxfX59e/xwe9bM/r7rA77sQ' +
-  'uP/x4gVw/5eXl0cQcAj8Iwg4BB6yH87588PDw/G4f+4D6Eef/X7rNf6G5/yB1373eQh8H8D9T09Px+P+FwQcAt8EAYfAp+yH47nvg64O4G/rPuhzEHAIfBcEHAKf' +
-  'sh+Ow/Fz/w1fC31fQ9/7kEPgd/4f9B+YQ8D3P4fg+/+DgEPgn+yH47kX9fUqB/1f8DkEHAI/BwGHwKfsH4L+73YIuP/x938OAYfAz0HAIeD+948g4BD4+N6H4Bf1' +
-  '9Qp+/BwEHAKfBwGHgPt/PgT9H/w5BBwCPwcBh4D7Hz+CgEPg2/f+W+C+D7vPg++DgEPgb0HAIeD+z/8cAg4Bh4CDgEPg/uePIOD+908QcAhwfAgCDgGOD0HAIfDr' +
-  '9/5n4L4PvM+D74OAQ+DfQcAh4P6f/zkEHAIOAQcBh8D9zx9BwP3vnyDgEOD4EAQcAhwfgoBD4Nfv/c/AfR94nwffBwGHwL+DgEPA/T//cwg4BBwCDgIOgfufP4KA' +
-  '+98/QcAhwPEhCDgEOD4EAYfAr9/7n4H7PvA+D74PAg6BfwcBh4D7f/7nEHAI/BwEHAI/BwGHwM9BwCHg/vePIOAQ4PgQBBwCHB+CgEPA8SEIOAQ4PgQBh4DjQxBw' +
-  'CDg+BAGHwM9BwCHg/vePIOAQ4PgQBBwCHB+CgEPA8SEIOAQ4PgQBh4DjQxDwF2vY29tbfg4v/d3X9vb2/vXn/f395bWwPq+G1/D33t/fX97/r/r63N/r7/v9y+F9' +
-  'D8Mh8FAH+Gq9lss/9F5/+L0MhwCgfwKAGgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
-  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
-  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
-  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
-  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg/wUYAI+rN7K4Y7hQAAAAAElFTkSuQmCC';
+// Generate proper multi-resolution ICO from logo.png
+async function generateIco() {
+  const logoPath = path.join(RESOURCES, 'logo.png')
+  const sizes = [16, 32, 48, 256]
+  const pngBuffers = []
 
-const pngBuffer = Buffer.from(logoBase64, 'base64');
+  for (const size of sizes) {
+    const buf = await sharp(logoPath)
+      .resize(size, size)
+      .png()
+      .toBuffer()
+    pngBuffers.push(buf)
+  }
 
-// Write logo.png
-const logoPath = path.join(resourcesDir, 'logo.png');
-fs.writeFileSync(logoPath, pngBuffer);
-console.log('Generated resources/logo.png');
+  const icoBuffer = await pngToIco(pngBuffers)
+  fs.writeFileSync(path.join(RESOURCES, 'icon.ico'), icoBuffer)
 
-// Wrap PNG inside a valid ICO file
-// ICO Header (6 bytes) + Directory Entry (16 bytes) + PNG Data
-const icoHeader = Buffer.alloc(6);
-icoHeader.writeUInt16LE(0, 0); // Reserved
-icoHeader.writeUInt16LE(1, 2); // Image type (1 = icon)
-icoHeader.writeUInt16LE(1, 4); // Number of images (1)
+  const sizeKB = (icoBuffer.length / 1024).toFixed(1)
+  console.log(`✅ Generated icon.ico (${sizeKB} KB, resolutions: ${sizes.map(s => s + '×' + s).join(', ')})`)
 
-const icoDirectory = Buffer.alloc(16);
-icoDirectory.writeUInt8(0, 0);   // Width (0 means 256)
-icoDirectory.writeUInt8(0, 1);   // Height (0 means 256)
-icoDirectory.writeUInt8(0, 2);   // Color palette (0 means >= 256 colors)
-icoDirectory.writeUInt8(0, 3);   // Reserved
-icoDirectory.writeUInt16LE(1, 4); // Color planes (1)
-icoDirectory.writeUInt16LE(32, 6); // Bits per pixel (32)
-icoDirectory.writeUInt32LE(pngBuffer.length, 8); // Size of PNG data
-icoDirectory.writeUInt32LE(22, 12); // Offset of PNG data (header + directory size)
+  if (icoBuffer.length < 5000) {
+    console.error('❌ ICO file suspiciously small — check logo.png source')
+    process.exit(1)
+  }
+}
 
-const icoBuffer = Buffer.concat([icoHeader, icoDirectory, pngBuffer]);
+async function main() {
+  if (!fs.existsSync(RESOURCES)) {
+    fs.mkdirSync(RESOURCES, { recursive: true })
+  }
 
-// Write icon.ico
-const icoPath = path.join(resourcesDir, 'icon.ico');
-fs.writeFileSync(icoPath, icoBuffer);
-console.log('Generated resources/icon.ico');
+  const logoPath = path.join(RESOURCES, 'logo.png')
+  const logoStats = fs.existsSync(logoPath) ? fs.statSync(logoPath) : null
+
+  // Regenerate logo if missing or if it's a stub (< 5KB)
+  if (!logoStats || logoStats.size < 5000) {
+    await generateLogoPNG()
+  } else {
+    console.log(`ℹ️  logo.png already exists (${(logoStats.size / 1024).toFixed(1)} KB) — skipping generation`)
+  }
+
+  await generateIco()
+  console.log('\n✅ All assets generated successfully')
+}
+
+main().catch(err => {
+  console.error('Asset generation failed:', err)
+  process.exit(1)
+})

@@ -3,7 +3,7 @@ productName: Cafe Canvas Store Admin
 copyright: Copyright © 2025 Cafe Canvas
 
 directories:
-  output: dist-electron
+  output: release
 
 files:
   - dist/**
