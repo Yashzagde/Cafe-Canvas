@@ -22,21 +22,21 @@ export function TitleBar({ title }: { title: string }) {
       {/* Right: Window Controls */}
       <div className="flex items-center gap-0.5 titlebar-nodrag">
         <button
-          onClick={() => window.electronAPI.minimizeWindow()}
+          onClick={() => window.electronAPI.minimize()}
           className="w-8 h-8 rounded flex items-center justify-center text-white/80 hover:bg-white/10 transition-colors focus:outline-none"
           title="Minimize"
         >
           <span className="text-xs font-bold font-mono">─</span>
         </button>
         <button
-          onClick={() => window.electronAPI.maximizeWindow()}
+          onClick={() => window.electronAPI.maximize()}
           className="w-8 h-8 rounded flex items-center justify-center text-white/80 hover:bg-white/10 transition-colors focus:outline-none"
           title="Maximize"
         >
           <span className="text-[10px] font-bold">⬜</span>
         </button>
         <button
-          onClick={() => window.electronAPI.closeWindow()}
+          onClick={() => window.electronAPI.close()}
           className="w-8 h-8 rounded flex items-center justify-center text-white/80 hover:bg-red-500/90 hover:text-white transition-colors focus:outline-none"
           title="Close"
         >

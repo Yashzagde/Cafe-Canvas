@@ -25,7 +25,7 @@ export function AIAssistantScreen() {
   // Set up IPC stream listeners
   useEffect(() => {
     // Listen to streamed chunks
-    const unsubscribeChunk = window.electronAPI.onAiChunk((chunk: string) => {
+    const unsubscribeChunk = window.electronAPI.onAIChunk((chunk: string) => {
       setMessages((prev) => {
         const last = prev[prev.length - 1]
         if (last && last.role === 'assistant') {
@@ -41,12 +41,12 @@ export function AIAssistantScreen() {
     })
 
     // Listen to completion
-    const unsubscribeDone = window.electronAPI.onAiDone(() => {
+    const unsubscribeDone = window.electronAPI.onAIDone(() => {
       setIsGenerating(false)
     })
 
     // Listen to errors
-    const unsubscribeError = window.electronAPI.onAiError((err: string) => {
+    const unsubscribeError = window.electronAPI.onAIError((err: string) => {
       setIsGenerating(false)
       // Detect missing API key error from main process
       if (err.toLowerCase().includes('api key') || err.toLowerCase().includes('not configured')) {
@@ -97,13 +97,13 @@ Help with: menu optimization, staff scheduling, customer feedback analysis, mark
     setErrorMsg(null)
 
     try {
-      // Map messages format to match Anthropic message structures
+      // Map messages format to match Gemini message structures
       const formattedMessages = updatedMessages.map((m) => ({
         role: m.role,
         content: m.content
       }))
 
-      await window.electronAPI.sendChatMessage(formattedMessages, systemPrompt)
+      await window.electronAPI.geminiStream(formattedMessages, systemPrompt)
     } catch (err: any) {
       setIsGenerating(false)
       setErrorMsg(err.message || 'Failed to dispatch AI query.')
@@ -143,19 +143,19 @@ Help with: menu optimization, staff scheduling, customer feedback analysis, mark
             AI Assistant Not Configured
           </h2>
           <p className="font-body text-canvas-brown_mid text-sm leading-relaxed">
-            To enable the AI Assistant, add your Anthropic API key to{' '}
+            To enable the AI Assistant, add your Gemini API key to{' '}
             <code className="bg-canvas-surface px-1.5 py-0.5 rounded text-xs font-mono border border-canvas-border">.env.local</code>
           </p>
           <pre className="mt-4 bg-canvas-surface border border-canvas-border rounded-xl p-4 text-left text-xs font-mono text-canvas-brown select-text">
-            ANTHROPIC_API_KEY=sk-ant-...
+            GEMINI_API_KEY=AIzaSy...
           </pre>
           <p className="mt-3 text-xs text-canvas-brown_light font-semibold">
             Get your key at{' '}
             <button
-              onClick={() => window.electronAPI.openExternal('https://console.anthropic.com')}
+              onClick={() => window.electronAPI.openExternal('https://aistudio.google.com')}
               className="text-canvas-terracotta underline hover:text-canvas-terra_dark font-bold"
             >
-              console.anthropic.com
+              aistudio.google.com
             </button>
           </p>
           <button
@@ -186,7 +186,7 @@ Help with: menu optimization, staff scheduling, customer feedback analysis, mark
               Cafe Canvas AI
             </h2>
             <p className="text-xs text-canvas-brown_mid font-medium">
-              Merchant strategy co-pilot powered by Claude 3.5 Sonnet.
+              Merchant strategy co-pilot powered by Gemini 2.0 Flash.
             </p>
           </div>
         </div>

@@ -11,9 +11,9 @@ export const supabase = createClient(supabaseUrl || '', supabaseKey || '', {
   auth: {
     storage: {
       // Use Electron-safe storage (file-based, encrypted, not localstorage)
-      getItem:    (key) => window.electronAPI.getSecureItem(key),
-      setItem:    async (key, val) => { await window.electronAPI.setSecureItem(key, val) },
-      removeItem: async (key) => { await window.electronAPI.removeSecureItem(key) },
+      getItem:    (key) => window.electronAPI.secureGet(key),
+      setItem:    async (key, val) => { await window.electronAPI.secureSet(key, val) },
+      removeItem: async (key) => { await window.electronAPI.secureRemove(key) },
     },
     autoRefreshToken:    true,
     persistSession:      true,
