@@ -13,7 +13,7 @@ let currentRoute = '/admin';   // active page path
 // Base targets
 /** @type {Record<'production' | 'local', string>} */
 const ENV_SERVERS = {
-  production: 'https://frontend-eta-topaz-41.vercel.app',
+  production: 'https://cafecanvas.bar',
   local: 'http://localhost:3000'
 };
 

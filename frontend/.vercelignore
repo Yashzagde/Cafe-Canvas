@@ -1,0 +1,7 @@
+# Vercel Ignore for frontend subdirectory
+.next/
+**/.next/
+node_modules/
+**/node_modules/
+public/CafeCanvas-Store-Admin-Setup-1.0.0.exe
+CafeCanvas-Store-Admin-Setup-1.0.0.exe

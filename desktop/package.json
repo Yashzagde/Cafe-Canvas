@@ -22,6 +22,7 @@
   "build": {
     "appId": "com.cafecanvas.storeadmin",
     "productName": "CafeCanvas Store Admin",
+    "publish": [],
     "compression": "maximum",
     "directories": {
       "output": "dist-desktop"

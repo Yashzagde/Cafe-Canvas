@@ -40,7 +40,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Scrollbar customization */
+/* ─── Scrollbar ───────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -59,10 +59,171 @@ body {
   background: rgba(196, 113, 74, 0.6);
 }
 
+/* ─── Title Bar Drag Regions ──────────────────────────────────────────────── */
 .titlebar-drag {
   -webkit-app-region: drag;
 }
 
 .titlebar-nodrag {
   -webkit-app-region: no-drag;
+}
+
+/* ─── Animations ──────────────────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+.animate-fade-in      { animation: fade-in 200ms ease-out; }
+.animate-fade-out     { animation: fade-out 200ms ease-out; }
+.animate-slide-up     { animation: slide-up 250ms ease-out; }
+.animate-slide-down   { animation: slide-down 200ms ease-out; }
+.animate-slide-right  { animation: slide-in-right 250ms ease-out; }
+.animate-scale-in     { animation: scale-in 200ms ease-out; }
+.animate-pulse-dot    { animation: pulse-dot 2s ease-in-out infinite; }
+.animate-bounce-soft  { animation: bounce-soft 2s ease-in-out infinite; }
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(212, 168, 67, 0.08) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ─── Screen Transition ───────────────────────────────────────────────────── */
+.screen-enter {
+  animation: slide-up 200ms ease-out;
+}
+
+/* ─── Print Styles ────────────────────────────────────────────────────────── */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: auto !important;
+  }
+
+  /* Hide all non-printable elements */
+  .no-print,
+  .titlebar-drag,
+  aside,
+  nav,
+  footer,
+  .toast-container {
+    display: none !important;
+  }
+
+  /* Receipt styling */
+  .print-receipt {
+    width: 80mm !important;
+    margin: 0 auto !important;
+    padding: 8px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    font-family: 'Courier New', monospace !important;
+  }
+
+  .print-receipt h2 {
+    font-size: 14px !important;
+    text-align: center !important;
+    font-weight: bold !important;
+    margin-bottom: 8px !important;
+  }
+
+  .print-receipt table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .print-receipt td, .print-receipt th {
+    padding: 2px 0 !important;
+    font-size: 11px !important;
+  }
+
+  .print-receipt .divider {
+    border-top: 1px dashed #333 !important;
+    margin: 6px 0 !important;
+  }
+}
+
+/* ─── Utility: Hide scrollbar but keep scrollable ─────────────────────────── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Utility: Gradient text ──────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #C4714A, #D4A843);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
