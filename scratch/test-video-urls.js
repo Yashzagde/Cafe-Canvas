@@ -27,6 +27,9 @@ const patterns = [
   'hd_1080_1920_25fps', // Vertical
 ];
 
+/**
+ * @param {string} url
+ */
 function checkUrl(url) {
   return new Promise((resolve) => {
     const req = https.request(url, { method: 'HEAD', headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
