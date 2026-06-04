@@ -13,8 +13,9 @@ scratch/
 # Ignore documentation, assets, and tests
 docs/
 tests/
-# Ignore root setup installer copy, but keep public folder copy
-/CafeCanvas-Store-Admin-Setup-1.0.0.exe
+# Ignore large setup installer binaries globally to avoid Vercel 100MB limits
+**/CafeCanvas-Store-Admin-Setup-1.0.0.exe
+CafeCanvas-Store-Admin-Setup-1.0.0.exe
 
 # Ignore local tool metadata/caches
 .agents/

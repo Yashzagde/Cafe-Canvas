@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function DownloadPage() {
   const [progress, setProgress] = useState(0);
   const [downloadStarted, setDownloadStarted] = useState(false);
-  const downloadUrl = "/CafeCanvas-Store-Admin-Setup-1.0.0.exe";
+  const downloadUrl = "https://gofile.io/d/RyE0zY";
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
