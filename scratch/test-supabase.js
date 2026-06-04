@@ -1,15 +1,15 @@
 const https = require('https');
 
 const supabaseUrl = 'https://oeringgdbxmmihgvuyfa.supabase.co';
-const anonKey = 'sb_publishable_laWLW3mZrK5wdSh115u2Dw_7K0BIjYU';
+const fakeKey = 'sb_publishable_dummy_key_value_here';
 
 const options = {
   hostname: 'oeringgdbxmmihgvuyfa.supabase.co',
   path: '/rest/v1/tenants?select=id',
   method: 'GET',
   headers: {
-    'apikey': anonKey,
-    'Authorization': `Bearer ${anonKey}`
+    'apikey': fakeKey,
+    'Authorization': `Bearer ${fakeKey}`
   }
 };
 
