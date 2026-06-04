@@ -1,0 +1,33 @@
+appId: bar.cafecanvas.storeadmin
+productName: Cafe Canvas Store Admin
+copyright: Copyright © 2025 Cafe Canvas
+
+directories:
+  output: dist-electron
+
+files:
+  - dist/**
+  - dist-electron/**
+  - resources/**
+  - package.json
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icon.ico
+
+nsis:
+  oneClick:          false
+  allowToChangeInstallationDirectory: true
+  installerIcon:     resources/icon.ico
+  uninstallerIcon:   resources/icon.ico
+  installerHeaderIcon: resources/icon.ico
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName:      Cafe Canvas Store Admin
+
+publish:
+  provider: github
+  owner:    Yashzagde
+  repo:     Cafe-Canava-Desktop

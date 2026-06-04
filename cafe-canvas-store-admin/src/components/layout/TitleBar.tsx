@@ -1,0 +1,49 @@
+import React from 'react'
+import { useTenantStore } from '../../store/tenant.store'
+
+export function TitleBar({ title }: { title: string }) {
+  const { tenant } = useTenantStore()
+
+  return (
+    <div
+      className="h-10 flex items-center justify-between px-4 select-none bg-canvas-terracotta text-white border-b border-canvas-terra_dark/25 titlebar-drag"
+    >
+      {/* Left: Logo + Screen */}
+      <div className="flex items-center gap-2 titlebar-nodrag">
+        <span className="font-display text-base font-bold tracking-wide">Cafe Canvas</span>
+        <span className="text-white/40 text-xs">·</span>
+        <span className="text-white/95 text-xs font-semibold">{title}</span>
+      </div>
+
+      {/* Center: Draggable Store Name display */}
+      <div className="text-white/80 text-xs font-semibold font-display tracking-wider truncate max-w-xs uppercase">
+        {tenant?.name || 'Cafe Canvas'}
+      </div>
+
+      {/* Right: Window Controls */}
+      <div className="flex items-center gap-0.5 titlebar-nodrag">
+        <button
+          onClick={() => window.electronAPI.minimizeWindow()}
+          className="w-8 h-8 rounded flex items-center justify-center text-white/80 hover:bg-white/10 transition-colors focus:outline-none"
+          title="Minimize"
+        >
+          <span className="text-xs font-bold font-mono">─</span>
+        </button>
+        <button
+          onClick={() => window.electronAPI.maximizeWindow()}
+          className="w-8 h-8 rounded flex items-center justify-center text-white/80 hover:bg-white/10 transition-colors focus:outline-none"
+          title="Maximize"
+        >
+          <span className="text-[10px] font-bold">⬜</span>
+        </button>
+        <button
+          onClick={() => window.electronAPI.closeWindow()}
+          className="w-8 h-8 rounded flex items-center justify-center text-white/80 hover:bg-red-500/90 hover:text-white transition-colors focus:outline-none"
+          title="Close"
+        >
+          <span className="text-xs font-bold font-mono">✕</span>
+        </button>
+      </div>
+    </div>
+  )
+}
