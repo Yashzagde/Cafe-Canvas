@@ -30,6 +30,8 @@ const NAV = [
   { id: "discounts", label: "Discounts", icon: "🏷" },
   { id: "analytics", label: "Analytics", icon: "📈" },
   { id: "staff", label: "Staffing", icon: "👥" },
+  { id: "attendance", label: "Attendance", icon: "📅" },
+  { id: "feedback", label: "Guest Feedbacks", icon: "💬" },
   { id: "storefront", label: "Storefront", icon: "🏪" },
   { id: "audit", label: "Audit Logs", icon: "📋" },
   { id: "activity", label: "Activity Feed", icon: "⚡" },

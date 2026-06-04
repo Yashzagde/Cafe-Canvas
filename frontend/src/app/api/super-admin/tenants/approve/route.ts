@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { mapTenant, mapBranch, mapStaff } from '@/lib/superadmin/mappers'
+import { sendTenantWelcomeWhatsApp } from '@/lib/msg91'
 
 function slugify(text: string): string {
   return text
@@ -177,6 +178,20 @@ export async function POST(req: NextRequest) {
 
       if (updateError) {
         throw new Error(updateError.message)
+      }
+
+      // 9. Send WhatsApp welcome alert to tenant owner via MSG91
+      try {
+        await sendTenantWelcomeWhatsApp({
+          phone: request.phone,
+          ownerName: request.owner_name,
+          businessName: request.business_name,
+          subdomain: finalSubdomain,
+          passwordText: finalPassword,
+          email: request.email
+        })
+      } catch (waError) {
+        console.error('Failed to dispatch tenant onboarding WhatsApp:', waError);
       }
 
       return NextResponse.json({

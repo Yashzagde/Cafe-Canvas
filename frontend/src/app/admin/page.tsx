@@ -26,6 +26,8 @@ import TableQRManager from '@/components/admin/TableQRManager';
 import StaffManager from '@/components/admin/StaffManager';
 import MenuEditor from '@/components/admin/MenuEditor';
 import ActivityFeedTab from '@/components/admin/ActivityFeedTab';
+import AttendanceTab from '@/components/admin/AttendanceTab';
+import FeedbackTab from '@/components/admin/FeedbackTab';
 
 import ReceiptPreviewModal from '@/components/billing/ReceiptPreviewModal';
 import type { ReceiptData } from '@/components/billing/types';
@@ -499,6 +501,8 @@ export default function CafeCanvaAdmin() {
               )}
               {page === "analytics" && <AnalyticsTab />}
               {page === "staff" && <StaffManager branchId={activeBranch?.id || ''} />}
+              {page === "attendance" && <AttendanceTab branchId={activeBranch?.id || ''} />}
+              {page === "feedback" && <FeedbackTab branchId={activeBranch?.id || ''} />}
               {page === "storefront" && <StorefrontEditor />}
               {page === "audit" && <AuditLogViewer />}
               {page === "activity" && <ActivityFeedTab />}

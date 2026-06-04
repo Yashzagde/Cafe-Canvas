@@ -3,7 +3,22 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { Coffee, ShoppingBag, Plus, Minus, Globe, Sparkles, X, User, Users, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { 
+  Coffee, 
+  ShoppingBag, 
+  Plus, 
+  Minus, 
+  Globe, 
+  Sparkles, 
+  X, 
+  User, 
+  Users, 
+  FileText, 
+  CheckCircle2, 
+  AlertCircle,
+  Star,
+  LogOut
+} from 'lucide-react';
 
 interface Tenant {
   id: string;
@@ -84,8 +99,6 @@ const TRANSLATIONS = {
   }
 };
 
-
-
 export default function Storefront() {
   const params = useParams();
   const storeSlug = (params?.store_slug as string) || '';
@@ -113,7 +126,37 @@ export default function Storefront() {
   const [successOrderRef, setSuccessOrderRef] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Loyalty & OTP Login states
+  const [customerPhone, setCustomerPhone] = useState<string | null>(null);
+  const [customerProfile, setCustomerProfile] = useState<any | null>(null);
+  const [offers, setOffers] = useState<any[]>([]);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [loginPhone, setLoginPhone] = useState('');
+  const [loginOtp, setLoginOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+
+  // Feedback states
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [foodRating, setFoodRating] = useState(5);
+  const [serviceRating, setServiceRating] = useState(5);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [wouldRevisit, setWouldRevisit] = useState(true);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [claimedCoupon, setClaimedCoupon] = useState<string | null>(null);
+
   const t = TRANSLATIONS[lang];
+
+  // Helper to read cookies on client
+  const getCookie = (name: string) => {
+    if (typeof document === 'undefined') return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+    return null;
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -189,6 +232,193 @@ export default function Storefront() {
     fetchData();
   }, [storeSlug]);
 
+  // Load Customer Profile and Offers
+  useEffect(() => {
+    async function loadCustomerData() {
+      if (!tenant) return;
+      const phoneVal = getCookie('customer_phone');
+      setCustomerPhone(phoneVal);
+
+      if (phoneVal) {
+        const { data: cust } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .eq('phone', phoneVal)
+          .maybeSingle();
+        
+        if (cust) {
+          setCustomerProfile(cust);
+          if (cust.name && cust.name !== 'Storefront Guest' && !customerName) {
+            setCustomerName(cust.name);
+          }
+        }
+      }
+
+      // Fetch active offers
+      const { data: activeOffers } = await supabase
+        .from('customer_offers')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .eq('is_active', true)
+        .gt('valid_until', new Date().toISOString());
+
+      if (activeOffers) {
+        setOffers(activeOffers);
+      }
+    }
+
+    loadCustomerData();
+  }, [tenant, customerPhone]);
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^\d{10}$/.test(loginPhone)) {
+      setOtpError('Please enter a valid 10-digit phone number.');
+      return;
+    }
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      const res = await fetch('/api/customer/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send',
+          phone: loginPhone,
+          tenantId: tenant?.id
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOtpSent(true);
+      } else {
+        setOtpError(data.error || 'Failed to dispatch OTP.');
+      }
+    } catch (err) {
+      setOtpError('Failed to communicate with OTP service.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(loginOtp)) {
+      setOtpError('Please enter a 6-digit OTP code.');
+      return;
+    }
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      const res = await fetch('/api/customer/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verify',
+          phone: loginPhone,
+          otp: loginOtp,
+          tenantId: tenant?.id
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCustomerPhone(data.phone);
+        setIsLoginOpen(false);
+        setOtpSent(false);
+        setLoginOtp('');
+        setLoginPhone('');
+      } else {
+        setOtpError(data.error || 'Invalid OTP code.');
+      }
+    } catch (err) {
+      setOtpError('Failed to verify OTP.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleLogoutCustomer = () => {
+    if (typeof document !== 'undefined') {
+      document.cookie = 'customer_phone=; Max-Age=0; path=/;';
+      document.cookie = 'customer_tenant_id=; Max-Age=0; path=/;';
+    }
+    setCustomerPhone(null);
+    setCustomerProfile(null);
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!tenant) return;
+    setSubmittingFeedback(true);
+    try {
+      // Get a random active waiter in this tenant to attach
+      const { data: staffMembers } = await supabase
+        .from('users')
+        .select('id')
+        .eq('tenant_id', tenant.id)
+        .eq('role', 'staff')
+        .limit(1);
+      
+      const assocStaffId = staffMembers && staffMembers.length > 0 ? staffMembers[0].id : null;
+
+      // Insert feedback
+      const { error: feedbackError } = await supabase
+        .from('customer_feedback')
+        .insert({
+          tenant_id: tenant.id,
+          table_id: selectedTableId || null,
+          customer_name: customerName || 'Guest Diner',
+          phone: customerPhone || null,
+          rating_overall: feedbackRating,
+          rating_food: foodRating,
+          rating_service: serviceRating,
+          comment: feedbackComment.trim() || null,
+          would_revisit: wouldRevisit,
+          staff_id: assocStaffId
+        });
+
+      if (feedbackError) throw feedbackError;
+
+      // Generate a dynamic 10% coupon code
+      const couponCode = `CF-${Math.floor(100000 + Math.random() * 900000)}`;
+      const { error: couponError } = await supabase
+        .from('offer_codes')
+        .insert({
+          tenant_id: tenant.id,
+          code: couponCode,
+          description: '10% guest feedback reward',
+          discount_type: 'percentage',
+          discount_value: 10,
+          min_order_paise: 0,
+          applicable_to: 'all',
+          valid_from: new Date().toISOString(),
+          valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          usage_limit: 1,
+          is_active: true
+        });
+
+      if (couponError) throw couponError;
+
+      setClaimedCoupon(couponCode);
+      setFeedbackSubmitted(true);
+    } catch (err: any) {
+      console.error('Failed to submit feedback:', err.message);
+      alert('Could not submit feedback: ' + err.message);
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
+  const handleCloseSuccessRef = () => {
+    setSuccessOrderRef(null);
+    setFeedbackSubmitted(false);
+    setClaimedCoupon(null);
+    setFeedbackComment('');
+    setFeedbackRating(5);
+    setFoodRating(5);
+    setServiceRating(5);
+  };
+
   const handleQtyChange = (itemId: string, delta: number) => {
     setCart(prev => {
       const current = prev[itemId] || 0;
@@ -225,7 +455,6 @@ export default function Storefront() {
       setPlacingOrder(true);
       setErrorMsg(null);
 
-      // If dbPending, simulate success immediately in sandbox mode
       if (dbPending) {
         await new Promise(resolve => setTimeout(resolve, 1500));
         setSuccessOrderRef(`ORD-${Math.floor(100000 + Math.random() * 900000)}`);
@@ -234,27 +463,27 @@ export default function Storefront() {
         return;
       }
 
-      // 1. Check if an active session exists for this table
+      // 1. Check table session
       let { data: activeSession, error: sessionFindError } = await supabase
         .from('table_sessions')
         .select('id')
         .eq('tenant_id', tenant.id)
         .eq('table_id', selectedTableId)
-        .is('check_out_at', null)
+        .is('session_end', null)
         .maybeSingle();
 
       if (sessionFindError) throw sessionFindError;
 
       let sessionId = activeSession?.id;
 
-      // Create new session if none exists
       if (!sessionId) {
         const { data: newSession, error: sessionCreateError } = await supabase
           .from('table_sessions')
           .insert({
             tenant_id: tenant.id,
             table_id: selectedTableId,
-            check_in_at: new Date().toISOString()
+            opened_by: '00000000-0000-0000-0000-000000000000', // anonymous customer
+            session_start: new Date().toISOString()
           })
           .select('id')
           .single();
@@ -272,9 +501,9 @@ export default function Storefront() {
           table_session_id: sessionId,
           customer_name: customerName,
           customer_count: customerCount,
-          subtotal: totalPricePaise,
-          discount_amount: 0,
-          total: totalPricePaise,
+          subtotal_paise: totalPricePaise,
+          discount_paise: 0,
+          total_paise: totalPricePaise,
           notes: orderNotes || null,
           status: 'pending'
         })
@@ -290,7 +519,7 @@ export default function Storefront() {
           order_id: newOrder.id,
           menu_item_id: item.id,
           item_name: item.name,
-          unit_price: item.price,
+          unit_price_paise: item.price,
           quantity: qty,
           modifiers: [],
           kds_status: 'pending'
@@ -303,7 +532,6 @@ export default function Storefront() {
 
       if (itemsInsertError) throw itemsInsertError;
 
-      // Success
       setSuccessOrderRef(newOrder.id.substring(0, 8).toUpperCase());
       setCart({});
       setIsCheckoutOpen(false);
@@ -349,10 +577,8 @@ export default function Storefront() {
   if (menuItems.length === 0) {
     return (
       <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] flex flex-col justify-between relative overflow-x-hidden">
-        {/* Luxury Liquid Floating Background Gradients */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#e05e35]/5 rounded-full blur-[120px] pointer-events-none"></div>
 
-        {/* Header Banner */}
         <div className="h-56 relative bg-stone-900 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-t from-[#23120b] via-[#23120b]/40 to-transparent z-10"></div>
           <img 
@@ -390,12 +616,11 @@ export default function Storefront() {
 
   return (
     <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] pb-32 relative overflow-x-hidden">
-      {/* Luxury Liquid Floating Background Gradients */}
+      {/* Liquid Floating Background Gradients */}
       <div className="liquid-blob-1 top-10 left-10"></div>
       <div className="liquid-blob-2 top-1/3 right-10"></div>
       <div className="liquid-blob-3 bottom-10 left-20"></div>
 
-      {/* Database Warning Alert */}
       {dbPending && (
         <div className="bg-amber-500 text-stone-950 px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-1.5 sticky top-0 z-50 shadow-md">
           <AlertCircle size={14} />
@@ -408,7 +633,7 @@ export default function Storefront() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#23120b] via-[#23120b]/40 to-transparent z-10"></div>
         <img 
           src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80" 
-          alt="AETHER Cover" 
+          alt="Cover Image" 
           className="w-full h-full object-cover opacity-85"
         />
         <div className="absolute bottom-5 left-6 right-6 z-20 flex justify-between items-end">
@@ -422,7 +647,6 @@ export default function Storefront() {
             </p>
           </div>
           
-          {/* Language Toggle Button */}
           <button 
             onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#fcfaf4]/10 backdrop-blur-md border border-[#fcfaf4]/20 text-xs font-bold text-[#fcfaf4] hover:bg-[#fcfaf4]/20 transition-all shadow-sm"
@@ -434,6 +658,68 @@ export default function Storefront() {
       </div>
 
       <main className="max-w-3xl mx-auto px-4 mt-6 relative z-20">
+        {/* Loyalty Profile Section */}
+        {customerPhone ? (
+          <div className="bg-[#ffffff] border border-amber-200 rounded-3xl p-5 shadow-lg space-y-4 mb-6 animate-fade-in">
+            <div className="flex justify-between items-center border-b border-[#e2e8f0]/60 pb-3">
+              <div>
+                <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#d97706]">Loyalty Profile</span>
+                <h4 className="font-extrabold text-sm text-[#1e293b]">{customerProfile?.name || 'Valued Guest'}</h4>
+                <p className="text-[10px] text-[#1e293b]/40 font-semibold">{customerPhone}</p>
+              </div>
+              <div className="text-right flex flex-col items-end">
+                <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#ca8a04]">Reward Points</span>
+                <p className="text-lg font-black text-[#ca8a04]">
+                  {Math.floor((customerProfile?.total_spend || 0) / 1000)} <span className="text-[10px] font-normal text-stone-400">pts</span>
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[9px] text-[#1e293b]/40 font-semibold">{customerProfile?.visit_count || 1} visits</span>
+                  <button 
+                    onClick={handleLogoutCustomer} 
+                    className="text-[9px] text-rose-600 font-extrabold hover:underline flex items-center gap-0.5"
+                  >
+                    <LogOut size={10} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Exclusive Offers */}
+            {offers.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#1e293b]/40">Your Exclusive Offers</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {offers.map(o => (
+                    <div key={o.id} className="bg-amber-50/40 border border-amber-100/70 rounded-2xl p-3 flex justify-between items-center gap-3">
+                      <div>
+                        <h5 className="font-bold text-xs text-[#d97706]">{o.title}</h5>
+                        <p className="text-[10px] text-[#1e293b]/60 mt-0.5">{o.description}</p>
+                      </div>
+                      <div className="shrink-0 bg-[#d97706] text-white px-2.5 py-1 rounded-xl text-xs font-black">
+                        {o.discount_percent}% OFF
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-[#ffffff] border border-[#eae5d8] rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h4 className="font-black text-sm text-[#4a2d22]">Unlock Special Loyalty Offers</h4>
+              <p className="text-stone-500 text-[11px] mt-0.5">Verify your WhatsApp number to check active discounts and points.</p>
+            </div>
+            <button
+              onClick={() => setIsLoginOpen(true)}
+              className="px-4 py-2 bg-[#d97706] hover:bg-[#b45309] text-white font-bold text-xs rounded-xl cursor-pointer transition-all whitespace-nowrap shadow-sm self-stretch sm:self-auto text-center"
+            >
+              Login / Verify
+            </button>
+          </div>
+        )}
+
         {/* Categories Chip Filters */}
         <div className="flex gap-2.5 overflow-x-auto pb-3 sticky top-4 z-30 scrollbar-none">
           <button 
@@ -477,7 +763,7 @@ export default function Storefront() {
                     className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl border border-[#eae5d8] flex gap-4 transition-all duration-300 hover:shadow-md hover:border-[#c5b293]"
                   >
                     <div className="flex-1 flex flex-col justify-between">
-                      <div>
+                       <div>
                         <h3 className="font-extrabold text-[#4a2d22] text-sm md:text-base">
                           {item.name}
                         </h3>
@@ -529,7 +815,6 @@ export default function Storefront() {
                       </div>
                     </div>
                     
-                    {/* Item Image */}
                     <div className="w-24 h-24 md:w-28 md:h-28 shrink-0 relative rounded-xl overflow-hidden border border-[#eae5d8] bg-stone-100 flex items-center justify-center">
                       {item.image_url ? (
                         <img 
@@ -549,7 +834,7 @@ export default function Storefront() {
         </div>
       </main>
 
-      {/* Floating Animated Cart Bar */}
+      {/* Floating Cart Bar */}
       {totalItems > 0 && (
         <div className="fixed bottom-6 w-full px-4 max-w-2xl left-1/2 -translate-x-1/2 z-50 animate-scale-up">
           <button 
@@ -569,11 +854,10 @@ export default function Storefront() {
         </div>
       )}
 
-      {/* Diner Checkout Drawer/Modal */}
+      {/* Diner Checkout Drawer */}
       {isCheckoutOpen && (
         <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex justify-center items-end md:items-center p-0 md:p-4">
           <div className="bg-[#fcfaf4] w-full md:max-w-md rounded-t-3xl md:rounded-3xl border border-[#eae5d8] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh] animate-slide-up">
-            {/* Header */}
             <div className="p-5 border-b border-[#eae5d8] flex justify-between items-center bg-[#fbeee7]/55">
               <h3 className="font-black text-base md:text-lg text-[#4a2d22] flex items-center gap-2">
                 <ShoppingBag size={18} className="text-[#e05e35]" />
@@ -587,7 +871,6 @@ export default function Storefront() {
               </button>
             </div>
 
-            {/* Content Form */}
             <form onSubmit={handlePlaceOrder} className="p-5 overflow-y-auto flex-1 space-y-4">
               {errorMsg && (
                 <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center gap-2">
@@ -596,7 +879,6 @@ export default function Storefront() {
                 </div>
               )}
 
-              {/* Table Selector */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-stone-500 block">
                   {t.select_table}
@@ -615,7 +897,6 @@ export default function Storefront() {
                 </select>
               </div>
 
-              {/* Customer Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-stone-500 block">
                   {t.enter_name}
@@ -635,7 +916,6 @@ export default function Storefront() {
                 </div>
               </div>
 
-              {/* Guests Count */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-stone-500 block">
                   {t.number_of_guests}
@@ -662,7 +942,6 @@ export default function Storefront() {
                 </div>
               </div>
 
-              {/* Order Notes */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-stone-500 block">
                   {t.notes}
@@ -681,7 +960,6 @@ export default function Storefront() {
                 </div>
               </div>
 
-              {/* Bill Details Summary */}
               <div className="p-4 rounded-2xl bg-[#fbeee7]/55 border border-[#eae5d8] space-y-2">
                 <div className="flex justify-between text-xs font-bold text-stone-500">
                   <span>Cart Subtotal</span>
@@ -698,7 +976,6 @@ export default function Storefront() {
                 </div>
               </div>
 
-              {/* Submit button */}
               <button
                 type="submit"
                 disabled={placingOrder}
@@ -718,10 +995,10 @@ export default function Storefront() {
         </div>
       )}
 
-      {/* Success Dialog */}
+      {/* Success Dialog & Post-payment feedback loop */}
       {successOrderRef && (
         <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex justify-center items-center p-4">
-          <div className="bg-[#fcfaf4] w-full max-w-sm rounded-3xl border border-[#eae5d8] p-6 shadow-2xl text-center space-y-5 animate-scale-up">
+          <div className="bg-[#fcfaf4] w-full max-w-sm rounded-3xl border border-[#eae5d8] p-6 shadow-2xl text-center space-y-5 animate-scale-up overflow-y-auto max-h-[90vh]">
             <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto border border-emerald-100">
               <CheckCircle2 className="w-10 h-10 text-emerald-500 animate-bounce" />
             </div>
@@ -736,12 +1013,180 @@ export default function Storefront() {
               <span className="text-lg font-black text-[#4a2d22] tracking-wider mt-0.5 block">{successOrderRef}</span>
             </div>
 
+            {/* Guest Feedback loop */}
+            {!feedbackSubmitted ? (
+              <div className="border-t border-[#eae5d8]/70 pt-4 space-y-3 text-left">
+                <h4 className="font-black text-xs text-[#4a2d22] uppercase tracking-wider text-center">Rate Your Dining Experience</h4>
+                <div className="flex gap-2.5 justify-center py-1">
+                  {[1, 2, 3, 4, 5].map((ratingVal) => (
+                    <button
+                      key={ratingVal}
+                      type="button"
+                      onClick={() => setFeedbackRating(ratingVal)}
+                      className="text-[#ca8a04] hover:scale-110 transition-transform cursor-pointer"
+                    >
+                      <Star 
+                        size={28} 
+                        className={ratingVal <= feedbackRating ? 'fill-[#ca8a04] text-[#ca8a04]' : 'text-stone-200'} 
+                      />
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-xs font-bold text-stone-500">
+                  <div>
+                    <label className="block mb-1">Food Score</label>
+                    <select 
+                      value={foodRating} 
+                      onChange={e => setFoodRating(Number(e.target.value))}
+                      className="w-full bg-white border border-[#eae5d8] rounded-xl px-2 py-1.5 outline-none font-bold"
+                    >
+                      {[5,4,3,2,1].map(v => <option key={v} value={v}>{v} Stars</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-1">Service Score</label>
+                    <select 
+                      value={serviceRating} 
+                      onChange={e => setServiceRating(Number(e.target.value))}
+                      className="w-full bg-white border border-[#eae5d8] rounded-xl px-2 py-1.5 outline-none font-bold"
+                    >
+                      {[5,4,3,2,1].map(v => <option key={v} value={v}>{v} Stars</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 mb-1">Comments</label>
+                  <textarea
+                    rows={2}
+                    value={feedbackComment}
+                    onChange={e => setFeedbackComment(e.target.value)}
+                    placeholder="Tell us about the service or food..."
+                    className="w-full bg-white border border-[#eae5d8] rounded-xl p-2.5 text-xs outline-none resize-none font-semibold"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="revisit"
+                    checked={wouldRevisit}
+                    onChange={e => setWouldRevisit(e.target.checked)}
+                    className="w-4 h-4 accent-[#d97706] cursor-pointer"
+                  />
+                  <label htmlFor="revisit" className="text-xs font-semibold text-stone-600 cursor-pointer select-none">I would visit this cafe again</label>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSubmitFeedback}
+                  disabled={submittingFeedback}
+                  className="w-full bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl py-2.5 font-bold text-xs tracking-wider uppercase disabled:opacity-50 cursor-pointer"
+                >
+                  {submittingFeedback ? 'Submitting...' : 'Submit & Get 10% Coupon'}
+                </button>
+              </div>
+            ) : (
+              <div className="border-t border-[#eae5d8]/70 pt-4 text-center space-y-2.5 animate-scale-up">
+                <h4 className="font-black text-sm text-green-600">Review Submitted!</h4>
+                <p className="text-stone-500 text-[10px] font-semibold">Thank you! Here is your 10% coupon code for your next order:</p>
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl inline-block font-mono font-black text-sm text-[#d97706] tracking-widest shadow-inner">
+                  {claimedCoupon}
+                </div>
+              </div>
+            )}
+
             <button
-              onClick={() => setSuccessOrderRef(null)}
-              className="w-full bg-[#eae5d8] text-[#4a2d22] rounded-xl py-3 font-extrabold text-xs tracking-wider uppercase hover:bg-[#c5b293]/35 transition-colors"
+              onClick={handleCloseSuccessRef}
+              className="w-full bg-[#eae5d8]/50 text-[#4a2d22] rounded-xl py-3 font-extrabold text-xs tracking-wider uppercase hover:bg-[#c5b293]/30 transition-colors cursor-pointer"
             >
               {t.back_to_menu}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Customer OTP Login Modal */}
+      {isLoginOpen && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex justify-center items-center p-4 animate-fade-in">
+          <div className="bg-[#fcfaf4] w-full max-w-sm rounded-3xl border border-[#eae5d8] p-6 shadow-2xl space-y-4 relative">
+            <button 
+              onClick={() => { setIsLoginOpen(false); setOtpSent(false); setOtpError(null); }}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-stone-200/50 flex items-center justify-center text-stone-500 cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+            <div className="text-center space-y-1 pb-2 border-b border-[#eae5d8]/50">
+              <h3 className="text-base font-black text-[#4a2d22] flex items-center justify-center gap-1.5">
+                <User size={18} className="text-[#d97706]" />
+                <span>Loyalty Club Login</span>
+              </h3>
+              <p className="text-stone-500 text-[10px] font-semibold">Verify via WhatsApp OTP for special rates & rewards.</p>
+            </div>
+
+            {otpError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle size={14} />
+                <span>{otpError}</span>
+              </div>
+            )}
+
+            {!otpSent ? (
+              <form onSubmit={handleSendOtp} className="space-y-4 text-xs font-bold text-stone-500">
+                <div className="space-y-1.5">
+                  <label className="block">WhatsApp Phone Number</label>
+                  <input
+                    type="tel"
+                    required
+                    pattern="[0-9]{10}"
+                    placeholder="Enter 10-digit number"
+                    value={loginPhone}
+                    onChange={e => setLoginPhone(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-[#eae5d8] bg-white text-sm font-bold text-[#4a2d22] focus:outline-none focus:border-[#d97706]"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={otpLoading}
+                  className="w-full bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl py-3 font-bold text-xs tracking-wider uppercase disabled:opacity-50 cursor-pointer"
+                >
+                  {otpLoading ? 'Sending...' : 'Send OTP Verification'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtp} className="space-y-4 text-xs font-bold text-stone-500">
+                <div className="space-y-1.5">
+                  <label className="block">Enter 6-Digit OTP</label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    pattern="[0-9]{6}"
+                    placeholder="Enter OTP code"
+                    value={loginOtp}
+                    onChange={e => setLoginOtp(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-[#eae5d8] bg-white text-sm font-bold text-[#4a2d22] focus:outline-none focus:border-[#d97706] tracking-widest text-center"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setOtpSent(false)}
+                    className="flex-1 border border-[#eae5d8] text-stone-500 rounded-xl py-2.5 font-bold text-xs cursor-pointer hover:bg-stone-50"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={otpLoading}
+                    className="flex-1 bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl py-2.5 font-bold text-xs tracking-wider uppercase disabled:opacity-50 cursor-pointer"
+                  >
+                    {otpLoading ? 'Verifying...' : 'Verify OTP'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

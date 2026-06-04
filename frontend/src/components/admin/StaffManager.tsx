@@ -1,10 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getStaffListAction, clockInAction, clockOutAction, reviewLeaveAction, openShiftAction, closeShiftAction } from '@/app/admin/actions/staff.actions';
+import { 
+  getStaffListAction, 
+  createStaffAction, 
+  reviewLeaveAction 
+} from '@/app/admin/actions/staff.actions';
 import { createClient } from '@/utils/supabase/client';
 import { useToast } from '@/components/admin/UIPrimitives';
-import { UserCheck, Clock, ShieldAlert, Award, Calendar, ToggleLeft, ToggleRight } from 'lucide-react';
+import { UserCheck, Calendar, Plus, X, AlertTriangle } from 'lucide-react';
 
 interface StaffProfile {
   id: string;
@@ -34,8 +38,19 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
   const supabase = createClient();
   const [staff, setStaff] = useState<StaffProfile[]>([]);
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<'roster' | 'leaves'>('roster');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    role: 'staff' as 'manager' | 'cashier' | 'kitchen' | 'staff',
+    pin: '',
+    branchId: branchId || '',
+  });
 
   const [toastItem, toast] = useToast();
 
@@ -53,12 +68,24 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
         .order('created_at', { ascending: false });
 
       if (leavesList) {
-        // Map staff names to leave list
         const mappedLeaves: LeaveRequest[] = (leavesList as any[]).map(l => ({
           ...l,
           staff_name: staffList.find((s: any) => s.id === l.staff_id)?.full_name || 'Staff Member'
         }));
         setLeaves(mappedLeaves);
+      }
+
+      // Load branches
+      const { data: branchList } = await supabase
+        .from('branches')
+        .select('id, name')
+        .eq('active', true);
+
+      if (branchList) {
+        setBranches(branchList);
+        if (branchList.length > 0 && !formData.branchId) {
+          setFormData(prev => ({ ...prev, branchId: branchList[0].id }));
+        }
       }
     } catch (err) {
       console.error('Failed to load staff manager details:', err);
@@ -69,6 +96,9 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
 
   useEffect(() => {
     loadData();
+    if (branchId) {
+      setFormData(prev => ({ ...prev, branchId }));
+    }
   }, [branchId]);
 
   const handleReviewLeave = async (leaveId: string, status: 'approved' | 'rejected') => {
@@ -80,6 +110,58 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
       }
     } catch (err: any) {
       toast(err.message || 'Action failed.', 'error');
+    }
+  };
+
+  const handleCreateStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (staff.length >= 50) {
+      toast('Staff account limit reached (max 50 accounts).', 'error');
+      return;
+    }
+    if (!formData.name.trim()) {
+      toast('Name is required.', 'error');
+      return;
+    }
+    if (!/^\d{10}$/.test(formData.phone)) {
+      toast('Phone must be a 10-digit number.', 'error');
+      return;
+    }
+    if (!/^\d{4}$/.test(formData.pin)) {
+      toast('PIN must be exactly a 4-digit number.', 'error');
+      return;
+    }
+    if (!formData.branchId) {
+      toast('Please select a branch.', 'error');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await createStaffAction({
+        name: formData.name.trim(),
+        phone: formData.phone,
+        role: formData.role,
+        pin: formData.pin,
+        branchId: formData.branchId,
+      });
+
+      if (res.success) {
+        toast('Staff account created successfully! Credentials sent via WhatsApp.', 'success');
+        setFormData({
+          name: '',
+          phone: '',
+          role: 'staff',
+          pin: '',
+          branchId: branchId || (branches.length > 0 ? branches[0].id : ''),
+        });
+        setShowAddForm(false);
+        loadData();
+      }
+    } catch (err: any) {
+      toast(err.message || 'Failed to create staff account.', 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -117,27 +199,143 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
           <span className="inline-block w-6 h-6 border-2 border-[#d97706] border-t-transparent rounded-full animate-spin"></span>
         </div>
       ) : activeSubTab === 'roster' ? (
-        /* Staff Grid layout */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {staff.map((s) => (
-            <div key={s.id} className="bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-[#e2e8f0]/80 transition-all gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#d97706]/10 flex items-center justify-center font-extrabold text-[#d97706]">
-                  {s.full_name.substring(0, 2).toUpperCase()}
+        <div className="space-y-6">
+          {/* Limits display & Add trigger */}
+          <div className="flex justify-between items-center bg-[#f8fafc] border border-[#e2e8f0]/80 rounded-2xl p-4 shadow-sm">
+            <div>
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#1e293b]/50">Staff Accounts limit</span>
+              <p className="text-lg font-black">{staff.length} <span className="text-xs font-medium text-[#1e293b]/40">/ 50 active accounts</span></p>
+            </div>
+            <button
+              disabled={staff.length >= 50}
+              onClick={() => setShowAddForm(true)}
+              className="px-4 py-2 bg-[#d97706] hover:bg-[#b45309] text-white disabled:bg-[#e2e8f0] disabled:text-[#1e293b]/30 font-bold text-xs rounded-xl cursor-pointer transition-all shadow-sm inline-flex items-center gap-1.5"
+            >
+              <Plus size={14} />
+              <span>Add Staff Member</span>
+            </button>
+          </div>
+
+          {/* Add Staff form */}
+          {showAddForm && (
+            <div className="bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-6 shadow-xl space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-[#e2e8f0]/50 pb-3">
+                <h3 className="font-extrabold text-sm text-[#1e293b] flex items-center gap-1.5">
+                  <UserCheck size={16} className="text-[#d97706]" />
+                  <span>Register Staff Member</span>
+                </h3>
+                <button 
+                  onClick={() => setShowAddForm(false)}
+                  className="text-[#1e293b]/40 hover:text-[#1e293b]/70 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateStaff} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold">
+                <div>
+                  <label className="block text-[#1e293b]/60 mb-1">Full Name</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2.5 outline-none focus:border-[#d97706] transition-all"
+                  />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm">{s.full_name}</h4>
-                  <span className="text-[10px] text-[#d97706] font-bold uppercase tracking-wider">{s.role}</span>
+                  <label className="block text-[#1e293b]/60 mb-1">WhatsApp Phone Number</label>
+                  <input 
+                    type="tel" 
+                    required
+                    pattern="[0-9]{10}"
+                    placeholder="10-digit number"
+                    value={formData.phone}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2.5 outline-none focus:border-[#d97706] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#1e293b]/60 mb-1">Role</label>
+                  <select 
+                    value={formData.role}
+                    onChange={e => setFormData({ ...formData, role: e.target.value as any })}
+                    className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2.5 outline-none focus:border-[#d97706] transition-all cursor-pointer"
+                  >
+                    <option value="manager">Manager</option>
+                    <option value="cashier">Cashier</option>
+                    <option value="kitchen">Kitchen Staff</option>
+                    <option value="staff">Waiter/Server</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[#1e293b]/60 mb-1">Branch</label>
+                  <select 
+                    value={formData.branchId}
+                    onChange={e => setFormData({ ...formData, branchId: e.target.value })}
+                    className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2.5 outline-none focus:border-[#d97706] transition-all cursor-pointer"
+                  >
+                    {branches.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[#1e293b]/60 mb-1">4-Digit PIN Code (for POS login)</label>
+                  <input 
+                    type="password" 
+                    required
+                    maxLength={4}
+                    pattern="[0-9]{4}"
+                    placeholder="e.g. 1234"
+                    value={formData.pin}
+                    onChange={e => setFormData({ ...formData, pin: e.target.value })}
+                    className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2.5 outline-none focus:border-[#d97706] transition-all"
+                  />
+                </div>
+                <div className="md:col-span-2 flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(false)}
+                    className="px-4 py-2 border border-[#e2e8f0] text-[#1e293b]/60 hover:bg-[#f1f5f9] rounded-xl cursor-pointer font-bold transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-5 py-2 bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl cursor-pointer font-bold transition-all disabled:opacity-50"
+                  >
+                    {submitting ? 'Creating...' : 'Create Account'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Staff Grid layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {staff.map((s) => (
+              <div key={s.id} className="bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-[#e2e8f0]/80 transition-all gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#d97706]/10 flex items-center justify-center font-extrabold text-[#d97706]">
+                    {s.full_name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm">{s.full_name}</h4>
+                    <span className="text-[10px] text-[#d97706] font-bold uppercase tracking-wider">{s.role}</span>
+                  </div>
+                </div>
+                <div className="border-t border-[#e2e8f0]/40 pt-3 flex justify-between items-center text-xs text-[#1e293b]/50">
+                  <span>Phone: {s.phone || '—'}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${s.is_active ? 'bg-green-500/15 text-green-600' : 'bg-red-500/15 text-red-600'}`}>
+                    {s.is_active ? 'Active' : 'Suspended'}
+                  </span>
                 </div>
               </div>
-              <div className="border-t border-[#e2e8f0]/40 pt-3 flex justify-between items-center text-xs text-[#1e293b]/50">
-                <span>Phone: {s.phone || '—'}</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${s.is_active ? 'bg-green-500/15 text-green-600' : 'bg-red-500/15 text-red-600'}`}>
-                  {s.is_active ? 'Active' : 'Suspended'}
-                </span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : (
         /* Leaves Roster Table */
@@ -205,7 +403,7 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
       )}
 
       {/* Toast Notification Container */}
-      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-2xl text-xs font-bold">{toastItem.msg}</div>}
+      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-2xl text-xs font-bold shadow-lg">{toastItem.msg}</div>}
     </div>
   );
 }
