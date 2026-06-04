@@ -76,7 +76,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow()
-  autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+  autoUpdater.checkForUpdatesAndNotify().catch((err: any) => {
     console.log('Auto updater check failed:', err)
   })
 })
@@ -94,12 +94,12 @@ ipcMain.on('window:maximize', () => {
 ipcMain.on('window:close', () => mainWindow?.close())
 
 // IPC: External browser opening
-ipcMain.handle('open:external', (_e, url: string) => {
+ipcMain.handle('open:external', (_e: any, url: string) => {
   shell.openExternal(url)
 })
 
 // IPC: Secure storage (using safeStorage)
-ipcMain.handle('secure:get', (_e, key: string) => {
+ipcMain.handle('secure:get', (_e: any, key: string) => {
   try {
     const filePath = path.join(app.getPath('userData'), `${key}.enc`)
     if (fs.existsSync(filePath)) {
@@ -113,7 +113,7 @@ ipcMain.handle('secure:get', (_e, key: string) => {
   }
 })
 
-ipcMain.handle('secure:set', (_e, key: string, value: string) => {
+ipcMain.handle('secure:set', (_e: any, key: string, value: string) => {
   try {
     const encrypted = safeStorage.encryptString(value)
     const filePath = path.join(app.getPath('userData'), `${key}.enc`)
@@ -125,7 +125,7 @@ ipcMain.handle('secure:set', (_e, key: string, value: string) => {
   }
 })
 
-ipcMain.handle('secure:remove', (_e, key: string) => {
+ipcMain.handle('secure:remove', (_e: any, key: string) => {
   try {
     const filePath = path.join(app.getPath('userData'), `${key}.enc`)
     if (fs.existsSync(filePath)) {
@@ -139,7 +139,7 @@ ipcMain.handle('secure:remove', (_e, key: string) => {
 })
 
 // IPC: Anthropic Chat API Proxy (secure streaming)
-ipcMain.handle('ai:chat-stream', async (_e, messages: { role: string; content: string }[], systemPrompt: string) => {
+ipcMain.handle('ai:chat-stream', async (_e: any, messages: { role: string; content: string }[], systemPrompt: string) => {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     mainWindow?.webContents.send('ai:chat-error', 'Anthropic API key is not configured in .env.local')

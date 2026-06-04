@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Sparkles, Send, Trash2, Bot, User, AlertCircle } from 'lucide-react'
 import { useTenantStore } from '../../store/tenant.store'
 

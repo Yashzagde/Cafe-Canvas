@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Plus, Search, MapPin, ShieldAlert, Key, Ban, UserCheck, Download } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Search, MapPin, ShieldAlert, Key, Ban, UserCheck, Download, Users } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/auth.store'
 import { useTenantStore } from '../../store/tenant.store'

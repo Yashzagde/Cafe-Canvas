@@ -10,14 +10,14 @@ export default defineConfig({
       {
         // Electron main process
         entry: 'electron/main.ts',
-        onstart(options) {
+        onstart(options: any) {
           options.startup()
         },
       },
       {
         // Electron preload bridge
         entry: 'electron/preload.ts',
-        onstart(options) {
+        onstart(options: any) {
           options.reload()
         },
       },

@@ -4,7 +4,8 @@
   "description": "Multi-tenant SaaS platform for the Indian restaurant industry",
   "workspaces": [
     "frontend",
-    "desktop"
+    "desktop",
+    "cafe-canvas-store-admin"
   ],
   "scripts": {
     "dev": "npm run dev --prefix frontend",

@@ -1,4 +1,3 @@
-import React from 'react'
 import { useTenantStore } from '../../store/tenant.store'
 
 export function TitleBar({ title }: { title: string }) {

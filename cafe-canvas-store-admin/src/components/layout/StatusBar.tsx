@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useTenantStore } from '../../store/tenant.store'
 
 export function StatusBar() {

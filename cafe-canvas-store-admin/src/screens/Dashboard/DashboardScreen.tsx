@@ -1,4 +1,3 @@
-import React from 'react'
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -7,7 +6,6 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  Legend, 
   PieChart, 
   Pie, 
   Cell 

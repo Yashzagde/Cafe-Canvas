@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Plus, MapPin, Phone, Users, Ban, Trash2, ShieldCheck, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, MapPin, Phone, Users, Ban, Trash2, X } from 'lucide-react'
 import { useTenantStore } from '../../store/tenant.store'
 import { useAuthStore } from '../../store/auth.store'
 import { supabase } from '../../lib/supabase'
@@ -80,11 +80,11 @@ export function LocationsScreen() {
 
     const res = await addLocation({
       name: locName.trim(),
-      address: locAddress.trim() || null,
-      city: locCity.trim() || null,
-      state: locState.trim() || null,
-      pincode: locPincode.trim() || null,
-      phone: locPhone.trim() || null,
+      address: locAddress.trim() || undefined,
+      city: locCity.trim() || undefined,
+      state: locState.trim() || undefined,
+      pincode: locPincode.trim() || undefined,
+      phone: locPhone.trim() || undefined,
     })
 
     setIsSubmitting(false)
