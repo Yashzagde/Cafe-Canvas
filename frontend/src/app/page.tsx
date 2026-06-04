@@ -518,8 +518,8 @@ export default function Home() {
       {/* Sticky Premium Glass Navbar */}
       <nav className="sticky top-0 w-full backdrop-blur-lg bg-[#FAF7F2]/80 border-b border-[#E5D2C0]/50 py-4 px-6 flex justify-between items-center z-40 max-w-7xl mx-auto rounded-b-3xl shadow-sm">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#C6783A] to-[#B39034] flex items-center justify-center shadow-md shadow-[#C6783A]/25 border border-white/20 transition-transform group-hover:scale-105">
-            <Coffee className="text-[#FAF6F0] w-4.5 h-4.5" />
+          <div className="w-9 h-9 rounded-2xl bg-[#FAF6F0] flex items-center justify-center shadow-md shadow-[#C6783A]/10 border border-[#E5D2C0]/50 overflow-hidden transition-transform group-hover:scale-105">
+            <img src="/logo.png" alt="Cafe Canvas Logo" className="w-7 h-7 object-contain" />
           </div>
           <span className="font-extrabold text-lg tracking-tight text-[#2D211A] uppercase">
             Cafe<span className="text-[#C6783A]">Canva</span>

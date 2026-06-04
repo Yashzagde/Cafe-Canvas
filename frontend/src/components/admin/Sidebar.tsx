@@ -68,16 +68,15 @@ export default function Sidebar({
           width: "32px",
           height: "32px",
           borderRadius: "8px",
-          background: `linear-gradient(135deg,${T.ind},${T.em})`,
+          background: "#faf6f0",
+          border: `1px solid ${T.bdr}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: "16px",
-          fontWeight: 800,
-          color: "#ffffff",
+          overflow: "hidden",
           flexShrink: 0
         }}>
-          C
+          <img src="/logo.png" alt="Logo" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
         </div>
         {sidebarOpen && (
           <div>
@@ -126,15 +125,15 @@ export default function Sidebar({
               width: "32px",
               height: "32px",
               borderRadius: "50%",
-              background: T.iA(0.2),
+              background: "#faf6f0",
+              border: `1px solid ${T.bdr}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "12px",
-              fontWeight: 800,
-              color: T.ind
+              overflow: "hidden",
+              flexShrink: 0
             }}>
-              CC
+              <img src="/logo.png" alt="Logo" style={{ width: "22px", height: "22px", objectFit: "contain" }} />
             </div>
             <div>
               <div style={{ fontSize: "11px", fontWeight: 600, color: T.tx }}>Operations</div>

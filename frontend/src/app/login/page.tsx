@@ -69,8 +69,8 @@ export default function LoginPage() {
       
       <div className="glass w-full max-w-md p-8 rounded-3xl z-10 relative border border-[#eae5d8] bg-white/90 shadow-lg">
         <div className="flex justify-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-[#fbeee7] flex items-center justify-center text-[#e05e35]">
-            <Coffee size={28} />
+          <div className="w-14 h-14 rounded-2xl bg-[#fbeee7] flex items-center justify-center overflow-hidden">
+            <img src="/logo.png" alt="Cafe Canvas Logo" className="w-10 h-10 object-contain" />
           </div>
         </div>
         

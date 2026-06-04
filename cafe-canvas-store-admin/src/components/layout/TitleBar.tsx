@@ -1,4 +1,5 @@
 import { useTenantStore } from '../../store/tenant.store'
+import logoUrl from '../../assets/logo.png'
 
 export function TitleBar({ title }: { title: string }) {
   const { tenant } = useTenantStore()
@@ -9,7 +10,8 @@ export function TitleBar({ title }: { title: string }) {
     >
       {/* Left: Logo + Screen */}
       <div className="flex items-center gap-2 titlebar-nodrag">
-        <span className="font-display text-base font-bold tracking-wide">Cafe Canvas</span>
+        <img src={logoUrl} alt="Cafe Canvas" className="w-5 h-5 object-contain" />
+        <span className="font-display text-sm font-bold tracking-wide">Cafe Canvas</span>
         <span className="text-white/40 text-xs">·</span>
         <span className="text-white/95 text-xs font-semibold">{title}</span>
       </div>

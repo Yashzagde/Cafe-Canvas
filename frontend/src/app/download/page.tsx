@@ -51,7 +51,7 @@ export default function DownloadPage() {
         {/* Header Profile */}
         <header className="text-center flex flex-col items-center gap-3">
           <div className="logo flex items-center gap-2 font-bold text-2xl tracking-tighter">
-            <Coffee className="text-amber-600" />
+            <img src="/logo.png" alt="Cafe Canvas Logo" className="w-8 h-8 object-contain" />
             <span>Cafe<span className="text-amber-600">Canva</span></span>
           </div>
           <p className="text-xs text-stone-500 uppercase tracking-widest font-black">Desktop Terminal Distribution</p>

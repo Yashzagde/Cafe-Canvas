@@ -45,8 +45,8 @@ export default function ComingSoon() {
         </div>
 
         {/* Brand signature */}
-        <div className="text-[10px] text-stone-400 font-bold flex items-center gap-1 mt-6">
-          <Coffee size={12} className="text-amber-600" />
+        <div className="text-[10px] text-stone-400 font-bold flex items-center gap-1.5 mt-6">
+          <img src="/logo.png" alt="" className="w-4 h-4 object-contain" />
           Cafe Canva Hospitality OS
         </div>
       </div>

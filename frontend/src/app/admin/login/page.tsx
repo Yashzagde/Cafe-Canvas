@@ -50,8 +50,8 @@ export default function AdminLogin() {
       <div className="w-full max-w-md bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-8 shadow-2xl relative z-10">
         {/* Branding header */}
         <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="w-14 h-14 bg-gradient-to-tr from-[#d97706] to-[#ca8a04] rounded-2xl flex items-center justify-center shadow-lg shadow-[#d97706]/20">
-            <Coffee className="w-7 h-7 text-[#ffffff]" />
+          <div className="w-14 h-14 bg-[#faf6f0] border border-[#e2e8f0] rounded-2xl flex items-center justify-center shadow-lg shadow-[#d97706]/5 overflow-hidden">
+            <img src="/logo.png" alt="Cafe Canvas Logo" className="w-10 h-10 object-contain" />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight font-display text-transparent bg-clip-text bg-gradient-to-r from-[#1e293b] via-[#f5e6d3] to-[#d97706]">
             CafeCanvas OS

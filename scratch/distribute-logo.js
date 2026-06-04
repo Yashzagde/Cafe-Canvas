@@ -1,10 +1,12 @@
-const sharp = require('../cafe-canvas-store-admin/node_modules/sharp');
-const pngToIco = require('../cafe-canvas-store-admin/node_modules/png-to-ico');
+const sharp = require('sharp');
+const pngToIco = require('png-to-ico');
 const fs = require('fs');
 const path = require('path');
 
 const srcLogo = path.join(__dirname, 'logo_transparent.png');
 const destAdminLogo = path.resolve(__dirname, '../cafe-canvas-store-admin/resources/logo.png');
+const destAdminSrcLogoDir = path.resolve(__dirname, '../cafe-canvas-store-admin/src/assets');
+const destAdminSrcLogo = path.resolve(__dirname, '../cafe-canvas-store-admin/src/assets/logo.png');
 const destFrontendLogo = path.resolve(__dirname, '../frontend/public/logo.png');
 const destFavicon = path.resolve(__dirname, '../frontend/public/favicon.ico');
 
@@ -17,6 +19,16 @@ async function distribute() {
       .png()
       .toFile(destAdminLogo);
     console.log(`✅ Saved desktop logo to: ${destAdminLogo}`);
+
+    console.log('Saving logo to Desktop Admin src/assets...');
+    if (!fs.existsSync(destAdminSrcLogoDir)) {
+      fs.mkdirSync(destAdminSrcLogoDir, { recursive: true });
+    }
+    await sharp(srcLogo)
+      .resize(512, 512)
+      .png()
+      .toFile(destAdminSrcLogo);
+    console.log(`✅ Saved desktop src logo to: ${destAdminSrcLogo}`);
 
     console.log('Resizing logo for Frontend public assets...');
     await sharp(srcLogo)

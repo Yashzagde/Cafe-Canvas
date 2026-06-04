@@ -23,6 +23,7 @@ import { useAuthStore } from '../../store/auth.store'
 import { useUIStore, type ScreenType } from '../../store/ui.store'
 import { cn } from '../../lib/utils'
 import { CountBadge } from '../ui/Badge'
+import logoUrl from '../../assets/logo.png'
 
 interface NavItem {
   id: ScreenType
@@ -119,8 +120,8 @@ export function Sidebar() {
           'border-b border-canvas-brown_mid/20 flex items-center shrink-0',
           sidebarCollapsed ? 'p-3 justify-center' : 'p-5 gap-3'
         )}>
-          <div className="w-10 h-10 bg-canvas-terracotta rounded-full flex items-center justify-center border border-canvas-gold shadow-md shadow-black/10 shrink-0">
-            <span className="font-display text-base font-bold text-white tracking-widest">CC</span>
+          <div className="w-10 h-10 bg-canvas-brown_mid/20 rounded-full flex items-center justify-center border border-canvas-gold/30 shadow-md shadow-black/10 shrink-0 overflow-hidden">
+            <img src={logoUrl} alt="Cafe Canvas Logo" className="w-8 h-8 object-contain" />
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0">

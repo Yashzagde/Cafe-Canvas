@@ -67,7 +67,7 @@ export default function SuperAdminLoginPage() {
         {/* Header Branding */}
         <header className="text-center flex flex-col items-center gap-2.5">
           <div className="logo flex items-center gap-2 font-bold text-2xl tracking-tighter text-stone-900">
-            <Shield className="text-amber-600 fill-amber-500/10" />
+            <img src="/logo.png" alt="Cafe Canvas Logo" className="w-8 h-8 object-contain" />
             <span>Cafe<span className="text-amber-600">Canva</span></span>
           </div>
           <div>
