@@ -49,7 +49,13 @@
 *   Resolved duplicate typescript definitions and missing fields (attendance/bills) in `frontend/src/types/database.ts` ensuring clean compilation.
 *   All Next.js frontend pages and server actions fully typed and tested via strict `type-check`.
 
-### Sprint 4: Tenant Storefront (Weeks 7-8) — 🚀 IN PROGRESS
+### Sprint 4: Tenant Storefront (Weeks 7-8) — ✅ COMPLETED
+*   Delivered the complete, conversion-optimized 15-section CafeCanvas V4 Enterprise SaaS Homepage.
+*   Implemented a premium, luxury hospitality styling system using warm cream (#FAF7F2), warm amber, rich gold, and soft rose accents.
+*   Wired dynamic live-update previews for cashiers, tables, inventories, and paise-precision CGST + SGST tax splits.
+*   Integrated a live English / Hindi language toggle (i18n) with comprehensive dictionaries.
+*   Removed scrollbar constraints from the pricing plans feature cards.
+*   Successfully built and deployed live to production at https://cafecanvas.bar.
 ### Sprint 5: Payments & Notifications (Weeks 9-10) — 📋 BACKLOG
 ### Sprint 6: Analytics & Polish (Weeks 11-12) — 📋 BACKLOG
 

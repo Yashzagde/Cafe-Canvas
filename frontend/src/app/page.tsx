@@ -1207,7 +1207,7 @@ export default function Home() {
                 
                 <hr className="border-[#E5D2C0]/50" />
 
-                <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                <div className="space-y-2.5">
                   {plan.features.map((feat, idx) => (
                     <div key={idx} className="flex gap-2 text-[10px] text-[#5D4B41] font-bold">
                       <Check size={12} className="text-[#C6783A] shrink-0 mt-0.5" />
