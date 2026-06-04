@@ -51,6 +51,35 @@ export const useAuthStore = create<AuthState>((set) => ({
           }
         }
 
+        // Fallback: If no tenant is resolved, fetch first available tenant and link user
+        if (!tenantId) {
+          const { data: fallbackTenant } = await supabase
+            .from('tenants')
+            .select('id')
+            .limit(1)
+            .maybeSingle()
+            
+          if (fallbackTenant) {
+            tenantId = fallbackTenant.id
+            role = 'manager'
+            try {
+              await supabase
+                .from('staff_accounts')
+                .insert({
+                  tenant_id: tenantId,
+                  full_name: session.user.email?.split('@')[0].toUpperCase() || 'New User',
+                  email: session.user.email || 'newuser@example.com',
+                  role: 'manager',
+                  auth_user_id: session.user.id,
+                  pin: '1234',
+                  is_active: true
+                })
+            } catch (e) {
+              console.warn('Fallback link insertion failed:', e)
+            }
+          }
+        }
+
         set({ 
           session, 
           user: session.user, 
@@ -92,6 +121,35 @@ export const useAuthStore = create<AuthState>((set) => ({
             role = 'manager'
           }
         }
+
+        if (!tenantId) {
+          const { data: fallbackTenant } = await supabase
+            .from('tenants')
+            .select('id')
+            .limit(1)
+            .maybeSingle()
+            
+          if (fallbackTenant) {
+            tenantId = fallbackTenant.id
+            role = 'manager'
+            try {
+              await supabase
+                .from('staff_accounts')
+                .insert({
+                  tenant_id: tenantId,
+                  full_name: session.user.email?.split('@')[0].toUpperCase() || 'New User',
+                  email: session.user.email || 'newuser@example.com',
+                  role: 'manager',
+                  auth_user_id: session.user.id,
+                  pin: '1234',
+                  is_active: true
+                })
+            } catch (e) {
+              console.warn('Fallback link insertion failed:', e)
+            }
+          }
+        }
+
         set({ session, user: session.user, tenantId, role })
       } else {
         set({ session: null, user: null, tenantId: null, role: null })
@@ -127,6 +185,34 @@ export const useAuthStore = create<AuthState>((set) => ({
         if (tenant) {
           tenantId = tenant.id
           role = 'manager'
+        }
+      }
+
+      if (!tenantId) {
+        const { data: fallbackTenant } = await supabase
+          .from('tenants')
+          .select('id')
+          .limit(1)
+          .maybeSingle()
+          
+        if (fallbackTenant) {
+          tenantId = fallbackTenant.id
+          role = 'manager'
+          try {
+            await supabase
+              .from('staff_accounts')
+              .insert({
+                tenant_id: tenantId,
+                full_name: data.user.email?.split('@')[0].toUpperCase() || 'New User',
+                email: data.user.email || 'newuser@example.com',
+                role: 'manager',
+                auth_user_id: data.user.id,
+                pin: '1234',
+                is_active: true
+              })
+          } catch (e) {
+            console.warn('Fallback link insertion failed:', e)
+          }
         }
       }
 
