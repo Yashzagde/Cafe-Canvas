@@ -60,7 +60,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
           .from('staff_attendance')
           .select('id, clock_in')
           .eq('staff_id', user.id)
-          .is_('clock_out', null)
+          .isFilter('clock_out', null)
           .maybeSingle();
 
       if (mounted) {

@@ -235,7 +235,7 @@ class CcMenuItemCard extends StatelessWidget {
                   ),
                 const SizedBox(height: 8.0),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.between,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     CcPriceText(priceInPaise: item.price),
                     if (onAdd != null && item.status == 'available')
@@ -263,7 +263,7 @@ class CcMenuItemCard extends StatelessWidget {
 
 // --- CcTableCard ---
 class CcTableCard extends StatelessWidget {
-  final TableModel table;
+  final CafeTable table;
   final VoidCallback onTap;
 
   const CcTableCard({
@@ -379,7 +379,7 @@ class CcTabletScaffold extends StatelessWidget {
                       'CafeCanva',
                       style: GoogleFonts.dmSans(
                         fontSize: 22.0,
-                        fontWeight: FontWeight.black,
+                        fontWeight: FontWeight.w900,
                         color: CafeCanvaColors.primary,
                       ),
                     ),

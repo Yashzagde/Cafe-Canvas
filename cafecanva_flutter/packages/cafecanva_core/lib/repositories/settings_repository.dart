@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/store_settings.dart';
 import '../models/branding.dart';
 import '../services/supabase_service.dart';
@@ -39,7 +41,8 @@ class SettingsRepository {
   static Future<String> uploadLogo(String tenantId, String branchId, List<int> imageBytes) async {
     final path = '$tenantId/$branchId/logo.png';
     await SupabaseService.storage.from('menu-images').uploadBinary(
-      path, imageBytes,
+      path,
+      Uint8List.fromList(imageBytes),
       fileOptions: const FileOptions(contentType: 'image/png', upsert: true),
     );
     return SupabaseService.storage.from('menu-images').getPublicUrl(path);

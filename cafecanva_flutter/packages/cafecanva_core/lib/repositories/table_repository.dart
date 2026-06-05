@@ -11,7 +11,7 @@ class TableRepository {
         .select()
         .eq('tenant_id', tenantId)
         .eq('branch_id', branchId)
-        .is_('deleted_at', null)
+        .isFilter('deleted_at', null)
         .order('name');
     return (data as List).map((e) => CafeTable.fromJson(e)).toList();
   }
@@ -57,6 +57,6 @@ class TableRepository {
           'check_out_at': DateTime.now().toUtc().toIso8601String(),
         })
         .eq('table_id', tableId)
-        .is_('check_out_at', null);
+        .isFilter('check_out_at', null);
   }
 }

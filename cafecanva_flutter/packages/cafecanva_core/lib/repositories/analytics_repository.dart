@@ -28,7 +28,7 @@ class AnalyticsRepository {
         .select('id, status')
         .eq('tenant_id', tenantId)
         .eq('branch_id', branchId)
-        .is_('deleted_at', null);
+        .isFilter('deleted_at', null);
 
     final tables = tablesData as List;
     final occupiedCount = tables.where((t) => t['status'] == 'occupied').length;

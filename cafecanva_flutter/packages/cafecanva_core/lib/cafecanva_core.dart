@@ -1,6 +1,9 @@
 /// CafeCanva Core — shared models, services, repositories, and providers.
 library cafecanva_core;
 
+// Config
+export 'config/env_config.dart';
+
 // Models
 export 'models/tenant.dart';
 export 'models/branch.dart';

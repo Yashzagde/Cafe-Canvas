@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/menu_category.dart';
 import '../models/menu_item.dart';
 import '../models/modifier_group.dart';
@@ -14,7 +16,7 @@ class MenuRepository {
         .select()
         .eq('tenant_id', tenantId)
         .eq('branch_id', branchId)
-        .is_('deleted_at', null)
+        .isFilter('deleted_at', null)
         .order('sort_order');
     return (data as List).map((e) => MenuCategory.fromJson(e)).toList();
   }
@@ -44,7 +46,7 @@ class MenuRepository {
         .select()
         .eq('tenant_id', tenantId)
         .eq('branch_id', branchId)
-        .is_('deleted_at', null);
+        .isFilter('deleted_at', null);
     if (categoryId != null) {
       query = query.eq('category_id', categoryId);
     }
@@ -58,7 +60,7 @@ class MenuRepository {
         .eq('tenant_id', tenantId)
         .eq('branch_id', branchId)
         .eq('status', 'available')
-        .is_('deleted_at', null)
+        .isFilter('deleted_at', null)
         .order('sort_order');
     return (data as List).map((e) => MenuItem.fromJson(e)).toList();
   }
@@ -137,7 +139,7 @@ class MenuRepository {
     final path = '$tenantId/menu/$itemId.jpg';
     await SupabaseService.storage.from('menu-images').uploadBinary(
       path,
-      imageBytes,
+      Uint8List.fromList(imageBytes),
       fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
     );
     return SupabaseService.storage.from('menu-images').getPublicUrl(path);

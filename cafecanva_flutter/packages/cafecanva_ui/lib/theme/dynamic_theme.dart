@@ -5,7 +5,7 @@ import 'app_theme.dart';
 
 ThemeData buildTenantTheme(StorefrontConfig config) {
   try {
-    final hexString = config.primaryColor.replaceFirst('#', '0xFF');
+    final hexString = (config.primaryColor ?? '#FFA500').replaceFirst('#', '0xFF');
     final intColor = int.parse(hexString);
     final brandColor = Color(intColor);
 

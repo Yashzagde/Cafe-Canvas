@@ -47,16 +47,6 @@ void main() async {
     debugPrint('Firebase initialization failed: $e. Using local simulation fallback.');
   }
 
-  // 4. Expose dynamic Edge Function settings
-  await SupabaseService.instance.initialize(
-    url: EnvConfig.supabaseUrl,
-    anonKey: EnvConfig.supabaseAnonKey,
-  );
-
-  // 5. Restore session from securely cached refresh token
-  final authService = AuthService.instance;
-  await authService.restoreSessionFromCache();
-
   // 6. Blocker 1: Inject concrete native mobile handlers at app startup
   final razorpayGateway = RazorpayPaymentGateway();
   razorpayGateway.initialize(

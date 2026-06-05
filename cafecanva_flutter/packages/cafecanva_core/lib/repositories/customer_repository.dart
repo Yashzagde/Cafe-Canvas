@@ -10,7 +10,7 @@ class CustomerRepository {
         .select()
         .eq('tenant_id', tenantId)
         .eq('branch_id', branchId)
-        .is_('deleted_at', null)
+        .isFilter('deleted_at', null)
         .order('name');
     return (data as List).map((e) => Customer.fromJson(e)).toList();
   }
@@ -30,7 +30,7 @@ class CustomerRepository {
         .select()
         .eq('tenant_id', tenantId)
         .eq('phone', phone)
-        .is_('deleted_at', null)
+        .isFilter('deleted_at', null)
         .maybeSingle();
     if (data == null) return null;
     return Customer.fromJson(data);

@@ -18,7 +18,6 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final OrderRepository _orderRepo = OrderRepository();
   bool _isLoading = true;
   int _ordersToday = 0;
   int _revenueToday = 0; // Paise
@@ -34,12 +33,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     try {
       setState(() => _isLoading = true);
       // Aggregating statistics from the repository
-      final orders = await _orderRepo.fetchOrders('demo-branch-7777');
+      final orders = await OrderRepository.getAllOrders('demo-tenant-5555', 'demo-branch-7777');
       
       int revenue = 0;
       for (final o in orders) {
         if (o.status == 'paid') {
-          revenue += o.total;
+          revenue += o.total.toInt();
         }
       }
 
@@ -139,7 +138,6 @@ class MenuEditorScreen extends StatefulWidget {
 }
 
 class _MenuEditorScreenState extends State<MenuEditorScreen> {
-  final MenuRepository _menuRepo = MenuRepository();
   bool _isLoading = true;
   List<MenuCategory> _categories = [];
   List<MenuItem> _items = [];
@@ -153,8 +151,8 @@ class _MenuEditorScreenState extends State<MenuEditorScreen> {
   Future<void> _loadMenu() async {
     try {
       setState(() => _isLoading = true);
-      final categories = await _menuRepo.fetchCategories('demo-branch-7777');
-      final items = await _menuRepo.fetchItems('demo-branch-7777');
+      final categories = await MenuRepository.getCategories('demo-tenant-5555', 'demo-branch-7777');
+      final items = await MenuRepository.getItems('demo-tenant-5555', 'demo-branch-7777');
 
       if (mounted) {
         setState(() {
@@ -193,7 +191,7 @@ class _MenuEditorScreenState extends State<MenuEditorScreen> {
               ElevatedButton(
                 onPressed: () async {
                   if (nameCont.text.trim().isEmpty) return;
-                  await _menuRepo.createCategory({
+                  await MenuRepository.createCategory({
                     'tenant_id': 'demo-tenant-5555',
                     'branch_id': 'demo-branch-7777',
                     'name': nameCont.text.trim(),
@@ -285,7 +283,7 @@ class _MenuEditorScreenState extends State<MenuEditorScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(CafeCanvaRadius.sm),
+                          borderRadius: const BorderRadius.all(CafeCanvaRadius.sm),
                           child: Image.file(
                             File(pickedImage!.path),
                             height: 120,
@@ -313,7 +311,7 @@ class _MenuEditorScreenState extends State<MenuEditorScreen> {
 
                             if (compressedBytes != null) {
                               final generatedItemId = 'item_${DateTime.now().millisecondsSinceEpoch}';
-                              uploadedUrl = await _menuRepo.uploadMenuImage(
+                              uploadedUrl = await MenuRepository.uploadMenuImage(
                                 'demo-tenant-5555',
                                 generatedItemId,
                                 compressedBytes,
@@ -324,7 +322,7 @@ class _MenuEditorScreenState extends State<MenuEditorScreen> {
                           final priceRupees = double.parse(priceCont.text.trim());
                           final pricePaise = (priceRupees * 100).round();
 
-                          await _menuRepo.createItem({
+                          await MenuRepository.createItem({
                             'tenant_id': 'demo-tenant-5555',
                             'branch_id': 'demo-branch-7777',
                             'category_id': selectedCatId!,
@@ -417,7 +415,7 @@ class _MenuEditorScreenState extends State<MenuEditorScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text(
                         cat.name.toUpperCase(),
-                        style: const TextStyle(fontWeight: FontWeight.black, color: CafeCanvaColors.primaryDark, letterSpacing: 0.5),
+                        style: const TextStyle(fontWeight: FontWeight.w900, color: CafeCanvaColors.primaryDark, letterSpacing: 0.5),
                       ),
                     ),
                     ...catItems.map((item) => ListTile(
@@ -430,7 +428,7 @@ class _MenuEditorScreenState extends State<MenuEditorScreen> {
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline, color: CafeCanvaColors.error),
                         onPressed: () async {
-                          await _menuRepo.deleteItem(item.id);
+                          await MenuRepository.deleteItem(item.id);
                           _loadMenu();
                         },
                       ),
@@ -456,7 +454,7 @@ class StaffManagementScreen extends StatefulWidget {
 }
 
 class _StaffManagementScreenState extends State<StaffManagementScreen> {
-  final _client = SupabaseService.instance.client;
+  final _client = SupabaseService.client;
   bool _isLoading = true;
   List<UserProfile> _staff = [];
 
@@ -591,12 +589,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           return ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const CircleAvatar(child: Icon(Icons.person)),
-            title: Text(u.fullName),
+            title: Text(u.name),
             subtitle: Text('Role: ${u.role.toUpperCase()}'),
             trailing: Text(
-              u.status.toUpperCase(),
+              u.active ? 'ACTIVE' : 'INACTIVE',
               style: TextStyle(
-                color: u.status.toUpperCase() == 'ACTIVE' ? CafeCanvaColors.success : CafeCanvaColors.error,
+                color: u.active ? CafeCanvaColors.success : CafeCanvaColors.error,
                 fontWeight: FontWeight.bold,
               ),
             ),

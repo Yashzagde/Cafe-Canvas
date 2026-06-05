@@ -1,3 +1,5 @@
+import 'order_item.dart';
+
 /// Order model. All amounts in paise.
 class Order {
   final String id;
