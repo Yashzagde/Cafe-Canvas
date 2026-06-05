@@ -1,0 +1,6 @@
+# melos_managed_dependency_overrides: cafecanva_core,cafecanva_ui
+dependency_overrides:
+  cafecanva_core:
+    path: ..\\..\\packages\\cafecanva_core
+  cafecanva_ui:
+    path: ..\\..\\packages\\cafecanva_ui

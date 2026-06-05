@@ -38,6 +38,7 @@
     "@supabase/supabase-js": "^2.106.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "ai": "^6.0.197",
     "dotenv": "^17.4.2",
     "postgres": "^3.4.9"
   },
