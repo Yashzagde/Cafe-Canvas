@@ -10,8 +10,6 @@ final storefrontConfigProvider = FutureProvider<StorefrontConfig>((ref) async {
   return StorefrontConfig(
     id: 'demo-cfg-1',
     tenantId: 'demo-tenant-5555',
-    branchId: 'demo-branch-7777',
-    slug: 'default-slug',
     primaryColor: '#D97706', // Primary Brand Seed
   );
 });

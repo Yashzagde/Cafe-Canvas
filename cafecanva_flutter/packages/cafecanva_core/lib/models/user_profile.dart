@@ -38,17 +38,20 @@ class UserProfile {
   bool get canManage => role == 'owner' || role == 'manager';
   bool get canTakeOrders => role == 'owner' || role == 'manager' || role == 'cashier' || role == 'staff';
 
+  String get fullName => name;
+  String get status => active ? 'ACTIVE' : 'INACTIVE';
+
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         id: json['id'] as String,
         tenantId: json['tenant_id'] as String?,
-        branchId: json['branch_id'] as String?,
-        name: (json['name'] ?? json['full_name'] ?? '') as String,
+        branchId: json['location_id'] as String?,
+        name: (json['full_name'] ?? json['name'] ?? '') as String,
         email: json['email'] as String?,
         phone: json['phone'] as String?,
         role: json['role'] as String? ?? 'staff',
-        pinHash: json['pin_hash'] as String?,
+        pinHash: json['pin'] as String?,
         avatarUrl: json['avatar_url'] as String?,
-        active: json['active'] as bool? ?? true,
+        active: json['is_active'] as bool? ?? true,
         fcmToken: json['fcm_token'] as String?,
         permissions: json['permissions'] is Map ? Map<String, dynamic>.from(json['permissions'] as Map) : {},
         createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
@@ -57,14 +60,14 @@ class UserProfile {
   Map<String, dynamic> toJson() => {
         'id': id,
         'tenant_id': tenantId,
-        'branch_id': branchId,
-        'name': name,
+        'location_id': branchId,
+        'full_name': name,
         'email': email,
         'phone': phone,
         'role': role,
-        'pin_hash': pinHash,
+        'pin': pinHash,
         'avatar_url': avatarUrl,
-        'active': active,
+        'is_active': active,
         'fcm_token': fcmToken,
         'permissions': permissions,
       };

@@ -28,7 +28,7 @@ void main() async {
   );
 
   // 4. Expose dynamic Edge Function settings
-  await SupabaseService.instance.initialize(
+  await SupabaseService.initialize(
     url: EnvConfig.supabaseUrl,
     anonKey: EnvConfig.supabaseAnonKey,
   );

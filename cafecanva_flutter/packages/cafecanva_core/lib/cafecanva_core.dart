@@ -52,3 +52,4 @@ export 'utils/currency_formatter.dart';
 export 'utils/date_formatter.dart';
 export 'utils/validators.dart';
 export 'utils/constants.dart';
+export 'utils/cc_error.dart';

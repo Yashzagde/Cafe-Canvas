@@ -49,8 +49,8 @@ class CafeTable {
     return CafeTable(
       id: json['id'] as String,
       tenantId: json['tenant_id'] as String,
-      branchId: json['branch_id'] as String,
-      name: json['name'] as String,
+      branchId: (json['location_id'] ?? json['branch_id'] ?? '') as String,
+      name: (json['name'] ?? '') as String,
       capacity: json['capacity'] as int? ?? 4,
       section: json['section'] as String? ?? 'indoor',
       shape: json['shape'] as String? ?? 'square',
@@ -65,7 +65,7 @@ class CafeTable {
 
   Map<String, dynamic> toJson() => {
         'tenant_id': tenantId,
-        'branch_id': branchId,
+        'location_id': branchId,
         'name': name,
         'capacity': capacity,
         'section': section,
@@ -100,3 +100,5 @@ class CafeTable {
         updatedAt: updatedAt,
       );
 }
+
+typedef TableModel = CafeTable;

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
 import 'package:cafecanva_billing/cafecanva_billing.dart';
@@ -75,7 +76,7 @@ class _SlugEntryScreenState extends State<SlugEntryScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.between,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Scan Table QR Code', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
                   IconButton(
@@ -155,7 +156,7 @@ class _SlugEntryScreenState extends State<SlugEntryScreen> {
                 'CafeCanva',
                 style: GoogleFonts.dmSans(
                   fontSize: 32.0,
-                  fontWeight: FontWeight.black,
+                  fontWeight: FontWeight.w900,
                   color: CafeCanvaColors.primaryDark,
                 ),
               ),
@@ -423,7 +424,7 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
               padding: const EdgeInsets.all(CafeCanvaSpacing.md),
               color: CafeCanvaColors.primaryDark,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.between,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     '${cartItems.length} items added in basket',
@@ -570,7 +571,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Text(_item.name, style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold)),
@@ -620,7 +621,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   const SizedBox(height: 24.0),
                   
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Quantity', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
                       Row(
@@ -815,7 +816,7 @@ class _CartScreenState extends State<CartScreen> {
                   const Divider(),
                   
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Subtotal'),
                       CcPriceText(priceInPaise: subtotal),
@@ -823,7 +824,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                   const SizedBox(height: 4.0),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('GST (5%)'),
                       CcPriceText(priceInPaise: tax),
@@ -831,7 +832,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                   const SizedBox(height: 8.0),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('TOTAL PAYABLE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
                       CcPriceText(priceInPaise: total, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: CafeCanvaColors.primary)),
@@ -965,7 +966,7 @@ class _TrackScreenState extends State<TrackScreen> {
             Text(
               'ORDER STATUS: ${status.toUpperCase()}',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.black, fontSize: 18.0, letterSpacing: 0.5),
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18.0, letterSpacing: 0.5),
             ),
             const SizedBox(height: 16.0),
             LinearProgressIndicator(
@@ -987,7 +988,7 @@ class _TrackScreenState extends State<TrackScreen> {
                   )),
                   const Divider(),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Total'),
                       CcPriceText(priceInPaise: _order!.total),

@@ -42,7 +42,7 @@ class DesktopLayout extends StatelessWidget {
                         'CafeCanva',
                         style: TextStyle(
                           fontSize: 22.0,
-                          fontWeight: FontWeight.black,
+                          fontWeight: FontWeight.w900,
                           color: CafeCanvaColors.primaryDark,
                         ),
                       ),
@@ -286,7 +286,7 @@ class _DesktopMenuEditorScreenState extends State<DesktopMenuEditorScreen> {
         PopupMenuItem(
           child: const Text('Toggle Availability', style: TextStyle(color: CafeCanvaColors.primary)),
           onTap: () async {
-            await _menuRepo.updateItem(item.id, {
+            await MenuRepository.updateItem(item.id, {
               'status': item.status == 'available' ? 'unavailable' : 'available',
             });
             _loadMenu();
@@ -295,7 +295,7 @@ class _DesktopMenuEditorScreenState extends State<DesktopMenuEditorScreen> {
         PopupMenuItem(
           child: const Text('Delete Listing Permanently', style: TextStyle(color: CafeCanvaColors.error)),
           onTap: () async {
-            await _menuRepo.deleteItem(item.id);
+            await MenuRepository.deleteItem(item.id);
             _loadMenu();
           },
         ),
@@ -327,7 +327,7 @@ class _DesktopMenuEditorScreenState extends State<DesktopMenuEditorScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12.0),
                   child: Text(
                     cat.name.toUpperCase(),
-                    style: const TextStyle(fontWeight: FontWeight.black, color: CafeCanvaColors.primaryDark, fontSize: 16.0),
+                    style: const TextStyle(fontWeight: FontWeight.w900, color: CafeCanvaColors.primaryDark, fontSize: 16.0),
                   ),
                 ),
                 Wrap(
@@ -383,7 +383,7 @@ class DesktopStaffManagementScreen extends StatefulWidget {
 }
 
 class _DesktopStaffManagementScreenState extends State<DesktopStaffManagementScreen> {
-  final _client = SupabaseService.instance.client;
+  final _client = SupabaseService.client;
   bool _isLoading = true;
   List<UserProfile> _staff = [];
 
@@ -422,7 +422,7 @@ class _DesktopStaffManagementScreenState extends State<DesktopStaffManagementScr
             padding: EdgeInsets.zero,
             child: SingleChildScrollView(
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(CafeCanvaColors.stone550.withOpacity(0.05)),
+                headingRowColor: MaterialStateProperty.all(CafeCanvaColors.stone500.withOpacity(0.05)),
                 columns: const [
                   DataColumn(label: Text('Full Name', style: TextStyle(fontWeight: FontWeight.bold))),
                   DataColumn(label: Text('Assigned Role', style: TextStyle(fontWeight: FontWeight.bold))),

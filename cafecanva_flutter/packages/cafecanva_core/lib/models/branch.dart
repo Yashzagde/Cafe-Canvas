@@ -27,7 +27,7 @@ class Branch {
         address: json['address'] as String?,
         phone: json['phone'] as String?,
         managerId: json['manager_id'] as String?,
-        active: json['active'] as bool? ?? true,
+        active: json['is_active'] as bool? ?? true,
         createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
       );
 
@@ -38,7 +38,7 @@ class Branch {
         'address': address,
         'phone': phone,
         'manager_id': managerId,
-        'active': active,
+        'is_active': active,
       };
 
   Branch copyWith({

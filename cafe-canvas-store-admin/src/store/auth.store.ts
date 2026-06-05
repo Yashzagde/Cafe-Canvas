@@ -51,33 +51,11 @@ export const useAuthStore = create<AuthState>((set) => ({
           }
         }
 
-        // Fallback: If no tenant is resolved, fetch first available tenant and link user
+        // If no tenant is resolved, they shouldn't log in
         if (!tenantId) {
-          const { data: fallbackTenant } = await supabase
-            .from('tenants')
-            .select('id')
-            .limit(1)
-            .maybeSingle()
-            
-          if (fallbackTenant) {
-            tenantId = fallbackTenant.id
-            role = 'manager'
-            try {
-              await supabase
-                .from('staff_accounts')
-                .insert({
-                  tenant_id: tenantId,
-                  full_name: session.user.email?.split('@')[0].toUpperCase() || 'New User',
-                  email: session.user.email || 'newuser@example.com',
-                  role: 'manager',
-                  auth_user_id: session.user.id,
-                  pin: '1234',
-                  is_active: true
-                })
-            } catch (e) {
-              console.warn('Fallback link insertion failed:', e)
-            }
-          }
+          await supabase.auth.signOut()
+          set({ session: null, user: null, tenantId: null, role: null, isLoading: false })
+          return
         }
 
         set({ 
@@ -123,31 +101,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
 
         if (!tenantId) {
-          const { data: fallbackTenant } = await supabase
-            .from('tenants')
-            .select('id')
-            .limit(1)
-            .maybeSingle()
-            
-          if (fallbackTenant) {
-            tenantId = fallbackTenant.id
-            role = 'manager'
-            try {
-              await supabase
-                .from('staff_accounts')
-                .insert({
-                  tenant_id: tenantId,
-                  full_name: session.user.email?.split('@')[0].toUpperCase() || 'New User',
-                  email: session.user.email || 'newuser@example.com',
-                  role: 'manager',
-                  auth_user_id: session.user.id,
-                  pin: '1234',
-                  is_active: true
-                })
-            } catch (e) {
-              console.warn('Fallback link insertion failed:', e)
-            }
-          }
+          await supabase.auth.signOut()
+          set({ session: null, user: null, tenantId: null, role: null })
+          return
         }
 
         set({ session, user: session.user, tenantId, role })
@@ -189,31 +145,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       if (!tenantId) {
-        const { data: fallbackTenant } = await supabase
-          .from('tenants')
-          .select('id')
-          .limit(1)
-          .maybeSingle()
-          
-        if (fallbackTenant) {
-          tenantId = fallbackTenant.id
-          role = 'manager'
-          try {
-            await supabase
-              .from('staff_accounts')
-              .insert({
-                tenant_id: tenantId,
-                full_name: data.user.email?.split('@')[0].toUpperCase() || 'New User',
-                email: data.user.email || 'newuser@example.com',
-                role: 'manager',
-                auth_user_id: data.user.id,
-                pin: '1234',
-                is_active: true
-              })
-          } catch (e) {
-            console.warn('Fallback link insertion failed:', e)
-          }
-        }
+        await supabase.auth.signOut()
+        return { error: 'Access denied: No tenant account is linked to this user.' }
       }
 
       set({ session: data.session, user: data.user, tenantId, role })

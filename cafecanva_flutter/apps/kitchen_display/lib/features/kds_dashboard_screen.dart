@@ -164,12 +164,12 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.chef_hat, color: CafeCanvaColors.primary),
+            const Icon(Icons.restaurant, color: CafeCanvaColors.primary),
             const SizedBox(width: 8.0),
             Text(
               'KITCHEN DISPLAY SYSTEM',
               style: GoogleFonts.dmSans(
-                fontWeight: FontWeight.black,
+                fontWeight: FontWeight.w900,
                 fontSize: 20.0,
                 letterSpacing: 1.0,
               ),
@@ -300,7 +300,7 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.between,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   tableName,

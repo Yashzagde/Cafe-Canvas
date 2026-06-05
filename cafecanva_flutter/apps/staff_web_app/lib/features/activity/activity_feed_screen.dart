@@ -34,12 +34,12 @@ class _ActivityFeedScreenState extends ConsumerState<ActivityFeedScreen> {
 
       final tenantId = user.appMetadata['tenant_id'] as String? ?? '';
 
-      // Query feed
+          // Query feed
       final feedResult = await Supabase.instance.client
           .from('staff_activity_feed')
           .select('id, activity_type, entity_type, entity_id, display_text, metadata, created_at, staff_id, branch_id')
           .eq('tenant_id', tenantId)
-          .order('created_at', descending: true)
+          .order('created_at', ascending: false)
           .limit(50);
 
       final feed = List<Map<String, dynamic>>.from(feedResult as List);
@@ -57,7 +57,7 @@ class _ActivityFeedScreenState extends ConsumerState<ActivityFeedScreen> {
         final staffResult = await Supabase.instance.client
             .from('profiles')
             .select('id, full_name')
-            .in_('id', staffIds);
+            .inFilter('id', staffIds);
 
         for (final s in staffResult as List) {
           staffMap[s['id'] as String] = s['full_name'] as String? ?? 'Staff';

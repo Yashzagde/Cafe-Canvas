@@ -24,7 +24,7 @@ class PdfPrintService implements PrintService {
               children: [
                 pw.Center(
                   child: pw.Text(
-                    settings.storeName.toUpperCase(),
+                    (settings.storeName ?? 'Cafe').toUpperCase(),
                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14.0),
                   ),
                 ),
@@ -34,7 +34,7 @@ class PdfPrintService implements PrintService {
                   pw.Center(child: pw.Text('GSTIN: ${settings.gstin!}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.0))),
                 pw.Divider(),
                 pw.Text('Bill ID: ${bill.id.substring(0, 8)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.0)),
-                pw.Text('Date: ${bill.createdAt.toLocal().toString().split('.')[0]}', style: const pw.TextStyle(fontSize: 8.0)),
+                pw.Text('Date: ${(bill.createdAt ?? DateTime.now()).toLocal().toString().split('.')[0]}', style: const pw.TextStyle(fontSize: 8.0)),
                 pw.Divider(),
                 
                 // Items Table

@@ -1,17 +1,51 @@
 import '../models/order.dart';
 import '../models/order_item.dart';
 import '../services/supabase_service.dart';
+import '../services/auth_service.dart';
 
 /// Repository for creating/managing orders.
 class OrderRepository {
   OrderRepository._();
+  OrderRepository();
 
-  /// Create a new order with items. Returns the created order.
-  static Future<Order> createOrder({
+  Future<List<Order>> fetchOrders(String branchId) {
+    final tId = AuthService.tenantId ?? 'demo-tenant-5555';
+    return getAllOrders(tId, branchId);
+  }
+
+  Future<void> updateOrderItemKdsStatus(String itemId, String kdsStatus) {
+    return OrderRepository.updateItemKdsStatus(itemId, kdsStatus);
+  }
+
+  Future<Order> createOrder({
     required String tenantId,
     required String branchId,
-    required String tableId,
-    required String createdBy,
+    String? tableId,
+    String? customerId,
+    int? subtotal,
+    int? discountAmount,
+    int? total,
+    String? notes,
+    required List<Map<String, dynamic>> itemsData,
+  }) {
+    return OrderRepository.staticCreateOrder(
+      tenantId: tenantId,
+      branchId: branchId,
+      tableId: tableId,
+      createdBy: 'customer',
+      items: itemsData,
+      notes: notes,
+      subtotal: subtotal ?? 0,
+      total: total ?? 0,
+    );
+  }
+
+  /// Create a new order with items. Returns the created order.
+  static Future<Order> staticCreateOrder({
+    required String tenantId,
+    required String branchId,
+    String? tableId,
+    String? createdBy,
     required List<Map<String, dynamic>> items,
     String? notes,
     int subtotal = 0,
@@ -21,9 +55,9 @@ class OrderRepository {
     final orderData = await SupabaseService.from('orders')
         .insert({
           'tenant_id': tenantId,
-          'branch_id': branchId,
+          'location_id': branchId,
           'table_id': tableId,
-          'created_by': createdBy,
+          'staff_id': createdBy,
           'status': 'pending',
           'subtotal': subtotal,
           'discount_amount': 0,
@@ -39,14 +73,17 @@ class OrderRepository {
     final itemsPayload = items.map((item) => {
           ...item,
           'order_id': order.id,
+          'tenant_id': tenantId,
         }).toList();
 
     await SupabaseService.from('order_items').insert(itemsPayload);
 
     // 3. Set table status to occupied
-    await SupabaseService.from('tables')
-        .update({'status': 'occupied'})
-        .eq('id', tableId);
+    if (tableId != null) {
+      await SupabaseService.from('tables')
+          .update({'status': 'occupied'})
+          .eq('id', tableId);
+    }
 
     return order;
   }
@@ -56,8 +93,8 @@ class OrderRepository {
     final data = await SupabaseService.from('orders')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
-        .inFilter('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed'])
+        .eq('location_id', branchId)
+        .inFilter('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'completed'])
         .order('created_at', ascending: false);
 
     return (data as List).map((e) => Order.fromJson(e)).toList();
@@ -117,7 +154,7 @@ class OrderRepository {
     var query = SupabaseService.from('orders')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId);
+        .eq('location_id', branchId);
     if (status != null) query = query.eq('status', status);
     if (fromDate != null) query = query.gte('created_at', fromDate);
     if (toDate != null) query = query.lte('created_at', toDate);

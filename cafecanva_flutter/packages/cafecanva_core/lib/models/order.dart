@@ -109,3 +109,5 @@ class Order {
         items: items ?? this.items,
       );
 }
+
+typedef OrderModel = Order;

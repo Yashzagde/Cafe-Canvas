@@ -167,8 +167,8 @@ export default function Storefront() {
         // 1. Resolve tenant
         const { data: tenantData, error: tenantError } = await supabase
           .from('tenants')
-          .select('id, name, subdomain')
-          .eq('subdomain', storeSlug)
+          .select('id, name, slug')
+          .eq('slug', storeSlug)
           .maybeSingle();
 
         if (tenantError) throw tenantError;
@@ -179,15 +179,19 @@ export default function Storefront() {
           return;
         }
 
-        setTenant(tenantData);
+        // Map slug to subdomain for UI compatibility if needed
+        setTenant({
+          id: tenantData.id,
+          name: tenantData.name,
+          subdomain: tenantData.slug,
+        });
 
         // 2. Fetch categories
         const { data: catData, error: catError } = await supabase
           .from('menu_categories')
-          .select('id, name, icon, sort_order')
+          .select('id, name, sort_order')
           .eq('tenant_id', tenantData.id)
           .eq('is_visible', true)
-          .is('deleted_at', null)
           .order('sort_order', { ascending: true });
 
         if (catError) throw catError;
@@ -196,14 +200,26 @@ export default function Storefront() {
         // 3. Fetch menu items
         const { data: itemData, error: itemError } = await supabase
           .from('menu_items')
-          .select('id, category_id, name, description, price, status, tags')
+          .select('id, category_id, name, description, price, is_available, dietary_tags, image_url')
           .eq('tenant_id', tenantData.id)
-          .eq('status', 'available')
-          .is('deleted_at', null)
+          .eq('is_available', true)
           .order('sort_order', { ascending: true });
 
         if (itemError) throw itemError;
-        setMenuItems(itemData || []);
+        
+        // Map canonical columns to legacy UI keys
+        const mappedItems: MenuItem[] = (itemData || []).map((item: any) => ({
+          id: item.id,
+          category_id: item.category_id,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          image_url: item.image_url,
+          status: item.is_available ? 'available' : 'unavailable',
+          tags: item.dietary_tags || [],
+        }));
+        
+        setMenuItems(mappedItems);
 
         // 4. Fetch tables
         const { data: tableData, error: tableError } = await supabase

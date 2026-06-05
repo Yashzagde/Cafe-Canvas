@@ -1,191 +1,113 @@
-import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
 
 /// Manages Supabase Realtime subscriptions for live data updates.
 class RealtimeService {
-  RealtimeService._();
+  static final RealtimeService instance = RealtimeService._internal();
+  RealtimeService._internal();
 
-  static final Map<String, RealtimeChannel> _channels = {};
+  final Map<String, RealtimeChannel> _channels = {};
 
-  /// Subscribe to table status changes for a branch.
-  static RealtimeChannel watchTables({
+  /// Subscribe POS to real-time table status changes within a branch
+  RealtimeChannel subscribeToTableChanges({
     required String branchId,
-    required void Function(Map<String, dynamic> payload) onUpdate,
+    required void Function(PostgresChangePayload payload) onTableUpdated,
   }) {
-    final channelName = 'tables-$branchId';
-    _removeIfExists(channelName);
+    final key = 'tables:branch:$branchId';
+    _channels[key]?.unsubscribe();
 
     final channel = SupabaseService.client
-        .channel(channelName)
+        .channel(key)
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
           schema: 'public',
           table: 'tables',
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
-            column: 'branch_id',
+            column: 'location_id',
             value: branchId,
           ),
-          callback: (PostgresChangePayload payload) {
-            onUpdate(payload.newRecord);
-          },
+          callback: onTableUpdated,
         )
         .subscribe();
 
-    _channels[channelName] = channel;
+    _channels[key] = channel;
     return channel;
   }
 
-  /// Subscribe to new orders and order item status changes for a branch.
-  static RealtimeChannel watchOrders({
+  /// Subscribe KDS to new orders and kitchen-order-item status changes
+  RealtimeChannel subscribeToKitchenOrders({
     required String branchId,
-    required void Function(Map<String, dynamic> payload, String event) onChange,
+    required void Function(PostgresChangePayload payload) onOrderCreated,
+    required void Function(PostgresChangePayload payload) onOrderItemUpdated,
   }) {
-    final channelName = 'orders-$branchId';
-    _removeIfExists(channelName);
+    final key = 'kds:branch:$branchId';
+    _channels[key]?.unsubscribe();
 
-    final channel = SupabaseService.client
-        .channel(channelName)
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'orders',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'branch_id',
-            value: branchId,
-          ),
-          callback: (PostgresChangePayload payload) {
-            onChange(payload.newRecord, 'INSERT');
-          },
-        )
-        .onPostgresChanges(
-          event: PostgresChangeEvent.update,
-          schema: 'public',
-          table: 'orders',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'branch_id',
-            value: branchId,
-          ),
-          callback: (PostgresChangePayload payload) {
-            onChange(payload.newRecord, 'UPDATE');
-          },
-        )
-        .subscribe();
+    var channel = SupabaseService.client.channel(key);
 
-    _channels[channelName] = channel;
+    // Apply branch isolation filter on Order insertions
+    channel = channel.onPostgresChanges(
+      event: PostgresChangeEvent.insert,
+      schema: 'public',
+      table: 'orders',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'location_id',
+        value: branchId,
+      ),
+      callback: onOrderCreated,
+    );
+
+    // Apply branch isolation filter on Order Item modifications
+    channel = channel.onPostgresChanges(
+      event: PostgresChangeEvent.update,
+      schema: 'public',
+      table: 'order_items',
+      callback: onOrderItemUpdated,
+    );
+
+    channel.subscribe();
+    _channels[key] = channel;
     return channel;
   }
 
-  /// Subscribe to order item KDS status changes.
-  static RealtimeChannel watchOrderItems({
-    required void Function(Map<String, dynamic> payload, String event) onItemChange,
-  }) {
-    const channelName = 'order-items-kds';
-    _removeIfExists(channelName);
-
-    final channel = SupabaseService.client
-        .channel(channelName)
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'order_items',
-          callback: (PostgresChangePayload payload) {
-            onItemChange(payload.newRecord, 'INSERT');
-          },
-        )
-        .onPostgresChanges(
-          event: PostgresChangeEvent.update,
-          schema: 'public',
-          table: 'order_items',
-          callback: (PostgresChangePayload payload) {
-            onItemChange(payload.newRecord, 'UPDATE');
-          },
-        )
-        .subscribe();
-
-    _channels[channelName] = channel;
-    return channel;
-  }
-
-  /// Subscribe to new staff calls for a branch.
-  static RealtimeChannel watchStaffCalls({
+  /// Subscribe staff to active "Call Waiter" requests in a branch
+  RealtimeChannel subscribeToStaffCalls({
     required String branchId,
-    required void Function(Map<String, dynamic> payload) onNewCall,
+    required void Function(PostgresChangePayload payload) onCallReceived,
   }) {
-    final channelName = 'staff-calls-$branchId';
-    _removeIfExists(channelName);
+    final key = 'calls:branch:$branchId';
+    _channels[key]?.unsubscribe();
 
     final channel = SupabaseService.client
-        .channel(channelName)
+        .channel(key)
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'staff_calls',
-          callback: (PostgresChangePayload payload) {
-            onNewCall(payload.newRecord);
-          },
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'location_id',
+            value: branchId,
+          ),
+          callback: onCallReceived,
         )
         .subscribe();
 
-    _channels[channelName] = channel;
+    _channels[key] = channel;
     return channel;
   }
 
-  /// Subscribe to bill changes for a branch.
-  static RealtimeChannel watchBills({
-    required String branchId,
-    required void Function(Map<String, dynamic> payload, String event) onBillChange,
-  }) {
-    final channelName = 'bills-$branchId';
-    _removeIfExists(channelName);
-
-    final channel = SupabaseService.client
-        .channel(channelName)
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'bills',
-          callback: (PostgresChangePayload payload) {
-            onBillChange(payload.newRecord, 'INSERT');
-          },
-        )
-        .onPostgresChanges(
-          event: PostgresChangeEvent.update,
-          schema: 'public',
-          table: 'bills',
-          callback: (PostgresChangePayload payload) {
-            onBillChange(payload.newRecord, 'UPDATE');
-          },
-        )
-        .subscribe();
-
-    _channels[channelName] = channel;
-    return channel;
-  }
-
-  /// Unsubscribe from a specific channel.
-  static Future<void> unsubscribe(String channelName) async {
-    final channel = _channels.remove(channelName);
-    if (channel != null) {
-      await SupabaseService.removeChannel(channel);
-    }
-  }
-
-  /// Unsubscribe from all channels.
-  static Future<void> unsubscribeAll() async {
+  /// Tear down all active channels to clean memory
+  void dispose() {
     for (final channel in _channels.values) {
-      await SupabaseService.removeChannel(channel);
+      channel.unsubscribe();
     }
     _channels.clear();
   }
 
-  static void _removeIfExists(String channelName) {
-    final existing = _channels.remove(channelName);
-    if (existing != null) {
-      SupabaseService.removeChannel(existing);
-    }
+  void unsubscribeAll() {
+    dispose();
   }
 }

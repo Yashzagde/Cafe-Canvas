@@ -4,10 +4,26 @@ import '../models/menu_category.dart';
 import '../models/menu_item.dart';
 import '../models/modifier_group.dart';
 import '../services/supabase_service.dart';
+import '../services/auth_service.dart';
 
 /// Repository for menu categories, items, and modifiers.
 class MenuRepository {
   MenuRepository._();
+  MenuRepository();
+
+  Future<List<MenuCategory>> fetchCategories(String branchId) {
+    final tId = AuthService.tenantId ?? 'demo-tenant-5555';
+    return getCategories(tId, branchId);
+  }
+
+  Future<List<MenuItem>> fetchItems(String branchId, {String? categoryId}) {
+    final tId = AuthService.tenantId ?? 'demo-tenant-5555';
+    return getItems(tId, branchId, categoryId: categoryId);
+  }
+
+  Future<List<ModifierGroup>> fetchModifiersForItem(String itemId) =>
+      getModifierGroups(itemId);
+
 
   // ─── CATEGORIES ───
 

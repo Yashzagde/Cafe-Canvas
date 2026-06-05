@@ -6,6 +6,13 @@ import '../utils/constants.dart';
 /// Repository for billing operations (edge functions + DB queries).
 class BillingRepository {
   BillingRepository._();
+  BillingRepository();
+
+  Future<void> settleBillDirect({
+    required String billId,
+    required String paymentMethod,
+  }) => recordPayment(billId: billId, paymentMethod: paymentMethod);
+
 
   /// Generate a bill via the generate-bill edge function.
   static Future<Bill> generateBill({
@@ -76,7 +83,7 @@ class BillingRepository {
     var query = SupabaseService.from('bills')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
+        .eq('location_id', branchId)
         .eq('status', 'paid');
     if (fromDate != null) query = query.gte('created_at', fromDate);
     if (toDate != null) query = query.lte('created_at', toDate);

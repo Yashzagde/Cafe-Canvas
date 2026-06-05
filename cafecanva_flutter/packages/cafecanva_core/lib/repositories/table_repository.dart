@@ -1,16 +1,24 @@
 import '../models/table_model.dart';
 import '../models/table_session.dart';
 import '../services/supabase_service.dart';
+import '../services/auth_service.dart';
 
 /// Repository for table management and sessions.
 class TableRepository {
   TableRepository._();
+  TableRepository();
+
+  Future<List<CafeTable>> fetchTables(String branchId) {
+    final tId = AuthService.tenantId ?? 'demo-tenant-5555';
+    return getTables(tId, branchId);
+  }
+
 
   static Future<List<CafeTable>> getTables(String tenantId, String branchId) async {
     final data = await SupabaseService.from('tables')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
+        .eq('location_id', branchId)
         .isFilter('deleted_at', null)
         .order('name');
     return (data as List).map((e) => CafeTable.fromJson(e)).toList();

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
 import 'package:cafecanva_billing/cafecanva_billing.dart';
@@ -101,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 'STAFF LOGIN',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.black, fontSize: 20.0, letterSpacing: 0.5),
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20.0, letterSpacing: 0.5),
               ),
               const SizedBox(height: 4.0),
               const Text(
@@ -214,7 +215,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
       
       // Fetch and cache branch printer width preference from Supabase to Hive
       try {
-        final settingsRes = await Supabase.instance.client
+        final settingsRes = await SupabaseService.client
             .from('store_settings')
             .select('printer_width')
             .eq('branch_id', 'demo-branch-7777')
@@ -285,7 +286,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                 leading: const Icon(Icons.cleaning_services_outlined, color: CafeCanvaColors.info),
                 title: const Text('Mark Table Cleaning'),
                 onTap: () async {
-                  await _tableRepo.updateTableStatus(table.id, 'cleaning');
+                  await TableRepository.updateTableStatus(table.id, 'cleaning');
                   Navigator.pop(context);
                   _loadTables();
                 },
@@ -294,7 +295,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                 leading: const Icon(Icons.check_circle_outline, color: CafeCanvaColors.tableAvailable),
                 title: const Text('Mark Table Available'),
                 onTap: () async {
-                  await _tableRepo.updateTableStatus(table.id, 'available');
+                  await TableRepository.updateTableStatus(table.id, 'available');
                   Navigator.pop(context);
                   _loadTables();
                 },
@@ -733,7 +734,7 @@ class _ActiveOrdersQueueState extends State<ActiveOrdersQueue> {
   }
 
   Future<void> _markServed(String id) async {
-    await _orderRepo.updateOrderStatus(id, 'served');
+    await OrderRepository.updateOrderStatus(id, 'served');
     _loadActive();
   }
 
@@ -767,7 +768,7 @@ class _ActiveOrdersQueueState extends State<ActiveOrdersQueue> {
                 return CcCard(
                   padding: const EdgeInsets.all(CafeCanvaSpacing.md),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Column(
@@ -827,7 +828,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
   Future<void> _triggerBillGeneration() async {
     try {
       setState(() => _isLoading = true);
-      final bill = await _billingRepo.generateBill(
+      final bill = await BillingRepository.generateBill(
         tableId: widget.tableId,
         tenantId: 'demo-tenant-5555',
         branchId: 'demo-branch-7777',
@@ -925,7 +926,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
                   const Divider(height: 24),
                   
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Subtotal'),
                       CcPriceText(priceInPaise: _bill!.subtotal),
@@ -933,7 +934,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
                   ),
                   const SizedBox(height: 6.0),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('CGST (2.50%)'),
                       CcPriceText(priceInPaise: (_bill!.tax / 2).round()),
@@ -941,7 +942,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
                   ),
                   const SizedBox(height: 4.0),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('SGST (2.50%)'),
                       CcPriceText(priceInPaise: (_bill!.tax / 2).round()),
@@ -949,7 +950,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
                   ),
                   const Divider(height: 24),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('GRAND TOTAL PAYABLE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
                       CcPriceText(priceInPaise: totalCost, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: CafeCanvaColors.primary)),
@@ -981,7 +982,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
             if (_cashTendered > 0) ...[
               const SizedBox(height: 12.0),
               Row(
-                mainAxisAlignment: MainAxisAlignment.between,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Change Due back:', style: TextStyle(fontWeight: FontWeight.bold)),
                   Text(

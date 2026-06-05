@@ -64,4 +64,10 @@ class OrderItem {
         kdsStatus: kdsStatus ?? this.kdsStatus,
         sentAt: sentAt,
       );
+
+  DateTime get createdAt => sentAt ?? DateTime.now();
+  List<Map<String, dynamic>> get modifierSelections => modifiers;
+  String? get itemNotes => notes;
 }
+
+typedef OrderItemModel = OrderItem;

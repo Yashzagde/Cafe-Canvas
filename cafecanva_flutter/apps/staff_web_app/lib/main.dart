@@ -20,7 +20,7 @@ void main() async {
   );
 
   // 3. Initialize core Supabase service singleton
-  await SupabaseService.instance.initialize(
+  await SupabaseService.initialize(
     url: EnvConfig.supabaseUrl,
     anonKey: EnvConfig.supabaseAnonKey,
   );

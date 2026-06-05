@@ -8,17 +8,19 @@ class SupabaseService {
   static SupabaseClient get client => Supabase.instance.client;
 
   /// Initialize Supabase. Call once in main.dart.
-  static Future<void> initialize() async {
-    await Supabase.initialize(
-      url: CafeCanvaConstants.supabaseUrl,
-      anonKey: CafeCanvaConstants.supabaseAnonKey,
-      authOptions: const FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.pkce,
-      ),
-      realtimeClientOptions: const RealtimeClientOptions(
-        logLevel: RealtimeLogLevel.info,
-      ),
-    );
+  static Future<void> initialize({String? url, String? anonKey}) async {
+    if (!Supabase.hasInstance) {
+      await Supabase.initialize(
+        url: url ?? CafeCanvaConstants.supabaseUrl,
+        anonKey: anonKey ?? CafeCanvaConstants.supabaseAnonKey,
+        authOptions: const FlutterAuthClientOptions(
+          authFlowType: AuthFlowType.pkce,
+        ),
+        realtimeClientOptions: const RealtimeClientOptions(
+          logLevel: RealtimeLogLevel.info,
+        ),
+      );
+    }
   }
 
   /// Shorthand for supabase.auth
@@ -49,6 +51,21 @@ class SupabaseService {
     return await client.functions.invoke(
       functionName,
       body: body,
+    );
+  }
+
+  static Future<void> callStaff({
+    required String tableId,
+    required String tenantId,
+    required String tableNumber,
+  }) async {
+    await invokeFunction(
+      'call-staff',
+      body: {
+        'tableId': tableId,
+        'tenantId': tenantId,
+        'tableNumber': tableNumber,
+      },
     );
   }
 
