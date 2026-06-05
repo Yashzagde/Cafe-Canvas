@@ -292,7 +292,7 @@ class _StorefrontHomeScreenState extends State<StorefrontHomeScreen> {
       }
     });
 
-    await SupabaseService.instance.callStaff(
+    await SupabaseService.callStaff(
       tableId: widget.prefilledTableId ?? 'demo-table-1',
       tenantId: 'demo-tenant-5555',
       tableNumber: 'Table 4',

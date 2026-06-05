@@ -9,7 +9,9 @@ class SupabaseService {
 
   /// Initialize Supabase. Call once in main.dart.
   static Future<void> initialize({String? url, String? anonKey}) async {
-    if (!Supabase.hasInstance) {
+    try {
+      final _ = Supabase.instance;
+    } catch (_) {
       await Supabase.initialize(
         url: url ?? CafeCanvaConstants.supabaseUrl,
         anonKey: anonKey ?? CafeCanvaConstants.supabaseAnonKey,
