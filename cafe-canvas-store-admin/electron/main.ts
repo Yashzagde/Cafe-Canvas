@@ -37,7 +37,7 @@ interface AppState {
 const APP_VERSION = app.getVersion()
 
 const ENV_SERVERS: Record<Environment, string> = {
-  production: 'https://cafecanava.com',
+  production: 'https://cafecanvas.bar',
   local:      'http://localhost:5173'
 }
 
@@ -355,7 +355,7 @@ function buildAppMenu(): void {
       label: 'Environment',
       submenu: [
         {
-          label:   '🌐  Production (cafecanava.com)',
+          label:   '🌐  Production (cafecanvas.bar)',
           type:    'checkbox',
           checked: state.currentEnv === 'production',
           click:   () => switchEnvironment('production')

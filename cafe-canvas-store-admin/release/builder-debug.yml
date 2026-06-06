@@ -22,8 +22,8 @@ x64:
     - package.json
 nsis:
   script: |-
-    !include "D:\Cafe Canva\cafe-canvas-store-admin\node_modules\app-builder-lib\templates\nsis\include\StdUtils.nsh"
-    !addincludedir "D:\Cafe Canva\cafe-canvas-store-admin\node_modules\app-builder-lib\templates\nsis\include"
+    !include "D:\Cafe Canva\node_modules\app-builder-lib\templates\nsis\include\StdUtils.nsh"
+    !addincludedir "D:\Cafe Canva\node_modules\app-builder-lib\templates\nsis\include"
     !macro _isUpdated _a _b _t _f
       ${StdUtils.TestParameter} $R9 "updated"
       StrCmp "$R9" "true" `${_t}` `${_f}`
@@ -95,8 +95,8 @@ nsis:
       !insertmacro MUI_LANGUAGE "Vietnamese"
     !macroend
 
-    !include "C:\Users\yash\AppData\Local\Temp\t-jw68rv\1-messages.nsh"
-    !include "C:\Users\yash\AppData\Local\Temp\t-jw68rv\0-messages.nsh"
+    !include "C:\Users\yash\AppData\Local\Temp\t-IDxb51\0-messages.nsh"
+    !include "C:\Users\yash\AppData\Local\Temp\t-IDxb51\1-messages.nsh"
     !addplugindir /x86-unicode "C:\Users\yash\AppData\Local\electron-builder\Cache\nsis\nsis-resources-3.4.1\plugins\x86-unicode"
 
     Var newStartMenuLink
