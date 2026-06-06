@@ -857,9 +857,8 @@ Intent keywords → Route to Agent:
   "build_artifacts": {
     "store_admin_web":    "tsc + vite build — 0 errors ✓",
     "staff_pos_apk":      "app-release.apk — 23.6 MB ✓",
-    "store_admin_mobile": "app-release.apk — 22.5 MB ✓",
     "storefront":         "next build — 0 TypeScript errors ✓",
-    "flutter_monorepo":   "melos exec flutter analyze — 0 errors, 10 packages ✓"
+    "flutter_monorepo":   "melos exec flutter analyze — 0 errors, 9 packages ✓"
   },
   "auth_resilience": {
     "jwt_hook":           "optional — DB fallback active",
@@ -872,7 +871,7 @@ Intent keywords → Route to Agent:
   ],
   "bill_generator": "active — Store Admin + Staff APK",
   "realtime": "Supabase subscriptions active on bills + notification_log",
-  "surfaces": ["store_admin", "staff_pos", "store_admin_mobile", "staff_web", "storefront"]
+  "surfaces": ["store_admin", "staff_pos", "staff_web", "storefront"]
 }
 ```
 
@@ -1061,11 +1060,10 @@ Verified build outputs from Sprint 5. Use for release tracking.
 | Artifact | Path | Size | Build Command | Status |
 |---|---|---|---|---|
 | Staff POS APK | `build/app/outputs/flutter-apk/app-release.apk` | 23.6 MB | `flutter build apk` | ✅ |
-| Store Admin Mobile APK | `build/app/outputs/flutter-apk/app-release.apk` | 22.5 MB | `flutter build apk` | ✅ |
 | Store Admin Web Bundle | `dist/` | — | `vite build` | ✅ |
 | Storefront | `.next/` | — | `npm run build` | ✅ |
 
-### Flutter Monorepo Package Status (10 packages — 0 errors)
+### Flutter Monorepo Package Status (9 packages — 0 errors)
 
 | Package | Fix Applied |
 |---|---|
@@ -1079,12 +1077,11 @@ Verified build outputs from Sprint 5. Use for release tracking.
 | `staff_pos` | All hardcoded tenant/branch IDs → AuthService.tenantId / AuthService.branchId |
 | `staff_pos` | FloorPlanScreen subscribeToNotifications wired in initState |
 | `staff_web_app` | Login restricted to staff roles; manager/owner blocked |
-| `store_admin_mobile` | widget_test.dart imports package:store_admin_mobile/app.dart |
 
 ---
 
 ## ═══════════════════════════════════════════
 ## END OF ANTIGRAVITY MASTER SYSTEM PROMPT v2.0
 ## Model: Gemini 3.5 Flash | Stitch v1 | CafeCanvas | Agents: 9 Active
-## Sprint 5 COMPLETED ✅ | 22 verification items passed | 4 APKs/bundles built
+## Sprint 5 COMPLETED ✅ | 22 verification items passed | 3 APKs/bundles built
 ## ═══════════════════════════════════════════

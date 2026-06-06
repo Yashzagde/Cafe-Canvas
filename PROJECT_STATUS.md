@@ -62,7 +62,7 @@
 *   Implemented real-time billing syncing in Store Admin from staff-created bills.
 *   Enforced role-based login restrictions: Store Admin is restricted to manager/owner/admin only; Staff POS/Web is restricted to staff sub-accounts only (blocking managers/owners/admins).
 *   Corrected `generate-bill` edge function to follow clean schema and handle paise-precision CGST + SGST tax.
-*   Successfully verified and compiled all target applications (Store Admin, staff_pos APK, and store_admin_mobile APK).
+*   Successfully verified and compiled all target applications (Store Admin and staff_pos APK).
 ### Sprint 6: Analytics & Polish (Weeks 11-12) — 📋 BACKLOG
 
 ---

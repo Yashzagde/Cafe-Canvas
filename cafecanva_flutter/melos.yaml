@@ -22,10 +22,6 @@ scripts:
     run: cd apps/staff_pos && flutter build apk --release --dart-define=SUPABASE_URL=https://oeringgdbxmmihgvuyfa.supabase.co --dart-define=SUPABASE_ANON_KEY=sb_publishable_laWLW3mZrK5wdSh115u2Dw_7K0BIjYU
     description: Build Staff POS App APK
 
-  build:android:admin:
-    run: cd apps/store_admin_mobile && flutter build apk --release --dart-define=SUPABASE_URL=https://oeringgdbxmmihgvuyfa.supabase.co --dart-define=SUPABASE_ANON_KEY=sb_publishable_laWLW3mZrK5wdSh115u2Dw_7K0BIjYU
-    description: Build Store Admin Mobile APK
-
   build:windows:admin:
     run: cd apps/store_admin_desktop && flutter build windows --release --dart-define=SUPABASE_URL=https://oeringgdbxmmihgvuyfa.supabase.co --dart-define=SUPABASE_ANON_KEY=sb_publishable_laWLW3mZrK5wdSh115u2Dw_7K0BIjYU
     description: Build Store Admin Desktop Windows
