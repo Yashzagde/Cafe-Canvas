@@ -51,8 +51,9 @@ export const useAuthStore = create<AuthState>((set) => ({
           }
         }
 
-        // If no tenant is resolved, they shouldn't log in
-        if (!tenantId) {
+        // Only allow manager/owner/admin to log in to Store Admin
+        const isManagerOrOwner = role === 'manager' || role === 'owner' || role === 'admin' || role === 'TENANT_OWNER' || role === 'BRANCH_ADMIN'
+        if (!tenantId || !isManagerOrOwner) {
           await supabase.auth.signOut()
           set({ session: null, user: null, tenantId: null, role: null, isLoading: false })
           return
@@ -100,7 +101,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           }
         }
 
-        if (!tenantId) {
+        const isManagerOrOwner = role === 'manager' || role === 'owner' || role === 'admin' || role === 'TENANT_OWNER' || role === 'BRANCH_ADMIN'
+        if (!tenantId || !isManagerOrOwner) {
           await supabase.auth.signOut()
           set({ session: null, user: null, tenantId: null, role: null })
           return
@@ -144,9 +146,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
       }
 
-      if (!tenantId) {
+      const isManagerOrOwner = role === 'manager' || role === 'owner' || role === 'admin' || role === 'TENANT_OWNER' || role === 'BRANCH_ADMIN'
+      if (!tenantId || !isManagerOrOwner) {
         await supabase.auth.signOut()
-        return { error: 'Access denied: No tenant account is linked to this user.' }
+        return { error: 'Access denied: Only managers and owners can log in to Store Admin.' }
       }
 
       set({ session: data.session, user: data.user, tenantId, role })

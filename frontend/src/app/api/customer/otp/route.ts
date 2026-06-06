@@ -118,7 +118,9 @@ export async function POST(req: NextRequest) {
         .eq('phone', phone)
         .maybeSingle();
 
+      let isNew = false;
       if (!existingCustomer) {
+        isNew = true;
         // Create new customer profile
         await admin
           .from('customers')
@@ -136,6 +138,17 @@ export async function POST(req: NextRequest) {
           .update({ visit_count: (existingCustomer.visit_count || 0) + 1 })
           .eq('id', existingCustomer.id);
       }
+
+      // Log notification for Store Admin and Staff POS
+      await admin
+        .from('notification_log')
+        .insert({
+          tenant_id: tenantId,
+          type: 'customer_checkin',
+          title: isNew ? 'New Customer Registered' : 'Customer Checked In',
+          body: `Customer with phone number ${phone} checked in on the digital menu.`,
+          read: false
+        });
     }
 
     return NextResponse.json({ success: true, phone });

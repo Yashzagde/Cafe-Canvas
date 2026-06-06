@@ -56,7 +56,13 @@
 *   Integrated a live English / Hindi language toggle (i18n) with comprehensive dictionaries.
 *   Removed scrollbar constraints from the pricing plans feature cards.
 *   Successfully built and deployed live to production at https://cafecanvas.bar.
-### Sprint 5: Payments & Notifications (Weeks 9-10) — 📋 BACKLOG
+### Sprint 5: Payments & Real-time Notifications (Weeks 9-10) — ✅ COMPLETED
+*   Database migrations applied to allow custom roles & notifications, track notification read status, and add customer phone to bills.
+*   Implemented real-time customer check-in notifications from the storefront.
+*   Implemented real-time billing syncing in Store Admin from staff-created bills.
+*   Enforced role-based login restrictions: Store Admin is restricted to manager/owner/admin only; Staff POS/Web is restricted to staff sub-accounts only (blocking managers/owners/admins).
+*   Corrected `generate-bill` edge function to follow clean schema and handle paise-precision CGST + SGST tax.
+*   Successfully verified and compiled all target applications (Store Admin, staff_pos APK, and store_admin_mobile APK).
 ### Sprint 6: Analytics & Polish (Weeks 11-12) — 📋 BACKLOG
 
 ---

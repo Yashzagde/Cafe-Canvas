@@ -12,8 +12,8 @@ final GoRouter staffPosRouter = GoRouter(
       return null; // Let user access login Pad
     }
 
-    final role = session.user.appMetadata['role'] as String?;
-    if (role != 'staff' && role != 'cashier' && role != 'manager' && role != 'owner') {
+    final role = (session.user.appMetadata['role'] as String?)?.toLowerCase();
+    if (role == null || role == 'manager' || role == 'owner' || role == 'admin') {
       Supabase.instance.client.auth.signOut();
       return '/unauthorized';
     }

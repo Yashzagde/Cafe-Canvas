@@ -35,46 +35,50 @@ Deno.serve(async (req) => {
       .eq('tenant_id', tenantId)
       .maybeSingle()
 
+    // Fetch table info to get table number
+    const { data: tableRecord } = await supabase
+      .from('tables')
+      .select('table_number')
+      .eq('id', tableId)
+      .maybeSingle()
+
+    // Fetch active table session or orders to get customer details
+    const { data: tableSession } = await supabase
+      .from('table_sessions')
+      .select('customer_name, customer_phone')
+      .eq('table_id', tableId)
+      .is('ended_at', null)
+      .maybeSingle()
+
+    const customerName = tableSession?.customer_name || activeOrders[0]?.customer_name || 'Storefront Guest'
+    const customerPhone = tableSession?.customer_phone || activeOrders[0]?.customer_phone || null
+
     const subtotal = activeOrders.reduce((sum, o) => sum + o.subtotal, 0)
     const discountAmount = activeOrders.reduce((sum, o) => sum + o.discount_amount, 0)
     
-    // Tax calculation in paise
-    const cgstPercent = parseFloat(settings?.cgst_percent || '2.5')
-    const sgstPercent = parseFloat(settings?.sgst_percent || '2.5')
-    const cgst = Math.round(subtotal * cgstPercent / 100)
-    const sgst = Math.round(subtotal * sgstPercent / 100)
+    // Tax calculation in paise. Settings has tax_cgst / tax_sgst in base points (2.5% = 250)
+    const cgstRate = settings?.tax_cgst !== undefined ? settings.tax_cgst : 250;
+    const sgstRate = settings?.tax_sgst !== undefined ? settings.tax_sgst : 250;
     
-    // Service charge calculation
-    let serviceCharge = 0
-    if (settings?.service_charge_type === 'percent') {
-      const rate = parseFloat(settings?.service_charge_value || '5.0')
-      serviceCharge = Math.round(subtotal * rate / 100)
-    } else if (settings?.service_charge_type === 'flat') {
-      serviceCharge = Math.round(parseFloat(settings?.service_charge_value || '0.0') * 100) // stored in rupees, convert to paise
-    }
-
-    const tax = cgst + sgst
-    const total = subtotal - discountAmount + tax + serviceCharge
-
-    const extraCharges = [
-      { label: `CGST (${cgstPercent}%)`, amount: cgst },
-      { label: `SGST (${sgstPercent}%)`, amount: sgst },
-      ...(serviceCharge > 0 ? [{ label: `Service Charge`, amount: serviceCharge }] : []),
-    ]
+    const cgst = Math.round(subtotal * cgstRate / 10000)
+    const sgst = Math.round(subtotal * sgstRate / 10000)
+    const total = subtotal - discountAmount + cgst + sgst
 
     const { data: bill, error: billError } = await supabase
       .from('bills')
       .insert({
         tenant_id: tenantId,
-        branch_id: branchId,
-        table_id: tableId,
+        location_id: branchId,
         order_ids: activeOrders.map(o => o.id),
+        table_number: tableRecord?.table_number || null,
+        customer_name: customerName,
+        customer_phone: customerPhone,
         subtotal,
-        tax,
+        cgst,
+        sgst,
         discount_amount: discountAmount,
-        extra_charges: extraCharges,
         total,
-        status: 'open',
+        status: 'unpaid',
         created_by: createdBy
       })
       .select()

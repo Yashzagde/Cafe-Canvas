@@ -99,6 +99,33 @@ class RealtimeService {
     return channel;
   }
 
+  /// Subscribe staff to active notification logs for a tenant
+  RealtimeChannel subscribeToNotifications({
+    required String tenantId,
+    required void Function(PostgresChangePayload payload) onNotificationReceived,
+  }) {
+    final key = 'notifications:tenant:$tenantId';
+    _channels[key]?.unsubscribe();
+
+    final channel = SupabaseService.client
+        .channel(key)
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'notification_log',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'tenant_id',
+            value: tenantId,
+          ),
+          callback: onNotificationReceived,
+        )
+        .subscribe();
+
+    _channels[key] = channel;
+    return channel;
+  }
+
   /// Tear down all active channels to clean memory
   void dispose() {
     for (final channel in _channels.values) {

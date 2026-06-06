@@ -44,11 +44,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
 
       // Validate staff role
-      final role = response.session!.user.appMetadata['role'] as String?;
-      final allowed = ['staff', 'cashier', 'manager', 'owner', 'bartender'];
-      if (role == null || !allowed.contains(role)) {
+      final role = (response.session!.user.appMetadata['role'] as String?)?.toLowerCase();
+      final blocked = ['manager', 'owner', 'admin'];
+      if (role == null || blocked.contains(role)) {
         await Supabase.instance.client.auth.signOut();
-        setState(() => _error = 'Unauthorized role: $role');
+        setState(() => _error = 'Access denied: Staff roles only.');
         return;
       }
 

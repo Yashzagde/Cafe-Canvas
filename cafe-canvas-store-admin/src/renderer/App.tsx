@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react'
 import { useAuthStore } from '../store/auth.store'
 import { useTenantStore } from '../store/tenant.store'
 import { useUIStore, type ScreenType } from '../store/ui.store'
+import { useNotificationsStore } from '../store/notifications.store'
 
 import { TitleBar } from '../components/layout/TitleBar'
 import { Sidebar } from '../components/layout/Sidebar'
@@ -53,6 +54,7 @@ export default function App() {
   const { session, tenantId, isLoading: authLoading, initialize } = useAuthStore()
   const { fetchTenantData } = useTenantStore()
   const { currentScreen, setScreen } = useUIStore()
+  const { fetchNotifications, subscribeToNotifications } = useNotificationsStore()
 
   // Initialize session on mount
   useEffect(() => {
@@ -72,6 +74,18 @@ export default function App() {
       setScreen('login')
     }
   }, [session, tenantId, currentScreen, setScreen, fetchTenantData])
+
+  // Sync notifications
+  useEffect(() => {
+    let unsub: (() => void) | undefined
+    if (session && tenantId) {
+      fetchNotifications(tenantId)
+      unsub = subscribeToNotifications(tenantId)
+    }
+    return () => {
+      if (unsub) unsub()
+    }
+  }, [session, tenantId, fetchNotifications, subscribeToNotifications])
 
   // ── Global Keyboard Shortcuts ────────────────────────────────────────────
   const handleKeyboard = useCallback(

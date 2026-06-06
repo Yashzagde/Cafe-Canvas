@@ -16,14 +16,21 @@ import { useTenantStore } from '../../store/tenant.store'
 export function BillingScreen() {
   const { tenantId } = useAuthStore()
   const { tenant } = useTenantStore()
-  const { bills, selectedBill, isLoading, fetchBills, markPaid, voidBill, selectBill } = useBillingStore()
+  const { bills, selectedBill, isLoading, fetchBills, markPaid, voidBill, selectBill, subscribeToBills } = useBillingStore()
   const [statusFilter, setStatusFilter] = useState<BillStatus | 'all'>('all')
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showReceiptModal, setShowReceiptModal] = useState(false)
 
   useEffect(() => {
-    if (tenantId) fetchBills(tenantId)
-  }, [tenantId, fetchBills])
+    let unsub: (() => void) | undefined
+    if (tenantId) {
+      fetchBills(tenantId)
+      unsub = subscribeToBills(tenantId)
+    }
+    return () => {
+      if (unsub) unsub()
+    }
+  }, [tenantId, fetchBills, subscribeToBills])
 
   const filteredBills = statusFilter === 'all' ? bills : bills.filter((b) => b.status === statusFilter)
 

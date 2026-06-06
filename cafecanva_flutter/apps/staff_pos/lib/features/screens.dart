@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
 import 'package:cafecanva_billing/cafecanva_billing.dart';
-
 final Map<String, List<Map<String, dynamic>>> _posTableCarts = {};
 
 List<Map<String, dynamic>> _getPosCart(String tableId) {
@@ -200,25 +199,48 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
     super.initState();
     _loadTables();
     
+    final branchId = AuthService.branchId ?? 'demo-branch-7777';
     // Blocker 3: Postgres real-time channels strictly bounded inside branch isolation filters
     RealtimeService.instance.subscribeToTableChanges(
-      branchId: 'demo-branch-7777',
+      branchId: branchId,
       onTableUpdated: (payload) {
         _loadTables();
       },
     );
+
+    final tenantId = AuthService.tenantId;
+    if (tenantId != null) {
+      RealtimeService.instance.subscribeToNotifications(
+        tenantId: tenantId,
+        onNotificationReceived: (payload) {
+          final title = payload.newRecord['title'] as String? ?? 'Notification';
+          final body = payload.newRecord['body'] as String? ?? '';
+          final type = payload.newRecord['type'] as String? ?? '';
+          if (type == 'customer_checkin' && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('$title: $body'),
+                backgroundColor: CafeCanvaColors.primary,
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
+        },
+      );
+    }
   }
 
   Future<void> _loadTables() async {
+    final branchId = AuthService.branchId ?? 'demo-branch-7777';
     try {
-      final list = await _tableRepo.fetchTables('demo-branch-7777');
+      final list = await _tableRepo.fetchTables(branchId);
       
       // Fetch and cache branch printer width preference from Supabase to Hive
       try {
         final settingsRes = await SupabaseService.client
             .from('store_settings')
             .select('printer_width')
-            .eq('branch_id', 'demo-branch-7777')
+            .eq('branch_id', branchId)
             .maybeSingle();
         if (settingsRes != null) {
           final width = settingsRes['printer_width'] as String? ?? 'mm80';
@@ -394,9 +416,10 @@ class _OrderBuilderScreenState extends State<OrderBuilderScreen> {
   }
 
   Future<void> _loadMenu() async {
+    final branchId = AuthService.branchId ?? 'demo-branch-7777';
     try {
-      final categories = await _menuRepo.fetchCategories('demo-branch-7777');
-      final items = await _menuRepo.fetchItems('demo-branch-7777');
+      final categories = await _menuRepo.fetchCategories(branchId);
+      final items = await _menuRepo.fetchItems(branchId);
 
       if (mounted) {
         setState(() {
@@ -552,9 +575,11 @@ class _OrderBuilderScreenState extends State<OrderBuilderScreen> {
         };
       }).toList();
 
+      final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
+      final branchId = AuthService.branchId ?? 'demo-branch-7777';
       await _orderRepo.createOrder(
-        tenantId: 'demo-tenant-5555',
-        branchId: 'demo-branch-7777',
+        tenantId: tenantId,
+        branchId: branchId,
         tableId: widget.tableId,
         customerId: null,
         subtotal: subtotal,
@@ -720,8 +745,9 @@ class _ActiveOrdersQueueState extends State<ActiveOrdersQueue> {
   }
 
   Future<void> _loadActive() async {
+    final branchId = AuthService.branchId ?? 'demo-branch-7777';
     try {
-      final list = await _orderRepo.fetchOrders('demo-branch-7777');
+      final list = await _orderRepo.fetchOrders(branchId);
       if (mounted) {
         setState(() {
           _orders = list;
@@ -828,11 +854,14 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
   Future<void> _triggerBillGeneration() async {
     try {
       setState(() => _isLoading = true);
+      final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
+      final branchId = AuthService.branchId ?? 'demo-branch-7777';
+      final createdBy = AuthService.currentUser?.id ?? 'demo-user-1234-5678';
       final bill = await BillingRepository.generateBill(
         tableId: widget.tableId,
-        tenantId: 'demo-tenant-5555',
-        branchId: 'demo-branch-7777',
-        createdBy: 'demo-user-1234-5678',
+        tenantId: tenantId,
+        branchId: branchId,
+        createdBy: createdBy,
       );
 
       if (mounted) {
@@ -878,12 +907,14 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
       final cachedWidth = sessionBox.get('printer_width', defaultValue: 'mm80') as String;
 
       final printService = BillingFactory.createPrintService(mode: PrintMode.bluetooth);
+      final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
+      final branchId = AuthService.branchId ?? 'demo-branch-7777';
       await printService.printReceipt(
         bill: _bill!,
         settings: StoreSettings(
           id: 'demo-sett',
-          tenantId: 'demo-tenant-5555',
-          branchId: 'demo-branch-7777',
+          tenantId: tenantId,
+          branchId: branchId,
           storeName: 'CafeCanva',
           printerWidth: cachedWidth,
         ),

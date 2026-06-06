@@ -45,6 +45,7 @@ interface BillingState {
   markPaid: (billId: string, paymentMethod: PaymentMethod) => Promise<{ error: string | null }>
   voidBill: (billId: string) => Promise<{ error: string | null }>
   selectBill: (bill: Bill | null) => void
+  subscribeToBills: (tenantId: string) => () => void
 }
 
 export const useBillingStore = create<BillingState>((set, get) => ({
@@ -155,6 +156,51 @@ export const useBillingStore = create<BillingState>((set, get) => ({
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to void bill'
       return { error: msg }
+    }
+  },
+
+  subscribeToBills: (tenantId) => {
+    const channel = supabase
+      .channel(`bills:${tenantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bills',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        (payload) => {
+          const { bills } = get()
+
+          if (payload.eventType === 'INSERT') {
+            const newBill = payload.new as Bill
+            set({ bills: [newBill, ...bills] })
+            toast.info('New bill generated', `Bill #${newBill.id.slice(-6).toUpperCase()} generated for Table ${newBill.table_number || '—'}`)
+          }
+
+          if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as Bill
+            set({
+              bills: bills.map((b) =>
+                b.id === updated.id ? { ...b, ...updated } : b
+              ),
+              selectedBill: get().selectedBill?.id === updated.id
+                ? { ...get().selectedBill!, ...updated }
+                : get().selectedBill
+            })
+          }
+
+          if (payload.eventType === 'DELETE') {
+            const deleted = payload.old as { id: string }
+            set({ bills: bills.filter((b) => b.id !== deleted.id) })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
     }
   },
 }))
