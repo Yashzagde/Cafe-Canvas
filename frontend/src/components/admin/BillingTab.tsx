@@ -25,6 +25,9 @@ interface Table {
   floor_x: number;
   floor_y: number;
   qr_version: number;
+  location_id?: string;
+  branch_id?: string;
+  table_number?: number;
 }
 
 interface BillItem {
@@ -197,19 +200,32 @@ export default function BillingTab({
 
         const orderIds = (activeOrders || []).map(o => o.id);
 
-        // 2. Insert bill
+        // 2a. Fetch active session details from table_sessions
+        const { data: activeSession } = await supabase
+          .from('table_sessions')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('table_id', selectedTable.id)
+          .is('check_out_at', null)
+          .maybeSingle();
+
+        // 2b. Insert bill
         const { error: billErr } = await supabase
           .from('bills')
           .insert({
             tenant_id: tenantId,
-            table_id: selectedTable.id,
+            location_id: selectedTable.location_id || selectedTable.branch_id,
             order_ids: orderIds,
+            table_number: selectedTable.table_number || parseInt(selectedTable.name.replace(/\D/g, '')) || 0,
+            customer_name: activeSession?.customer_name || 'Walk-in Guest',
+            customer_phone: activeSession?.customer_phone || null,
             subtotal: Math.round(subtotal * 100),
-            tax: Math.round(gstAmt * 100),
+            cgst: Math.round(cgstAmt * 100),
+            sgst: Math.round(sgstAmt * 100),
             discount_amount: Math.round(discountAmt * 100),
             total: Math.round(grandTotal * 100),
-            payment_method: payMethod.toUpperCase(),
             status: 'paid',
+            payment_method: payMethod.toLowerCase(),
             paid_at: new Date().toISOString()
           });
 
@@ -225,14 +241,6 @@ export default function BillingTab({
         }
 
         // 4. Checkout table session
-        const { data: activeSession } = await supabase
-          .from('table_sessions')
-          .select('id')
-          .eq('tenant_id', tenantId)
-          .eq('table_id', selectedTable.id)
-          .is('check_out_at', null)
-          .maybeSingle();
-
         if (activeSession) {
           await supabase
             .from('table_sessions')

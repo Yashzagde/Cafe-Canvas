@@ -289,7 +289,7 @@ export default function StaffPOS() {
         .from('orders')
         .select('*')
         .eq('tenant_id', activeProfile.tenant_id)
-        .eq('branch_id', activeProfile.branch_id)
+        .eq('location_id', activeProfile.branch_id)
         .in('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed'])
         .order('created_at', { ascending: false });
 
@@ -544,9 +544,9 @@ export default function StaffPOS() {
         .from('orders')
         .insert({
           tenant_id: profile.tenant_id,
-          branch_id: profile.branch_id,
+          location_id: profile.branch_id,
           table_id: selectedTable.id,
-          created_by: profile.id,
+          staff_id: profile.id,
           status: 'pending',
           subtotal: subtotalInPaise,
           discount_amount: 0,
@@ -564,6 +564,7 @@ export default function StaffPOS() {
         const baseItemId = i.id.split('_')[0];
         return {
           order_id: newOrder.id,
+          tenant_id: profile.tenant_id,
           menu_item_id: baseItemId.length > 5 ? baseItemId : null,
           quantity: i.qty,
           unit_price: Math.round(i.price * 100),
@@ -599,29 +600,108 @@ export default function StaffPOS() {
     }
   };
 
-  const processPayment = () => {
+  const processPayment = async () => {
     if (payMethod === 'cash' && (!cashReceived || Number(cashReceived) < grandTotal)) {
       alert('Cash received must be ≥ total amount');
       return;
     }
-    
-    // update performance stats locally or push to db
-    setShiftStats(prev => ({
-      ...prev,
-      billsSettled: prev.billsSettled + 1,
-      revenueGenerated: prev.revenueGenerated + Math.round(grandTotal)
-    }));
 
-    setBillCounter(prev => prev + 1);
-    setPaymentSuccess(true);
-    setShowPayment(false);
+    try {
+      if (!demoMode && selectedTable) {
+        const tenantId = profile.tenant_id;
+        
+        // 1. Get active orders for this table
+        const { data: activeOrders, error: activeOrdersErr } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('table_id', selectedTable.id)
+          .in('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed']);
 
-    // Free up table locally or via Supabase
-    if (selectedTable) {
-      setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, status: 'available' } : t));
-      if (!demoMode) {
-        supabase.from('tables').update({ status: 'available' }).eq('id', selectedTable.id).then();
+        if (activeOrdersErr) throw activeOrdersErr;
+        const orderIds = (activeOrders || []).map(o => o.id);
+
+        // 2. Fetch active session details from table_sessions
+        const { data: activeSession, error: sessionErr } = await supabase
+          .from('table_sessions')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('table_id', selectedTable.id)
+          .is('check_out_at', null)
+          .maybeSingle();
+
+        if (sessionErr) throw sessionErr;
+
+        // 3. Insert bill record
+        const { error: billErr } = await supabase
+          .from('bills')
+          .insert({
+            tenant_id: tenantId,
+            location_id: profile.branch_id,
+            order_ids: orderIds,
+            table_number: selectedTable.table_number || parseInt(selectedTable.name.replace(/\D/g, '')) || 0,
+            customer_name: activeSession?.customer_name || 'Walk-in Guest',
+            customer_phone: activeSession?.customer_phone || null,
+            subtotal: Math.round(subtotal * 100),
+            cgst: Math.round(cgstAmt * 100),
+            sgst: Math.round(sgstAmt * 100),
+            discount_amount: 0,
+            total: Math.round(grandTotal * 100),
+            status: 'paid',
+            payment_method: payMethod.toLowerCase(),
+            created_by: profile.id,
+            paid_at: new Date().toISOString()
+          });
+
+        if (billErr) throw billErr;
+
+        // 4. Update orders status to 'paid'
+        if (orderIds.length > 0) {
+          const { error: ordErr } = await supabase
+            .from('orders')
+            .update({ status: 'paid' })
+            .in('id', orderIds);
+          if (ordErr) throw ordErr;
+        }
+
+        // 5. Checkout table session
+        if (activeSession) {
+          const { error: checkoutErr } = await supabase
+            .from('table_sessions')
+            .update({
+              check_out_at: new Date().toISOString(),
+              total_revenue: Math.round(grandTotal * 100)
+            })
+            .eq('id', activeSession.id);
+          if (checkoutErr) throw checkoutErr;
+        }
+
+        // 6. Update table status to available
+        const { error: tableErr } = await supabase
+          .from('tables')
+          .update({ status: 'available' })
+          .eq('id', selectedTable.id);
+        if (tableErr) throw tableErr;
       }
+
+      // Update local states
+      setShiftStats(prev => ({
+        ...prev,
+        billsSettled: prev.billsSettled + 1,
+        revenueGenerated: prev.revenueGenerated + Math.round(grandTotal)
+      }));
+
+      setBillCounter(prev => prev + 1);
+      setPaymentSuccess(true);
+      setShowPayment(false);
+
+      if (selectedTable) {
+        setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, status: 'available' } : t));
+      }
+
+    } catch (err: any) {
+      console.error("Payment settlement failed:", err);
+      alert("Payment settlement failed: " + (err.message || String(err)));
     }
   };
 
