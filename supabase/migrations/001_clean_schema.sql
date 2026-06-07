@@ -147,7 +147,8 @@ CREATE TABLE tables (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
   location_id UUID REFERENCES locations(id) ON DELETE CASCADE NOT NULL,
-  table_number INTEGER NOT NULL,
+  branch_id UUID REFERENCES locations(id) ON DELETE CASCADE,
+  table_number INTEGER,
   name TEXT,
   capacity INTEGER DEFAULT 4,
   section TEXT,
@@ -155,6 +156,10 @@ CREATE TABLE tables (
   status TEXT DEFAULT 'vacant' CHECK (status IN ('vacant', 'occupied', 'dirty', 'reserved', 'cleaning')),
   position_x INTEGER DEFAULT 0,
   position_y INTEGER DEFAULT 0,
+  floor_x INTEGER,
+  floor_y INTEGER,
+  qr_version INTEGER DEFAULT 1,
+  qr_generated_at TIMESTAMPTZ DEFAULT NOW(),
   is_active BOOLEAN DEFAULT true,
   deleted_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -320,6 +325,61 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER enforce_staff_limit
 BEFORE INSERT ON public.staff_accounts
 FOR EACH ROW EXECUTE FUNCTION public.check_staff_limit();
+
+-- =========================================================================
+-- DATABASE TRIGGER: SYNC TABLES COMPATIBILITY FIELDS
+-- =========================================================================
+
+CREATE OR REPLACE FUNCTION public.sync_tables_compatibility_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Sync branch_id and location_id
+  IF NEW.branch_id IS NOT NULL AND NEW.location_id IS NULL THEN
+    NEW.location_id := NEW.branch_id;
+  ELSIF NEW.location_id IS NOT NULL AND NEW.branch_id IS NULL THEN
+    NEW.branch_id := NEW.location_id;
+  END IF;
+
+  -- Sync name and table_number
+  IF NEW.name IS NOT NULL AND NEW.table_number IS NULL THEN
+    BEGIN
+      NEW.table_number := (REGEXP_REPLACE(NEW.name, '[^0-9]', '', 'g'))::INTEGER;
+    EXCEPTION WHEN OTHERS THEN
+      NEW.table_number := 0;
+    END;
+  ELSIF NEW.table_number IS NOT NULL AND NEW.name IS NULL THEN
+    NEW.name := NEW.table_number::TEXT;
+  END IF;
+
+  -- Sync floor_x/y and position_x/y
+  IF NEW.floor_x IS NOT NULL AND NEW.position_x IS NULL THEN
+    NEW.position_x := NEW.floor_x;
+  ELSIF NEW.position_x IS NOT NULL AND NEW.floor_x IS NULL THEN
+    NEW.floor_x := NEW.position_x;
+  END IF;
+
+  IF NEW.floor_y IS NOT NULL AND NEW.position_y IS NULL THEN
+    NEW.position_y := NEW.floor_y;
+  ELSIF NEW.position_y IS NOT NULL AND NEW.floor_y IS NULL THEN
+    NEW.floor_y := NEW.position_y;
+  END IF;
+
+  -- Fallbacks
+  IF NEW.location_id IS NULL THEN
+    NEW.location_id := NEW.branch_id;
+  END IF;
+
+  IF NEW.table_number IS NULL THEN
+    NEW.table_number := 0;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER sync_tables_compatibility_trig
+BEFORE INSERT OR UPDATE ON public.tables
+FOR EACH ROW EXECUTE FUNCTION public.sync_tables_compatibility_fields();
 
 -- =========================================================================
 -- CUSTOM AUTH HOOK FUNCTION (Inject Claims to App Metadata)

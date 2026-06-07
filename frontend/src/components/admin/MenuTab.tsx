@@ -44,12 +44,13 @@ export default function MenuTab({
     const target = menu.find(i => i.id === id);
     if (!target) return;
     const nextStatus = target.status === "available" ? "unavailable" : "available";
+    const nextAvailable = nextStatus === "available";
 
     try {
       if (!dbPending) {
         const { error } = await supabase
           .from('menu_items')
-          .update({ status: nextStatus })
+          .update({ is_available: nextAvailable })
           .eq('id', id);
         if (error) throw error;
       }
@@ -76,7 +77,7 @@ export default function MenuTab({
           .update({
             name: editItem.name,
             price: Math.round(editItem.price * 100),
-            status: editItem.status,
+            is_available: editItem.status === 'available',
             description: editItem.desc,
             category_id: catData?.id || null
           })
@@ -125,7 +126,7 @@ export default function MenuTab({
             tenant_id: tenantId,
             name: newItem.name,
             price: Math.round(newItem.price * 100),
-            status: newItem.status,
+            is_available: newItem.status === 'available',
             description: newItem.desc,
             category_id: categoryId
           })

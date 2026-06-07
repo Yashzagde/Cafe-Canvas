@@ -200,12 +200,11 @@ export default function StaffPOS() {
           setCategories(FALLBACK_CATEGORIES);
         }
 
-        // E. Fetch Menu Items
         const { data: dbItems } = await supabase
           .from('menu_items')
           .select('*')
           .is('deleted_at', null)
-          .eq('status', 'available')
+          .eq('is_available', true)
           .order('name');
         
         if (dbItems && dbItems.length > 0) {
