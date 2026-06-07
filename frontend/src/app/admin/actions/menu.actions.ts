@@ -25,7 +25,8 @@ export async function getModifierGroupsAction() {
     .from('modifier_groups')
     .select('*, modifier_options(*)')
     .eq('tenant_id', profile.tenant_id)
-    .order('sort_order', { ascending: true });
+    .order('name', { ascending: true })
+    .order('sort_order', { referencedTable: 'modifier_options', ascending: true });
 
   if (error) {
     throw new Error(error.message);

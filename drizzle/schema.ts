@@ -1,143 +1,187 @@
-import { pgTable, serial, text, varchar, timestamp, uuid, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "drizzle-orm/pg-core";
 
-// ---------- SaaS Tenants & Branches ----------
+// ---------- SaaS Tenants & Locations ----------
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
-  mode: text('mode').default('SINGLE_STORE').notNull(),
-  maxSubaccounts: integer('max_subaccounts').default(50).notNull(),
-  status: text('status').default('ACTIVE').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull()
-});
-
-export const branches = pgTable('branches', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  name: text('name').notNull(),
-  status: text('status').default('ACTIVE').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull()
-});
-
-// ---------- Core Users ----------
-
-export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id'),
-  branchId: uuid('branch_id'),
-  fullName: text('full_name').notNull(),
-  email: text('email'),
-  phone: text('phone'),
-  role: text('role'),
-  status: text('status').default('ACTIVE'),
-  pinHash: text('pin_hash'),
-  createdAt: timestamp('created_at').defaultNow()
-});
-
-export const preRegistrations = pgTable('pre_registrations', {
-  id: serial('id').primaryKey(),
+  slug: text('slug').unique().notNull(),
   email: text('email').notNull(),
-  restaurantName: text('restaurant_name'),
+  phone: text('phone'),
+  address: text('address'),
+  city: text('city'),
+  state: text('state'),
+  pincode: text('pincode'),
+  logoUrl: text('logo_url'),
+  subscriptionTier: text('subscription_tier').default('Free').notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
-// ---------- Menu & Modifier Management ----------
+export const locations = pgTable('locations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  name: text('name').notNull(),
+  address: text('address'),
+  city: text('city'),
+  state: text('state'),
+  pincode: text('pincode'),
+  phone: text('phone'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+// ---------- Staff Accounts (Sub-accounts) ----------
+
+export const staffAccounts = pgTable('staff_accounts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  locationId: uuid('location_id').references(() => locations.id, { onDelete: 'set null' }),
+  authUserId: uuid('auth_user_id').unique(),
+  fullName: text('full_name').notNull(),
+  email: text('email').unique().notNull(),
+  phone: text('phone'),
+  role: text('role').default('staff').notNull(),
+  pin: text('pin'),
+  fcmToken: text('fcm_token'),
+  isActive: boolean('is_active').default(true).notNull(),
+  lastLogin: timestamp('last_login'),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+// ---------- Store Settings & Config ----------
+
+export const storeSettings = pgTable('store_settings', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull().unique(),
+  currency: text('currency').default('INR').notNull(),
+  taxCgst: integer('tax_cgst').default(250).notNull(), // in base points (2.5% = 250)
+  taxSgst: integer('tax_sgst').default(250).notNull(),
+  taxInclusive: boolean('tax_inclusive').default(false).notNull(),
+  razorpayKeyId: text('razorpay_key_id'),
+  upiId: text('upi_id'),
+  openTime: text('open_time'),
+  closeTime: text('close_time'),
+  receiptHeader: text('receipt_header'),
+  receiptFooter: text('receipt_footer').default('Thank you! Visit again.').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const storefrontConfig = pgTable('storefront_config', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull().unique(),
+  themeId: text('theme_id').default('theme-01').notNull(),
+  primaryColor: text('primary_color').default('#ff6b6b').notNull(),
+  accentColor: text('accent_color').default('#4ecdc4').notNull(),
+  fontHeading: text('font_heading').default('Outfit').notNull(),
+  fontBody: text('font_body').default('Inter').notNull(),
+  bannerText: text('banner_text'),
+  showPrices: boolean('show_prices').default(true).notNull(),
+  allowOrders: boolean('allow_orders').default(true).notNull(),
+  showBlog: boolean('show_blog').default(false).notNull(),
+  heroImageUrl: text('hero_image_url'),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+// ---------- Menu Management ----------
 
 export const menuCategories = pgTable('menu_categories', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
   name: text('name').notNull(),
+  nameHi: text('name_hi'),
+  description: text('description'),
   sortOrder: integer('sort_order').default(0).notNull(),
   isVisible: boolean('is_visible').default(true).notNull(),
-  deletedAt: timestamp('deleted_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
 export const menuItems = pgTable('menu_items', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  categoryId: uuid('category_id').notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  categoryId: uuid('category_id').references(() => menuCategories.id, { onDelete: 'set null' }),
   name: text('name').notNull(),
+  nameHi: text('name_hi'),
   description: text('description'),
-  price: integer('price').notNull(),
+  price: integer('price').notNull(), // in paise
+  comparePrice: integer('compare_price'),
   imageUrl: text('image_url'),
-  status: text('status').default('available').notNull(),
-  allowsModifiers: boolean('allows_modifiers').default(false).notNull(),
-  discountEligible: boolean('discount_eligible').default(true).notNull(),
-  createdBy: uuid('created_by'),
-  deletedAt: timestamp('deleted_at'),
+  isAvailable: boolean('is_available').default(true).notNull(),
+  isFeatured: boolean('is_featured').default(false).notNull(),
+  dietaryTags: text('dietary_tags').array().default([]).notNull(),
+  prepTimeMins: integer('prep_time_mins').default(10).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
 export const modifierGroups = pgTable('modifier_groups', {
   id: uuid('id').defaultRandom().primaryKey(),
-  itemId: uuid('item_id').notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
   name: text('name').notNull(),
-  required: boolean('required').default(false).notNull(),
   minSelect: integer('min_select').default(0).notNull(),
   maxSelect: integer('max_select').default(1).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  isRequired: boolean('is_required').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
 export const modifierOptions = pgTable('modifier_options', {
   id: uuid('id').defaultRandom().primaryKey(),
-  groupId: uuid('group_id').notNull(),
+  groupId: uuid('group_id').references(() => modifierGroups.id, { onDelete: 'cascade' }).notNull(),
   name: text('name').notNull(),
-  extraPrice: integer('extra_price').default(0).notNull(),
-  isDefault: boolean('is_default').default(false).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  price: integer('price').default(0).notNull(), // in paise
+  isAvailable: boolean('is_available').default(true).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
 // ---------- Tables & Customer Sessions ----------
 
 export const tables = pgTable('tables', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  name: text('name').notNull(),
-  capacity: integer('capacity').default(2).notNull(),
-  section: text('section').default('Main Floor').notNull(),
-  position: jsonb('position').notNull(),
-  status: text('status').default('available').notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  locationId: uuid('location_id').references(() => locations.id, { onDelete: 'cascade' }).notNull(),
+  tableNumber: integer('table_number').notNull(),
+  name: text('name'),
+  capacity: integer('capacity').default(4).notNull(),
+  section: text('section'),
+  qrToken: text('qr_token'),
+  status: text('status').default('vacant').notNull(),
+  positionX: integer('position_x').default(0).notNull(),
+  positionY: integer('position_y').default(0).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
   deletedAt: timestamp('deleted_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
-export const customers = pgTable('customers', {
+export const tableSessions = pgTable('table_sessions', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  name: text('name').notNull(),
-  phone: text('phone').notNull(),
-  notes: text('notes'),
-  tags: jsonb('tags'),
-  deletedAt: timestamp('deleted_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  tableId: uuid('table_id').references(() => tables.id, { onDelete: 'cascade' }).notNull(),
+  customerName: text('customer_name'),
+  customerPhone: text('customer_phone'),
+  pax: integer('pax').default(1).notNull(),
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  endedAt: timestamp('ended_at'),
+  orderIds: uuid('order_ids').array().default([]).notNull()
 });
 
 // ---------- Orders & Invoicing ----------
 
 export const orders = pgTable('orders', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  tableId: uuid('table_id'),
-  customerId: uuid('customer_id'),
-  createdBy: uuid('created_by'),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  locationId: uuid('location_id').references(() => locations.id, { onDelete: 'cascade' }).notNull(),
+  tableId: uuid('table_id').references(() => tables.id, { onDelete: 'set null' }),
+  staffId: uuid('staff_id').references(() => staffAccounts.id, { onDelete: 'set null' }),
+  customerName: text('customer_name'),
+  customerPhone: text('customer_phone'),
   status: text('status').default('pending').notNull(),
-  source: text('source').default('staff_app').notNull(),
-  subtotal: integer('subtotal').default(0).notNull(),
-  discountAmount: integer('discount_amount').default(0).notNull(),
-  extraCharges: jsonb('extra_charges'),
-  total: integer('total').default(0).notNull(),
+  orderType: text('order_type').default('dine_in').notNull(),
+  subtotal: integer('subtotal').notNull(), // in paise
+  taxAmount: integer('tax_amount').default(0).notNull(), // in paise
+  discountAmount: integer('discount_amount').default(0).notNull(), // in paise
+  total: integer('total').notNull(), // in paise
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
@@ -145,207 +189,100 @@ export const orders = pgTable('orders', {
 
 export const orderItems = pgTable('order_items', {
   id: uuid('id').defaultRandom().primaryKey(),
-  orderId: uuid('order_id').notNull(),
-  menuItemId: uuid('menu_item_id'),
-  quantity: integer('quantity').default(1).notNull(),
-  unitPrice: integer('unit_price').notNull(),
-  modifierSelections: jsonb('modifier_selections'),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  orderId: uuid('order_id').references(() => orders.id, { onDelete: 'cascade' }).notNull(),
+  menuItemId: uuid('menu_item_id').references(() => menuItems.id, { onDelete: 'set null' }),
   itemName: text('item_name').notNull(),
-  itemNotes: text('item_notes'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  unitPrice: integer('unit_price').notNull(), // in paise
+  quantity: integer('quantity').default(1).notNull(),
+  modifierDetails: text('modifier_details'),
+  modifiers: jsonb('modifiers').default('[]').notNull(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
 export const bills = pgTable('bills', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  tableId: uuid('table_id'),
-  orders: jsonb('orders').notNull(),
-  subtotal: integer('subtotal').notNull(),
-  tax: integer('tax').default(0).notNull(),
-  discountAmount: integer('discount_amount').default(0).notNull(),
-  extraCharges: jsonb('extra_charges'),
-  total: integer('total').notNull(),
-  status: text('status').default('open').notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  locationId: uuid('location_id').references(() => locations.id, { onDelete: 'cascade' }),
+  orderId: uuid('order_id').references(() => orders.id, { onDelete: 'set null' }),
+  orderIds: uuid('order_ids').array().default([]).notNull(),
+  tableNumber: integer('table_number'),
+  customerName: text('customer_name'),
+  customerPhone: text('customer_phone'),
+  subtotal: integer('subtotal').notNull(), // in paise
+  cgst: integer('cgst').default(0).notNull(), // in paise
+  sgst: integer('sgst').default(0).notNull(), // in paise
+  discountAmount: integer('discount_amount').default(0).notNull(), // in paise
+  total: integer('total').notNull(), // in paise
+  status: text('status').default('unpaid').notNull(),
   paymentMethod: text('payment_method'),
+  createdBy: uuid('created_by').references(() => staffAccounts.id, { onDelete: 'set null' }),
   paidAt: timestamp('paid_at'),
-  createdBy: uuid('created_by'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
-export const tableSessions = pgTable('table_sessions', {
+// ---------- Staff Calls & CRM ----------
+
+export const staffCalls = pgTable('staff_calls', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tableId: uuid('table_id').notNull(),
-  tenantId: uuid('tenant_id').notNull(),
-  checkInAt: timestamp('check_in_at').defaultNow().notNull(),
-  checkOutAt: timestamp('check_out_at'),
-  durationMinutes: integer('duration_minutes'),
-  totalRevenue: integer('total_revenue').default(0).notNull(),
-  customerCount: integer('customer_count').default(1).notNull(),
-  assignedStaffId: uuid('assigned_staff_id'),
-  billId: uuid('bill_id'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  tableId: uuid('table_id').references(() => tables.id, { onDelete: 'cascade' }).notNull(),
+  tableNumber: integer('table_number'),
+  status: text('status').default('pending').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
-export const extraChargeTemplates = pgTable('extra_charge_templates', {
+export const customers = pgTable('customers', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  label: text('label').notNull(),
-  type: text('type').notNull(),
-  value: integer('value').notNull(),
-  isDefault: boolean('is_default').default(false).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  name: text('name'),
+  phone: text('phone').notNull(),
+  email: text('email'),
+  totalVisits: integer('total_visits').default(0).notNull(),
+  totalSpent: integer('total_spent').default(0).notNull(), // in paise
+  lastVisitAt: timestamp('last_visit_at'),
+  notes: text('notes'),
+  tags: text('tags').array().default([]).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
-export const customerVisits = pgTable('customer_visits', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  customerId: uuid('customer_id').notNull(),
-  billId: uuid('bill_id'),
-  tableId: uuid('table_id'),
-  orderAt: timestamp('order_at').defaultNow().notNull(),
-  checkInAt: timestamp('check_in_at'),
-  checkOutAt: timestamp('check_out_at'),
-  durationMinutes: integer('duration_minutes'),
-  totalSpent: integer('total_spent').default(0).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-// ---------- Marketing & Campaigns ----------
+// ---------- Marketing & CRM ----------
 
 export const discounts = pgTable('discounts', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
   name: text('name').notNull(),
   type: text('type').notNull(),
-  value: integer('value').notNull(),
-  minOrderAmount: integer('min_order_amount').default(0).notNull(),
-  appliesTo: text('applies_to').default('all').notNull(),
-  targetIds: jsonb('target_ids'),
-  validFrom: timestamp('valid_from').notNull(),
-  validUntil: timestamp('valid_until').notNull(),
-  usageLimit: integer('usage_limit'),
-  usedCount: integer('used_count').default(0).notNull(),
-  perCustomerLimit: integer('per_customer_limit').default(1).notNull(),
+  value: integer('value').notNull(), // flat = paise, percentage = rate
+  minOrderAmount: integer('min_order_amount').default(0).notNull(), // in paise
+  maxDiscount: integer('max_discount'), // in paise
   isActive: boolean('is_active').default(true).notNull(),
-  deletedAt: timestamp('deleted_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  startsAt: timestamp('starts_at'),
+  endsAt: timestamp('ends_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
 export const coupons = pgTable('coupons', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  discountId: uuid('discount_id').notNull(),
-  code: text('code').notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  code: text('code').unique().notNull(),
+  discountId: uuid('discount_id').references(() => discounts.id, { onDelete: 'cascade' }).notNull(),
   maxUses: integer('max_uses'),
-  usedCount: integer('used_count').default(0).notNull(),
-  perUserLimit: integer('per_user_limit').default(1).notNull(),
-  validUntil: timestamp('valid_until'),
+  currentUses: integer('current_uses').default(0).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  expiresAt: timestamp('expires_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
-export const couponUses = pgTable('coupon_uses', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  couponId: uuid('coupon_id').notNull(),
-  customerPhone: text('customer_phone').notNull(),
-  orderId: uuid('order_id').notNull(),
-  usedAt: timestamp('used_at').defaultNow().notNull()
-});
+// ---------- Notifications ----------
 
-export const storefrontNotifications = pgTable('storefront_notifications', {
+export const notificationLog = pgTable('notification_log', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  type: text('type').default('banner').notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  type: text('type').notNull(),
   title: text('title').notNull(),
   body: text('body').notNull(),
-  ctaText: text('cta_text'),
-  ctaUrl: text('cta_url'),
-  startAt: timestamp('start_at').notNull(),
-  endAt: timestamp('end_at').notNull(),
-  target: text('target').default('all').notNull(),
-  isActive: boolean('is_active').default(true).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-// ---------- Store Settings & Customisation ----------
-
-export const storeSettings = pgTable('store_settings', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  storeName: text('store_name').notNull(),
-  address: text('address'),
-  phone: text('phone'),
-  email: text('email'),
-  gstin: text('gstin'),
-  currency: text('currency').default('INR').notNull(),
-  timezone: text('timezone').default('Asia/Kolkata').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-export const branding = pgTable('branding', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  logoUrl: text('logo_url'),
-  bannerUrl: text('banner_url'),
-  primaryColor: text('primary_color').default('#F59E0B').notNull(),
-  secondaryColor: text('secondary_color').default('#C2410C').notNull(),
-  backgroundColor: text('background_color').default('#FAFAF7').notNull(),
-  fontFamily: text('font_family').default('DM Sans').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-export const storefrontConfig = pgTable('storefront_config', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  slug: text('slug').notNull(),
-  domain: text('domain'),
-  isActive: boolean('is_active').default(true).notNull(),
-  allowOnlineOrders: boolean('allow_online_orders').default(true).notNull(),
-  allowPayAtCounter: boolean('allow_pay_at_counter').default(true).notNull(),
-  taxRatePercent: integer('tax_rate_percent').default(5).notNull(),
-  serviceChargePercent: integer('service_charge_percent').default(5).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-export const paymentIntegrations = pgTable('payment_integrations', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  provider: text('provider').default('razorpay').notNull(),
-  keyId: text('key_id').notNull(),
-  keySecret: text('key_secret').notNull(),
-  isActive: boolean('is_active').default(false).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-export const blogs = pgTable('blogs', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
-  title: text('title').notNull(),
-  slug: text('slug').notNull(),
-  content: text('content').notNull(),
-  heroImageUrl: text('hero_image_url'),
-  isPublished: boolean('is_published').default(false).notNull(),
-  publishedAt: timestamp('published_at'),
-  deletedAt: timestamp('deleted_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  read: boolean('read').default(false).notNull(),
+  sentAt: timestamp('sent_at').defaultNow().notNull()
 });

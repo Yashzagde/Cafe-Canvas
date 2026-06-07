@@ -2,6 +2,13 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env.local') });
 
+// Clear PG environment variables to prevent postgres client from picking up AWS DSQL credentials instead of DATABASE_URL
+delete process.env.PGHOST;
+delete process.env.PGPORT;
+delete process.env.PGUSER;
+delete process.env.PGDATABASE;
+delete process.env.PGSSLMODE;
+
 const migrationsDir = path.join(__dirname, 'supabase', 'migrations');
 const migrationFiles = [
   '001_clean_schema.sql',
@@ -21,30 +28,71 @@ async function run() {
   }
 
   const postgres = require('postgres');
-  const sql = postgres(dbUrl, {
-    ssl: 'require',
-    connect_timeout: 15,
-  });
+  
+  // Parse DATABASE_URL to connect to Session-mode pooler on port 5432
+  let connectionConfig;
+  try {
+    const urlPattern = /postgresql:\/\/([^:]+):([^@]+)@([^:/]+):(\d+)\/(.+)/;
+    const match = dbUrl.match(urlPattern);
+    if (match) {
+      const [_, user, pass, host, port, db] = match;
+      connectionConfig = {
+        host: host,
+        port: 5432, // Session mode pooler port
+        database: db,
+        username: user,
+        password: pass,
+        ssl: 'require',
+        max: 1,
+        connect_timeout: 30
+      };
+    } else {
+      connectionConfig = dbUrl;
+    }
+  } catch (err) {
+    connectionConfig = dbUrl;
+  }
+
+  const sql = typeof connectionConfig === 'object' 
+    ? postgres(connectionConfig) 
+    : postgres(dbUrl, { ssl: 'require', connect_timeout: 15 });
 
   try {
     console.log("Connecting to remote Supabase database...");
     await sql`SELECT 1`;
     console.log("Connected successfully!");
 
-    console.log("\nDropping and recreating public schema...");
+    console.log("\nDropping all views and tables in public schema...");
     await sql.unsafe(`
-      DROP SCHEMA IF EXISTS public CASCADE;
-      CREATE SCHEMA public;
-      GRANT ALL ON SCHEMA public TO postgres;
-      GRANT ALL ON SCHEMA public TO anon;
-      GRANT ALL ON SCHEMA public TO authenticated;
-      GRANT ALL ON SCHEMA public TO service_role;
-      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres;
-      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon;
-      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO authenticated;
-      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;
+      -- Drop all views in public schema
+      DO $$
+      DECLARE
+        view_rec RECORD;
+      BEGIN
+        FOR view_rec IN (
+          SELECT table_name
+          FROM information_schema.views
+          WHERE table_schema = 'public'
+        ) LOOP
+          EXECUTE 'DROP VIEW IF EXISTS public.' || quote_ident(view_rec.table_name) || ' CASCADE';
+        END LOOP;
+      END $$;
+
+      -- Drop all tables in public schema
+      DO $$
+      DECLARE
+        tbl RECORD;
+      BEGIN
+        FOR tbl IN (
+          SELECT tablename
+          FROM pg_tables
+          WHERE schemaname = 'public'
+        ) LOOP
+          EXECUTE 'DROP TABLE IF EXISTS public.' || quote_ident(tbl.tablename) || ' CASCADE';
+        END LOOP;
+      END $$;
     `);
-    console.log("✓ Public schema reset completed!");
+    console.log("✓ Public schema cleanup completed!");
 
     for (const file of migrationFiles) {
       console.log(`\nExecuting migration: ${file}...`);

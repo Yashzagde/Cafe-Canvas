@@ -1,16 +1,16 @@
 -- =========================================================================
--- CafeCanvas — Canonical Clean Database Schema
+-- CafeCanvas — Canonical Clean Multi-Tenant SaaS Database Schema
 -- =========================================================================
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 1. TENANTS
+-- 1. TENANTS (SaaS Store Accounts)
 CREATE TABLE tenants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
+  slug TEXT UNIQUE NOT NULL, -- Used in storefront subdomains (e.g. {slug}.cafecanvas.bar)
   email TEXT NOT NULL,
   phone TEXT,
   address TEXT,
@@ -23,7 +23,7 @@ CREATE TABLE tenants (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. LOCATIONS (Branches)
+-- 2. LOCATIONS (Branches under a Tenant)
 CREATE TABLE locations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE locations (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. STAFF ACCOUNTS (Users)
+-- 3. STAFF ACCOUNTS (Sub-accounts under a Tenant branch, capped at 50 per tenant)
 CREATE TABLE staff_accounts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE staff_accounts (
   full_name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   phone TEXT,
-  role TEXT DEFAULT 'staff' CHECK (role IN ('manager','cashier','kitchen','delivery','staff')),
+  role TEXT DEFAULT 'staff', -- Supports custom roles: owner, manager, admin, cashier, waiter, chef, bartender, etc.
   pin TEXT,
   fcm_token TEXT,
   is_active BOOLEAN DEFAULT true,
@@ -54,7 +54,7 @@ CREATE TABLE staff_accounts (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. STORE SETTINGS
+-- 4. STORE SETTINGS (Taxes and receipt configs)
 CREATE TABLE store_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL UNIQUE,
@@ -71,7 +71,7 @@ CREATE TABLE store_settings (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. STOREFRONT CONFIG
+-- 5. STOREFRONT CONFIG (Digital menu theme & layout configs)
 CREATE TABLE storefront_config (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL UNIQUE,
@@ -83,7 +83,7 @@ CREATE TABLE storefront_config (
   banner_text TEXT,
   show_prices BOOLEAN DEFAULT true,
   allow_orders BOOLEAN DEFAULT true,
-  show_blog BOOLEAN DEFAULT true,
+  show_blog BOOLEAN DEFAULT false,
   hero_image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -100,7 +100,7 @@ CREATE TABLE menu_categories (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. MENU ITEMS
+-- 7. MENU ITEMS (Prices stored in Paise)
 CREATE TABLE menu_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
@@ -108,8 +108,8 @@ CREATE TABLE menu_items (
   name TEXT NOT NULL,
   name_hi TEXT,
   description TEXT,
-  price INTEGER NOT NULL, -- stored in paise (1 INR = 100 paise)
-  compare_price INTEGER, -- stored in paise
+  price INTEGER NOT NULL, -- Stored in paise (1 INR = 100 paise)
+  compare_price INTEGER, -- Stored in paise
   image_url TEXT,
   is_available BOOLEAN DEFAULT true,
   is_featured BOOLEAN DEFAULT false,
@@ -136,7 +136,7 @@ CREATE TABLE modifier_options (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   group_id UUID REFERENCES modifier_groups(id) ON DELETE CASCADE NOT NULL,
   name TEXT NOT NULL,
-  price INTEGER DEFAULT 0, -- in paise
+  price INTEGER DEFAULT 0, -- In paise
   is_available BOOLEAN DEFAULT true,
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -184,10 +184,10 @@ CREATE TABLE orders (
   customer_phone TEXT,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'preparing', 'ready', 'served', 'completed', 'cancelled')),
   order_type TEXT DEFAULT 'dine_in' CHECK (order_type IN ('dine_in', 'takeaway', 'delivery')),
-  subtotal INTEGER NOT NULL, -- paise
-  tax_amount INTEGER DEFAULT 0, -- paise
-  discount_amount INTEGER DEFAULT 0, -- paise
-  total INTEGER NOT NULL, -- paise
+  subtotal INTEGER NOT NULL, -- Paise
+  tax_amount INTEGER DEFAULT 0, -- Paise
+  discount_amount INTEGER DEFAULT 0, -- Paise
+  total INTEGER NOT NULL, -- Paise
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -196,11 +196,11 @@ CREATE TABLE orders (
 -- 13. ORDER ITEMS
 CREATE TABLE order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL, -- Added for analytics queries
+  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
   order_id UUID REFERENCES orders(id) ON DELETE CASCADE NOT NULL,
   menu_item_id UUID REFERENCES menu_items(id) ON DELETE SET NULL,
   item_name TEXT NOT NULL,
-  unit_price INTEGER NOT NULL, -- paise
+  unit_price INTEGER NOT NULL, -- Paise
   quantity INTEGER NOT NULL DEFAULT 1,
   modifier_details TEXT,
   modifiers JSONB DEFAULT '[]'::JSONB,
@@ -208,20 +208,21 @@ CREATE TABLE order_items (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 14. BILLS
+-- 14. BILLS (Includes customer phone field added in migration 004)
 CREATE TABLE bills (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
   location_id UUID REFERENCES locations(id) ON DELETE CASCADE,
-  order_id UUID REFERENCES orders(id) ON DELETE SET NULL, -- single order reference
-  order_ids UUID[] DEFAULT '{}'::UUID[],                 -- multiple orders reference
+  order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+  order_ids UUID[] DEFAULT '{}'::UUID[],
   table_number INTEGER,
   customer_name TEXT,
-  subtotal INTEGER NOT NULL, -- paise
-  cgst INTEGER DEFAULT 0, -- paise
-  sgst INTEGER DEFAULT 0, -- paise
-  discount_amount INTEGER DEFAULT 0, -- paise
-  total INTEGER NOT NULL, -- paise
+  customer_phone TEXT,
+  subtotal INTEGER NOT NULL, -- Paise
+  cgst INTEGER DEFAULT 0, -- Paise
+  sgst INTEGER DEFAULT 0, -- Paise
+  discount_amount INTEGER DEFAULT 0, -- Paise
+  total INTEGER NOT NULL, -- Paise
   status TEXT DEFAULT 'unpaid' CHECK (status IN ('unpaid', 'paid', 'partially_paid', 'cancelled', 'void')),
   payment_method TEXT CHECK (payment_method IN ('cash', 'upi', 'card', 'other')),
   created_by UUID REFERENCES staff_accounts(id) ON DELETE SET NULL,
@@ -239,7 +240,7 @@ CREATE TABLE staff_calls (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 16. CUSTOMERS
+-- 16. CUSTOMERS (Loyalty CRM)
 CREATE TABLE customers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
@@ -247,7 +248,7 @@ CREATE TABLE customers (
   phone TEXT NOT NULL,
   email TEXT,
   total_visits INTEGER DEFAULT 0,
-  total_spent INTEGER DEFAULT 0, -- paise
+  total_spent INTEGER DEFAULT 0, -- Paise
   last_visit_at TIMESTAMPTZ,
   notes TEXT,
   tags TEXT[] DEFAULT '{}'::TEXT[],
@@ -255,36 +256,22 @@ CREATE TABLE customers (
   UNIQUE (tenant_id, phone)
 );
 
--- 17. INVENTORY
-CREATE TABLE inventory (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
-  name TEXT NOT NULL,
-  unit TEXT DEFAULT 'pcs',
-  current_stock NUMERIC DEFAULT 0,
-  reorder_level NUMERIC DEFAULT 10,
-  cost_per_unit INTEGER DEFAULT 0, -- paise
-  supplier TEXT,
-  last_restocked_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 18. DISCOUNTS
+-- 17. DISCOUNTS (Offers & Promotions)
 CREATE TABLE discounts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
   name TEXT NOT NULL,
   type TEXT CHECK (type IN ('percentage', 'percent', 'flat')),
-  value INTEGER NOT NULL, -- flat = paise, percentage = number
-  min_order_amount INTEGER DEFAULT 0, -- paise
-  max_discount INTEGER, -- paise
+  value INTEGER NOT NULL, -- flat = Paise, percentage = standard integer rate
+  min_order_amount INTEGER DEFAULT 0, -- Paise
+  max_discount INTEGER, -- Paise
   is_active BOOLEAN DEFAULT true,
   starts_at TIMESTAMPTZ,
   ends_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 19. COUPONS
+-- 18. COUPONS
 CREATE TABLE coupons (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
@@ -297,43 +284,47 @@ CREATE TABLE coupons (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 20. ATTENDANCE
-CREATE TABLE attendance (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
-  staff_id UUID REFERENCES staff_accounts(id) ON DELETE CASCADE NOT NULL,
-  date DATE DEFAULT CURRENT_DATE,
-  check_in TIMESTAMPTZ,
-  check_out TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 21. NOTIFICATION LOG
+-- 19. NOTIFICATION LOG (With read status column added in migration 004)
 CREATE TABLE notification_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('staff_call', 'order_status', 'payment_received')),
+  type TEXT NOT NULL, -- Supports custom types: staff_call, order_status, customer_checkin, etc.
   title TEXT NOT NULL,
   body TEXT NOT NULL,
+  read BOOLEAN DEFAULT false,
   sent_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 22. BLOGS
-CREATE TABLE blogs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE NOT NULL,
-  title TEXT NOT NULL,
-  slug TEXT NOT NULL,
-  content TEXT,
-  hero_image_url TEXT,
-  is_published BOOLEAN DEFAULT false,
-  published_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- =========================================================================
+-- DATABASE TRIGGER: ENFORCE STAFF LIMIT (MAX 50 STAFF SUB-ACCOUNTS PER TENANT)
+-- =========================================================================
 
--- =========================================
--- CUSTOM AUTH HOOK FUNCTION
--- =========================================
+CREATE OR REPLACE FUNCTION public.check_staff_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  staff_count INTEGER;
+BEGIN
+  -- Count active staff accounts for the tenant
+  SELECT COUNT(*) INTO staff_count 
+  FROM public.staff_accounts 
+  WHERE tenant_id = NEW.tenant_id;
+
+  IF staff_count >= 50 THEN
+    RAISE EXCEPTION 'Maximum limit of 50 staff sub-accounts reached for this tenant.';
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER enforce_staff_limit
+BEFORE INSERT ON public.staff_accounts
+FOR EACH ROW EXECUTE FUNCTION public.check_staff_limit();
+
+-- =========================================================================
+-- CUSTOM AUTH HOOK FUNCTION (Inject Claims to App Metadata)
+-- =========================================================================
+
 CREATE OR REPLACE FUNCTION public.inject_tenant_claims(event JSONB)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -361,7 +352,7 @@ BEGIN
 END;
 $$;
 
--- Grant permissions to supabase_auth_admin and other roles for Custom JWT Claims Hook
+-- Grant permissions to auth hook
 GRANT USAGE ON SCHEMA public TO supabase_auth_admin;
 GRANT USAGE ON SCHEMA public TO authenticator;
 GRANT USAGE ON SCHEMA public TO authenticated;
@@ -375,5 +366,150 @@ GRANT EXECUTE ON FUNCTION public.inject_tenant_claims(jsonb) TO anon;
 GRANT EXECUTE ON FUNCTION public.inject_tenant_claims(jsonb) TO service_role;
 GRANT EXECUTE ON FUNCTION public.inject_tenant_claims(jsonb) TO PUBLIC;
 
+-- =========================================================================
+-- BACKWARD COMPATIBILITY VIEWS: public.users AND public.branches
+-- =========================================================================
 
+-- 1. users Compatibility View
+CREATE OR REPLACE VIEW public.users WITH (security_invoker = true) AS
+SELECT
+  COALESCE(auth_user_id, id) AS id,
+  tenant_id,
+  location_id AS branch_id,
+  full_name AS name,
+  email,
+  phone,
+  role,
+  CASE WHEN is_active THEN 'ACTIVE' ELSE 'INACTIVE' END AS status,
+  is_active AS active,
+  pin AS pin_hash,
+  created_at
+FROM public.staff_accounts;
 
+-- 2. branches Compatibility View
+CREATE OR REPLACE VIEW public.branches WITH (security_invoker = true) AS
+SELECT
+  id,
+  tenant_id,
+  name,
+  CASE WHEN is_active THEN 'ACTIVE' ELSE 'INACTIVE' END AS status,
+  created_at
+FROM public.locations;
+
+-- INSTEAD OF triggers for users view
+CREATE OR REPLACE FUNCTION public.handle_users_view_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.staff_accounts (
+    id, tenant_id, location_id, auth_user_id, full_name, email, phone, role, pin, is_active
+  ) VALUES (
+    COALESCE(NEW.id, gen_random_uuid()),
+    NEW.tenant_id,
+    NEW.branch_id,
+    NEW.id,
+    COALESCE(NEW.name, NEW.full_name),
+    NEW.email,
+    NEW.phone,
+    NEW.role,
+    NEW.pin_hash,
+    COALESCE(NEW.active, NEW.status = 'ACTIVE', TRUE)
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    tenant_id = EXCLUDED.tenant_id,
+    location_id = EXCLUDED.location_id,
+    auth_user_id = EXCLUDED.auth_user_id,
+    full_name = EXCLUDED.full_name,
+    email = EXCLUDED.email,
+    phone = EXCLUDED.phone,
+    role = EXCLUDED.role,
+    pin = EXCLUDED.pin,
+    is_active = EXCLUDED.is_active;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER users_view_insert_trig
+INSTEAD OF INSERT ON public.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_users_view_insert();
+
+CREATE OR REPLACE FUNCTION public.handle_users_view_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.staff_accounts SET
+    tenant_id = NEW.tenant_id,
+    location_id = NEW.branch_id,
+    auth_user_id = NEW.id,
+    full_name = COALESCE(NEW.name, NEW.full_name),
+    email = NEW.email,
+    phone = NEW.phone,
+    role = NEW.role,
+    pin = NEW.pin_hash,
+    is_active = COALESCE(NEW.active, NEW.status = 'ACTIVE', TRUE)
+  WHERE id = OLD.id OR auth_user_id = OLD.id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER users_view_update_trig
+INSTEAD OF UPDATE ON public.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_users_view_update();
+
+CREATE OR REPLACE FUNCTION public.handle_users_view_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+  DELETE FROM public.staff_accounts WHERE id = OLD.id OR auth_user_id = OLD.id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER users_view_delete_trig
+INSTEAD OF DELETE ON public.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_users_view_delete();
+
+-- INSTEAD OF triggers for branches view
+CREATE OR REPLACE FUNCTION public.handle_branches_view_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.locations (
+    id, tenant_id, name, is_active
+  ) VALUES (
+    COALESCE(NEW.id, gen_random_uuid()),
+    NEW.tenant_id,
+    NEW.name,
+    COALESCE(NEW.status = 'ACTIVE', TRUE)
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER branches_view_insert_trig
+INSTEAD OF INSERT ON public.branches
+FOR EACH ROW EXECUTE FUNCTION public.handle_branches_view_insert();
+
+CREATE OR REPLACE FUNCTION public.handle_branches_view_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.locations SET
+    tenant_id = NEW.tenant_id,
+    name = NEW.name,
+    is_active = COALESCE(NEW.status = 'ACTIVE', TRUE)
+  WHERE id = OLD.id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER branches_view_update_trig
+INSTEAD OF UPDATE ON public.branches
+FOR EACH ROW EXECUTE FUNCTION public.handle_branches_view_update();
+
+CREATE OR REPLACE FUNCTION public.handle_branches_view_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+  DELETE FROM public.locations WHERE id = OLD.id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER branches_view_delete_trig
+INSTEAD OF DELETE ON public.branches
+FOR EACH ROW EXECUTE FUNCTION public.handle_branches_view_delete();

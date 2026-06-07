@@ -45,7 +45,7 @@ END;
 $$;
 
 -- =========================================
--- Enable RLS on All Tables
+-- Enable RLS on All Active Tables
 -- =========================================
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
@@ -63,12 +63,9 @@ ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bills ENABLE ROW LEVEL SECURITY;
 ALTER TABLE staff_calls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inventory ENABLE ROW LEVEL SECURITY;
 ALTER TABLE discounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coupons ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notification_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE blogs ENABLE ROW LEVEL SECURITY;
 
 -- =========================================
 -- RLS POLICIES DEFINITION
@@ -257,11 +254,6 @@ CREATE POLICY "staff_customers" ON customers
   FOR ALL TO authenticated
   USING (tenant_id = get_tenant_id());
 
--- inventory: Staff have full access
-CREATE POLICY "staff_inventory" ON inventory
-  FOR ALL TO authenticated
-  USING (tenant_id = get_tenant_id());
-
 -- discounts: Staff have full access. Public can view active discounts.
 CREATE POLICY "staff_discounts" ON discounts
   FOR ALL TO authenticated
@@ -280,21 +272,7 @@ CREATE POLICY "public_read_coupons" ON coupons
   FOR SELECT TO anon
   USING (is_active = true);
 
--- attendance: Staff clock in/out, managers view all in tenant
-CREATE POLICY "own_attendance" ON attendance
-  FOR ALL TO authenticated
-  USING (staff_id IN (SELECT id FROM staff_accounts WHERE auth_user_id = auth.uid()) OR get_user_role() IN ('owner', 'manager'));
-
 -- notification_log: Staff read logs
 CREATE POLICY "staff_notifications" ON notification_log
-  FOR ALL TO authenticated
-  USING (tenant_id = get_tenant_id());
-
--- blogs: Public read published, staff write
-CREATE POLICY "public_read_blogs" ON blogs
-  FOR SELECT TO anon, authenticated
-  USING (is_published = true);
-
-CREATE POLICY "staff_blogs" ON blogs
   FOR ALL TO authenticated
   USING (tenant_id = get_tenant_id());
