@@ -31,7 +31,7 @@ export const fm = "'DM Mono', monospace";
 
 export interface BtnProps {
   children: React.ReactNode;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   variant?: "primary" | "emerald" | "rose" | "amber" | "ghost" | "outline" | "danger";
   size?: "sm" | "md" | "lg";
   disabled?: boolean;

@@ -453,6 +453,7 @@ SELECT
   tenant_id,
   name,
   CASE WHEN is_active THEN 'ACTIVE' ELSE 'INACTIVE' END AS status,
+  is_active AS active,
   created_at
 FROM public.locations;
 

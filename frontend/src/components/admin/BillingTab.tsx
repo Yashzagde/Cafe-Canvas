@@ -116,7 +116,6 @@ export default function BillingTab({
   };
 
   const selectTable = (tbl: Table) => {
-    if (tbl.status !== "occupied") { toast("Only occupied tables can be billed", "error"); return; }
     setSelectedTable(tbl);
     const orders = tableOrders[tbl.id] || [];
     setBillItems(orders.map(o => ({ ...o, _key: o.id })));
@@ -374,7 +373,7 @@ export default function BillingTab({
           <Btn onClick={() => setBillingSettingsOpen(true)} variant="ghost" size="sm" style={{ border: `1px solid ${T.bdr}` }}>
             ⚙️ Billing settings
           </Btn>
-          {[{ v: "floor", l: "Floor View" }, { v: "session", l: "Bill Builder" }, { v: "history", l: "Bill History" }].map(tab => (
+          {[{ v: "floor", l: "Floor View" }, { v: "session", l: "Bill Creator" }, { v: "history", l: "Bill History" }].map(tab => (
             <Btn key={tab.v} onClick={() => setView(tab.v as any)} variant={view === tab.v ? "primary" : "ghost"} size="sm">
               {tab.l}
             </Btn>
@@ -406,7 +405,7 @@ export default function BillingTab({
               const orders = tableOrders[tbl.id] || [];
               const tblTotal = orders.reduce((s, o) => s + (o.qty * o.price), 0);
               return (
-                <Card key={tbl.id} hover onClick={() => occ && selectTable(tbl)}
+                <Card key={tbl.id} hover onClick={() => selectTable(tbl)}
                   style={{
                     padding: "14px", border: `1px solid ${occ ? T.rA(0.3) : T.bdr}`,
                     background: occ ? T.rA(0.06) : "", display: "flex", flexDirection: "column", gap: "4px"
@@ -424,7 +423,18 @@ export default function BillingTab({
                   ) : (
                     <div style={{ fontSize: "10px", color: T.mu, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>{tbl.status}</div>
                   )}
-                  {occ && <div style={{ marginTop: "auto", paddingTop: "8px" }}><Btn size="sm" fullWidth onClick={() => selectTable(tbl)}>Open Bill</Btn></div>}
+                  <div style={{ marginTop: "auto", paddingTop: "8px" }}>
+                    <Btn 
+                      size="sm" 
+                      fullWidth 
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => { 
+                        e.stopPropagation(); 
+                        selectTable(tbl); 
+                      }}
+                    >
+                      {occ ? "Open Bill" : "Create Bill"}
+                    </Btn>
+                  </div>
                 </Card>
               );
             })}
@@ -436,10 +446,36 @@ export default function BillingTab({
       {view === "session" && (
         <div>
           {!selectedTable && payStep !== "success" ? (
-            <Card style={{ padding: "40px", textAlign: "center" }}>
-              <div style={{ fontSize: "16px", fontWeight: 700, color: T.mu, marginBottom: "12px" }}>No Table Selected</div>
-              <p style={{ fontSize: "12px", color: T.mu, marginBottom: "20px" }}>Select an occupied table from the Floor View to begin billing.</p>
-              <Btn onClick={() => setView("floor")}>Go to Floor View</Btn>
+            <Card style={{ padding: "40px", textAlign: "center", maxWidth: "440px", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: T.tx, marginBottom: "8px" }}>No Table Selected</div>
+              <p style={{ fontSize: "12px", color: T.mu2, marginBottom: "20px" }}>Select a table below to start a manual billing session, or choose one from the Floor View.</p>
+              
+              <div style={{ width: "100%", marginBottom: "20px", textAlign: "left" }}>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.mu, marginBottom: "6px" }}>
+                  Select Table for Bill Creation
+                </label>
+                <Sel 
+                  value="" 
+                  onChange={(e) => {
+                    const tbl = tables.find(t => t.id === e.target.value);
+                    if (tbl) selectTable(tbl);
+                  }}
+                  style={{ width: "100%" }}
+                >
+                  <option value="" disabled>-- Select a Table --</option>
+                  {tables.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.section || 'Indoor'}) — {t.status.toUpperCase()}
+                    </option>
+                  ))}
+                </Sel>
+              </div>
+
+              <div style={{ display: "flex", gap: "10px", width: "100%" }}>
+                <Btn onClick={() => setView("floor")} variant="outline" style={{ flex: 1 }}>
+                  Go to Floor View
+                </Btn>
+              </div>
             </Card>
           ) : payStep === "success" ? (
             <Card style={{ padding: "40px", textAlign: "center", maxWidth: "480px", margin: "0 auto" }}>
