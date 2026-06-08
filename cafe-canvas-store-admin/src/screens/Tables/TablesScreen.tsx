@@ -206,7 +206,7 @@ function TableCard({
           <Users className="w-3 h-3 inline mr-0.5" />{table.capacity} seats
         </p>
         <Badge variant={
-          table.status === 'vacant' ? 'success' :
+          table.status === 'vacant' || table.status === 'available' ? 'success' :
           table.status === 'occupied' ? 'warning' :
           table.status === 'reserved' ? 'danger' : 'neutral'
         } size="sm" className="mt-2">
@@ -226,7 +226,7 @@ function TableCard({
         <button
           onClick={(e) => {
             e.stopPropagation()
-            const nextStatus: TableStatus = table.status === 'vacant' ? 'occupied' : 'vacant'
+            const nextStatus: TableStatus = (table.status === 'vacant' || table.status === 'available') ? 'occupied' : 'vacant'
             onStatusChange(table.id, nextStatus)
           }}
           className="p-1 rounded bg-white/80 hover:bg-white shadow-sm text-canvas-brown_mid"

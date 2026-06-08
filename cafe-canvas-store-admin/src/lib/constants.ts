@@ -84,14 +84,15 @@ export const STAFF_ROLE_COLORS: Record<StaffRole, { bg: string; text: string; bo
 }
 
 // ─── Table Status ────────────────────────────────────────────────────────────
-export const TABLE_STATUSES = ['vacant', 'occupied', 'reserved', 'inactive'] as const
+export const TABLE_STATUSES = ['vacant', 'available', 'occupied', 'reserved', 'inactive'] as const
 export type TableStatus = (typeof TABLE_STATUSES)[number]
 
 export const TABLE_STATUS_COLORS: Record<TableStatus, { bg: string; text: string; dot: string }> = {
-  vacant:   { bg: 'bg-emerald-50',  text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  occupied: { bg: 'bg-amber-50',    text: 'text-amber-700',   dot: 'bg-amber-500' },
-  reserved: { bg: 'bg-red-50',      text: 'text-red-700',     dot: 'bg-red-500' },
-  inactive: { bg: 'bg-gray-100',    text: 'text-gray-500',    dot: 'bg-gray-400' },
+  vacant:    { bg: 'bg-emerald-50',  text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  available: { bg: 'bg-emerald-50',  text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  occupied:  { bg: 'bg-amber-50',    text: 'text-amber-700',   dot: 'bg-amber-500' },
+  reserved:  { bg: 'bg-red-50',      text: 'text-red-700',     dot: 'bg-red-500' },
+  inactive:  { bg: 'bg-gray-100',    text: 'text-gray-500',    dot: 'bg-gray-400' },
 }
 
 // ─── Payment Methods ─────────────────────────────────────────────────────────
