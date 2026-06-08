@@ -30,7 +30,7 @@ void _addPosItem(String tableId, MenuItem item, List<ModifierOption> mods, Strin
   });
 }
 
-// --- SCREEN 1: SECURE LOGIN & PIN PAD RE-AUTH (BLOCKER 2) ---
+// --- SCREEN 1: SECURE PIN PAD RE-AUTH (BLOCKER 2) ---
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
@@ -39,42 +39,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Authentication states
+  final List<int> _pinDigits = [];
   bool _isLoading = false;
   String? _errorMsg;
-  bool _showPinPad = false;
-  bool _isCheckingCache = true;
-
-  // PIN Pad states
-  final List<int> _pinDigits = [];
-
-  // Email/Password login states
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkCachedPin();
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _checkCachedPin() async {
-    setState(() => _isCheckingCache = true);
-    final hasPin = await AuthService.instance.hasCachedPin;
-    setState(() {
-      _showPinPad = hasPin;
-      _isCheckingCache = false;
-    });
-  }
 
   void _onDigitPressed(int val) {
     if (_pinDigits.length >= 4) return;
@@ -84,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (_pinDigits.length == 4) {
-      _authenticatePin();
+      _authenticate();
     }
   }
 
@@ -93,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _pinDigits.removeLast());
   }
 
-  Future<void> _authenticatePin() async {
+  Future<void> _authenticate() async {
     setState(() => _isLoading = true);
     final pin = _pinDigits.join();
 
@@ -101,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Blocker 2: Verify quick PIN securely against stored Bcrypt hashes
       final match = await AuthService.instance.verifyOfflinePin(pin);
       if (match) {
-        if (mounted) context.go('/floor');
+        context.go('/floor');
       } else {
         setState(() {
           _errorMsg = 'Incorrect POS PIN. Access Denied.';
@@ -118,355 +85,97 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _loginWithEmail() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _isLoading = true;
-      _errorMsg = null;
-    });
-
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    try {
-      final response = await AuthService.signInWithEmail(email, password);
-      final user = response.user;
-      if (user == null) throw Exception('Authentication failed');
-
-      // Fetch user profile from staff_accounts
-      final profile = await AuthService.fetchUserProfile(user.id);
-      if (profile == null) throw Exception('Profile not found for this account.');
-
-      // Check role restrictions
-      final role = profile.role.toLowerCase();
-      if (role == 'manager' || role == 'owner' || role == 'admin') {
-        await AuthService.signOut();
-        throw Exception('Access denied: Manager/Owner accounts are blocked from this POS terminal. Please use Store Admin.');
-      }
-
-      // Check if PIN exists
-      final pin = profile.pinHash; // Column 'pin' holds the 4-digit PIN in database
-      if (pin == null || pin.isEmpty) {
-        await AuthService.signOut();
-        throw Exception('Access denied: No POS PIN is assigned to your account. Contact your store manager.');
-      }
-
-      // Cache credentials locally for future offline re-auth
-      final refreshToken = AuthService.currentSession?.refreshToken;
-      if (refreshToken != null) {
-        await AuthService.instance.cacheStaffCredentials(
-          refreshToken: refreshToken,
-          pin: pin,
-          profile: profile,
-        );
-      }
-
-      if (mounted) {
-        context.go('/floor');
-      }
-    } catch (e) {
-      setState(() {
-        _errorMsg = e.toString().replaceAll('Exception:', '').trim();
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _switchUser() async {
-    setState(() => _isLoading = true);
-    try {
-      await AuthService.signOut();
-      setState(() {
-        _pinDigits.clear();
-        _emailController.clear();
-        _passwordController.clear();
-        _showPinPad = false;
-        _errorMsg = null;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMsg = CcError.friendly(e);
-      });
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_isCheckingCache) {
-      return const Scaffold(
-        backgroundColor: CafeCanvaColors.stone50,
-        body: Center(
-          child: CircularProgressIndicator(color: CafeCanvaColors.primary),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: CafeCanvaColors.stone50,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(CafeCanvaSpacing.xl),
-            child: _showPinPad ? _buildPinPadUI() : _buildEmailLoginUI(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmailLoginUI() {
-    return Form(
-      key: _formKey,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Icon(Icons.storefront_outlined, size: 60.0, color: CafeCanvaColors.primary),
-          const SizedBox(height: 16.0),
-          Text(
-            'CafeCanvas OS',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
-              fontWeight: FontWeight.w900,
-              fontSize: 26.0,
-              color: CafeCanvaColors.stone800,
-            ),
-          ),
-          const SizedBox(height: 4.0),
-          const Text(
-            'STAFF TERMINAL GATEWAY',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 12.0,
-              color: CafeCanvaColors.stone500,
-              letterSpacing: 1.0,
-            ),
-          ),
-          const SizedBox(height: 28.0),
-          
-          Card(
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(CafeCanvaSpacing.xl),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Operator Sign In',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.0,
-                      color: CafeCanvaColors.stone800,
+        child: Padding(
+          padding: const EdgeInsets.all(CafeCanvaSpacing.xl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.lock_person_outlined, size: 54.0, color: CafeCanvaColors.primary),
+              const SizedBox(height: 12.0),
+              const Text(
+                'STAFF LOGIN',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20.0, letterSpacing: 0.5),
+              ),
+              const SizedBox(height: 4.0),
+              const Text(
+                'Enter your 4-digit POS PIN',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: CafeCanvaColors.stone500, fontSize: 13.0),
+              ),
+              const SizedBox(height: 24.0),
+              
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(4, (index) {
+                  final filled = index < _pinDigits.length;
+                  return Container(
+                    width: 16.0,
+                    height: 16.0,
+                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                    decoration: BoxDecoration(
+                      color: filled ? CafeCanvaColors.primary : CafeCanvaColors.stone200,
+                      shape: BoxShape.circle,
                     ),
+                  );
+                }),
+              ),
+              
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 16.0),
+                Text(
+                  _errorMsg!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: CafeCanvaColors.error, fontSize: 12.0, fontWeight: FontWeight.bold),
+                ),
+              ],
+              
+              const SizedBox(height: 32.0),
+              
+              Expanded(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 1.5,
                   ),
-                  const SizedBox(height: 16.0),
-
-                  // Email
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.w600),
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.alternate_email_outlined, size: 18.0),
-                      labelText: 'OPERATOR EMAIL',
-                      hintText: 'Enter email address',
-                    ),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Email is required';
-                      }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val.trim())) {
-                        return 'Enter a valid email address';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-
-                  // Password
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.lock_outline, size: 18.0),
-                      labelText: 'GATEWAY PASSWORD',
-                      hintText: 'Enter password',
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                          size: 18.0,
-                        ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                      ),
-                    ),
-                    validator: (val) {
-                      if (val == null || val.isEmpty) {
-                        return 'Password is required';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  if (_errorMsg != null) ...[
-                    const SizedBox(height: 16.0),
-                    Container(
-                      padding: const EdgeInsets.all(12.0),
-                      decoration: BoxDecoration(
-                        color: CafeCanvaColors.error.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(CafeCanvaRadius.md.x),
-                        border: Border.all(color: CafeCanvaColors.error.withOpacity(0.2)),
-                      ),
-                      child: Text(
-                        _errorMsg!,
-                        style: const TextStyle(
-                          color: CafeCanvaColors.error,
-                          fontSize: 12.0,
-                          fontWeight: FontWeight.bold,
+                  itemCount: 12,
+                  itemBuilder: (context, index) {
+                    if (index == 9) {
+                      return IconButton(
+                        icon: const Icon(Icons.backspace_outlined),
+                        onPressed: _onDeletePressed,
+                      );
+                    }
+                    if (index == 11) {
+                      return const SizedBox.shrink();
+                    }
+                    
+                    final val = index == 10 ? 0 : index + 1;
+                    return InkWell(
+                      onTap: () => _onDigitPressed(val),
+                      borderRadius: BorderRadius.circular(40),
+                      child: Center(
+                        child: Text(
+                          '$val',
+                          style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
                         ),
                       ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 24.0),
-
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _loginWithEmail,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20.0,
-                            width: 20.0,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0),
-                          )
-                        : const Text(
-                            'Sign In to Terminal',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 24.0),
-          const Text(
-            'Authorized multi-tenant operator sessions strictly logged to compliance databases.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: CafeCanvaColors.stone400,
-              fontSize: 10.0,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPinPadUI() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Icon(Icons.lock_person_outlined, size: 54.0, color: CafeCanvaColors.primary),
-        const SizedBox(height: 12.0),
-        Text(
-          'STAFF LOGIN',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.outfit(
-            fontWeight: FontWeight.w900,
-            fontSize: 20.0,
-            letterSpacing: 0.5,
-            color: CafeCanvaColors.stone800,
-          ),
-        ),
-        const SizedBox(height: 4.0),
-        const Text(
-          'Enter your 4-digit POS PIN',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: CafeCanvaColors.stone500, fontSize: 13.0),
-        ),
-        const SizedBox(height: 24.0),
-        
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(4, (index) {
-            final filled = index < _pinDigits.length;
-            return Container(
-              width: 16.0,
-              height: 16.0,
-              margin: const EdgeInsets.symmetric(horizontal: 8.0),
-              decoration: BoxDecoration(
-                color: filled ? CafeCanvaColors.primary : CafeCanvaColors.stone200,
-                shape: BoxShape.circle,
-              ),
-            );
-          }),
-        ),
-        
-        if (_errorMsg != null) ...[
-          const SizedBox(height: 16.0),
-          Text(
-            _errorMsg!,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: CafeCanvaColors.error, fontSize: 12.0, fontWeight: FontWeight.bold),
-          ),
-        ],
-        
-        const SizedBox(height: 32.0),
-        
-        // Pin Pad Grid
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 1.6,
-          ),
-          itemCount: 12,
-          itemBuilder: (context, index) {
-            if (index == 9) {
-              return IconButton(
-                icon: const Icon(Icons.backspace_outlined),
-                onPressed: _isLoading ? null : _onDeletePressed,
-              );
-            }
-            if (index == 11) {
-              return const SizedBox.shrink();
-            }
-            
-            final val = index == 10 ? 0 : index + 1;
-            return InkWell(
-              onTap: _isLoading ? null : () => _onDigitPressed(val),
-              borderRadius: BorderRadius.circular(40),
-              child: Center(
-                child: Text(
-                  '$val',
-                  style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
+                    );
+                  },
                 ),
               ),
-            );
-          },
-        ),
-        
-        const SizedBox(height: 16.0),
-        
-        TextButton.icon(
-          onPressed: _isLoading ? null : _switchUser,
-          icon: const Icon(Icons.logout_outlined, size: 16.0),
-          label: const Text(
-            'Switch Account / Log Out',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.0),
-          ),
-          style: TextButton.styleFrom(
-            foregroundColor: CafeCanvaColors.stone500,
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

@@ -130,12 +130,6 @@ class AuthService {
     }
   }
 
-  /// Check if there are cached staff credentials
-  Future<bool> get hasCachedPin async {
-    final hash = await _storage.read(key: SecureCacheKeys.staffPinHash);
-    return hash != null;
-  }
-
   /// Offline PIN verification using BCrypt checks
   Future<bool> verifyOfflinePin(String enteredPin) async {
     final hash = await _storage.read(key: SecureCacheKeys.staffPinHash);
