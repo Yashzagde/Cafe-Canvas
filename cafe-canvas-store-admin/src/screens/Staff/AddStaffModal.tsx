@@ -38,10 +38,18 @@ export function AddStaffModal({ onClose, onSuccess }: AddStaffModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!tenantId) return
+    if (!tenantId) {
+      setErrorMsg('No tenant ID found. Please log out and log in again.')
+      return
+    }
 
     if (!fullName.trim() || !email.trim()) {
       setErrorMsg('Full Name and Email are required.')
+      return
+    }
+
+    if (pin.trim().length !== 4) {
+      setErrorMsg('PIN must be exactly 4 digits.')
       return
     }
 
@@ -49,39 +57,65 @@ export function AddStaffModal({ onClose, onSuccess }: AddStaffModalProps) {
     setErrorMsg(null)
 
     try {
+      console.log('[AddStaff] Starting employee creation...', { tenantId, email: email.trim().toLowerCase(), role })
+
       // Check if email already exists in staff_accounts
-      const { data: existing } = await supabase
+      console.log('[AddStaff] Checking for duplicate email...')
+      const { data: existing, error: checkError } = await supabase
         .from('staff_accounts')
         .select('id')
         .eq('email', email.trim().toLowerCase())
         .maybeSingle()
 
-      if (existing) {
-        setErrorMsg('An employee with this email address already exists.')
-        setIsSubmitting(false)
+      if (checkError) {
+        console.error('[AddStaff] Duplicate check failed:', checkError)
+        setErrorMsg('Failed to check for existing employee: ' + checkError.message)
         return
       }
 
-      const { error } = await supabase
-        .from('staff_accounts')
-        .insert({
-          tenant_id: tenantId,
-          full_name: fullName.trim(),
-          email: email.trim().toLowerCase(),
-          phone: phone.trim() || null,
-          role,
-          pin: pin.trim() || null,
-          location_id: locationId || null,
-          is_active: true
-        })
+      if (existing) {
+        console.warn('[AddStaff] Duplicate email found:', existing.id)
+        setErrorMsg('An employee with this email address already exists.')
+        return
+      }
 
-      if (error) {
-        setErrorMsg(error.message)
+      console.log('[AddStaff] No duplicate found. Inserting new staff record...')
+      const insertPayload = {
+        tenant_id: tenantId,
+        full_name: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone.trim() || null,
+        role,
+        pin: pin.trim() || null,
+        location_id: locationId || null,
+        is_active: true
+      }
+      console.log('[AddStaff] Insert payload:', insertPayload)
+
+      const { data: insertedData, error: insertError } = await supabase
+        .from('staff_accounts')
+        .insert(insertPayload)
+        .select('id, full_name, email')
+
+      if (insertError) {
+        console.error('[AddStaff] Insert failed:', insertError)
+        // Provide user-friendly messages for common errors
+        if (insertError.message.includes('duplicate key')) {
+          setErrorMsg('An employee with this email already exists. Please refresh and try again.')
+        } else if (insertError.message.includes('row-level security') || insertError.code === '42501') {
+          setErrorMsg('Permission denied. Only managers and owners can add employees.')
+        } else if (insertError.message.includes('staff_limit') || insertError.message.includes('50')) {
+          setErrorMsg('Maximum staff limit (50) reached for this tenant.')
+        } else {
+          setErrorMsg(insertError.message)
+        }
       } else {
+        console.log('[AddStaff] Insert successful:', insertedData)
         onSuccess()
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'An error occurred while adding staff.')
+      console.error('[AddStaff] Unexpected error:', err)
+      setErrorMsg(err.message || 'An unexpected error occurred while adding staff.')
     } finally {
       setIsSubmitting(false)
     }

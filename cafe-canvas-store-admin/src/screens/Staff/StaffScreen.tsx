@@ -126,11 +126,15 @@ export function StaffScreen() {
       staff.is_active ? 'Yes' : 'No'
     ])
     
-    let csvContent = "data:text/csv;charset=utf-8," 
-      + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+    let csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
     
-    const encodedUri = encodeURI(csvContent)
-    window.electronAPI.openExternal(encodedUri)
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'staff_directory.csv'
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
