@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
+import 'package:cafecanva_core/cafecanva_core.dart';
 import 'features/screens.dart';
 
 final GoRouter staffPosRouter = GoRouter(
@@ -12,7 +13,7 @@ final GoRouter staffPosRouter = GoRouter(
       return null; // Let user access login Pad
     }
 
-    final role = (session.user.appMetadata['role'] as String?)?.toLowerCase();
+    final role = AuthService.userRole?.toLowerCase();
     if (role == null || role == 'manager' || role == 'owner' || role == 'admin') {
       Supabase.instance.client.auth.signOut();
       return '/unauthorized';

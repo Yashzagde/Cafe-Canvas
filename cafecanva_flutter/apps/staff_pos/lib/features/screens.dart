@@ -148,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final role = (response.session!.user.appMetadata['role'] as String?)?.toLowerCase();
+      final role = AuthService.userRole?.toLowerCase();
       final blocked = ['manager', 'owner', 'admin'];
       if (role == null || blocked.contains(role)) {
         await AuthService.signOut();
