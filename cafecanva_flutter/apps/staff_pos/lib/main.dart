@@ -34,6 +34,9 @@ void main() async {
     ),
   );
 
+  // 3a. Restore cached session
+  await AuthService.instance.restoreSessionFromCache();
+
   // 3b. Initialize Firebase Messaging for push notifications
   try {
     await Firebase.initializeApp();

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
 import 'package:cafecanva_billing/cafecanva_billing.dart';
@@ -39,9 +40,48 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _storage = const FlutterSecureStorage();
+  bool _isChecking = true;
+  bool _hasCachedPin = false;
+
+  // PIN Pad variables
   final List<int> _pinDigits = [];
   bool _isLoading = false;
   String? _errorMsg;
+
+  // Email/Password variables
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  bool _showPassword = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCachedPin();
+  }
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkCachedPin() async {
+    setState(() => _isChecking = true);
+    try {
+      final hash = await _storage.read(key: SecureCacheKeys.staffPinHash);
+      setState(() {
+        _hasCachedPin = hash != null;
+        _isChecking = false;
+      });
+    } catch (_) {
+      setState(() {
+        _hasCachedPin = false;
+        _isChecking = false;
+      });
+    }
+  }
 
   void _onDigitPressed(int val) {
     if (_pinDigits.length >= 4) return;
@@ -65,7 +105,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final pin = _pinDigits.join();
 
     try {
-      // Blocker 2: Verify quick PIN securely against stored Bcrypt hashes
       final match = await AuthService.instance.verifyOfflinePin(pin);
       if (match) {
         context.go('/floor');
@@ -85,100 +124,302 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _loginWithEmailPassword() async {
+    final email = _emailCtrl.text.trim();
+    final password = _passwordCtrl.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _errorMsg = 'Email and password are required.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMsg = null;
+    });
+
+    try {
+      final response = await AuthService.signInWithEmail(email, password);
+      if (response.session == null) {
+        setState(() {
+          _errorMsg = 'Invalid credentials.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final role = (response.session!.user.appMetadata['role'] as String?)?.toLowerCase();
+      final blocked = ['manager', 'owner', 'admin'];
+      if (role == null || blocked.contains(role)) {
+        await AuthService.signOut();
+        setState(() {
+          _errorMsg = 'Access denied: Staff roles only.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final profile = AuthService.currentUserProfile;
+      if (profile != null) {
+        final pin = profile.pinHash ?? '1111';
+        await AuthService.instance.cacheStaffCredentials(
+          refreshToken: response.session!.refreshToken ?? '',
+          pin: pin,
+          profile: profile,
+        );
+      }
+
+      if (mounted) {
+        context.go('/floor');
+      }
+    } catch (e) {
+      setState(() {
+        _errorMsg = CcError.friendly(e);
+        _isLoading = false;
+      });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _switchToEmailMode() async {
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.signOut();
+      setState(() {
+        _hasCachedPin = false;
+        _pinDigits.clear();
+        _errorMsg = null;
+      });
+    } catch (e) {
+      setState(() => _errorMsg = CcError.friendly(e));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isChecking) {
+      return const Scaffold(
+        backgroundColor: CafeCanvaColors.stone50,
+        body: Center(
+          child: CircularProgressIndicator(color: CafeCanvaColors.primary),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: CafeCanvaColors.stone50,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(CafeCanvaSpacing.xl),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Icon(Icons.lock_person_outlined, size: 54.0, color: CafeCanvaColors.primary),
-              const SizedBox(height: 12.0),
-              const Text(
-                'STAFF LOGIN',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20.0, letterSpacing: 0.5),
-              ),
-              const SizedBox(height: 4.0),
-              const Text(
-                'Enter your 4-digit POS PIN',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: CafeCanvaColors.stone500, fontSize: 13.0),
-              ),
-              const SizedBox(height: 24.0),
-              
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(4, (index) {
-                  final filled = index < _pinDigits.length;
-                  return Container(
-                    width: 16.0,
-                    height: 16.0,
-                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                    decoration: BoxDecoration(
-                      color: filled ? CafeCanvaColors.primary : CafeCanvaColors.stone200,
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                }),
-              ),
-              
-              if (_errorMsg != null) ...[
-                const SizedBox(height: 16.0),
-                Text(
-                  _errorMsg!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: CafeCanvaColors.error, fontSize: 12.0, fontWeight: FontWeight.bold),
-                ),
-              ],
-              
-              const SizedBox(height: 32.0),
-              
-              Expanded(
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 1.5,
-                  ),
-                  itemCount: 12,
-                  itemBuilder: (context, index) {
-                    if (index == 9) {
-                      return IconButton(
-                        icon: const Icon(Icons.backspace_outlined),
-                        onPressed: _onDeletePressed,
-                      );
-                    }
-                    if (index == 11) {
-                      return const SizedBox.shrink();
-                    }
-                    
-                    final val = index == 10 ? 0 : index + 1;
-                    return InkWell(
-                      onTap: () => _onDigitPressed(val),
-                      borderRadius: BorderRadius.circular(40),
-                      child: Center(
-                        child: Text(
-                          '$val',
-                          style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(CafeCanvaSpacing.xl),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: _hasCachedPin ? _buildPinPadView() : _buildEmailLoginView(),
+            ),
           ),
         ),
       ),
     );
   }
-}
+
+  Widget _buildPinPadView() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Icon(Icons.lock_person_outlined, size: 54.0, color: CafeCanvaColors.primary),
+        const SizedBox(height: 12.0),
+        const Text(
+          'STAFF LOGIN',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20.0, letterSpacing: 0.5),
+        ),
+        const SizedBox(height: 4.0),
+        const Text(
+          'Enter your 4-digit POS PIN',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: CafeCanvaColors.stone500, fontSize: 13.0),
+        ),
+        const SizedBox(height: 24.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(4, (index) {
+            final filled = index < _pinDigits.length;
+            return Container(
+              width: 16.0,
+              height: 16.0,
+              margin: const EdgeInsets.symmetric(horizontal: 8.0),
+              decoration: BoxDecoration(
+                color: filled ? CafeCanvaColors.primary : CafeCanvaColors.stone200,
+                shape: BoxShape.circle,
+              ),
+            );
+          }),
+        ),
+        if (_errorMsg != null) ...[
+          const SizedBox(height: 16.0),
+          Text(
+            _errorMsg!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: CafeCanvaColors.error, fontSize: 12.0, fontWeight: FontWeight.bold),
+          ),
+        ],
+        const SizedBox(height: 32.0),
+        SizedBox(
+          height: 320,
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 1.5,
+            ),
+            itemCount: 12,
+            itemBuilder: (context, index) {
+              if (index == 9) {
+                return IconButton(
+                  icon: const Icon(Icons.backspace_outlined),
+                  onPressed: _onDeletePressed,
+                );
+              }
+              if (index == 11) {
+                return const SizedBox.shrink();
+              }
+              final val = index == 10 ? 0 : index + 1;
+              return InkWell(
+                onTap: _isLoading ? null : () => _onDigitPressed(val),
+                borderRadius: BorderRadius.circular(40),
+                child: Center(
+                  child: Text(
+                    '$val',
+                    style: const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 16.0),
+        TextButton(
+          onPressed: _isLoading ? null : _switchToEmailMode,
+          child: const Text(
+            'Sign in with different account',
+            style: TextStyle(
+              color: CafeCanvaColors.primary,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmailLoginView() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Icon(Icons.storefront_outlined, size: 54.0, color: CafeCanvaColors.primary),
+        const SizedBox(height: 12.0),
+        const Text(
+          'STAFF GATEWAY',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20.0, letterSpacing: 0.5),
+        ),
+        const SizedBox(height: 4.0),
+        const Text(
+          'Sign in with your email and password',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: CafeCanvaColors.stone500, fontSize: 13.0),
+        ),
+        const SizedBox(height: 24.0),
+        TextField(
+          controller: _emailCtrl,
+          keyboardType: TextInputType.emailAddress,
+          decoration: InputDecoration(
+            labelText: 'Email Address',
+            prefixIcon: const Icon(Icons.email_outlined),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 16.0),
+        TextField(
+          controller: _passwordCtrl,
+          obscureText: !_showPassword,
+          decoration: InputDecoration(
+            labelText: 'Password',
+            prefixIcon: const Icon(Icons.lock_outlined),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              ),
+              onPressed: () => setState(() => _showPassword = !_showPassword),
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+          ),
+        ),
+        if (_errorMsg != null) ...[
+          const SizedBox(height: 16.0),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: CafeCanvaColors.error.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: CafeCanvaColors.error.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, color: CafeCanvaColors.error, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _errorMsg!,
+                    style: const TextStyle(color: CafeCanvaColors.error, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 24.0),
+        SizedBox(
+          height: 48,
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _loginWithEmailPassword,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: CafeCanvaColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Text(
+                    'Sign In to Terminal',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
 
 // --- SCREEN 2: TABLE FLOOR GRID (BLOCKER 3) ---
 class FloorPlanScreen extends StatefulWidget {
