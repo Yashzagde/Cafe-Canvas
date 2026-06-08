@@ -420,6 +420,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ],
     );
   }
+}
 
 // --- SCREEN 2: TABLE FLOOR GRID (BLOCKER 3) ---
 class FloorPlanScreen extends StatefulWidget {
