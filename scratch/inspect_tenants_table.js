@@ -1,3 +1,4 @@
+// @ts-nocheck
 const postgres = require('postgres');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
