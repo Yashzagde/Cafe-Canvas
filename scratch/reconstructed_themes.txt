@@ -1,0 +1,17 @@
+'theme-01':'Liquid Glass Premium'
+'theme-02':'Liquid Glass Basic'
+'theme-03':'Onyx Luxury Dark'
+'theme-04':'Classic Cafe Brown'
+'theme-05':'Artisan Roastery'
+'theme-01': `:root{--primary:#C9A84C;--accent:#E8D48B;--bg-primary:#0A0A0A;--bg-surface:#141414;--text-hero:#F5F0E8;--text-body:#8A8070;--font-display:'
+'theme-01': `:root{--bg-primary:#0A0A1A;--bg-glass:rgba(255,255,255,0.10);--glass-blur:24px;--glass-border:1px solid rgba(212,175,55,0.30);--accent:#D4AF37;--accent-2:#FF6B35;--text-hero:#FFFFFF;--text-bo\n<truncated 16228 bytes>"
+'theme-11': `:root{--primary:#18181B;--accent:#EC4899;--bg-primary:#FAFAFA;--bg-surface:#FFFFFF;--text-hero:#18181B;--text-body:#71717A;--font-display:'
+'theme-11': `:root{--bg-primary:#FFFACD;--bg-glass:rgba(255,69,0,0.06);--accent:#FF4500;--accent-2:#FFD700;--text-hero:#3D0000;--text-body:#5D1A00;--text-muted:#8B4513;--font-display:'
+'theme-21': `:root{--primary:#EF4444;--accent:#3B82F6;--bg-primary:#F8FAFC;--bg-surface:#FFFFFF;--text-hero:#1E293B;--font-heading:'
+'theme-22': `:root{--primary:#\n<truncated 2035 bytes>"
+'theme-21': `:root{--bg-primary:#FFFFFF;--bg-glass:rgba(255,0,0,0.06);--accent:#FF0000;--accent-2:#FFD700;--text-hero:#1C1C1C;--text-body:#374151;--text-muted:#6B7280;--font-display:'
+'theme-31': `:root{--primary:#F0ABFC;--accent:#22D3EE;--bg-primary:#09090B;--bg-surface:#18181B;--text-hero:#F5F3FF;--font-heading:'
+'theme-31': `:root{--bg-primary:#0D0D0D;--bg-glass:rgba(255,0,255,0.08);--accent:#FF00FF;--accent-2:#00FFFF;--text-hero:#FFFFFF;--text-body:#E0E0E0;--text-muted:rgba(255,255,255,0.5);--font-display:'
+'theme-41': `:root{--primary:#0891B2;--accent:#7DD3FC;--bg-primary:#F0F9FF;--bg-surface:#FFFFFF;--text-hero:#164E63;--font-heading:'
+'theme-41': `:root{--bg-primary:#EDF2F7;--bg-glass:rgba(30,58,95,0.08);--accent:#D4A853;--accent-2:#4A7C59;--text-hero:#1E3A5F;--text-body:#2D4A6A;--text-muted:#6B7A8B;--font-display:'
+'theme-10': `:root{--primary:#6B4226;--accent:#A3B18A;--bg-primary:#F9F4EE;--bg-surface:#FFFDF9;--text-hero:#2C1810;--text-body:#7A6050;--radius-card:4px;--radius-btn:4px;--font-heading:'

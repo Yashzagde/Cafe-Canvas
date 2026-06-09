@@ -1,0 +1,1 @@
+I will write a script to search for the full text of the 52 themes (searching for terms like "Theme 52" or "Kids & Family") across all transcript logs in both the active and backup app directories.

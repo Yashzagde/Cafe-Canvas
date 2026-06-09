@@ -1,0 +1,51 @@
+The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.
+
+<SYSTEM_MESSAGE>
+[Message] timestamp=2026-06-09T09:51:47Z sender=549e09f5-dc99-4164-8538-1e40fad751d5/task-860 priority=MESSAGE_PRIORITY_HIGH content=Task id "549e09f5-dc99-4164-8538-1e40fad751d5/task-860" finished with result:
+
+				The command completed successfully.
+				Output:
+				Searching .gemini directory...
+
+=== Found "Korean Bento" in: C:\Users\yash\.gemini\antigravity-backup\brain\6151a98f-afcf-4219-b2ec-9c27621c6516\theme_bible.md ===
+inese Dynasty Red | `theme-17` | Japanese Sakura |
+| `theme-18` | Mediterranean Blue | `theme-19` | Mexican Fiesta |
+| `theme-20` | Thai Tropical | `theme-21` | American Diner Chrome |
+| `theme-22` | Korean Bento | `theme-23` | French Patisserie |
+| `theme-24` | Middle Eastern Souk | `theme-25` | Spanish Tapas |
+| `theme-28` | Goan Beach Shack | | |
+
+### ⚡ Modern & Trendy
+| ID | Name | Design Aesthetic |
+| :--- | :--- | :--- |
+| `theme-31` | **Neon Street Food** | Cyberpunk Pink & Cyan |
+| `theme-32` | **Y2K Retro Pop** | Pastel Pink and Bright Blue |
+| `theme-33` | **Botanical Garden** | Deep Forest Greens |
+| `theme-34` | **Industrial Craft** | Concrete Grey and Rust Orange |
+| `theme-35` | **Pastels Kawaii** | Soft Pink and Mint |
+
+### 🎊 Seasonal & Festive
+| ID | Name | ID | Name |
+| :--- | :--- | :--- | :--- |
+| `theme-37` | Diwali Glow | `theme-38` | Holi Splash |
+| `theme-39` | Christmas Cosy | `theme-40` | Eid Crescent |
+| `theme-41` | Monsoon Cafe | `theme-42` | Summer Burst |
+| `theme-43` | Valentine Blush | | |
+
+### 🛠️ Specialized Displays
+| ID | Name | Use Case |
+| :--- | :--- | :--- |
+| `theme-44` | **New Year Noir** | Celebration / Night Event |
+| `theme-45` | **Dark Mode Espresso** | Standard Dark Mode UI |
+| `theme-46` | **High Contrast** | Accessibility (WCAG Compliant) |
+| `theme-47` | **Print-Ready Menu** | For Physical Printing |
+| `theme-48` | **Kiosk Display** | Large touch targets for tablets |
+| `the
+<truncated 2111 bytes>
+= Found "Korean Bento" in: C:\Users\yash\.gemini\antigravity-ide\brain\549e09f5-dc99-4164-8538-1e40fad751d5\.system_generated\logs\transcript.jsonl ===
+text-shadow glow effect\n• Milkshake colour swatch flavour selector\n• Retro badge price tags on menu cards\n• Jukebox-themed playlist footer section\n• \"Build Your Burger\" interactive\n\nTheme 22  Korean Bento\nTier / Category\n4 - International\nBest For\nKorean BBQ, kimbap shops, Korean fried chicken, ramen bars\nColour Palette\n#E8002D Korean red, #003478 navy, #FFFFFF white, #F5F5DC beige, #228B22 green\nTypography\nNoto Sans KR (display) + Nanum Gothic (body)\n🤖  Gemini AI / Figma AI Prompt\nDesign a Korean restaurant website. Taegukgi (Korean flag) color-inspired palette of red and blue. Background: white with subtle hanji paper texture. KBBQ grill grate texture on hero section. K-drama aesthetic: clean, minimal, modern. Mood: modern Seoul KBBQ restaurant meets Korean street food pojangmacha.\n🎨  Figma AI Design Prompt\nFigma AI: Create Korean restaurant homepage 1440px. White background with hanji texture. Korean red #E8002D and navy #003478 accents. Noto Sans KR for Korean headings. Include: KBBQ hero with grill visualization, banchan side dish carousel, gochujang spice level, tteokbokki street food section, Korean drama poster-style chef profile.\n💻  CSS Theme Tokens\n/* theme-22: Korean Bento */\n:root {\n  --bg: #FFFFFF;\n  --korean-red: #E8002D;\n  --navy: #003478;\n  --beige: #F5F5DC;\n  --font-display: 'Noto Sans KR', sans-serif;\n  --font-body: 'Nanum Gothic', sans-serif;\n}\n✅  Key UI Features\n• Hanji paper CSS texture\n• KBBQ grill grate SVG hero element\n• Banchan side dish carousel\n• Gochujang spice level selector\n• Korean drama aesthetic hero layout\n• K-pop playlist tie-in offer section\n\nTheme 23  French Patisserie\nTier / Cat\n<truncated 4
+Search complete.
+
+
+Log: file:///C:/Users/yash/.gemini/antigravity-ide/brain/549e09f5-dc99-4164-8538-1e40fad751d5/.system_generated/tasks/task-860.log
+</SYSTEM_MESSAGE>

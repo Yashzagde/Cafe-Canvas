@@ -1,0 +1,83 @@
+Created At: 2026-06-09T09:51:53Z
+Completed At: 2026-06-09T09:51:53Z
+File Path: `file:///C:/Users/yash/.gemini/antigravity-backup/brain/6151a98f-afcf-4219-b2ec-9c27621c6516/theme_bible.md`
+Total Lines: 98
+Total Bytes: 4552
+Showing lines 1 to 98
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: # Cafe Canava: The Master Theme Bible (v4.1)
+2: 
+3: ![Liquid Glass Theme Preview](C:\Users\yash\.gemini\antigravity\brain\6151a98f-afcf-4219-b2ec-9c27621c6516\liquid_glass_theme_preview_1777405656063.png)
+4: 
+5: Welcome to the complete collection of **52 Premium Themes** designed for the Cafe Canava multi-tenant ecosystem. Each theme is engineered to provide a unique atmosphere, from high-end luxury to regional heritage.
+6: 
+7: 
+8: ## 🎨 Theme Categories
+9: 
+10: | Category | Count | Focus |
+11: | :--- | :--- | :--- |
+12: | **Premium & Luxury** | 3 | High-end, glassmorphism, gold accents |
+13: | **Cafe & Roastery** | 4 | Warm browns, earthy tones, artisan feel |
+14: | **Indian Regional** | 10 | Local heritage, vibrant colors, cultural motifs |
+15: | **Global Cuisines** | 13 | Themed according to world food cultures |
+16: | **Modern & Trendy** | 5 | Neon, Y2K, Industrial, Bold |
+17: | **Seasonal & Festive** | 7 | Diwali, Holi, Christmas, etc. |
+18: | **Specialized** | 10 | Dark mode, Accessible, Kiosk, Delivery |
+19: 
+20: ---
+21: 
+22: ## 📜 Full Theme List
+23: 
+24: ### 🌟 Premium & Luxury
+25: | ID | Name | Design Aesthetic |
+26: | :--- | :--- | :--- |
+27: | `theme-01` | **Liquid Glass Premium** | Gold & Dark Blue, Extreme Glassmorphism |
+28: | `theme-02` | **Liquid Glass Basic** | Clean, Transparent, Modern |
+29: | `theme-03` | **Onyx Luxury Dark** | Matte Black, Gold Foil Accents |
+30: 
+31: ### ☕ Cafe & Roastery
+32: | ID | Name | Design Aesthetic |
+33: | :--- | :--- | :--- |
+34: | `theme-04` | **Classic Cafe Brown** | Traditio
+<truncated 1408 bytes>
+heme-20` | Thai Tropical | `theme-21` | American Diner Chrome |
+60: | `theme-22` | Korean Bento | `theme-23` | French Patisserie |
+61: | `theme-24` | Middle Eastern Souk | `theme-25` | Spanish Tapas |
+62: | `theme-28` | Goan Beach Shack | | |
+63: 
+64: ### ⚡ Modern & Trendy
+65: | ID | Name | Design Aesthetic |
+66: | :--- | :--- | :--- |
+67: | `theme-31` | **Neon Street Food** | Cyberpunk Pink & Cyan |
+68: | `theme-32` | **Y2K Retro Pop** | Pastel Pink and Bright Blue |
+69: | `theme-33` | **Botanical Garden** | Deep Forest Greens |
+70: | `theme-34` | **Industrial Craft** | Concrete Grey and Rust Orange |
+71: | `theme-35` | **Pastels Kawaii** | Soft Pink and Mint |
+72: 
+73: ### 🎊 Seasonal & Festive
+74: | ID | Name | ID | Name |
+75: | :--- | :--- | :--- | :--- |
+76: | `theme-37` | Diwali Glow | `theme-38` | Holi Splash |
+77: | `theme-39` | Christmas Cosy | `theme-40` | Eid Crescent |
+78: | `theme-41` | Monsoon Cafe | `theme-42` | Summer Burst |
+79: | `theme-43` | Valentine Blush | | |
+80: 
+81: ### 🛠️ Specialized Displays
+82: | ID | Name | Use Case |
+83: | :--- | :--- | :--- |
+84: | `theme-44` | **New Year Noir** | Celebration / Night Event |
+85: | `theme-45` | **Dark Mode Espresso** | Standard Dark Mode UI |
+86: | `theme-46` | **High Contrast** | Accessibility (WCAG Compliant) |
+87: | `theme-47` | **Print-Ready Menu** | For Physical Printing |
+88: | `theme-48` | **Kiosk Display** | Large touch targets for tablets |
+89: | `theme-49` | **Delivery-First** | High-conversion layout |
+90: | `theme-50` | **Catering Corporate** | Professional / Clean |
+91: | `theme-51` | **Wedding & Events** | Elegant / Script Fonts |
+92: | `theme-52` | **Kids & Family** | Playful / Rounded Corners |
+93: 
+94: ---
+95: 
+96: > [!TIP]
+97: > All themes are dynamic. You can switch between them instantly in the **Super Admin** or **Tenant Settings** panels. The entire UI (buttons, cards, fonts, and shadows) updates automatically via the `theme-engine`.
+98: 
+The above content shows the entire, complete file contents of the requested file.

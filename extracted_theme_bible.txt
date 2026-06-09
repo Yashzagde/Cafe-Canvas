@@ -1,0 +1,45 @@
+Created At: 2026-06-09T09:55:46Z
+Completed At: 2026-06-09T09:55:46Z
+File Path: `file:///d:/Cafe%20Canva/scratch/find_themes_in_logs.js`
+Total Lines: 37
+Total Bytes: 1394
+Showing lines 1 to 37
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: const fs = require('fs');
+2: const path = require('path');
+3: 
+4: const logFile = path.join('C:', 'Users', 'yash', '.gemini', 'antigravity-ide', 'brain', '549e09f5-dc99-4164-8538-1e40fad751d5', '.system_generated', 'logs', 'transcript.jsonl');
+5: 
+6: async function main() {
+7:   try {
+8:     if (!fs.existsSync(logFile)) {
+9:       console.log("Log file does not exist at path:", logFile);
+10:       return;
+11:     }
+12:     const content = fs.readFileSync(logFile, 'utf8');
+13:     const lines = content.split('\n');
+14:     console.log(`Total lines in log: ${lines.length}`);
+15:     
+16:     // Find lines mentioning THEME BIBLE or 52 themes
+17:     for (let i = 0; i < lines.length; i++) {
+18:       if (lines[i].includes("THEME BIBLE v4.0") || lines[i].includes("52 themes")) {
+19:         console.log(`\n=== Found on line ${i + 1} ===`);
+20:         const json = JSON.parse(lines[i]);
+21:         console.log("Type:", json.type);
+22:         // Print part of content to check
+23:         console.log("Content preview:", json.content ? json.content.substring(0, 1000) : "NO CONTENT");
+24:         // Save full content of this message if it's the user request
+25:         if (json.content && json.content.includes("THEME BIBLE")) {
+26:           fs.writeFileSync('extracted_theme_bible.txt', json.content);
+27:           console.log("Saved full message to extracted_theme_bible.txt");
+28:         }
+29:       }
+30:     }
+31:   } catch (err) {
+32:     console.error("Error:", err.message);
+33:   }
+34: }
+35: 
+36: main();
+37: 
+The above content shows the entire, complete file contents of the requested file.

@@ -1,0 +1,81 @@
+Created At: 2026-06-09T09:45:05Z
+Completed At: 2026-06-09T09:45:06Z
+File Path: `file:///d:/Cafe%20Canva/scratch/full_theme_bible.txt`
+Total Lines: 94
+Total Bytes: 4121
+Showing lines 1 to 94
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: <USER_REQUEST>
+2: ☕  CAFE CANAVA - PREMIUM MULTI-TENANT SAAS
+3: UI/UX THEME BIBLE v4.0
+4: 52 Complete Themes · Gemini AI Prompts · Figma AI Prompts · CSS Tokens · Production Code
+5: 
+6: Platform
+7: Cafe Canava - Shopify-Style Multi-Tenant Restaurant SaaS
+8: Version
+9: v4.0 - Enhanced from Blueprint v3.0
+10: Themes
+11: 52 themes across 8 tiers: Premium · Cafe · Indian Regional · International · Regional Indian · Modern · Seasonal · Special
+12: AI Prompts
+13: Gemini AI Pro prompt + Figma AI prompt for every single theme (104 prompts total)
+14: CSS Tokens
+15: Complete CSS custom properties for every theme - ready to upload to Supabase Storage
+16: Pages
+17: Dine-In · Delivery · Menu · Blogs · Account · Hero Swipe · Google Reviews · Instagram · Customer Service
+18: Notification
+19: Pre-visit popup: Digital Receipt + Offers + OTP phone capture (WhatsApp/SMS)
+20: Tech Stack
+21: Next.js 14 · Supabase · Razorpay · Tailwind · Framer Motion · Swiper.js
+22: Target Market
+23: Indian restaurant and cafe owners - Starter ₹999 / Growth ₹2,499 / Scale ₹5,999 / Enterprise Custom
+24: 
+25: SECTION 0 - PRE-VISIT NOTIFICATION SYSTEM
+26: Before any customer lands on a Cafe Canava tenant website, a smart revenue-driving popup fires. This captures phone numbers for WhatsApp receipts and drives repeat visits via offer updates. It is not a cookie banner - it is a conversion trigger.
+27: 0.1  Notification Popup Specification
+28: Trigger
+29: First visit (localStorage check) - fires after 1.5 second delay (natural, not jarring)
+30: Frequency
+31: Once per 30 days per device. After skip
+<truncated 907 bytes>
+Milkshake colour swatch flavour selector
+55: • Retro badge price tags on menu cards
+56: • Jukebox-themed playlist footer section
+57: • "Build Your Burger" interactive
+58: 
+59: Theme 22  Korean Bento
+60: Tier / Category
+61: 4 - International
+62: Best For
+63: Korean BBQ, kimbap shops, Korean fried chicken, ramen bars
+64: Colour Palette
+65: #E8002D Korean red, #003478 navy, #FFFFFF white, #F5F5DC beige, #228B22 green
+66: Typography
+67: Noto Sans KR (display) + Nanum Gothic (body)
+68: 🤖  Gemini AI / Figma AI Prompt
+69: Design a Korean restaurant website. Taegukgi (Korean flag) color-inspired palette of red and blue. Background: white with subtle hanji paper texture. KBBQ grill grate texture on hero section. K-drama aesthetic: clean, minimal, modern. Mood: modern Seoul KBBQ restaurant meets Korean street food pojangmacha.
+70: 🎨  Figma AI Design Prompt
+71: Figma AI: Create Korean restaurant homepage 1440px. White background with hanji texture. Korean red #E8002D and navy #003478 accents. Noto Sans KR for Korean headings. Include: KBBQ hero with grill visualization, banchan side dish carousel, gochujang spice level, tteokbokki street food section, Korean drama poster-style chef profile.
+72: 💻  CSS Theme Tokens
+73: /* theme-22: Korean Bento */
+74: :root {
+75:   --bg: #FFFFFF;
+76:   --korean-red: #E8002D;
+77:   --navy: #003478;
+78:   --beige: #F5F5DC;
+79:   --font-display: 'Noto Sans KR', sans-serif;
+80:   --font-body: 'Nanum Gothic', sans-serif;
+81: }
+82: ✅  Key UI Features
+83: • Hanji paper CSS texture
+84: • KBBQ grill grate SVG hero element
+85: • Banchan side dish carousel
+86: • Gochujang spice level selector
+87: • Korean drama aesthetic hero layout
+88: • K-pop playlist tie-in offer section
+89: 
+90: Theme 23  French Patisserie
+91: Tier / Cat
+92: <truncated 47333 bytes>
+93: 
+94: NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.
+The above content shows the entire, complete file contents of the requested file.

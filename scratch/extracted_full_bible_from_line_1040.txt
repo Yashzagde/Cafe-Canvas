@@ -1,0 +1,1 @@
+I will write a script to find the line numbers in our current `transcript.jsonl` file that contain "Korean Bento" and "French Patisserie" and write the full contents of that step's message to a text file.

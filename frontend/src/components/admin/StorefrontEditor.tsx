@@ -5,13 +5,445 @@ import { getStorefrontConfigAction, updateStorefrontConfigAction } from '@/app/a
 import { useStorefrontEditorStore } from '@/store/storefront-editor';
 import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles } from 'lucide-react';
 
-const PRESETS = [
-  { name: 'Classic Cream', primary: '#d97706', accent: '#fdfcf7' },
-  { name: 'Ocean Breeze', primary: '#0284c7', accent: '#f0f9ff' },
-  { name: 'Mint Sage', primary: '#16a34a', accent: '#f0fdf4' },
-  { name: 'Corporate Indigo', primary: '#4f46e5', accent: '#e0e7ff' },
-  { name: 'Luxury Gold', primary: '#ca8a04', accent: '#fef9c3' },
-  { name: 'Rose Clean', primary: '#db2777', accent: '#fdf2f8' }
+interface StoreTheme {
+  id: string
+  name: string
+  tier: string
+  colors: string[]
+  description: string
+  fontHeading: string
+}
+
+const PRESETS: StoreTheme[] = [
+  // 1. Premium & Luxury (theme-01 to theme-03)
+  {
+    id: 'theme-01',
+    name: 'Liquid Glass Premium',
+    tier: 'Premium & Luxury',
+    colors: ['#0A0A1A', '#D4AF37', '#FF6B35'],
+    description: 'Gold and dark blue premium theme with extreme glassmorphism overlays.',
+    fontHeading: 'Cormorant Garamond'
+  },
+  {
+    id: 'theme-02',
+    name: 'Liquid Glass Basic',
+    tier: 'Premium & Luxury',
+    colors: ['#F8F9FA', '#FF6B35', '#1A1A2E'],
+    description: 'Clean transparent design with bright orange accents.',
+    fontHeading: 'Fraunces'
+  },
+  {
+    id: 'theme-03',
+    name: 'Onyx Luxury Dark',
+    tier: 'Premium & Luxury',
+    colors: ['#121212', '#C9A84C', '#1C1C1C'],
+    description: 'Matte black background with rich gold foil accents for fine dining.',
+    fontHeading: 'Playfair Display'
+  },
+
+  // 2. Cafe & Roastery (theme-04 to theme-07)
+  {
+    id: 'theme-04',
+    name: 'Classic Cafe Brown',
+    tier: 'Cafe & Roastery',
+    colors: ['#FAF6F0', '#78350F', '#3E1F07'],
+    description: 'Warm cream foundations and dark espresso brown tones.',
+    fontHeading: 'Playfair Display'
+  },
+  {
+    id: 'theme-05',
+    name: 'Artisan Roastery',
+    tier: 'Cafe & Roastery',
+    colors: ['#F5EBE0', '#4E3629', '#D5BDAF'],
+    description: 'Artisan minimalist coffee culture palette with earthy brown hues.',
+    fontHeading: 'Outfit'
+  },
+  {
+    id: 'theme-06',
+    name: 'Chocolate Indulgence',
+    tier: 'Cafe & Roastery',
+    colors: ['#3D1E12', '#DDA15E', '#F4A261'],
+    description: 'Rich dark chocolate tones and pink accents for dessert cafes.',
+    fontHeading: 'Poppins'
+  },
+  {
+    id: 'theme-07',
+    name: 'Matcha Zen',
+    tier: 'Cafe & Roastery',
+    colors: ['#EDF4EC', '#15803D', '#A3B18A'],
+    description: 'Organic sage greens and tranquil bamboo textures.',
+    fontHeading: 'Nunito'
+  },
+
+  // 3. Indian Regional Heritage (theme-08 to theme-13, theme-26, theme-27, theme-29, theme-30)
+  {
+    id: 'theme-08',
+    name: 'Rajasthani Royal',
+    tier: 'Indian Regional',
+    colors: ['#FDF3E7', '#C2410C', '#9A3412'],
+    description: 'Saffron orange, deep marigold, and copper patterns.',
+    fontHeading: 'Playfair Display'
+  },
+  {
+    id: 'theme-09',
+    name: 'Maharashtrian Heritage',
+    tier: 'Indian Regional',
+    colors: ['#FDF2F4', '#BE123C', '#E11D48'],
+    description: 'Rich saffron red background with royal maroon borders.',
+    fontHeading: 'Poppins'
+  },
+  {
+    id: 'theme-10',
+    name: 'Mughal Garden',
+    tier: 'Indian Regional',
+    colors: ['#ECF8F4', '#047857', '#065F46'],
+    description: 'Deep emerald greens and delicate white marble accents.',
+    fontHeading: 'Cormorant Garamond'
+  },
+  {
+    id: 'theme-11',
+    name: 'Punjabi Dhaba Bold',
+    tier: 'Indian Regional',
+    colors: ['#FFFDF0', '#DC2626', '#FACC15'],
+    description: 'Vibrant yellow and red accents for high-energy traditional dhabas.',
+    fontHeading: 'Space Grotesk'
+  },
+  {
+    id: 'theme-12',
+    name: 'South Indian Temple',
+    tier: 'Indian Regional',
+    colors: ['#FCF8F2', '#B91C1C', '#D97706'],
+    description: 'Sandalwood base with vermillion red highlights.',
+    fontHeading: 'Playfair Display'
+  },
+  {
+    id: 'theme-13',
+    name: 'Gujarat Mithai Gold',
+    tier: 'Indian Regional',
+    colors: ['#FFFDF5', '#E28743', '#F0A050'],
+    description: 'Festive gold and sweet orange highlights.',
+    fontHeading: 'Outfit'
+  },
+  {
+    id: 'theme-26',
+    name: 'Bengali Fish Curry',
+    tier: 'Indian Regional',
+    colors: ['#FAF8F5', '#D97706', '#1E3A8A'],
+    description: 'Deep mustard yellow and sea blue accents.',
+    fontHeading: 'Playfair Display'
+  },
+  {
+    id: 'theme-27',
+    name: 'Kerala Backwater',
+    tier: 'Indian Regional',
+    colors: ['#F0FDF4', '#166534', '#15803D'],
+    description: 'Palm white background with tropical green accents.',
+    fontHeading: 'Inter'
+  },
+  {
+    id: 'theme-29',
+    name: 'Chettinad Spice',
+    tier: 'Indian Regional',
+    colors: ['#FAF5F0', '#9A3412', '#451A03'],
+    description: 'Terracotta and dark wood textures for traditional dining.',
+    fontHeading: 'Fraunces'
+  },
+  {
+    id: 'theme-30',
+    name: 'Hyderabadi Nawabi',
+    tier: 'Indian Regional',
+    colors: ['#FAF8FF', '#7C3AED', '#5B21B6'],
+    description: 'Royal purple and pearl white accents.',
+    fontHeading: 'Outfit'
+  },
+
+  // 4. Global Cuisines (theme-14 to theme-25, theme-28)
+  {
+    id: 'theme-14',
+    name: 'Kashmiri Winter',
+    tier: 'Global Cuisines',
+    colors: ['#F0F9FF', '#0284C7', '#075985'],
+    description: 'Cool ice blue and slate tones for a winter lounge feel.',
+    fontHeading: 'Inter'
+  },
+  {
+    id: 'theme-15',
+    name: 'Italian Trattoria',
+    tier: 'Global Cuisines',
+    colors: ['#FDF2F2', '#15803D', '#B91C1C'],
+    description: 'Tuscan olive green and sun-dried tomato red accents.',
+    fontHeading: 'Playfair Display'
+  },
+  {
+    id: 'theme-16',
+    name: 'Chinese Dynasty Red',
+    tier: 'Global Cuisines',
+    colors: ['#FFF5F5', '#E11D48', '#991B1B'],
+    description: 'Dynasty crimson red and imperial gold accents.',
+    fontHeading: 'Cormorant Garamond'
+  },
+  {
+    id: 'theme-17',
+    name: 'Japanese Sakura',
+    tier: 'Global Cuisines',
+    colors: ['#FDF2F8', '#DB2777', '#9D174D'],
+    description: 'Soft cherry blossom pink and dark slate stone accents.',
+    fontHeading: 'Poppins'
+  },
+  {
+    id: 'theme-18',
+    name: 'Mediterranean Blue',
+    tier: 'Global Cuisines',
+    colors: ['#F0F7FF', '#2563EB', '#FBBF24'],
+    description: 'Stunning azure blue and sunny yellow highlights.',
+    fontHeading: 'Outfit'
+  },
+  {
+    id: 'theme-19',
+    name: 'Mexican Fiesta',
+    tier: 'Global Cuisines',
+    colors: ['#FFFBEB', '#16A34A', '#DC2626'],
+    description: 'Cactus green and chili red for high-energy cafes.',
+    fontHeading: 'Space Grotesk'
+  },
+  {
+    id: 'theme-20',
+    name: 'Thai Tropical',
+    tier: 'Global Cuisines',
+    colors: ['#ECFEFF', '#0891B2', '#EA580C'],
+    description: 'Vibrant teal and sweet orange highlights.',
+    fontHeading: 'Nunito'
+  },
+  {
+    id: 'theme-21',
+    name: 'American Diner Chrome',
+    tier: 'Global Cuisines',
+    colors: ['#FFF5F5', '#EF4444', '#3B82F6'],
+    description: 'Checkerboard patterns, retro red, and chrome blue accents.',
+    fontHeading: 'Space Grotesk'
+  },
+  {
+    id: 'theme-22',
+    name: 'Korean Bento',
+    tier: 'Global Cuisines',
+    colors: ['#FFFFFF', '#E8002D', '#003478'],
+    description: 'Taegukgi-inspired palette of bold red and deep navy.',
+    fontHeading: 'Inter'
+  },
+  {
+    id: 'theme-23',
+    name: 'French Patisserie',
+    tier: 'Global Cuisines',
+    colors: ['#FAF5FF', '#8E44AD', '#34495E'],
+    description: 'Lavender base and royal blue accents for elegant patisseries.',
+    fontHeading: 'Cormorant Garamond'
+  },
+  {
+    id: 'theme-24',
+    name: 'Middle Eastern Souk',
+    tier: 'Global Cuisines',
+    colors: ['#FFFDF5', '#D97706', '#2D3748'],
+    description: 'Rich amber gold and charcoal tones.',
+    fontHeading: 'Fraunces'
+  },
+  {
+    id: 'theme-25',
+    name: 'Spanish Tapas',
+    tier: 'Global Cuisines',
+    colors: ['#FFF9F5', '#EA580C', '#7C2D12'],
+    description: 'Warm ochre and rust red accents.',
+    fontHeading: 'Playfair Display'
+  },
+  {
+    id: 'theme-28',
+    name: 'Goan Beach Shack',
+    tier: 'Global Cuisines',
+    colors: ['#F0FDFD', '#0D9488', '#D97706'],
+    description: 'Cool turquoise and beach sand colors.',
+    fontHeading: 'Outfit'
+  },
+
+  // 5. Modern & Trendy (theme-31 to theme-35)
+  {
+    id: 'theme-31',
+    name: 'Neon Street Food',
+    tier: 'Modern & Trendy',
+    colors: ['#0D0D1A', '#EC4899', '#06B6D4'],
+    description: 'Cyberpunk dark mode with neon pink and cyan glows.',
+    fontHeading: 'Space Grotesk'
+  },
+  {
+    id: 'theme-32',
+    name: 'Y2K Retro Pop',
+    tier: 'Modern & Trendy',
+    colors: ['#FFF1F2', '#F43F5E', '#0EA5E9'],
+    description: 'High-energy Y2K aesthetic with pastel pink and neon blue.',
+    fontHeading: 'Outfit'
+  },
+  {
+    id: 'theme-33',
+    name: 'Botanical Garden',
+    tier: 'Modern & Trendy',
+    colors: ['#F0FDF4', '#15803D', '#14532D'],
+    description: 'Lush forest greens and leaf textures for plant cafes.',
+    fontHeading: 'Inter'
+  },
+  {
+    id: 'theme-34',
+    name: 'Industrial Craft',
+    tier: 'Modern & Trendy',
+    colors: ['#F1F5F9', '#64748B', '#EA580C'],
+    description: 'Concrete grey and rust orange for modern loft cafes.',
+    fontHeading: 'Space Grotesk'
+  },
+  {
+    id: 'theme-35',
+    name: 'Pastels Kawaii',
+    tier: 'Modern & Trendy',
+    colors: ['#FFF5F5', '#FF8787', '#A5F3FC'],
+    description: 'Soft baby pink and mint green for bubble tea shops.',
+    fontHeading: 'Poppins'
+  },
+
+  // 6. Seasonal & Festive (theme-37 to theme-43)
+  {
+    id: 'theme-37',
+    name: 'Diwali Glow',
+    tier: 'Seasonal & Festive',
+    colors: ['#FFFDF0', '#D97706', '#7C2D12'],
+    description: 'Golden clay lamp colors and festive lights.',
+    fontHeading: 'Playfair Display'
+  },
+  {
+    id: 'theme-38',
+    name: 'Holi Splash',
+    tier: 'Seasonal & Festive',
+    colors: ['#FCFAFF', '#EC4899', '#EAB308'],
+    description: 'Energetic splash of magenta, yellow, and green.',
+    fontHeading: 'Space Grotesk'
+  },
+  {
+    id: 'theme-39',
+    name: 'Christmas Cosy',
+    tier: 'Seasonal & Festive',
+    colors: ['#FFFDFD', '#15803D', '#DC2626'],
+    description: 'Pine green background and berry red highlights.',
+    fontHeading: 'Fraunces'
+  },
+  {
+    id: 'theme-40',
+    name: 'Eid Crescent',
+    tier: 'Seasonal & Festive',
+    colors: ['#F4FBF7', '#047857', '#B39034'],
+    description: 'Emerald green and golden crescent moon accents.',
+    fontHeading: 'Cormorant Garamond'
+  },
+  {
+    id: 'theme-41',
+    name: 'Monsoon Cafe',
+    tier: 'Seasonal & Festive',
+    colors: ['#F0F4F8', '#475569', '#3B82F6'],
+    description: 'Earthy rain blue and slate grey tones.',
+    fontHeading: 'Nunito'
+  },
+  {
+    id: 'theme-42',
+    name: 'Summer Burst',
+    tier: 'Seasonal & Festive',
+    colors: ['#FFFBEB', '#F97316', '#EAB308'],
+    description: 'Bright citrus orange and sunny yellow.',
+    fontHeading: 'Outfit'
+  },
+  {
+    id: 'theme-43',
+    name: 'Valentine Blush',
+    tier: 'Seasonal & Festive',
+    colors: ['#FFF5F5', '#BE123C', '#FDA4AF'],
+    description: 'Blush pink and deep red tones for dessert cafes.',
+    fontHeading: 'Poppins'
+  },
+
+  // 7. Specialized Displays (theme-36, theme-44 to theme-52)
+  {
+    id: 'theme-36',
+    name: 'Bakehouse Warm',
+    tier: 'Specialized Displays',
+    colors: ['#FAF8F6', '#D97706', '#BE185D'],
+    description: 'Warm, cozy colors perfect for family bakery houses and pastry shops.',
+    fontHeading: 'Fraunces'
+  },
+  {
+    id: 'theme-44',
+    name: 'New Year Noir',
+    tier: 'Specialized Displays',
+    colors: ['#0A0A0A', '#C9A84C', '#1A1A1A'],
+    description: 'Celebration theme with dark noir background and champagne gold.',
+    fontHeading: 'Playfair Display'
+  },
+  {
+    id: 'theme-45',
+    name: 'Dark Mode Espresso',
+    tier: 'Specialized Displays',
+    colors: ['#121212', '#FAF5F0', '#3E1F07'],
+    description: 'Standard optimized dark mode with warm espresso accents.',
+    fontHeading: 'Outfit'
+  },
+  {
+    id: 'theme-46',
+    name: 'High Contrast',
+    tier: 'Specialized Displays',
+    colors: ['#FFFFFF', '#000000', '#0000EE'],
+    description: 'Pure black and white with high-contrast blue for accessibility.',
+    fontHeading: 'Inter'
+  },
+  {
+    id: 'theme-47',
+    name: 'Print-Ready Menu',
+    tier: 'Specialized Displays',
+    colors: ['#FFFFFF', '#1A1A1A', '#7F7F7F'],
+    description: 'Clean monochrome layout optimized for physical paper printing.',
+    fontHeading: 'Inter'
+  },
+  {
+    id: 'theme-48',
+    name: 'Kiosk Display',
+    tier: 'Specialized Displays',
+    colors: ['#F8FAFC', '#0F172A', '#3B82F6'],
+    description: 'Large tap targets and clear contrast for digital self-service kiosks.',
+    fontHeading: 'Space Grotesk'
+  },
+  {
+    id: 'theme-49',
+    name: 'Delivery-First',
+    tier: 'Specialized Displays',
+    colors: ['#FFF8F5', '#EA580C', '#1E293B'],
+    description: 'App-first layout optimized for fast mobile deliveries.',
+    fontHeading: 'Outfit'
+  },
+  {
+    id: 'theme-50',
+    name: 'Catering Corporate',
+    tier: 'Specialized Displays',
+    colors: ['#F8FAFC', '#1E3A8A', '#475569'],
+    description: 'Professional executive corporate blue and slate.',
+    fontHeading: 'Inter'
+  },
+  {
+    id: 'theme-51',
+    name: 'Wedding & Events',
+    tier: 'Specialized Displays',
+    colors: ['#FFFBFB', '#C29F6F', '#E8A598'],
+    description: 'Elegant champagne gold and rose for marriage lawns and event caterers.',
+    fontHeading: 'Cormorant Garamond'
+  },
+  {
+    id: 'theme-52',
+    name: 'Kids & Family',
+    tier: 'Specialized Displays',
+    colors: ['#FFFDF5', '#EC4899', '#3B82F6'],
+    description: 'Bright bubblegum pink and sky blue colors for family restaurants.',
+    fontHeading: 'Poppins'
+  }
 ];
 
 export default function StorefrontEditor() {
@@ -19,6 +451,17 @@ export default function StorefrontEditor() {
   const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'social'>('branding');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [saving, setSaving] = useState(false);
+  const [themeCategory, setThemeCategory] = useState<string>('All');
+  const categories = [
+    'All',
+    'Premium & Luxury',
+    'Cafe & Roastery',
+    'Indian Regional',
+    'Global Cuisines',
+    'Modern & Trendy',
+    'Seasonal & Festive',
+    'Specialized Displays'
+  ];
 
   const loadConfig = async () => {
     try {
@@ -52,8 +495,10 @@ export default function StorefrontEditor() {
   };
 
   const applyPreset = (preset: typeof PRESETS[0]) => {
-    updateField('primary_color', preset.primary);
-    updateField('accent_color', preset.accent);
+    updateField('theme_id', preset.id);
+    updateField('primary_color', preset.colors[0]);
+    updateField('accent_color', preset.colors[1] || preset.colors[0]);
+    updateField('font_heading', preset.fontHeading);
     updateField('theme_preset', preset.name);
   };
 
@@ -119,28 +564,53 @@ export default function StorefrontEditor() {
           {activeTab === 'branding' && (
             <>
               {/* Presets Grid */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
                   Quick Design Presets
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {PRESETS.map((p) => {
-                    const isSelected = config.theme_preset === p.name;
+                
+                {/* Category Filter Pills */}
+                <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 border-b border-[#e2e8f0]/40 scrollbar-none">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setThemeCategory(category)}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap transition-all border ${
+                        themeCategory === category
+                          ? 'bg-[#d97706] text-[#ffffff] border-[#d97706] shadow-sm'
+                          : 'bg-[#f1f5f9] text-[#1e293b]/60 border-[#e2e8f0] hover:border-[#d97706]/40 hover:bg-[#FAF6F0]'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[280px] overflow-y-auto pr-1">
+                  {PRESETS.filter(
+                    (p) => themeCategory === 'All' || p.tier === themeCategory
+                  ).map((p) => {
+                    const isSelected = config.theme_id === p.id || config.theme_preset === p.name;
                     return (
                       <button
-                        key={p.name}
+                        key={p.id}
+                        type="button"
                         onClick={() => applyPreset(p)}
                         className={`p-3 bg-[#f1f5f9] border rounded-2xl flex flex-col gap-2 items-start text-left cursor-pointer transition-all ${
-                          isSelected ? 'border-[#d97706]' : 'border-[#e2e8f0] hover:border-[#e2e8f0]/80'
+                          isSelected ? 'border-[#d97706] bg-[#d97706]/5' : 'border-[#e2e8f0] hover:border-[#e2e8f0]/80'
                         }`}
                       >
                         <div className="flex items-center gap-1.5 w-full">
-                          <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: p.primary }}></div>
-                          <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: p.accent }}></div>
+                          <div className="w-3.5 h-3.5 rounded-full border border-black/5" style={{ backgroundColor: p.colors[0] }} title={p.colors[0]}></div>
+                          <div className="w-3.5 h-3.5 rounded-full border border-black/5" style={{ backgroundColor: p.colors[1] || p.colors[0] }} title={p.colors[1]}></div>
                           {isSelected && <Check size={10} className="text-[#d97706] ml-auto" />}
                         </div>
-                        <span className="text-[10px] font-extrabold tracking-wide uppercase text-[#1e293b]/60">
+                        <span className="text-[10px] font-extrabold tracking-wide uppercase text-[#1e293b]/70 truncate w-full">
                           {p.name}
+                        </span>
+                        <span className="text-[8px] font-bold text-[#1e293b]/40 uppercase tracking-wider block">
+                          {p.id}
                         </span>
                       </button>
                     );
@@ -201,10 +671,14 @@ export default function StorefrontEditor() {
                     onChange={(e) => updateField('font_heading', e.target.value)}
                     className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
                   >
-                    <option value="Outfit">Outfit (Recommended)</option>
-                    <option value="Playfair Display">Playfair Serif</option>
-                    <option value="Inter">Inter Sans</option>
-                    <option value="Montserrat">Montserrat</option>
+                    <option value="Outfit">Outfit</option>
+                    <option value="Playfair Display">Playfair Display</option>
+                    <option value="Inter">Inter</option>
+                    <option value="Nunito">Nunito</option>
+                    <option value="Poppins">Poppins</option>
+                    <option value="Cormorant Garamond">Cormorant Garamond</option>
+                    <option value="Fraunces">Fraunces</option>
+                    <option value="Space Grotesk">Space Grotesk</option>
                   </select>
                 </div>
                 <div className="space-y-2">

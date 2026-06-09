@@ -1,0 +1,1 @@
+I will write a script to perform a deep search for "Korean Bento" or "French Patisserie" in all text files (including transcripts, md, json) within `C:\Users\yash\.gemini` to find if the full uncompacted Theme Bible v4.0 is stored in any previous session files.
