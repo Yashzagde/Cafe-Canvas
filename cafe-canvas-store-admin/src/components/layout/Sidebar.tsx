@@ -110,28 +110,25 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'bg-canvas-sidebar text-canvas-cream flex flex-col justify-between select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0',
+        'bg-white border-r border-[#e2e8f0] text-[#1e293b] flex flex-col justify-between select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0',
         sidebarCollapsed ? 'w-[68px]' : 'w-60'
       )}
-      style={{
-        background: 'linear-gradient(180deg, #4A3728 0%, #3D2B1F 100%)',
-      }}
     >
       {/* ── Top: Logo & Branding ──────────────────────────────────── */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <div className={cn(
-          'border-b border-white/8 flex items-center shrink-0',
+          'border-b border-[#e2e8f0] flex items-center shrink-0',
           sidebarCollapsed ? 'p-3 justify-center' : 'p-5 gap-3'
         )}>
-          <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-canvas-rose/30 shadow-md shadow-black/10 shrink-0 overflow-hidden">
+          <div className="w-10 h-10 bg-[#faf6f0] rounded-xl flex items-center justify-center border border-[#e2e8f0] shadow-sm shrink-0 overflow-hidden">
             <img src={logoUrl} alt="Cafe Canvas Logo" className="w-8 h-8 object-contain hover:scale-105 transition-transform duration-300" />
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0">
-              <h2 className="font-display text-base font-bold tracking-wide text-canvas-cream truncate">
+              <h2 className="font-display text-base font-bold tracking-wide text-[#1e293b] truncate">
                 Cafe Canvas
               </h2>
-              <span className="text-[9px] font-body text-canvas-rose tracking-widest uppercase">
+              <span className="text-[9px] font-body text-[#d97706] tracking-widest uppercase font-extrabold">
                 Store Admin
               </span>
             </div>
@@ -162,18 +159,18 @@ export function Sidebar() {
                         'w-full flex items-center gap-2.5 rounded-xl text-xs font-semibold transition-all duration-200 relative group',
                         sidebarCollapsed ? 'px-3 py-2.5 justify-center' : 'px-3 py-2.5',
                         isActive
-                          ? 'bg-canvas-rose/20 text-white shadow-sm border border-canvas-rose/15'
-                          : 'text-canvas-cream/60 hover:bg-white/6 hover:text-canvas-cream/90 border border-transparent'
+                          ? 'bg-[#d97706]/15 text-[#d97706] shadow-sm border border-[#d97706]/10'
+                          : 'text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#1e293b] border border-transparent'
                       )}
                     >
                       {/* Active indicator bar */}
                       {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-canvas-rose" />
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#d97706]" />
                       )}
                       <Icon
                         className={cn(
                           'w-4 h-4 shrink-0 transition-colors',
-                          isActive ? 'text-canvas-rose' : 'text-canvas-tan/60 group-hover:text-canvas-rose/70'
+                          isActive ? 'text-[#d97706]' : 'text-[#94a3b8] group-hover:text-[#d97706]/70'
                         )}
                       />
                       {!sidebarCollapsed && (
@@ -185,7 +182,7 @@ export function Sidebar() {
                         </>
                       )}
                       {sidebarCollapsed && badgeCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-canvas-rose animate-pulse-dot" />
+                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#d97706] animate-pulse-dot" />
                       )}
                     </button>
                   )
@@ -211,17 +208,17 @@ export function Sidebar() {
 
       {/* ── Bottom: Profile & Logout ──────────────────────────────── */}
       <div className={cn(
-        'border-t border-white/8 bg-black/10 shrink-0',
+        'border-t border-[#e2e8f0] bg-[#faf6f0] shrink-0',
         sidebarCollapsed ? 'p-2' : 'p-3'
       )}>
         {sidebarCollapsed ? (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-canvas-rose/20 text-canvas-rose font-bold flex items-center justify-center text-[10px]">
+            <div className="w-8 h-8 rounded-xl bg-[#d97706]/15 text-[#d97706] font-bold flex items-center justify-center text-[10px]">
               {getInitials()}
             </div>
             <button
               onClick={() => signOut()}
-              className="p-1.5 rounded-lg hover:bg-red-500/15 text-canvas-cream/40 hover:text-red-400 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-red-500/10 text-[#64748b] hover:text-red-500 transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -230,21 +227,21 @@ export function Sidebar() {
         ) : (
           <>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-canvas-rose/20 text-canvas-rose font-bold flex items-center justify-center text-[10px] shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-[#d97706]/15 text-[#d97706] font-bold flex items-center justify-center text-[10px] shrink-0">
                 {getInitials()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-bold truncate text-canvas-cream/90">
+                <p className="text-[11px] font-bold truncate text-[#1e293b]">
                   {user?.email || 'Store Manager'}
                 </p>
-                <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold rounded-md bg-canvas-rose/10 text-canvas-rose border border-canvas-rose/15 mt-0.5 uppercase tracking-wider">
+                <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold rounded-md bg-[#d97706]/10 text-[#d97706] border border-[#d97706]/20 mt-0.5 uppercase tracking-wider">
                   {getRoleLabel()}
                 </span>
               </div>
             </div>
             <button
               onClick={() => signOut()}
-              className="mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-transparent hover:bg-red-500/10 border border-white/8 hover:border-red-500/25 text-[11px] font-semibold text-canvas-cream/50 hover:text-red-400 transition-all duration-200"
+              className="mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-transparent hover:bg-red-500/10 border border-[#e2e8f0] hover:border-red-500/25 text-[11px] font-semibold text-[#64748b] hover:text-red-500 transition-all duration-200"
             >
               <LogOut className="w-3 h-3" />
               Sign Out
