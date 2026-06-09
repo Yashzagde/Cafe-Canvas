@@ -1,0 +1,69 @@
+# Cafe Canava — 52 Premium Themes Gallery
+
+Explore the complete collection of high-fidelity design themes integrated into the platform. Each theme is meticulously crafted to match specific restaurant vibes, from luxury fine dining to vibrant street food.
+
+![52 Themes Showcase](file:///C:/Users/yash/.gemini/antigravity/brain/ae5da39d-b719-4810-9055-c3d70d29a37d/cafe_canava_52_themes_collage_1777530197232.png)
+
+## 🎨 Theme Categories
+
+### 1. Premium & Luxury
+*Focus on elegance, high contrast, and sophisticated accents.*
+
+| ID | Name | Target Establishment | Key Accents |
+|---|---|---|---|
+| `theme-01` | Dark Luxe | Upscale restaurants, rooftop bars | Gold, Black |
+| `theme-13` | Midnight Black | Luxury lounges, night clubs | Neon Purple, Cyan |
+| `theme-23` | French Bistro | Fine dining, patisseries | Royal Blue, Lavender |
+| `theme-28` | Hyderabadi Royal | Biryani houses, Nizami cuisine | Purple, Gold |
+
+### 2. Indian Regional
+*Vibrant colors and traditional typography celebrating India's culinary diversity.*
+
+| ID | Name | Target Establishment | Style |
+|---|---|---|---|
+| `theme-02` | Indian Vibrant | Dhabas, Tiffin centers | Turmeric, Orange |
+| `theme-05` | Royal Mughal | Mughlai, Biryani houses | Burgundy, Heritage |
+| `theme-12` | Kerala Spice | South Indian, Kerala cuisine | Forest Green, Mustard |
+| `theme-26` | Bengali Heritage | Bengali specialty restaurants | Earthy Brown, Saffron |
+| `theme-30` | Gujarati Thali | Gujarati thali restaurants | Vibrant Yellow, Festive |
+
+### 3. Global Styles
+*International design languages for specialized cuisines.*
+
+| ID | Name | Target Establishment | Vibe |
+|---|---|---|---|
+| `theme-07` | Japanese Zen | Sushi bars, Ramen houses | Peaceful, Vermilion |
+| `theme-08` | Mediterranean Glow | Wine bars, Greek eateries | Azure, Sunny |
+| `theme-21` | American Diner | Burger joints, Retro cafes | Classic Red/Blue |
+| `theme-22` | Korean BBQ | BBQ grills, Bento shops | Bold Red, Clean |
+| `theme-25` | Spanish Tapas | Tapas bars, Rustic Spanish | Warm Red, Ochre |
+
+### 4. Modern & Lifestyle
+*Sleek, minimal, and trend-focused designs for the new generation.*
+
+| ID | Name | Target Establishment | Key Features |
+|---|---|---|---|
+| `theme-03` | Nordic Minimal | Artisan cafes, Coffee shops | Sage Green, Minimal |
+| `theme-09` | Neon Diner | Retro diners, Late-night spots | Cyberpunk Neon |
+| `theme-11` | Modern Bistro | Brunch spots, Urban cafes | Sleek Zinc, Pink |
+| `theme-31` | Cyberpunk Night | Gaming cafes, Nightlife | Neon Glows |
+| `theme-33` | Botanical Cafe | Eco-friendly, Plant cafes | Nature Green |
+
+### 5. Seasonal & Specialized
+*Templates for festivals and specific operational needs.*
+
+| ID | Name | Target Establishment | Event/Use |
+|---|---|---|---|
+| `theme-37` | Holi Festival | Pop-ups, Festive events | Multi-color Splash |
+| `theme-38` | Diwali Night | Festive dining | Golden Glow |
+| `theme-46` | High Contrast | Accessible dining | Max Readability |
+| `theme-48` | Kiosk Touch | Self-service kiosks | Large Tap Targets |
+| `theme-49` | Delivery Fast | Cloud kitchens | App-first UI |
+
+---
+
+> [!TIP]
+> You can live-preview any theme by navigating to the `/themes` page in your browser or clicking **Live Preview** on any theme card.
+
+> [!IMPORTANT]
+> All themes are fully responsive and include pre-configured dark/light mode optimization based on their design intent.

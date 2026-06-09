@@ -1,0 +1,94 @@
+<USER_REQUEST>
+☕  CAFE CANAVA - PREMIUM MULTI-TENANT SAAS
+UI/UX THEME BIBLE v4.0
+52 Complete Themes · Gemini AI Prompts · Figma AI Prompts · CSS Tokens · Production Code
+
+Platform
+Cafe Canava - Shopify-Style Multi-Tenant Restaurant SaaS
+Version
+v4.0 - Enhanced from Blueprint v3.0
+Themes
+52 themes across 8 tiers: Premium · Cafe · Indian Regional · International · Regional Indian · Modern · Seasonal · Special
+AI Prompts
+Gemini AI Pro prompt + Figma AI prompt for every single theme (104 prompts total)
+CSS Tokens
+Complete CSS custom properties for every theme - ready to upload to Supabase Storage
+Pages
+Dine-In · Delivery · Menu · Blogs · Account · Hero Swipe · Google Reviews · Instagram · Customer Service
+Notification
+Pre-visit popup: Digital Receipt + Offers + OTP phone capture (WhatsApp/SMS)
+Tech Stack
+Next.js 14 · Supabase · Razorpay · Tailwind · Framer Motion · Swiper.js
+Target Market
+Indian restaurant and cafe owners - Starter ₹999 / Growth ₹2,499 / Scale ₹5,999 / Enterprise Custom
+
+SECTION 0 - PRE-VISIT NOTIFICATION SYSTEM
+Before any customer lands on a Cafe Canava tenant website, a smart revenue-driving popup fires. This captures phone numbers for WhatsApp receipts and drives repeat visits via offer updates. It is not a cookie banner - it is a conversion trigger.
+0.1  Notification Popup Specification
+Trigger
+First visit (localStorage check) - fires after 1.5 second delay (natural, not jarring)
+Frequency
+Once per 30 days per device. After skip: smaller bottom toast on next visit.
+Headline
+🧾 Get Your Digital Receipt & Exclusive Offers
+Body Copy
+Add your mobile number to receive your online order receipt and be the first to get exclusive discount codes, seasonal offers, and new menu alerts from [Cafe Name].
+Input
+📱 Mobile Number: +91 __________ (10-digit Indian validation, auto-format)
+Primary CTA
+✅ Yes, Send Me My Receipts & Offers  →  triggers OTP via Supabase Auth
+Secondary
+✗ Skip for now  (sets 30-day cookie)
+Tertiary Link
+"Read More" → /offers  (full Loyalty Prog
+<truncated 45215 bytes>
+Bebas Neue', sans-serif;
+  --font-body: 'Roboto', sans-serif;
+}
+.neon-glow {
+  text-shadow: 0 0 10px #FF0000, 0 0 20px #FF0000, 0 0 40px #FF0000;
+}
+✅  Key UI Features
+• Checkerboard tile CSS background
+• Neon text-shadow glow effect
+• Milkshake colour swatch flavour selector
+• Retro badge price tags on menu cards
+• Jukebox-themed playlist footer section
+• "Build Your Burger" interactive
+
+Theme 22  Korean Bento
+Tier / Category
+4 - International
+Best For
+Korean BBQ, kimbap shops, Korean fried chicken, ramen bars
+Colour Palette
+#E8002D Korean red, #003478 navy, #FFFFFF white, #F5F5DC beige, #228B22 green
+Typography
+Noto Sans KR (display) + Nanum Gothic (body)
+🤖  Gemini AI / Figma AI Prompt
+Design a Korean restaurant website. Taegukgi (Korean flag) color-inspired palette of red and blue. Background: white with subtle hanji paper texture. KBBQ grill grate texture on hero section. K-drama aesthetic: clean, minimal, modern. Mood: modern Seoul KBBQ restaurant meets Korean street food pojangmacha.
+🎨  Figma AI Design Prompt
+Figma AI: Create Korean restaurant homepage 1440px. White background with hanji texture. Korean red #E8002D and navy #003478 accents. Noto Sans KR for Korean headings. Include: KBBQ hero with grill visualization, banchan side dish carousel, gochujang spice level, tteokbokki street food section, Korean drama poster-style chef profile.
+💻  CSS Theme Tokens
+/* theme-22: Korean Bento */
+:root {
+  --bg: #FFFFFF;
+  --korean-red: #E8002D;
+  --navy: #003478;
+  --beige: #F5F5DC;
+  --font-display: 'Noto Sans KR', sans-serif;
+  --font-body: 'Nanum Gothic', sans-serif;
+}
+✅  Key UI Features
+• Hanji paper CSS texture
+• KBBQ grill grate SVG hero element
+• Banchan side dish carousel
+• Gochujang spice level selector
+• Korean drama aesthetic hero layout
+• K-pop playlist tie-in offer section
+
+Theme 23  French Patisserie
+Tier / Cat
+<truncated 47333 bytes>
+
+NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.
