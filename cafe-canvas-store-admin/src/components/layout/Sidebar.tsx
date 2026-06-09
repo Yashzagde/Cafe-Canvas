@@ -123,8 +123,8 @@ export function Sidebar() {
           'border-b border-white/8 flex items-center shrink-0',
           sidebarCollapsed ? 'p-3 justify-center' : 'p-5 gap-3'
         )}>
-          <div className="w-10 h-10 bg-white/8 rounded-xl flex items-center justify-center border border-canvas-rose/20 shadow-lg shadow-black/10 shrink-0 overflow-hidden">
-            <img src={logoUrl} alt="Cafe Canvas Logo" className="w-8 h-8 object-contain" />
+          <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-canvas-rose/30 shadow-md shadow-black/10 shrink-0 overflow-hidden">
+            <img src={logoUrl} alt="Cafe Canvas Logo" className="w-8 h-8 object-contain hover:scale-105 transition-transform duration-300" />
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0">

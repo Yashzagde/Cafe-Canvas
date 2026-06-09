@@ -282,37 +282,37 @@ export function DashboardScreen() {
       </div>
 
       {/* Quick Actions Bar */}
-      <div className="bg-canvas-surface p-6 rounded-xl border border-canvas-border shadow-sm">
+      <div className="glass-panel p-6 shadow-boutique">
         <h3 className="text-xs font-extrabold uppercase text-canvas-brown tracking-wider mb-4">
           Quick Actions
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <button 
             onClick={() => setScreen('orders')} 
-            className="p-4 rounded-xl border border-canvas-border bg-canvas-cream hover:bg-canvas-terracotta/5 hover:border-canvas-terracotta transition-all text-center flex flex-col items-center justify-center gap-2 group cursor-pointer"
+            className="p-4 rounded-xl border border-canvas-border/40 bg-white/20 hover:bg-canvas-rose/10 hover:border-canvas-rose/60 transition-all text-center flex flex-col items-center justify-center gap-2 group cursor-pointer shadow-sm hover:scale-[1.02]"
           >
-            <ShoppingCart className="w-5 h-5 text-canvas-terracotta group-hover:scale-110 transition-transform" />
+            <ShoppingCart className="w-5 h-5 text-canvas-rose group-hover:scale-110 transition-transform" />
             <span className="text-xs font-bold text-canvas-brown">Manage Orders</span>
           </button>
           <button 
             onClick={() => setScreen('menu')} 
-            className="p-4 rounded-xl border border-canvas-border bg-canvas-cream hover:bg-canvas-terracotta/5 hover:border-canvas-terracotta transition-all text-center flex flex-col items-center justify-center gap-2 group cursor-pointer"
+            className="p-4 rounded-xl border border-canvas-border/40 bg-white/20 hover:bg-canvas-rose/10 hover:border-canvas-rose/60 transition-all text-center flex flex-col items-center justify-center gap-2 group cursor-pointer shadow-sm hover:scale-[1.02]"
           >
-            <UtensilsCrossed className="w-5 h-5 text-canvas-gold group-hover:scale-110 transition-transform" />
+            <UtensilsCrossed className="w-5 h-5 text-canvas-brown_mid group-hover:scale-110 transition-transform" />
             <span className="text-xs font-bold text-canvas-brown">Edit Menu</span>
           </button>
           <button 
             onClick={() => setScreen('kds')} 
-            className="p-4 rounded-xl border border-canvas-border bg-canvas-cream hover:bg-canvas-terracotta/5 hover:border-canvas-terracotta transition-all text-center flex flex-col items-center justify-center gap-2 group cursor-pointer"
+            className="p-4 rounded-xl border border-canvas-border/40 bg-white/20 hover:bg-canvas-rose/10 hover:border-canvas-rose/60 transition-all text-center flex flex-col items-center justify-center gap-2 group cursor-pointer shadow-sm hover:scale-[1.02]"
           >
-            <Clock className="w-5 h-5 text-canvas-teal group-hover:scale-110 transition-transform" />
+            <Clock className="w-5 h-5 text-canvas-rose group-hover:scale-110 transition-transform" />
             <span className="text-xs font-bold text-canvas-brown">Kitchen KDS</span>
           </button>
           <button 
             onClick={() => setScreen('billing')} 
-            className="p-4 rounded-xl border border-canvas-border bg-canvas-cream hover:bg-canvas-terracotta/5 hover:border-canvas-terracotta transition-all text-center flex flex-col items-center justify-center gap-2 group cursor-pointer"
+            className="p-4 rounded-xl border border-canvas-border/40 bg-white/20 hover:bg-canvas-rose/10 hover:border-canvas-rose/60 transition-all text-center flex flex-col items-center justify-center gap-2 group cursor-pointer shadow-sm hover:scale-[1.02]"
           >
-            <IndianRupee className="w-5 h-5 text-canvas-coral group-hover:scale-110 transition-transform" />
+            <IndianRupee className="w-5 h-5 text-canvas-rose group-hover:scale-110 transition-transform" />
             <span className="text-xs font-bold text-canvas-brown">GST Billing</span>
           </button>
         </div>
@@ -321,59 +321,59 @@ export function DashboardScreen() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Revenue Card */}
-        <div className="bg-canvas-terracotta text-white p-6 rounded-xl border border-canvas-terra_dark/20 shadow-md relative overflow-hidden group">
+        <div className="glass-accent p-6 rounded-xl border border-canvas-rose/30 shadow-boutique-md relative overflow-hidden group">
           <div className="absolute right-[-10px] top-[-10px] opacity-10 pointer-events-none group-hover:scale-110 transition-transform">
-            <IndianRupee className="w-24 h-24" />
+            <IndianRupee className="w-24 h-24 text-canvas-brown" />
           </div>
           <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-canvas-cream/80">Today's Revenue</span>
-            <span className="p-1 rounded bg-white/20 text-[10px] font-bold flex items-center gap-0.5">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-canvas-brown/70">Today's Revenue</span>
+            <span className="p-1 rounded bg-canvas-brown/10 text-canvas-brown text-[10px] font-bold flex items-center gap-0.5">
               {stats.revenueChange >= 0 ? '+' : ''}{stats.revenueChange}% <ArrowUpRight className="w-2.5 h-2.5" />
             </span>
           </div>
-          <p className="font-display text-3xl font-extrabold mt-3">{formatRupees(stats.todayRevenue / 100)}</p>
-          <p className="text-[10px] text-canvas-cream/70 font-semibold mt-2">vs yesterday</p>
+          <p className="font-display text-3xl font-extrabold mt-3 text-canvas-brown">{formatRupees(stats.todayRevenue / 100)}</p>
+          <p className="text-[10px] text-canvas-brown/60 font-semibold mt-2">vs yesterday</p>
         </div>
 
         {/* Orders Card */}
-        <div className="bg-canvas-gold text-canvas-brown p-6 rounded-xl border border-canvas-champagne shadow-md relative overflow-hidden group">
+        <div className="glass-panel p-6 border-canvas-border/55 shadow-boutique-md relative overflow-hidden group">
           <div className="absolute right-[-10px] top-[-10px] opacity-10 pointer-events-none group-hover:scale-110 transition-transform">
-            <ShoppingCart className="w-24 h-24" />
+            <ShoppingCart className="w-24 h-24 text-canvas-brown" />
           </div>
           <div className="flex justify-between items-start">
             <span className="text-xs font-extrabold uppercase tracking-wider text-canvas-brown_mid">Active Orders</span>
-            <span className="p-1 rounded bg-canvas-brown/10 text-[10px] font-bold">POS Live</span>
+            <span className="p-1 rounded bg-canvas-brown/10 text-[10px] font-bold text-canvas-brown">POS Live</span>
           </div>
-          <p className="font-display text-3xl font-extrabold mt-3">{stats.activeOrders}</p>
+          <p className="font-display text-3xl font-extrabold mt-3 text-canvas-brown">{stats.activeOrders}</p>
           <p className="text-[10px] text-canvas-brown_mid font-semibold mt-2">orders preparing in kitchen</p>
         </div>
 
         {/* Staff Card */}
-        <div className="bg-canvas-teal text-canvas-brown p-6 rounded-xl border border-canvas-teal_light/30 shadow-md relative overflow-hidden group">
+        <div className="glass-success p-6 border-canvas-mint/40 shadow-boutique-md relative overflow-hidden group">
           <div className="absolute right-[-10px] top-[-10px] opacity-10 pointer-events-none group-hover:scale-110 transition-transform">
-            <Users className="w-24 h-24" />
+            <Users className="w-24 h-24 text-canvas-brown" />
           </div>
           <div className="flex justify-between items-start">
             <span className="text-xs font-extrabold uppercase tracking-wider text-canvas-brown_mid">Active Staff</span>
-            <span className="p-1 rounded bg-canvas-brown/10 text-[10px] font-bold flex items-center gap-1">
+            <span className="p-1 rounded bg-canvas-brown/10 text-[10px] font-bold text-canvas-brown flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-canvas-sage animate-ping"></span> Live
             </span>
           </div>
-          <p className="font-display text-3xl font-extrabold mt-3">{stats.onlineStaff}</p>
+          <p className="font-display text-3xl font-extrabold mt-3 text-canvas-brown">{stats.onlineStaff}</p>
           <p className="text-[10px] text-canvas-brown_mid font-semibold mt-2">out of {stats.totalStaff} staff registered</p>
         </div>
 
         {/* Menu Items Card */}
-        <div className="bg-canvas-coral text-white p-6 rounded-xl border border-canvas-coral/20 shadow-md relative overflow-hidden group">
+        <div className="glass-panel p-6 border-canvas-rose/40 shadow-boutique-md relative overflow-hidden group">
           <div className="absolute right-[-10px] top-[-10px] opacity-15 pointer-events-none group-hover:scale-110 transition-transform">
-            <UtensilsCrossed className="w-24 h-24" />
+            <UtensilsCrossed className="w-24 h-24 text-canvas-brown" />
           </div>
           <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-canvas-cream/80">Menu Catalog</span>
-            <span className="p-1 rounded bg-white/20 text-[10px] font-bold">{stats.totalMenuItems} Items</span>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-canvas-brown_mid">Menu Catalog</span>
+            <span className="p-1 rounded bg-canvas-brown/10 text-[10px] font-bold text-canvas-brown">{stats.totalMenuItems} Items</span>
           </div>
-          <p className="font-display text-3xl font-extrabold mt-3">{stats.totalMenuItems}</p>
-          <p className="text-[10px] text-canvas-cream/70 font-semibold mt-2 font-bold">
+          <p className="font-display text-3xl font-extrabold mt-3 text-canvas-brown">{stats.totalMenuItems}</p>
+          <p className="text-[10px] text-canvas-brown_mid mt-2 font-bold">
             {stats.outOfStockItems > 0 ? `${stats.outOfStockItems} unavailable today` : 'All items in stock'}
           </p>
         </div>
@@ -382,7 +382,7 @@ export function DashboardScreen() {
       {/* Analytics Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Line Chart */}
-        <div className="lg:col-span-2 bg-canvas-surface p-6 rounded-xl border border-canvas-border shadow-sm">
+        <div className="lg:col-span-2 glass-panel p-6 shadow-boutique">
           <h3 className="text-sm font-extrabold uppercase text-canvas-brown tracking-wider mb-4">
             Weekly Revenue Trend (₹)
           </h3>
@@ -414,7 +414,7 @@ export function DashboardScreen() {
         </div>
 
         {/* Pie Chart */}
-        <div className="bg-canvas-surface p-6 rounded-xl border border-canvas-border shadow-sm">
+        <div className="glass-panel p-6 shadow-boutique">
           <h3 className="text-sm font-extrabold uppercase text-canvas-brown tracking-wider mb-4">
             Menu Item Distribution
           </h3>
@@ -459,7 +459,7 @@ export function DashboardScreen() {
       {/* Bottom Row: Recent Orders & Online Staff */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Orders table */}
-        <div className="lg:col-span-2 bg-canvas-surface p-6 rounded-xl border border-canvas-border shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-2 glass-panel p-6 shadow-boutique flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-extrabold uppercase text-canvas-brown tracking-wider mb-4">
               Recent Live Orders
@@ -505,7 +505,7 @@ export function DashboardScreen() {
         </div>
 
         {/* Staff Online status */}
-        <div className="bg-canvas-surface p-6 rounded-xl border border-canvas-border shadow-sm flex flex-col justify-between">
+        <div className="glass-panel p-6 shadow-boutique flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-extrabold uppercase text-canvas-brown tracking-wider mb-4">
               Registered Staff
