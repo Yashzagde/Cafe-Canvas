@@ -1,14 +1,17 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import type { Tenant, Location, StoreSettings } from '../lib/types'
+import type { Tenant, Location, StoreSettings, StorefrontConfig } from '../lib/types'
 
 interface TenantState {
   tenant:       Tenant | null
   locations:    Location[]
   settings:     StoreSettings | null
+  storefrontConfig: StorefrontConfig | null
   isLoading:    boolean
   fetchTenantData: (tenantId: string) => Promise<void>
   updateSettings:  (updates: Partial<StoreSettings>) => Promise<{ error: string | null }>
+  updateTenant:    (updates: Partial<Tenant>) => Promise<{ error: string | null }>
+  updateStorefrontConfig: (updates: Partial<StorefrontConfig>) => Promise<{ error: string | null }>
   addLocation:     (location: Omit<Location, 'id' | 'tenant_id' | 'is_active'>) => Promise<{ error: string | null }>
   updateLocation:  (id: string, updates: Partial<Location>) => Promise<{ error: string | null }>
   deleteLocation:  (id: string) => Promise<{ error: string | null }>
@@ -18,6 +21,7 @@ export const useTenantStore = create<TenantState>((set, get) => ({
   tenant: null,
   locations: [],
   settings: null,
+  storefrontConfig: null,
   isLoading: false,
 
   fetchTenantData: async (tenantId: string) => {
@@ -43,10 +47,18 @@ export const useTenantStore = create<TenantState>((set, get) => ({
         .eq('tenant_id', tenantId)
         .maybeSingle()
 
+      // 4. Fetch Storefront Config
+      const { data: storefrontConfigData } = await supabase
+        .from('storefront_config')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .maybeSingle()
+
       set({
         tenant: tenantData || null,
         locations: locationsData || [],
         settings: settingsData || null,
+        storefrontConfig: storefrontConfigData || null,
       })
     } catch (err) {
       console.error('Error fetching tenant data:', err)
@@ -82,6 +94,54 @@ export const useTenantStore = create<TenantState>((set, get) => ({
       return { error: null }
     } catch (err: any) {
       return { error: err.message || 'An error occurred updating settings' }
+    }
+  },
+
+  updateTenant: async (updates) => {
+    const { tenant } = get()
+    if (!tenant) return { error: 'No active tenant loaded' }
+
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .update(updates)
+        .eq('id', tenant.id)
+
+      if (error) return { error: error.message }
+      set({ tenant: { ...tenant, ...updates } as Tenant })
+      return { error: null }
+    } catch (err: any) {
+      return { error: err.message || 'An error occurred updating tenant profile' }
+    }
+  },
+
+  updateStorefrontConfig: async (updates) => {
+    const { storefrontConfig, tenant } = get()
+    if (!tenant) return { error: 'No active tenant loaded' }
+
+    try {
+      if (storefrontConfig) {
+        const { error } = await supabase
+          .from('storefront_config')
+          .update(updates)
+          .eq('tenant_id', tenant.id)
+
+        if (error) return { error: error.message }
+        set({ storefrontConfig: { ...storefrontConfig, ...updates } })
+      } else {
+        const newConfig = { tenant_id: tenant.id, ...updates }
+        const { data, error } = await supabase
+          .from('storefront_config')
+          .insert(newConfig)
+          .select()
+          .single()
+
+        if (error) return { error: error.message }
+        set({ storefrontConfig: data })
+      }
+      return { error: null }
+    } catch (err: any) {
+      return { error: err.message || 'An error occurred updating storefront configuration' }
     }
   },
 

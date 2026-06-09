@@ -9,6 +9,7 @@ export interface Tenant {
   state?:            string
   pincode?:          string
   logo_url?:         string
+  theme_id?:         string
   subscription_tier: 'Free' | 'Pro' | 'Growth' | 'Enterprise'
   is_active:         boolean
   created_at:        string
@@ -54,5 +55,23 @@ export interface StoreSettings {
   close_time?:      string
 }
 
+export interface StorefrontConfig {
+  id:              string
+  tenant_id:       string
+  theme_id:        string
+  primary_color:   string
+  accent_color:    string
+  font_heading:    string
+  font_body:       string
+  banner_text?:    string
+  hero_text?:      string
+  hero_image_url?: string
+  show_prices:     boolean
+  allow_orders:    boolean
+  show_blog:       boolean
+  created_at:      string
+}
+
 export type RoleBadgeVariant = StaffAccount['role']
 export type SubscriptionTier = Tenant['subscription_tier']
+

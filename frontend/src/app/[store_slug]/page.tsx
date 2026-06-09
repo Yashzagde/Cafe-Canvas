@@ -3,6 +3,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import WelcomeNotificationPopup from '@/components/WelcomeNotificationPopup';
+import HeroCarousel from '@/components/HeroCarousel';
+import { loadTenantTheme } from '@/lib/theme-engine';
 import { 
   Coffee, 
   ShoppingBag, 
@@ -157,6 +160,14 @@ export default function Storefront() {
     if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
     return null;
   };
+
+  // Load tenant theme dynamically
+  useEffect(() => {
+    if (tenant) {
+      const themeId = (tenant as any).theme_id || 'theme-02';
+      loadTenantTheme(themeId).catch(console.error);
+    }
+  }, [tenant]);
 
   useEffect(() => {
     async function fetchData() {
@@ -644,28 +655,20 @@ export default function Storefront() {
         </div>
       )}
 
-      {/* Header Banner */}
-      <div className="h-56 relative bg-stone-900 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#23120b] via-[#23120b]/40 to-transparent z-10"></div>
-        <img 
-          src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80" 
-          alt="Cover Image" 
-          className="w-full h-full object-cover opacity-85"
-        />
-        <div className="absolute bottom-5 left-6 right-6 z-20 flex justify-between items-end">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black text-[#fcfaf4] tracking-tight flex items-center gap-2">
-              {tenant.name} <Sparkles size={20} className="text-[#ca8a04] animate-pulse" />
-            </h1>
-            <p className="text-[#fcfaf4]/85 text-xs font-semibold flex items-center gap-1.5 mt-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              {t.openStatus}
-            </p>
+      {/* Header Banner / Hero Carousel */}
+      <div className="relative mb-6">
+        <HeroCarousel cafeName={tenant.name} />
+        
+        {/* Controls Overlay */}
+        <div className="absolute top-4 left-6 right-6 z-20 flex justify-between items-center">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4A3728]/45 backdrop-blur-md border border-white/10 text-xs font-bold text-white shadow-sm">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>{t.openStatus}</span>
           </div>
           
           <button 
             onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#fcfaf4]/10 backdrop-blur-md border border-[#fcfaf4]/20 text-xs font-bold text-[#fcfaf4] hover:bg-[#fcfaf4]/20 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4A3728]/45 backdrop-blur-md border border-white/10 text-xs font-bold text-white hover:bg-[#4A3728]/60 transition-all shadow-sm"
           >
             <Globe size={13} />
             {lang === 'en' ? 'हिंदी' : 'English'}
@@ -1211,6 +1214,9 @@ export default function Storefront() {
       <footer className="text-center py-12 text-[10px] text-stone-500/80">
         <div>{t.powered} · {tenant.name}</div>
       </footer>
+
+      {/* Pre-Visit Notification System */}
+      <WelcomeNotificationPopup cafeName={tenant.name} />
     </div>
   );
 }
