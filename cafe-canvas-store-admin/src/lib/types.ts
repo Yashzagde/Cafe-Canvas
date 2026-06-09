@@ -64,7 +64,6 @@ export interface StorefrontConfig {
   font_heading:    string
   font_body:       string
   banner_text?:    string
-  hero_text?:      string
   hero_image_url?: string
   show_prices:     boolean
   allow_orders:    boolean
