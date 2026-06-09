@@ -110,17 +110,20 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'bg-canvas-brown text-canvas-cream flex flex-col justify-between select-none transition-all duration-200 ease-in-out shrink-0',
+        'bg-canvas-sidebar text-canvas-cream flex flex-col justify-between select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0',
         sidebarCollapsed ? 'w-[68px]' : 'w-60'
       )}
+      style={{
+        background: 'linear-gradient(180deg, #4A3728 0%, #3D2B1F 100%)',
+      }}
     >
       {/* ── Top: Logo & Branding ──────────────────────────────────── */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <div className={cn(
-          'border-b border-canvas-brown_mid/20 flex items-center shrink-0',
+          'border-b border-white/8 flex items-center shrink-0',
           sidebarCollapsed ? 'p-3 justify-center' : 'p-5 gap-3'
         )}>
-          <div className="w-10 h-10 bg-canvas-brown_mid/20 rounded-full flex items-center justify-center border border-canvas-gold/30 shadow-md shadow-black/10 shrink-0 overflow-hidden">
+          <div className="w-10 h-10 bg-white/8 rounded-xl flex items-center justify-center border border-canvas-rose/20 shadow-lg shadow-black/10 shrink-0 overflow-hidden">
             <img src={logoUrl} alt="Cafe Canvas Logo" className="w-8 h-8 object-contain" />
           </div>
           {!sidebarCollapsed && (
@@ -128,7 +131,7 @@ export function Sidebar() {
               <h2 className="font-display text-base font-bold tracking-wide text-canvas-cream truncate">
                 Cafe Canvas
               </h2>
-              <span className="text-[9px] font-body text-canvas-gold tracking-widest uppercase">
+              <span className="text-[9px] font-body text-canvas-rose tracking-widest uppercase">
                 Store Admin
               </span>
             </div>
@@ -140,7 +143,7 @@ export function Sidebar() {
           {NAV_SECTIONS.map((section) => (
             <div key={section.title}>
               {!sidebarCollapsed && (
-                <p className="px-3 mb-1.5 text-[9px] font-extrabold uppercase tracking-[0.15em] text-canvas-brown_light">
+                <p className="px-3 mb-1.5 text-[9px] font-extrabold uppercase tracking-[0.15em] text-canvas-tan/60">
                   {section.title}
                 </p>
               )}
@@ -156,17 +159,21 @@ export function Sidebar() {
                       onClick={() => setScreen(item.id)}
                       title={sidebarCollapsed ? item.label : undefined}
                       className={cn(
-                        'w-full flex items-center gap-2.5 rounded-lg text-xs font-semibold transition-all duration-150 relative',
+                        'w-full flex items-center gap-2.5 rounded-xl text-xs font-semibold transition-all duration-200 relative group',
                         sidebarCollapsed ? 'px-3 py-2.5 justify-center' : 'px-3 py-2.5',
                         isActive
-                          ? 'bg-canvas-terracotta text-white shadow-sm shadow-canvas-terra_dark/20'
-                          : 'text-canvas-cream/70 hover:bg-canvas-brown_mid/20 hover:text-white'
+                          ? 'bg-canvas-rose/20 text-white shadow-sm border border-canvas-rose/15'
+                          : 'text-canvas-cream/60 hover:bg-white/6 hover:text-canvas-cream/90 border border-transparent'
                       )}
                     >
+                      {/* Active indicator bar */}
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-canvas-rose" />
+                      )}
                       <Icon
                         className={cn(
-                          'w-4 h-4 shrink-0',
-                          isActive ? 'text-canvas-gold' : 'text-canvas-gold/70'
+                          'w-4 h-4 shrink-0 transition-colors',
+                          isActive ? 'text-canvas-rose' : 'text-canvas-tan/60 group-hover:text-canvas-rose/70'
                         )}
                       />
                       {!sidebarCollapsed && (
@@ -178,7 +185,7 @@ export function Sidebar() {
                         </>
                       )}
                       {sidebarCollapsed && badgeCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-canvas-error animate-pulse-dot" />
+                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-canvas-rose animate-pulse-dot" />
                       )}
                     </button>
                   )
@@ -191,7 +198,7 @@ export function Sidebar() {
         {/* ── Collapse Toggle ─────────────────────────────────────── */}
         <button
           onClick={toggleSidebar}
-          className="mx-2 mb-2 p-2 rounded-lg hover:bg-canvas-brown_mid/20 text-canvas-cream/50 hover:text-canvas-cream transition-colors flex items-center justify-center"
+          className="mx-2 mb-2 p-2 rounded-xl hover:bg-white/6 text-canvas-cream/40 hover:text-canvas-cream transition-all duration-200 flex items-center justify-center"
           title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {sidebarCollapsed ? (
@@ -204,17 +211,17 @@ export function Sidebar() {
 
       {/* ── Bottom: Profile & Logout ──────────────────────────────── */}
       <div className={cn(
-        'border-t border-canvas-brown_mid/20 bg-canvas-brown_mid/10 shrink-0',
+        'border-t border-white/8 bg-black/10 shrink-0',
         sidebarCollapsed ? 'p-2' : 'p-3'
       )}>
         {sidebarCollapsed ? (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-canvas-gold text-canvas-brown font-bold flex items-center justify-center text-[10px] shadow-inner">
+            <div className="w-8 h-8 rounded-xl bg-canvas-rose/20 text-canvas-rose font-bold flex items-center justify-center text-[10px]">
               {getInitials()}
             </div>
             <button
               onClick={() => signOut()}
-              className="p-1.5 rounded hover:bg-red-500/10 text-canvas-cream/50 hover:text-red-400 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-red-500/15 text-canvas-cream/40 hover:text-red-400 transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -223,21 +230,21 @@ export function Sidebar() {
         ) : (
           <>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-canvas-gold text-canvas-brown font-bold flex items-center justify-center text-[10px] shadow-inner shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-canvas-rose/20 text-canvas-rose font-bold flex items-center justify-center text-[10px] shrink-0">
                 {getInitials()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-bold truncate text-white">
+                <p className="text-[11px] font-bold truncate text-canvas-cream/90">
                   {user?.email || 'Store Manager'}
                 </p>
-                <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold rounded bg-canvas-gold/15 text-canvas-gold border border-canvas-gold/20 mt-0.5 uppercase tracking-wider">
+                <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold rounded-md bg-canvas-rose/10 text-canvas-rose border border-canvas-rose/15 mt-0.5 uppercase tracking-wider">
                   {getRoleLabel()}
                 </span>
               </div>
             </div>
             <button
               onClick={() => signOut()}
-              className="mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-transparent hover:bg-red-500/10 border border-canvas-cream/10 hover:border-red-500/30 text-[11px] font-semibold text-canvas-cream/60 hover:text-red-400 transition-colors"
+              className="mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-transparent hover:bg-red-500/10 border border-white/8 hover:border-red-500/25 text-[11px] font-semibold text-canvas-cream/50 hover:text-red-400 transition-all duration-200"
             >
               <LogOut className="w-3 h-3" />
               Sign Out

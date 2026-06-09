@@ -13,12 +13,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary:   'bg-canvas-terracotta hover:bg-canvas-terra_light active:bg-canvas-terra_dark text-white shadow-md shadow-canvas-terracotta/10',
-  secondary: 'bg-canvas-gold hover:bg-canvas-gold_light active:bg-canvas-gold text-canvas-brown shadow-sm',
-  ghost:     'bg-transparent hover:bg-canvas-surface text-canvas-brown_mid hover:text-canvas-brown',
+  primary:   'bg-canvas-rose hover:bg-canvas-rose_dark active:bg-canvas-rose_deep text-canvas-brown shadow-md shadow-canvas-rose/15',
+  secondary: 'bg-canvas-tan hover:bg-canvas-tan_dark active:bg-canvas-tan text-canvas-brown shadow-sm shadow-canvas-tan/10',
+  ghost:     'bg-transparent hover:bg-canvas-surface/50 text-canvas-brown_mid hover:text-canvas-brown',
   danger:    'bg-canvas-error hover:bg-red-600 active:bg-red-700 text-white shadow-sm',
-  success:   'bg-canvas-sage hover:bg-green-600 active:bg-green-700 text-white shadow-sm',
-  outline:   'bg-transparent border border-canvas-border hover:bg-canvas-surface text-canvas-brown',
+  success:   'bg-canvas-mint hover:bg-canvas-mint_dark active:bg-canvas-mint_deep text-canvas-brown shadow-sm shadow-canvas-mint/15',
+  outline:   'bg-transparent border border-canvas-border hover:bg-canvas-highlight hover:border-canvas-rose/30 text-canvas-brown',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -34,7 +34,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          'inline-flex items-center justify-center rounded-lg font-bold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-canvas-terracotta/30 disabled:opacity-50 disabled:cursor-not-allowed select-none',
+          'inline-flex items-center justify-center rounded-xl font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-canvas-rose/30 disabled:opacity-50 disabled:cursor-not-allowed select-none',
           variantStyles[variant],
           sizeStyles[size],
           fullWidth && 'w-full',

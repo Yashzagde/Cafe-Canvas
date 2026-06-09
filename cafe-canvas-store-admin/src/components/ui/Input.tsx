@@ -30,8 +30,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full px-4 py-2.5 rounded-lg border bg-white text-sm text-canvas-brown font-semibold',
-              'focus:border-canvas-terracotta focus:ring-1 focus:ring-canvas-terracotta/20 outline-none transition-all',
+              'w-full px-4 py-2.5 rounded-xl border bg-canvas-highlight text-sm text-canvas-brown font-semibold',
+              'focus:border-canvas-rose focus:ring-1 focus:ring-canvas-rose/20 outline-none transition-all',
               'placeholder-canvas-brown_light',
               icon ? 'pl-10' : '',
               suffix ? 'pr-10' : '',
@@ -76,8 +76,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           id={textareaId}
           className={cn(
-            'w-full px-4 py-2.5 rounded-lg border bg-white text-sm text-canvas-brown font-semibold',
-            'focus:border-canvas-terracotta focus:ring-1 focus:ring-canvas-terracotta/20 outline-none transition-all',
+            'w-full px-4 py-2.5 rounded-xl border bg-canvas-highlight text-sm text-canvas-brown font-semibold',
+            'focus:border-canvas-rose focus:ring-1 focus:ring-canvas-rose/20 outline-none transition-all',
             'placeholder-canvas-brown_light resize-none',
             error
               ? 'border-canvas-error focus:border-canvas-error focus:ring-canvas-error/20'

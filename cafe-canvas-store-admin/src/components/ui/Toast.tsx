@@ -15,17 +15,17 @@ interface Toast {
 }
 
 const icons: Record<ToastType, React.ReactNode> = {
-  success: <CheckCircle className="w-4 h-4 text-canvas-sage" />,
+  success: <CheckCircle className="w-4 h-4 text-canvas-mint_deep" />,
   error:   <AlertCircle className="w-4 h-4 text-canvas-error" />,
-  info:    <Info className="w-4 h-4 text-canvas-teal" />,
-  warning: <AlertTriangle className="w-4 h-4 text-canvas-gold" />,
+  info:    <Info className="w-4 h-4 text-canvas-mint_deep" />,
+  warning: <AlertTriangle className="w-4 h-4 text-canvas-tan_dark" />,
 }
 
 const bgStyles: Record<ToastType, string> = {
-  success: 'border-canvas-sage/30 bg-green-50',
-  error:   'border-canvas-error/30 bg-red-50',
-  info:    'border-canvas-teal/30 bg-teal-50',
-  warning: 'border-canvas-gold/30 bg-amber-50',
+  success: 'border-canvas-mint/30 bg-canvas-mint/10',
+  error:   'border-canvas-error/30 bg-canvas-rose/15',
+  info:    'border-canvas-mint/25 bg-canvas-mint/8',
+  warning: 'border-canvas-tan/30 bg-canvas-surface/60',
 }
 
 // ─── Global Toast State ──────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ function ToastItem({ t, onDismiss }: { t: Toast; onDismiss: (id: string) => void
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-4 rounded-lg border shadow-lg animate-slide-up max-w-sm',
+        'flex items-start gap-3 p-4 rounded-xl border shadow-boutique-md animate-slide-up max-w-sm backdrop-blur-sm',
         bgStyles[t.type]
       )}
     >

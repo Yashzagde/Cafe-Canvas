@@ -50,7 +50,7 @@ export function DataTable<T>({
 
   if (loading) {
     return (
-      <div className="bg-canvas-surface rounded-xl border border-canvas-border overflow-hidden">
+      <div className="bg-canvas-highlight rounded-xl border border-canvas-border/50 overflow-hidden shadow-card">
         <div className="animate-pulse p-6 space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-10 bg-canvas-border/40 rounded-lg" />
@@ -61,7 +61,7 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="bg-canvas-surface rounded-xl border border-canvas-border overflow-hidden">
+    <div className="bg-canvas-highlight rounded-xl border border-canvas-border/50 overflow-hidden shadow-card">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs font-semibold text-canvas-brown border-collapse">
           <thead>
@@ -84,7 +84,7 @@ export function DataTable<T>({
                       <ArrowUpDown
                         className={cn(
                           'w-3 h-3 transition-transform',
-                          sortKey === col.key ? 'text-canvas-terracotta' : 'text-canvas-brown_light',
+                          sortKey === col.key ? 'text-canvas-rose' : 'text-canvas-brown_light',
                           sortKey === col.key && sortDir === 'desc' && 'rotate-180'
                         )}
                       />
@@ -112,8 +112,8 @@ export function DataTable<T>({
                       'transition-colors',
                       onRowClick && 'cursor-pointer',
                       selectedKey === rowKey
-                        ? 'bg-canvas-terracotta/5 border-l-2 border-l-canvas-terracotta'
-                        : 'hover:bg-canvas-cream/30'
+                        ? 'bg-canvas-rose/5 border-l-2 border-l-canvas-rose'
+                        : 'hover:bg-canvas-cream/50'
                     )}
                   >
                     {columns.map((col) => (

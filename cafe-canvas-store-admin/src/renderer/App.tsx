@@ -123,10 +123,10 @@ export default function App() {
   if (authLoading) {
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-canvas-cream font-body select-none">
-        <div className="w-16 h-16 bg-canvas-terracotta rounded-2xl flex items-center justify-center border-2 border-canvas-gold shadow-lg mb-6 animate-bounce-soft">
-          <span className="font-display text-2xl font-bold text-white tracking-widest">CC</span>
+        <div className="w-16 h-16 bg-canvas-rose/20 rounded-2xl flex items-center justify-center border-2 border-canvas-rose/30 shadow-boutique-md mb-6 animate-float">
+          <span className="font-display text-2xl font-bold text-canvas-brown tracking-widest">CC</span>
         </div>
-        <div className="h-8 w-8 animate-spin rounded-full border-3 border-canvas-champagne border-t-canvas-terracotta mb-4" />
+        <div className="h-8 w-8 animate-spin rounded-full border-3 border-canvas-surface border-t-canvas-rose mb-4" />
         <p className="text-canvas-brown_mid font-semibold text-sm">Resolving session...</p>
       </div>
     )

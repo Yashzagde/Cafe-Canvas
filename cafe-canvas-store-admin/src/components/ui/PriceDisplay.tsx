@@ -55,7 +55,7 @@ export function GSTBreakdown({ subtotal, cgst, sgst, total, discount, className 
         <PriceDisplay paise={subtotal} size="sm" />
       </div>
       {discount !== undefined && discount > 0 && (
-        <div className="flex justify-between text-canvas-sage">
+        <div className="flex justify-between text-canvas-mint_deep">
           <span>Discount</span>
           <span>-{formatINR(discount)}</span>
         </div>
@@ -68,7 +68,7 @@ export function GSTBreakdown({ subtotal, cgst, sgst, total, discount, className 
         <span>SGST (2.5%)</span>
         <PriceDisplay paise={sgst} size="sm" />
       </div>
-      <div className="flex justify-between pt-2 border-t border-canvas-border text-canvas-brown font-extrabold text-sm">
+      <div className="flex justify-between pt-2 border-t border-canvas-border/50 text-canvas-brown font-extrabold text-sm">
         <span>Total</span>
         <PriceDisplay paise={total} size="md" />
       </div>

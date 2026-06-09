@@ -14,7 +14,7 @@ export function Skeleton({ className }: SkeletonProps) {
 
 export function SkeletonCard() {
   return (
-    <div className="bg-canvas-surface rounded-xl border border-canvas-border p-6 space-y-4">
+    <div className="bg-canvas-highlight rounded-xl border border-canvas-border/40 p-6 space-y-4 shadow-card">
       <Skeleton className="h-4 w-1/3" />
       <Skeleton className="h-8 w-1/2" />
       <div className="space-y-2">
@@ -27,7 +27,7 @@ export function SkeletonCard() {
 
 export function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
   return (
-    <div className="bg-canvas-surface rounded-xl border border-canvas-border overflow-hidden">
+    <div className="bg-canvas-highlight rounded-xl border border-canvas-border/40 overflow-hidden shadow-card">
       {/* Header */}
       <div className="flex gap-4 p-4 border-b border-canvas-border bg-canvas-cream/50">
         {Array.from({ length: cols }).map((_, i) => (
@@ -50,7 +50,7 @@ export function SkeletonStats({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-canvas-surface rounded-xl border border-canvas-border p-6 space-y-3">
+        <div key={i} className="bg-canvas-highlight rounded-xl border border-canvas-border/40 p-6 space-y-3 shadow-card">
           <Skeleton className="h-3 w-1/3" />
           <Skeleton className="h-8 w-1/2" />
           <Skeleton className="h-2 w-2/3" />
