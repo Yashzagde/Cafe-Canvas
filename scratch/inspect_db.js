@@ -12,13 +12,12 @@ const sql = postgres(dbUrl, { ssl: 'require' });
 
 async function check() {
   try {
-    const columns = await sql`
-      SELECT column_name, data_type 
-      FROM information_schema.columns 
-      WHERE table_name = 'order_items'
+    const tenants = await sql`
+      SELECT id, name, slug, public_id
+      FROM tenants
     `;
-    console.log("ORDER_ITEMS COLUMNS:");
-    console.table(columns);
+    console.log("TENANTS WITH PUBLIC_ID:");
+    console.log(tenants);
   } catch (err) {
     console.error(err);
   } finally {
