@@ -478,9 +478,9 @@ const PRESETS: StoreTheme[] = [
   }
 ];
 
-export default function StorefrontEditor() {
+export default function StorefrontEditor({ tenantPublicId, tenantPrivateId }: { tenantPublicId: string; tenantPrivateId: string }) {
   const { config, setConfig, updateField, isDirty, clearDirty } = useStorefrontEditorStore();
-  const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'social'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'social' | 'connection'>('branding');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [saving, setSaving] = useState(false);
   const [themeCategory, setThemeCategory] = useState<string>('All');
@@ -588,6 +588,15 @@ export default function StorefrontEditor() {
           >
             <Phone size={14} />
             <span>Integrations</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('connection')}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === 'connection' ? 'bg-[#f1f5f9] text-[#d97706]' : 'text-[#1e293b]/50 hover:text-[#1e293b]'
+            }`}
+          >
+            <ShieldAlert size={14} />
+            <span>Store IDs</span>
           </button>
         </div>
 
@@ -819,6 +828,83 @@ export default function StorefrontEditor() {
                 </div>
               </div>
             </>
+          )}
+
+          {activeTab === 'connection' && (
+            <div className="space-y-6">
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[#d97706] text-xs leading-relaxed space-y-1">
+                <p className="font-bold flex items-center gap-1.5">🛎️ Developer Mode & Linking Reference</p>
+                <p className="opacity-90">Use the Public ID to link your storefront subdomain, Store Admin Electron app, and Staff Mobile APK. Keep the Private ID hidden to secure tenant data isolation.</p>
+              </div>
+
+              {/* Public Primary ID */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                  Public Primary ID (Subdomain & APK Sync)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={tenantPublicId || 'Unavailable'}
+                    className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(tenantPublicId);
+                      alert('Public ID copied!');
+                    }}
+                    className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl cursor-pointer transition-all"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              {/* Private Primary ID */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                  Private Primary ID (Restricted Database Key)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={tenantPrivateId || 'Unavailable'}
+                    className="flex-1 px-4 py-3 bg-[#fdfcf7] border border-[#e2e8f0]/40 text-stone-400 rounded-xl text-xs font-mono select-all focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(tenantPrivateId);
+                      alert('Private ID copied!');
+                    }}
+                    className="px-4 py-2.5 border border-[#e2e8f0] text-stone-500 hover:bg-stone-50 text-xs font-bold rounded-xl cursor-pointer transition-all"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              {/* Storefront Subdomain URL */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                  Storefront Subdomain Resolve Link
+                </label>
+                <div className="p-3.5 bg-[#f8fafc] border border-slate-200/80 rounded-2xl flex items-center justify-between gap-3">
+                  <span className="text-xs font-mono text-slate-600 truncate">
+                    {`http://${tenantPublicId || 'store'}.cafecanvas.bar`}
+                  </span>
+                  <a
+                    href={`http://${tenantPublicId || 'store'}.cafecanvas.bar`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-bold text-[#d97706] hover:underline whitespace-nowrap"
+                  >
+                    Open Link ↗
+                  </a>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

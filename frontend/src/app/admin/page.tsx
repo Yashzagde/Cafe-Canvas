@@ -124,6 +124,7 @@ export default function CafeCanvaAdmin() {
   const [loading, setLoading] = useState(true);
   const [tenantId, setTenantId] = useState("");
   const [tenantName, setTenantName] = useState("My Cafe");
+  const [publicId, setPublicId] = useState("");
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
@@ -190,11 +191,14 @@ export default function CafeCanvaAdmin() {
       // Fetch tenant metadata
       const { data: tenData } = await supabase
         .from('tenants')
-        .select('name')
+        .select('name, public_id')
         .eq('id', activeTenantId)
         .maybeSingle();
 
-      if (tenData) setTenantName(tenData.name);
+      if (tenData) {
+        setTenantName(tenData.name);
+        setPublicId(tenData.public_id || "");
+      }
 
       // Fetch menu categories
       const { data: catData } = await supabase
@@ -518,7 +522,7 @@ export default function CafeCanvaAdmin() {
               {page === "staff" && <StaffManager branchId={activeBranch?.id || ''} />}
               {page === "attendance" && <AttendanceTab branchId={activeBranch?.id || ''} />}
               {page === "feedback" && <FeedbackTab branchId={activeBranch?.id || ''} />}
-              {page === "storefront" && <StorefrontEditor />}
+              {page === "storefront" && <StorefrontEditor tenantPublicId={publicId} tenantPrivateId={tenantId} />}
               {page === "audit" && <AuditLogViewer />}
               {page === "activity" && <ActivityFeedTab />}
             </>

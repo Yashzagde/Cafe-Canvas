@@ -13,7 +13,8 @@ const migrationsDir = path.join(__dirname, 'supabase', 'migrations');
 const migrationFiles = [
   '001_clean_schema.sql',
   '002_rls_policies.sql',
-  '003_seed_data.sql'
+  '003_seed_data.sql',
+  '004_add_public_id.sql'
 ];
 
 async function run() {

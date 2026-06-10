@@ -68,13 +68,13 @@ export async function POST(req: NextRequest) {
     // Set temporary cookies
     const cookieStore = await cookies();
     cookieStore.set('customer_phone', phone, {
-      maxAge: 1800, // 30 minutes
+      maxAge: 86400, // 24 hours
       path: '/',
       httpOnly: false,
       sameSite: 'strict'
     });
     cookieStore.set('customer_tenant_id', tenantId, {
-      maxAge: 1800,
+      maxAge: 86400, // 24 hours
       path: '/',
       httpOnly: false,
       sameSite: 'strict'
@@ -139,7 +139,14 @@ export async function POST(req: NextRequest) {
       console.error('Failed to insert notification log:', notifErr.message);
     }
 
-    return NextResponse.json({ success: true, phone, visits });
+    // Fetch tenant's public_id
+    const { data: tenantObj } = await admin
+      .from('tenants')
+      .select('public_id')
+      .eq('id', tenantId)
+      .maybeSingle();
+
+    return NextResponse.json({ success: true, phone, visits, publicId: tenantObj?.public_id || null });
   }
 
   if (action === 'verify') {
@@ -176,7 +183,7 @@ export async function POST(req: NextRequest) {
     // Set temporary 30-minute cookies
     const cookieStore = await cookies();
     cookieStore.set('customer_phone', phone, {
-      maxAge: 1800, // 30 minutes in seconds
+      maxAge: 86400, // 24 hours in seconds
       path: '/',
       httpOnly: false, // Accessible to storefront client
       sameSite: 'strict'
@@ -184,7 +191,7 @@ export async function POST(req: NextRequest) {
 
     if (tenantId) {
       cookieStore.set('customer_tenant_id', tenantId, {
-        maxAge: 1800,
+        maxAge: 86400, // 24 hours in seconds
         path: '/',
         httpOnly: false,
         sameSite: 'strict'

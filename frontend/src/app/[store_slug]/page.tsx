@@ -27,6 +27,7 @@ interface Tenant {
   id: string;
   name: string;
   subdomain: string;
+  public_id?: string;
 }
 
 interface MenuCategory {
@@ -134,6 +135,9 @@ export default function Storefront() {
   const [customerPhone, setCustomerPhone] = useState<string | null>(null);
   const [customerProfile, setCustomerProfile] = useState<any | null>(null);
   const [offers, setOffers] = useState<any[]>([]);
+  const [previousOrders, setPreviousOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [staffCallCooldown, setStaffCallCooldown] = useState(0);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loginPhone, setLoginPhone] = useState('');
   const [loginOtp, setLoginOtp] = useState('');
@@ -177,11 +181,16 @@ export default function Storefront() {
         setErrorMsg(null);
 
         // 1. Resolve tenant
-        const { data: tenantData, error: tenantError } = await supabase
-          .from('tenants')
-          .select('id, name, slug')
-          .eq('slug', storeSlug)
-          .maybeSingle();
+        let query = supabase.from('tenants').select('id, name, slug, public_id');
+        const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(storeSlug);
+        
+        if (isUuid) {
+          query = query.eq('public_id', storeSlug);
+        } else {
+          query = query.eq('slug', storeSlug);
+        }
+
+        const { data: tenantData, error: tenantError } = await query.maybeSingle();
 
         if (tenantError) throw tenantError;
 
@@ -196,6 +205,7 @@ export default function Storefront() {
           id: tenantData.id,
           name: tenantData.name,
           subdomain: tenantData.slug,
+          public_id: tenantData.public_id
         });
 
         // 2. Fetch categories
@@ -281,6 +291,36 @@ export default function Storefront() {
             setCustomerName(cust.name);
           }
         }
+
+        // Fetch previous orders
+        setLoadingOrders(true);
+        try {
+          const { data: ords } = await supabase
+            .from('orders')
+            .select(`
+              id,
+              created_at,
+              status,
+              total,
+              notes,
+              order_items (
+                id,
+                item_name,
+                quantity,
+                unit_price
+              )
+            `)
+            .eq('tenant_id', tenant.id)
+            .eq('customer_phone', phoneVal)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+          setPreviousOrders(ords || []);
+        } catch (err) {
+          console.error("Failed to load previous orders:", err);
+        } finally {
+          setLoadingOrders(false);
+        }
       }
 
       // Fetch active offers
@@ -312,19 +352,21 @@ export default function Storefront() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'send',
-          phone: loginPhone,
+          action: 'quick_checkin',
+          phone: `+91${loginPhone}`,
           tenantId: tenant?.id
         })
       });
       const data = await res.json();
       if (data.success) {
-        setOtpSent(true);
+        setCustomerPhone(data.phone);
+        setIsLoginOpen(false);
+        setLoginPhone('');
       } else {
-        setOtpError(data.error || 'Failed to dispatch OTP.');
+        setOtpError(data.error || 'Failed to login.');
       }
     } catch (err) {
-      setOtpError('Failed to communicate with OTP service.');
+      setOtpError('Failed to communicate with login service.');
     } finally {
       setOtpLoading(false);
     }
@@ -373,7 +415,43 @@ export default function Storefront() {
     }
     setCustomerPhone(null);
     setCustomerProfile(null);
+    setPreviousOrders([]);
   };
+
+  const handleCallStaff = async () => {
+    if (!selectedTableId || !tenant) return;
+    if (staffCallCooldown > 0) return;
+    
+    try {
+      const tableObj = tables.find(t => t.id === selectedTableId);
+      const tableName = tableObj ? tableObj.name : 'Unknown';
+
+      const { error } = await supabase
+        .from('notification_log')
+        .insert({
+          tenant_id: tenant.id,
+          type: 'staff_call',
+          title: '🛎️ Staff Assistance Requested',
+          body: `Table ${tableName} has requested staff assistance.`,
+          read: false
+        });
+
+      if (error) throw error;
+      
+      alert('🛎️ Staff has been called to your table!');
+      setStaffCallCooldown(60); // 60 seconds cooldown
+    } catch (err: any) {
+      console.error('Call staff failed:', err.message);
+      alert('Failed to call staff. Please try again.');
+    }
+  };
+
+  useEffect(() => {
+    if (staffCallCooldown > 0) {
+      const timer = setTimeout(() => setStaffCallCooldown(p => p - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [staffCallCooldown]);
 
   const handleSubmitFeedback = async () => {
     if (!tenant) return;
@@ -726,6 +804,45 @@ export default function Storefront() {
                       </div>
                       <div className="shrink-0 bg-[#d97706] text-white px-2.5 py-1 rounded-xl text-xs font-black">
                         {o.discount_percent}% OFF
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Previous Orders */}
+            {previousOrders.length > 0 && (
+              <div className="border-t border-[#e2e8f0]/60 pt-4 space-y-3">
+                <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#1e293b]/40">Your Previous Orders</span>
+                <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                  {previousOrders.map(order => (
+                    <div key={order.id} className="bg-stone-50 border border-stone-100 rounded-2xl p-3 space-y-2 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] text-stone-400 font-bold">
+                          {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                          order.status === 'served' || order.status === 'completed'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : order.status === 'cancelled'
+                            ? 'bg-rose-50 text-rose-600'
+                            : 'bg-amber-50 text-amber-600'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {order.order_items?.map((item: any) => (
+                          <div key={item.id} className="flex justify-between text-stone-600">
+                            <span>{item.item_name} <span className="text-stone-400 font-medium">x{item.quantity}</span></span>
+                            <span>₹{(item.unit_price * item.quantity / 100).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between items-center border-t border-stone-100/60 pt-1.5 font-bold text-stone-800">
+                        <span>Total Paid</span>
+                        <span>₹{(order.total / 100).toFixed(2)}</span>
                       </div>
                     </div>
                   ))}
@@ -1226,6 +1343,22 @@ export default function Storefront() {
 
       {/* Pre-Visit Notification System */}
       <WelcomeNotificationPopup cafeName={tenant.name} tenantId={tenant.id} />
+
+      {/* Floating Call Staff Action Button */}
+      {selectedTableId && (
+        <button
+          onClick={handleCallStaff}
+          disabled={staffCallCooldown > 0}
+          className={`fixed bottom-6 right-6 z-40 p-4 rounded-full shadow-2xl flex items-center gap-2 font-extrabold text-xs tracking-wider uppercase transition-all duration-300 transform active:scale-95 cursor-pointer border ${
+            staffCallCooldown > 0
+              ? 'bg-stone-300 text-stone-500 border-stone-200 cursor-not-allowed'
+              : 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400 hover:shadow-amber-500/20'
+          }`}
+        >
+          <span>🛎️</span>
+          <span>{staffCallCooldown > 0 ? `Called (${staffCallCooldown}s)` : 'Call Staff'}</span>
+        </button>
+      )}
     </div>
   );
 }
