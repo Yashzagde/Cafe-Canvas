@@ -181,7 +181,15 @@ export default function Storefront() {
         setErrorMsg(null);
 
         // 1. Resolve tenant
-        let query = supabase.from('tenants').select('id, name, slug, public_id');
+        let query = supabase.from('tenants').select(`
+          id,
+          name,
+          slug,
+          public_id,
+          storefront_config (
+            theme_id
+          )
+        `);
         const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(storeSlug);
         
         if (isUuid) {
@@ -200,13 +208,19 @@ export default function Storefront() {
           return;
         }
 
+        const configData = (tenantData as any).storefront_config;
+        const resolvedThemeId = Array.isArray(configData)
+          ? configData[0]?.theme_id
+          : configData?.theme_id;
+
         // Map slug to subdomain for UI compatibility if needed
         setTenant({
           id: tenantData.id,
           name: tenantData.name,
           subdomain: tenantData.slug,
-          public_id: tenantData.public_id
-        });
+          public_id: tenantData.public_id,
+          theme_id: resolvedThemeId || 'theme-02'
+        } as any);
 
         // 2. Fetch categories
         const { data: catData, error: catError } = await supabase
@@ -659,8 +673,8 @@ export default function Storefront() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] flex flex-col justify-center items-center gap-4">
-        <Coffee className="w-12 h-12 text-[#e05e35] animate-spin" />
+      <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center gap-4">
+        <Coffee className="w-12 h-12 text-brand animate-spin" />
         <span className="font-extrabold text-sm tracking-widest uppercase opacity-75">Loading Menu Canvas...</span>
       </div>
     );
@@ -668,18 +682,18 @@ export default function Storefront() {
 
   if (!tenant) {
     return (
-      <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] flex flex-col justify-center items-center p-6 text-center">
-        <div className="max-w-md bg-white p-8 rounded-3xl border border-[#eae5d8] shadow-md space-y-6">
-          <div className="w-16 h-16 bg-[#fbeee7] rounded-2xl flex items-center justify-center text-[#e05e35] mx-auto">
+      <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-6 text-center">
+        <div className="max-w-md bg-card-bg p-8 rounded-3xl border border-border-color shadow-md space-y-6">
+          <div className="w-16 h-16 bg-brand-light rounded-2xl flex items-center justify-center text-brand mx-auto">
             <Coffee size={32} />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-[#4a2d22]">Store Not Found</h1>
-          <p className="text-sm text-stone-500 leading-relaxed">
+          <h1 className="text-2xl font-black tracking-tight text-foreground">Store Not Found</h1>
+          <p className="text-sm text-foreground/60 leading-relaxed">
             The restaurant store you are trying to access does not exist or has been disabled. Please check the URL or contact the owner.
           </p>
           <a
             href="https://cafecanvas.bar"
-            className="inline-block bg-[#e05e35] text-[#fcfaf4] font-extrabold px-6 py-3.5 rounded-xl hover:opacity-90 transition-all text-xs tracking-wider uppercase shadow-md"
+            className="inline-block bg-brand text-[#fcfaf4] font-extrabold px-6 py-3.5 rounded-xl hover:opacity-90 transition-all text-xs tracking-wider uppercase shadow-md"
           >
             Go to CafeCanva Home
           </a>
@@ -690,8 +704,8 @@ export default function Storefront() {
 
   if (menuItems.length === 0) {
     return (
-      <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] flex flex-col justify-between relative overflow-x-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#e05e35]/5 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="min-h-screen bg-background text-foreground flex flex-col justify-between relative overflow-x-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand/5 rounded-full blur-[120px] pointer-events-none"></div>
 
         <div className="h-56 relative bg-stone-900 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-t from-[#23120b] via-[#23120b]/40 to-transparent z-10"></div>
@@ -703,25 +717,25 @@ export default function Storefront() {
           <div className="absolute bottom-5 left-6 right-6 z-20 flex justify-between items-end">
             <div>
               <h1 className="text-2xl md:text-3xl font-black text-[#fcfaf4] tracking-tight flex items-center gap-2">
-                {tenant.name} <Sparkles size={20} className="text-[#ca8a04] animate-pulse" />
+                {tenant.name} <Sparkles size={20} className="text-accent animate-pulse" />
               </h1>
             </div>
           </div>
         </div>
 
         <main className="max-w-md mx-auto px-4 py-16 text-center flex-1 flex flex-col justify-center items-center gap-6 relative z-20">
-          <div className="w-16 h-16 bg-[#fbeee7] rounded-2xl flex items-center justify-center text-[#e05e35] mx-auto border border-[#e05e35]/10">
+          <div className="w-16 h-16 bg-brand-light rounded-2xl flex items-center justify-center text-brand mx-auto border border-brand/10">
             <Sparkles size={32} />
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-black tracking-tight text-[#4a2d22]">Menu Under Construction</h2>
-            <p className="text-stone-500 text-xs leading-relaxed px-4">
+            <h2 className="text-xl font-black tracking-tight text-foreground">Menu Under Construction</h2>
+            <p className="text-foreground/60 text-xs leading-relaxed px-4">
               We are working hard to set up our digital menu catalog. Please check back soon or ask our staff for assistance!
             </p>
           </div>
         </main>
 
-        <footer className="text-center py-8 text-[10px] text-stone-500/80">
+        <footer className="text-center py-8 text-[10px] text-foreground/60/80">
           <div>{t.powered} · {tenant.name}</div>
         </footer>
       </div>
@@ -729,7 +743,7 @@ export default function Storefront() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fcfaf4] text-[#4a2d22] pb-32 relative overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground pb-32 relative overflow-x-hidden">
       {/* Liquid Floating Background Gradients */}
       <div className="liquid-blob-1 top-10 left-10"></div>
       <div className="liquid-blob-2 top-1/3 right-10"></div>
@@ -748,14 +762,14 @@ export default function Storefront() {
         
         {/* Controls Overlay */}
         <div className="absolute top-4 left-6 right-6 z-20 flex justify-between items-center">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4A3728]/45 backdrop-blur-md border border-white/10 text-xs font-bold text-white shadow-sm">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground/20 backdrop-blur-md border border-white/10 text-xs font-bold text-white shadow-sm">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>{t.openStatus}</span>
           </div>
           
           <button 
             onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4A3728]/45 backdrop-blur-md border border-white/10 text-xs font-bold text-white hover:bg-[#4A3728]/60 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground/20 backdrop-blur-md border border-white/10 text-xs font-bold text-white hover:bg-foreground/30 transition-all shadow-sm"
           >
             <Globe size={13} />
             {lang === 'en' ? 'हिंदी' : 'English'}
@@ -766,20 +780,20 @@ export default function Storefront() {
       <main className="max-w-3xl mx-auto px-4 mt-6 relative z-20">
         {/* Loyalty Profile Section */}
         {customerPhone ? (
-          <div className="bg-[#ffffff] border border-amber-200 rounded-3xl p-5 shadow-lg space-y-4 mb-6 animate-fade-in">
-            <div className="flex justify-between items-center border-b border-[#e2e8f0]/60 pb-3">
+          <div className="bg-card-bg border border-brand/35 rounded-3xl p-5 shadow-lg space-y-4 mb-6 animate-fade-in">
+            <div className="flex justify-between items-center border-b border-border-color/60 pb-3">
               <div>
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#d97706]">Loyalty Profile</span>
-                <h4 className="font-extrabold text-sm text-[#1e293b]">{customerProfile?.name || 'Valued Guest'}</h4>
-                <p className="text-[10px] text-[#1e293b]/40 font-semibold">{customerPhone}</p>
+                <span className="text-[9px] uppercase tracking-wider font-extrabold text-brand">Loyalty Profile</span>
+                <h4 className="font-extrabold text-sm text-foreground">{customerProfile?.name || 'Valued Guest'}</h4>
+                <p className="text-[10px] text-foreground/40 font-semibold">{customerPhone}</p>
               </div>
               <div className="text-right flex flex-col items-end">
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#ca8a04]">Reward Points</span>
-                <p className="text-lg font-black text-[#ca8a04]">
+                <span className="text-[9px] uppercase tracking-wider font-extrabold text-accent">Reward Points</span>
+                <p className="text-lg font-black text-accent">
                   {Math.floor((customerProfile?.total_spent || 0) / 1000)} <span className="text-[10px] font-normal text-stone-400">pts</span>
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[9px] text-[#1e293b]/40 font-semibold">{customerProfile?.total_visits || 1} visits</span>
+                  <span className="text-[9px] text-foreground/40 font-semibold">{customerProfile?.total_visits || 1} visits</span>
                   <button 
                     onClick={handleLogoutCustomer} 
                     className="text-[9px] text-rose-600 font-extrabold hover:underline flex items-center gap-0.5"
@@ -794,15 +808,15 @@ export default function Storefront() {
             {/* Exclusive Offers */}
             {offers.length > 0 && (
               <div className="space-y-2">
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#1e293b]/40">Your Exclusive Offers</span>
+                <span className="text-[10px] uppercase tracking-wider font-extrabold text-foreground/40">Your Exclusive Offers</span>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   {offers.map(o => (
                     <div key={o.id} className="bg-amber-50/40 border border-amber-100/70 rounded-2xl p-3 flex justify-between items-center gap-3">
                       <div>
-                        <h5 className="font-bold text-xs text-[#d97706]">{o.title}</h5>
-                        <p className="text-[10px] text-[#1e293b]/60 mt-0.5">{o.description}</p>
+                        <h5 className="font-bold text-xs text-brand">{o.title}</h5>
+                        <p className="text-[10px] text-foreground/60 mt-0.5">{o.description}</p>
                       </div>
-                      <div className="shrink-0 bg-[#d97706] text-white px-2.5 py-1 rounded-xl text-xs font-black">
+                      <div className="shrink-0 bg-brand text-white px-2.5 py-1 rounded-xl text-xs font-black">
                         {o.discount_percent}% OFF
                       </div>
                     </div>
@@ -813,11 +827,11 @@ export default function Storefront() {
 
             {/* Previous Orders */}
             {previousOrders.length > 0 && (
-              <div className="border-t border-[#e2e8f0]/60 pt-4 space-y-3">
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#1e293b]/40">Your Previous Orders</span>
+              <div className="border-t border-border-color/60 pt-4 space-y-3">
+                <span className="text-[10px] uppercase tracking-wider font-extrabold text-foreground/40">Your Previous Orders</span>
                 <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                   {previousOrders.map(order => (
-                    <div key={order.id} className="bg-stone-50 border border-stone-100 rounded-2xl p-3 space-y-2 text-xs">
+                    <div key={order.id} className="bg-brand-light/25 border border-border-color/40 rounded-2xl p-3 space-y-2 text-xs">
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] text-stone-400 font-bold">
                           {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -840,7 +854,7 @@ export default function Storefront() {
                           </div>
                         ))}
                       </div>
-                      <div className="flex justify-between items-center border-t border-stone-100/60 pt-1.5 font-bold text-stone-800">
+                      <div className="flex justify-between items-center border-t border-border-color/40/60 pt-1.5 font-bold text-stone-800">
                         <span>Total Paid</span>
                         <span>₹{(order.total / 100).toFixed(2)}</span>
                       </div>
@@ -851,14 +865,14 @@ export default function Storefront() {
             )}
           </div>
         ) : (
-          <div className="bg-[#ffffff] border border-[#eae5d8] rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="bg-card-bg border border-border-color rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-              <h4 className="font-black text-sm text-[#4a2d22]">Unlock Special Loyalty Offers</h4>
-              <p className="text-stone-500 text-[11px] mt-0.5">Verify your WhatsApp number to check active discounts and points.</p>
+              <h4 className="font-black text-sm text-foreground">Unlock Special Loyalty Offers</h4>
+              <p className="text-foreground/60 text-[11px] mt-0.5">Verify your WhatsApp number to check active discounts and points.</p>
             </div>
             <button
               onClick={() => setIsLoginOpen(true)}
-              className="px-4 py-2 bg-[#d97706] hover:bg-[#b45309] text-white font-bold text-xs rounded-xl cursor-pointer transition-all whitespace-nowrap shadow-sm self-stretch sm:self-auto text-center"
+              className="px-4 py-2 bg-brand hover:bg-brand/90 text-white font-bold text-xs rounded-xl cursor-pointer transition-all whitespace-nowrap shadow-sm self-stretch sm:self-auto text-center"
             >
               Login / Verify
             </button>
@@ -871,8 +885,8 @@ export default function Storefront() {
             onClick={() => setActiveCatId('All')}
             className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-sm border transition-all ${
               activeCatId === 'All' 
-                ? 'bg-[#e05e35] text-[#fcfaf4] border-[#e05e35] scale-105' 
-                : 'bg-white/80 backdrop-blur-sm border-[#eae5d8] text-[#4a2d22] hover:border-[#e05e35]/40'
+                ? 'bg-brand text-[#fcfaf4] border-brand scale-105' 
+                : 'bg-white/80 backdrop-blur-sm border-border-color text-foreground hover:border-brand/40'
             }`}
           >
             {t.all}
@@ -883,8 +897,8 @@ export default function Storefront() {
               onClick={() => setActiveCatId(cat.id)}
               className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-sm border transition-all ${
                 activeCatId === cat.id 
-                  ? 'bg-[#e05e35] text-[#fcfaf4] border-[#e05e35] scale-105' 
-                  : 'bg-white/80 backdrop-blur-sm border-[#eae5d8] text-[#4a2d22] hover:border-[#e05e35]/40'
+                  ? 'bg-brand text-[#fcfaf4] border-brand scale-105' 
+                  : 'bg-white/80 backdrop-blur-sm border-border-color text-foreground hover:border-brand/40'
               }`}
             >
               {cat.name}
@@ -905,15 +919,15 @@ export default function Storefront() {
                 return (
                   <div 
                     key={item.id} 
-                    className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl border border-[#eae5d8] flex gap-4 transition-all duration-300 hover:shadow-md hover:border-[#c5b293]"
+                    className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl border border-border-color flex gap-4 transition-all duration-300 hover:shadow-md hover:border-[#c5b293]"
                   >
                     <div className="flex-1 flex flex-col justify-between">
                        <div>
-                        <h3 className="font-extrabold text-[#4a2d22] text-sm md:text-base">
+                        <h3 className="font-extrabold text-foreground text-sm md:text-base">
                           {item.name}
                         </h3>
                         {item.description && (
-                          <p className="text-stone-500 text-[11px] md:text-xs mt-1 leading-relaxed line-clamp-2">
+                          <p className="text-foreground/60 text-[11px] md:text-xs mt-1 leading-relaxed line-clamp-2">
                             {item.description}
                           </p>
                         )}
@@ -929,22 +943,22 @@ export default function Storefront() {
                       </div>
                       
                       <div className="flex justify-between items-center mt-4">
-                        <span className="font-black text-sm md:text-base text-[#4a2d22]">
+                        <span className="font-black text-sm md:text-base text-foreground">
                           ₹{(item.price / 100).toFixed(2)}
                         </span>
                         
                         {qty > 0 ? (
-                          <div className="flex items-center gap-2 bg-[#fbeee7] rounded-full px-2 py-1 border border-[#e05e35]/20">
+                          <div className="flex items-center gap-2 bg-brand-light rounded-full px-2 py-1 border border-brand/20">
                             <button 
                               onClick={() => handleQtyChange(item.id, -1)}
-                              className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-[#e05e35] hover:bg-[#e05e35] hover:text-[#fcfaf4] transition-colors"
+                              className="w-6 h-6 rounded-full bg-card-bg flex items-center justify-center text-brand hover:bg-brand hover:text-[#fcfaf4] transition-colors"
                             >
                               <Minus size={12} strokeWidth={3} />
                             </button>
-                            <span className="font-bold text-xs text-[#e05e35] px-1">{qty}</span>
+                            <span className="font-bold text-xs text-brand px-1">{qty}</span>
                             <button 
                               onClick={() => handleQtyChange(item.id, 1)}
-                              className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-[#e05e35] hover:bg-[#e05e35] hover:text-[#fcfaf4] transition-colors"
+                              className="w-6 h-6 rounded-full bg-card-bg flex items-center justify-center text-brand hover:bg-brand hover:text-[#fcfaf4] transition-colors"
                             >
                               <Plus size={12} strokeWidth={3} />
                             </button>
@@ -952,7 +966,7 @@ export default function Storefront() {
                         ) : (
                           <button 
                             onClick={() => handleQtyChange(item.id, 1)}
-                            className="w-8 h-8 rounded-full bg-[#fbeee7] text-[#e05e35] flex items-center justify-center hover:bg-[#e05e35] hover:text-[#fcfaf4] transition-all hover:scale-105 active:scale-95"
+                            className="w-8 h-8 rounded-full bg-brand-light text-brand flex items-center justify-center hover:bg-brand hover:text-[#fcfaf4] transition-all hover:scale-105 active:scale-95"
                           >
                             <Plus size={15} strokeWidth={3} />
                           </button>
@@ -960,7 +974,7 @@ export default function Storefront() {
                       </div>
                     </div>
                     
-                    <div className="w-24 h-24 md:w-28 md:h-28 shrink-0 relative rounded-xl overflow-hidden border border-[#eae5d8] bg-stone-100 flex items-center justify-center">
+                    <div className="w-24 h-24 md:w-28 md:h-28 shrink-0 relative rounded-xl overflow-hidden border border-border-color bg-stone-100 flex items-center justify-center">
                       {item.image_url ? (
                         <img 
                           src={item.image_url} 
@@ -987,7 +1001,7 @@ export default function Storefront() {
             className="w-full brand-gradient text-[#fcfaf4] rounded-2xl p-4 flex justify-between items-center shadow-xl hover:opacity-95 transition-all active:scale-95"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#fcfaf4]/20 flex items-center justify-center font-black text-sm">
+              <div className="w-8 h-8 rounded-full bg-background/20 flex items-center justify-center font-black text-sm">
                 {totalItems}
               </div>
               <span className="font-extrabold text-sm tracking-wide uppercase">{t.viewOrder}</span>
@@ -1002,15 +1016,15 @@ export default function Storefront() {
       {/* Diner Checkout Drawer */}
       {isCheckoutOpen && (
         <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex justify-center items-end md:items-center p-0 md:p-4">
-          <div className="bg-[#fcfaf4] w-full md:max-w-md rounded-t-3xl md:rounded-3xl border border-[#eae5d8] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh] animate-slide-up">
-            <div className="p-5 border-b border-[#eae5d8] flex justify-between items-center bg-[#fbeee7]/55">
-              <h3 className="font-black text-base md:text-lg text-[#4a2d22] flex items-center gap-2">
-                <ShoppingBag size={18} className="text-[#e05e35]" />
+          <div className="bg-background w-full md:max-w-md rounded-t-3xl md:rounded-3xl border border-border-color shadow-2xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh] animate-slide-up">
+            <div className="p-5 border-b border-border-color flex justify-between items-center bg-brand-light/55">
+              <h3 className="font-black text-base md:text-lg text-foreground flex items-center gap-2">
+                <ShoppingBag size={18} className="text-brand" />
                 {t.checkout_title}
               </h3>
               <button 
                 onClick={() => setIsCheckoutOpen(false)}
-                className="w-8 h-8 rounded-full hover:bg-stone-200/50 flex items-center justify-center text-stone-500"
+                className="w-8 h-8 rounded-full hover:bg-stone-200/50 flex items-center justify-center text-foreground/60"
               >
                 <X size={18} />
               </button>
@@ -1025,13 +1039,13 @@ export default function Storefront() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-stone-500 block">
+                <label className="text-xs font-bold uppercase tracking-wider text-foreground/60 block">
                   {t.select_table}
                 </label>
                 <select
                   value={selectedTableId}
                   onChange={(e) => setSelectedTableId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#eae5d8] bg-white text-sm font-bold text-[#4a2d22] focus:outline-none focus:border-[#e05e35] transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border border-border-color bg-card-bg text-sm font-bold text-foreground focus:outline-none focus:border-brand transition-colors"
                   required
                 >
                   {tables.map(table => (
@@ -1043,7 +1057,7 @@ export default function Storefront() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-stone-500 block">
+                <label className="text-xs font-bold uppercase tracking-wider text-foreground/60 block">
                   {t.enter_name}
                 </label>
                 <div className="relative">
@@ -1055,32 +1069,32 @@ export default function Storefront() {
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="e.g. Rahul Sharma"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#eae5d8] bg-white text-sm font-bold text-[#4a2d22] focus:outline-none focus:border-[#e05e35] transition-colors"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-border-color bg-card-bg text-sm font-bold text-foreground focus:outline-none focus:border-brand transition-colors"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-stone-500 block">
+                <label className="text-xs font-bold uppercase tracking-wider text-foreground/60 block">
                   {t.number_of_guests}
                 </label>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setCustomerCount(c => Math.max(1, c - 1))}
-                    className="w-10 h-10 rounded-xl bg-white border border-[#eae5d8] flex items-center justify-center font-black text-[#4a2d22] hover:bg-stone-50"
+                    className="w-10 h-10 rounded-xl bg-card-bg border border-border-color flex items-center justify-center font-black text-foreground hover:bg-brand-light/25"
                   >
                     -
                   </button>
-                  <div className="flex-1 bg-white border border-[#eae5d8] rounded-xl py-2 text-center font-bold text-sm flex items-center justify-center gap-2 text-[#4a2d22]">
+                  <div className="flex-1 bg-card-bg border border-border-color rounded-xl py-2 text-center font-bold text-sm flex items-center justify-center gap-2 text-foreground">
                     <Users size={15} className="text-stone-400" />
                     <span>{customerCount}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setCustomerCount(c => c + 1)}
-                    className="w-10 h-10 rounded-xl bg-white border border-[#eae5d8] flex items-center justify-center font-black text-[#4a2d22] hover:bg-stone-50"
+                    className="w-10 h-10 rounded-xl bg-card-bg border border-border-color flex items-center justify-center font-black text-foreground hover:bg-brand-light/25"
                   >
                     +
                   </button>
@@ -1088,7 +1102,7 @@ export default function Storefront() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-stone-500 block">
+                <label className="text-xs font-bold uppercase tracking-wider text-foreground/60 block">
                   {t.notes}
                 </label>
                 <div className="relative">
@@ -1100,22 +1114,22 @@ export default function Storefront() {
                     onChange={(e) => setOrderNotes(e.target.value)}
                     placeholder="e.g. Extra spicy, make it hot, no sugar etc."
                     rows={2}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#eae5d8] bg-white text-sm font-bold text-[#4a2d22] focus:outline-none focus:border-[#e05e35] transition-colors resize-none"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-border-color bg-card-bg text-sm font-bold text-foreground focus:outline-none focus:border-brand transition-colors resize-none"
                   />
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-[#fbeee7]/55 border border-[#eae5d8] space-y-2">
-                <div className="flex justify-between text-xs font-bold text-stone-500">
+              <div className="p-4 rounded-2xl bg-brand-light/55 border border-border-color space-y-2">
+                <div className="flex justify-between text-xs font-bold text-foreground/60">
                   <span>Cart Subtotal</span>
                   <span>₹{totalPriceRupees.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-xs font-bold text-stone-500">
+                <div className="flex justify-between text-xs font-bold text-foreground/60">
                   <span>CGST (2.5%) + SGST (2.5%)</span>
-                  <span className="text-[#e05e35]">Incl. in bill</span>
+                  <span className="text-brand">Incl. in bill</span>
                 </div>
                 <div className="h-px bg-[#eae5d8] my-1"></div>
-                <div className="flex justify-between text-sm font-black text-[#4a2d22]">
+                <div className="flex justify-between text-sm font-black text-foreground">
                   <span>Total Amount</span>
                   <span>₹{totalPriceRupees.toFixed(2)}</span>
                 </div>
@@ -1143,48 +1157,48 @@ export default function Storefront() {
       {/* Success Dialog & Post-payment feedback loop */}
       {successOrderRef && (
         <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex justify-center items-center p-4">
-          <div className="bg-[#fcfaf4] w-full max-w-sm rounded-3xl border border-[#eae5d8] p-6 shadow-2xl text-center space-y-5 animate-scale-up overflow-y-auto max-h-[90vh]">
+          <div className="bg-background w-full max-w-sm rounded-3xl border border-border-color p-6 shadow-2xl text-center space-y-5 animate-scale-up overflow-y-auto max-h-[90vh]">
             <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto border border-emerald-100">
               <CheckCircle2 className="w-10 h-10 text-emerald-500 animate-bounce" />
             </div>
             
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-[#4a2d22]">{t.success_title}</h3>
-              <p className="text-stone-500 text-xs font-semibold px-4">{t.success_msg}</p>
+              <h3 className="text-xl font-black text-foreground">{t.success_title}</h3>
+              <p className="text-foreground/60 text-xs font-semibold px-4">{t.success_msg}</p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 inline-block mx-auto min-w-[200px]">
+            <div className="p-3.5 rounded-2xl bg-brand-light/25 border border-stone-200 inline-block mx-auto min-w-[200px]">
               <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block">{t.order_ref}</span>
-              <span className="text-lg font-black text-[#4a2d22] tracking-wider mt-0.5 block">{successOrderRef}</span>
+              <span className="text-lg font-black text-foreground tracking-wider mt-0.5 block">{successOrderRef}</span>
             </div>
 
             {/* Guest Feedback loop */}
             {!feedbackSubmitted ? (
-              <div className="border-t border-[#eae5d8]/70 pt-4 space-y-3 text-left">
-                <h4 className="font-black text-xs text-[#4a2d22] uppercase tracking-wider text-center">Rate Your Dining Experience</h4>
+              <div className="border-t border-border-color/70 pt-4 space-y-3 text-left">
+                <h4 className="font-black text-xs text-foreground uppercase tracking-wider text-center">Rate Your Dining Experience</h4>
                 <div className="flex gap-2.5 justify-center py-1">
                   {[1, 2, 3, 4, 5].map((ratingVal) => (
                     <button
                       key={ratingVal}
                       type="button"
                       onClick={() => setFeedbackRating(ratingVal)}
-                      className="text-[#ca8a04] hover:scale-110 transition-transform cursor-pointer"
+                      className="text-accent hover:scale-110 transition-transform cursor-pointer"
                     >
                       <Star 
                         size={28} 
-                        className={ratingVal <= feedbackRating ? 'fill-[#ca8a04] text-[#ca8a04]' : 'text-stone-200'} 
+                        className={ratingVal <= feedbackRating ? 'fill-[#ca8a04] text-accent' : 'text-stone-200'} 
                       />
                     </button>
                   ))}
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 text-xs font-bold text-stone-500">
+                <div className="grid grid-cols-2 gap-2 text-xs font-bold text-foreground/60">
                   <div>
                     <label className="block mb-1">Food Score</label>
                     <select 
                       value={foodRating} 
                       onChange={e => setFoodRating(Number(e.target.value))}
-                      className="w-full bg-white border border-[#eae5d8] rounded-xl px-2 py-1.5 outline-none font-bold"
+                      className="w-full bg-card-bg border border-border-color rounded-xl px-2 py-1.5 outline-none font-bold"
                     >
                       {[5,4,3,2,1].map(v => <option key={v} value={v}>{v} Stars</option>)}
                     </select>
@@ -1194,7 +1208,7 @@ export default function Storefront() {
                     <select 
                       value={serviceRating} 
                       onChange={e => setServiceRating(Number(e.target.value))}
-                      className="w-full bg-white border border-[#eae5d8] rounded-xl px-2 py-1.5 outline-none font-bold"
+                      className="w-full bg-card-bg border border-border-color rounded-xl px-2 py-1.5 outline-none font-bold"
                     >
                       {[5,4,3,2,1].map(v => <option key={v} value={v}>{v} Stars</option>)}
                     </select>
@@ -1202,13 +1216,13 @@ export default function Storefront() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-stone-500 mb-1">Comments</label>
+                  <label className="block text-xs font-bold text-foreground/60 mb-1">Comments</label>
                   <textarea
                     rows={2}
                     value={feedbackComment}
                     onChange={e => setFeedbackComment(e.target.value)}
                     placeholder="Tell us about the service or food..."
-                    className="w-full bg-white border border-[#eae5d8] rounded-xl p-2.5 text-xs outline-none resize-none font-semibold"
+                    className="w-full bg-card-bg border border-border-color rounded-xl p-2.5 text-xs outline-none resize-none font-semibold"
                   />
                 </div>
 
@@ -1227,16 +1241,16 @@ export default function Storefront() {
                   type="button"
                   onClick={handleSubmitFeedback}
                   disabled={submittingFeedback}
-                  className="w-full bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl py-2.5 font-bold text-xs tracking-wider uppercase disabled:opacity-50 cursor-pointer"
+                  className="w-full bg-brand hover:bg-brand/90 text-white rounded-xl py-2.5 font-bold text-xs tracking-wider uppercase disabled:opacity-50 cursor-pointer"
                 >
                   {submittingFeedback ? 'Submitting...' : 'Submit & Get 10% Coupon'}
                 </button>
               </div>
             ) : (
-              <div className="border-t border-[#eae5d8]/70 pt-4 text-center space-y-2.5 animate-scale-up">
+              <div className="border-t border-border-color/70 pt-4 text-center space-y-2.5 animate-scale-up">
                 <h4 className="font-black text-sm text-green-600">Review Submitted!</h4>
-                <p className="text-stone-500 text-[10px] font-semibold">Thank you! Here is your 10% coupon code for your next order:</p>
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl inline-block font-mono font-black text-sm text-[#d97706] tracking-widest shadow-inner">
+                <p className="text-foreground/60 text-[10px] font-semibold">Thank you! Here is your 10% coupon code for your next order:</p>
+                <div className="p-3 bg-amber-50 border border-brand/35 rounded-2xl inline-block font-mono font-black text-sm text-brand tracking-widest shadow-inner">
                   {claimedCoupon}
                 </div>
               </div>
@@ -1244,7 +1258,7 @@ export default function Storefront() {
 
             <button
               onClick={handleCloseSuccessRef}
-              className="w-full bg-[#eae5d8]/50 text-[#4a2d22] rounded-xl py-3 font-extrabold text-xs tracking-wider uppercase hover:bg-[#c5b293]/30 transition-colors cursor-pointer"
+              className="w-full bg-[#eae5d8]/50 text-foreground rounded-xl py-3 font-extrabold text-xs tracking-wider uppercase hover:bg-[#c5b293]/30 transition-colors cursor-pointer"
             >
               {t.back_to_menu}
             </button>
@@ -1255,19 +1269,19 @@ export default function Storefront() {
       {/* Customer OTP Login Modal */}
       {isLoginOpen && (
         <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex justify-center items-center p-4 animate-fade-in">
-          <div className="bg-[#fcfaf4] w-full max-w-sm rounded-3xl border border-[#eae5d8] p-6 shadow-2xl space-y-4 relative">
+          <div className="bg-background w-full max-w-sm rounded-3xl border border-border-color p-6 shadow-2xl space-y-4 relative">
             <button 
               onClick={() => { setIsLoginOpen(false); setOtpSent(false); setOtpError(null); }}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-stone-200/50 flex items-center justify-center text-stone-500 cursor-pointer"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-stone-200/50 flex items-center justify-center text-foreground/60 cursor-pointer"
             >
               <X size={16} />
             </button>
-            <div className="text-center space-y-1 pb-2 border-b border-[#eae5d8]/50">
-              <h3 className="text-base font-black text-[#4a2d22] flex items-center justify-center gap-1.5">
-                <User size={18} className="text-[#d97706]" />
+            <div className="text-center space-y-1 pb-2 border-b border-border-color/50">
+              <h3 className="text-base font-black text-foreground flex items-center justify-center gap-1.5">
+                <User size={18} className="text-brand" />
                 <span>Loyalty Club Login</span>
               </h3>
-              <p className="text-stone-500 text-[10px] font-semibold">Verify via WhatsApp OTP for special rates & rewards.</p>
+              <p className="text-foreground/60 text-[10px] font-semibold">Verify via WhatsApp OTP for special rates & rewards.</p>
             </div>
 
             {otpError && (
@@ -1278,7 +1292,7 @@ export default function Storefront() {
             )}
 
             {!otpSent ? (
-              <form onSubmit={handleSendOtp} className="space-y-4 text-xs font-bold text-stone-500">
+              <form onSubmit={handleSendOtp} className="space-y-4 text-xs font-bold text-foreground/60">
                 <div className="space-y-1.5">
                   <label className="block">WhatsApp Phone Number</label>
                   <input
@@ -1288,19 +1302,19 @@ export default function Storefront() {
                     placeholder="Enter 10-digit number"
                     value={loginPhone}
                     onChange={e => setLoginPhone(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#eae5d8] bg-white text-sm font-bold text-[#4a2d22] focus:outline-none focus:border-[#d97706]"
+                    className="w-full px-3 py-2.5 rounded-xl border border-border-color bg-card-bg text-sm font-bold text-foreground focus:outline-none focus:border-[#d97706]"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={otpLoading}
-                  className="w-full bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl py-3 font-bold text-xs tracking-wider uppercase disabled:opacity-50 cursor-pointer"
+                  className="w-full bg-brand hover:bg-brand/90 text-white rounded-xl py-3 font-bold text-xs tracking-wider uppercase disabled:opacity-50 cursor-pointer"
                 >
                   {otpLoading ? 'Sending...' : 'Send OTP Verification'}
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleVerifyOtp} className="space-y-4 text-xs font-bold text-stone-500">
+              <form onSubmit={handleVerifyOtp} className="space-y-4 text-xs font-bold text-foreground/60">
                 <div className="space-y-1.5">
                   <label className="block">Enter 6-Digit OTP</label>
                   <input
@@ -1311,21 +1325,21 @@ export default function Storefront() {
                     placeholder="Enter OTP code"
                     value={loginOtp}
                     onChange={e => setLoginOtp(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#eae5d8] bg-white text-sm font-bold text-[#4a2d22] focus:outline-none focus:border-[#d97706] tracking-widest text-center"
+                    className="w-full px-3 py-2.5 rounded-xl border border-border-color bg-card-bg text-sm font-bold text-foreground focus:outline-none focus:border-[#d97706] tracking-widest text-center"
                   />
                 </div>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setOtpSent(false)}
-                    className="flex-1 border border-[#eae5d8] text-stone-500 rounded-xl py-2.5 font-bold text-xs cursor-pointer hover:bg-stone-50"
+                    className="flex-1 border border-border-color text-foreground/60 rounded-xl py-2.5 font-bold text-xs cursor-pointer hover:bg-brand-light/25"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
                     disabled={otpLoading}
-                    className="flex-1 bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl py-2.5 font-bold text-xs tracking-wider uppercase disabled:opacity-50 cursor-pointer"
+                    className="flex-1 bg-brand hover:bg-brand/90 text-white rounded-xl py-2.5 font-bold text-xs tracking-wider uppercase disabled:opacity-50 cursor-pointer"
                   >
                     {otpLoading ? 'Verifying...' : 'Verify OTP'}
                   </button>
@@ -1337,7 +1351,7 @@ export default function Storefront() {
       )}
 
       {/* Footer Branding */}
-      <footer className="text-center py-12 text-[10px] text-stone-500/80">
+      <footer className="text-center py-12 text-[10px] text-foreground/60/80">
         <div>{t.powered} · {tenant.name}</div>
       </footer>
 
@@ -1351,7 +1365,7 @@ export default function Storefront() {
           disabled={staffCallCooldown > 0}
           className={`fixed bottom-6 right-6 z-40 p-4 rounded-full shadow-2xl flex items-center gap-2 font-extrabold text-xs tracking-wider uppercase transition-all duration-300 transform active:scale-95 cursor-pointer border ${
             staffCallCooldown > 0
-              ? 'bg-stone-300 text-stone-500 border-stone-200 cursor-not-allowed'
+              ? 'bg-stone-300 text-foreground/60 border-stone-200 cursor-not-allowed'
               : 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400 hover:shadow-amber-500/20'
           }`}
         >

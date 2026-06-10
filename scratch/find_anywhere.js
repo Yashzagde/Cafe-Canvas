@@ -1,41 +1,52 @@
 const fs = require('fs');
 const path = require('path');
 
-const targetDir = path.join('C:', 'Users', 'yash', '.gemini');
+const rootDirs = [
+  'D:\\Cafe Canva',
+  'D:\\final-clean',
+  'D:\\test-clone',
+  'D:\\src'
+];
 
-function searchDir(dir) {
+function searchFile(filePath) {
   try {
-    const files = fs.readdirSync(dir);
-    for (const file of files) {
-      const fullPath = path.join(dir, file);
-      let stat;
-      try { stat = fs.statSync(fullPath); } catch (e) { continue; }
-      
-      if (stat.isDirectory()) {
-        // Skip some standard big directories to speed up
-        if (file === 'node_modules' || file === 'bin' || file === 'implicit' || file === 'browser_recordings' || file === 'html_artifacts') continue;
-        searchDir(fullPath);
-      } else if (stat.isFile()) {
-        if (file.endsWith('.log') || file.endsWith('.jsonl') || file.endsWith('.txt') || file.endsWith('.md') || file.endsWith('.json')) {
-          try {
-            const content = fs.readFileSync(fullPath, 'utf8');
-            if (content.includes("Korean Bento")) {
-              console.log(`\n=== Found "Korean Bento" in: ${fullPath} ===`);
-              // Print around matching text
-              const index = content.indexOf("Korean Bento");
-              console.log(content.substring(Math.max(0, index - 200), Math.min(content.length, index + 1500)));
-            }
-          } catch (e) {
-            // ignore read errors
-          }
-        }
-      }
+    const stat = fs.statSync(filePath);
+    if (stat.size > 5000000) return; // Skip files > 5MB
+    const content = fs.readFileSync(filePath, 'utf8');
+    if (content.includes('Korean Bento') && content.includes('theme-52')) {
+      console.log(`Found complete theme match: ${filePath} (${stat.size} bytes)`);
     }
-  } catch (err) {
-    // ignore dir errors
-  }
+  } catch (e) {}
 }
 
-console.log("Searching .gemini directory...");
-searchDir(targetDir);
-console.log("Search complete.");
+function walk(dir) {
+  try {
+    const files = fs.readdirSync(dir);
+    files.forEach(file => {
+      const fullPath = path.join(dir, file);
+      let stat;
+      try {
+        stat = fs.statSync(fullPath);
+      } catch (e) {
+        return;
+      }
+      if (stat && stat.isDirectory()) {
+        if (file === 'node_modules' || file === '.git' || file === '.next' || file === 'dist') return;
+        walk(fullPath);
+      } else {
+        if (file.endsWith('.css') || file.endsWith('.json') || file.endsWith('.md') || file.endsWith('.txt') || file.endsWith('.ts') || file.endsWith('.tsx')) {
+          searchFile(fullPath);
+        }
+      }
+    });
+  } catch (e) {}
+}
+
+console.log('Searching folders for themes...');
+rootDirs.forEach(dir => {
+  if (fs.existsSync(dir)) {
+    console.log(`Scanning ${dir}...`);
+    walk(dir);
+  }
+});
+console.log('Search completed.');

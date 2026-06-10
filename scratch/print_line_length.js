@@ -1,18 +1,13 @@
 const fs = require('fs');
-const filePath = 'overview_log_content.txt';
+
+const cssPath = 'd:\\Cafe Canva\\extracted_theme-styles.css';
 
 try {
-  const content = fs.readFileSync(filePath, 'utf8');
-  const lines = content.split('\n');
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes("theme-01") && lines[i].includes("primary")) {
-      console.log(`Line ${i + 1} length:`, lines[i].length);
-      console.log("Substr 0-500:", lines[i].substring(0, 500));
-      console.log("Substr 500-1000:", lines[i].substring(500, 1000));
-      console.log("Contains '<truncated':", lines[i].includes("<truncated"));
-      break;
-    }
-  }
-} catch (e) {
-  console.error(e.message);
+  const content = fs.readFileSync(cssPath, 'utf8');
+  console.log('Total character length:', content.length);
+  console.log('Number of lines:', content.split('\n').length);
+  const first200 = content.substring(0, 1000);
+  console.log('First 1000 characters:', first200);
+} catch (err) {
+  console.error(err.message);
 }

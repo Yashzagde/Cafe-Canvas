@@ -21,6 +21,12 @@
   
   --shadow-warm: 0 4px 20px rgba(30, 41, 59, 0.04);
   --shadow-hover: 0 10px 30px rgba(30, 41, 59, 0.08);
+  
+  --font-heading: var(--font-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), serif;
 }
 
 /* Enforce the same professional light theme even in dark mode */

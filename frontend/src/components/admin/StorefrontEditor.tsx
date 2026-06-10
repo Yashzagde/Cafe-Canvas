@@ -1,9 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getStorefrontConfigAction, updateStorefrontConfigAction } from '@/app/admin/actions/storefront.actions';
+import { 
+  getStorefrontConfigAction, 
+  updateStorefrontConfigAction,
+  publishStorefrontAction,
+  updateTenantNameAction
+} from '@/app/admin/actions/storefront.actions';
 import { useStorefrontEditorStore } from '@/store/storefront-editor';
-import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles } from 'lucide-react';
+import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link } from 'lucide-react';
 
 interface StoreTheme {
   id: string
@@ -478,11 +483,29 @@ const PRESETS: StoreTheme[] = [
   }
 ];
 
-export default function StorefrontEditor({ tenantPublicId, tenantPrivateId }: { tenantPublicId: string; tenantPrivateId: string }) {
+export default function StorefrontEditor({ 
+  tenantPublicId, 
+  tenantPrivateId,
+  tenantName,
+  setTenantName
+}: { 
+  tenantPublicId: string; 
+  tenantPrivateId: string;
+  tenantName: string;
+  setTenantName: React.Dispatch<React.SetStateAction<string>>;
+}) {
   const { config, setConfig, updateField, isDirty, clearDirty } = useStorefrontEditorStore();
   const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'social' | 'connection'>('branding');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [storeName, setStoreName] = useState(tenantName);
+  const [isNameDirty, setIsNameDirty] = useState(false);
+
+  useEffect(() => {
+    setStoreName(tenantName);
+  }, [tenantName]);
+
   const [themeCategory, setThemeCategory] = useState<string>('All');
   const categories = [
     'All',
@@ -514,15 +537,54 @@ export default function StorefrontEditor({ tenantPublicId, tenantPrivateId }: { 
     if (!config) return;
     setSaving(true);
     try {
+      if (isNameDirty) {
+        const tenantUpdated = await updateTenantNameAction(storeName);
+        if (tenantUpdated) {
+          setTenantName(storeName);
+          setIsNameDirty(false);
+        }
+      }
       const updated = await updateStorefrontConfigAction(config.id, config);
       if (updated) {
         setConfig(updated);
         clearDirty();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save storefront configuration:', err);
+      alert(err.message || 'Failed to save configuration');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!config) return;
+    setPublishing(true);
+    try {
+      // Save any pending changes first
+      if (isDirty || isNameDirty) {
+        if (isNameDirty) {
+          const tenantUpdated = await updateTenantNameAction(storeName);
+          if (tenantUpdated) {
+            setTenantName(storeName);
+            setIsNameDirty(false);
+          }
+        }
+        const updated = await updateStorefrontConfigAction(config.id, config);
+        if (updated) {
+          setConfig(updated);
+          clearDirty();
+        }
+      }
+      const publishRes = await publishStorefrontAction('Published via Storefront Experience Editor');
+      if (publishRes) {
+        alert('🚀 Storefront changes published and live!');
+      }
+    } catch (err: any) {
+      console.error('Failed to publish changes:', err);
+      alert(err.message || 'Failed to publish changes');
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -551,13 +613,22 @@ export default function StorefrontEditor({ tenantPublicId, tenantPrivateId }: { 
             <h2 className="text-lg font-extrabold font-display">Storefront Experience Editor</h2>
             <p className="text-xs text-[#1e293b]/50">Modify client site themes, branding, and layouts.</p>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={!isDirty || saving}
-            className="px-4 py-2 bg-gradient-to-r from-[#d97706] to-[#ca8a04] hover:opacity-95 text-[#ffffff] font-extrabold rounded-2xl text-xs transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
-          >
-            {saving ? 'Saving...' : 'Save Settings'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              disabled={(!isDirty && !isNameDirty) || saving || publishing}
+              className="px-4 py-2 bg-[#f1f5f9] text-[#1e293b]/70 hover:text-[#1e293b] hover:bg-[#e2e8f0] font-extrabold rounded-2xl text-xs transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none border border-[#e2e8f0]"
+            >
+              {saving ? 'Saving...' : 'Save Settings'}
+            </button>
+            <button
+              onClick={handlePublish}
+              disabled={saving || publishing}
+              className="px-4 py-2 bg-gradient-to-r from-[#16a34a] to-[#10b981] hover:opacity-95 text-white font-extrabold rounded-2xl text-xs transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+            >
+              {publishing ? 'Publishing...' : 'Publish Changes'}
+            </button>
+          </div>
         </div>
 
         {/* Tab Selection */}
@@ -595,8 +666,8 @@ export default function StorefrontEditor({ tenantPublicId, tenantPrivateId }: { 
               activeTab === 'connection' ? 'bg-[#f1f5f9] text-[#d97706]' : 'text-[#1e293b]/50 hover:text-[#1e293b]'
             }`}
           >
-            <ShieldAlert size={14} />
-            <span>Store IDs</span>
+            <Link size={14} />
+            <span>Storefront Link</span>
           </button>
         </div>
 
@@ -604,6 +675,24 @@ export default function StorefrontEditor({ tenantPublicId, tenantPrivateId }: { 
         <div className="space-y-5">
           {activeTab === 'branding' && (
             <>
+              {/* Storefront Business Name */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                  Storefront Business Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Chai Point"
+                  value={storeName}
+                  onChange={(e) => {
+                    setStoreName(e.target.value);
+                    setIsNameDirty(true);
+                  }}
+                  className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm font-bold text-[#1e293b] focus:outline-none focus:border-[#d97706]"
+                />
+              </div>
+
               {/* Presets Grid */}
               <div className="space-y-3">
                 <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
@@ -833,76 +922,43 @@ export default function StorefrontEditor({ tenantPublicId, tenantPrivateId }: { 
           {activeTab === 'connection' && (
             <div className="space-y-6">
               <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[#d97706] text-xs leading-relaxed space-y-1">
-                <p className="font-bold flex items-center gap-1.5">🛎️ Developer Mode & Linking Reference</p>
-                <p className="opacity-90">Use the Public ID to link your storefront subdomain, Store Admin Electron app, and Staff Mobile APK. Keep the Private ID hidden to secure tenant data isolation.</p>
-              </div>
-
-              {/* Public Primary ID */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                  Public Primary ID (Subdomain & APK Sync)
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={tenantPublicId || 'Unavailable'}
-                    className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none"
-                  />
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(tenantPublicId);
-                      alert('Public ID copied!');
-                    }}
-                    className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl cursor-pointer transition-all"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-
-              {/* Private Primary ID */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                  Private Primary ID (Restricted Database Key)
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={tenantPrivateId || 'Unavailable'}
-                    className="flex-1 px-4 py-3 bg-[#fdfcf7] border border-[#e2e8f0]/40 text-stone-400 rounded-xl text-xs font-mono select-all focus:outline-none"
-                  />
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(tenantPrivateId);
-                      alert('Private ID copied!');
-                    }}
-                    className="px-4 py-2.5 border border-[#e2e8f0] text-stone-500 hover:bg-stone-50 text-xs font-bold rounded-xl cursor-pointer transition-all"
-                  >
-                    Copy
-                  </button>
-                </div>
+                <p className="font-bold flex items-center gap-1.5">📲 Your Digital Storefront Link</p>
+                <p className="opacity-90">This link is used by your customers to access your storefront menu, place table orders, view visit history, and contact your staff. Click "Copy Link" to copy it or "Open Link" to view the live menu.</p>
               </div>
 
               {/* Storefront Subdomain URL */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                  Storefront Subdomain Resolve Link
+                  Storefront URL Link
                 </label>
-                <div className="p-3.5 bg-[#f8fafc] border border-slate-200/80 rounded-2xl flex items-center justify-between gap-3">
-                  <span className="text-xs font-mono text-slate-600 truncate">
-                    {`http://${tenantPublicId || 'store'}.cafecanvas.bar`}
-                  </span>
-                  <a
-                    href={`http://${tenantPublicId || 'store'}.cafecanvas.bar`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-bold text-[#d97706] hover:underline whitespace-nowrap"
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`http://${tenantPublicId || 'store'}.cafecanvas.bar`}
+                    className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`http://${tenantPublicId || 'store'}.cafecanvas.bar`);
+                      alert('Storefront URL Link copied!');
+                    }}
+                    className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl cursor-pointer transition-all"
                   >
-                    Open Link ↗
-                  </a>
+                    Copy Link
+                  </button>
                 </div>
+              </div>
+
+              <div className="flex justify-end pr-1">
+                <a
+                  href={`http://${tenantPublicId || 'store'}.cafecanvas.bar`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-extrabold text-[#d97706] hover:underline flex items-center gap-1"
+                >
+                  Open Live Storefront ↗
+                </a>
               </div>
             </div>
           )}

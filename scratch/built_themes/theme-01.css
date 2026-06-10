@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;700;900&display=swap');
+
+:root {
+  --background: #0A0A1A;
+  --foreground: #f8fafc;
+  --brand: #D4AF37;
+  --brand-light: rgba(255, 255, 255, 0.15);
+  --accent: #FF6B35;
+  --card-bg: rgba(255, 255, 255, 0.07);
+  --border-color: rgba(255, 255, 255, 0.12);
+  --border-focus: #D4AF37;
+  --font-heading: 'Cormorant Garamond', serif;
+  
+  /* Additional details */
+  --shadow-warm: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-hover: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+/* Scoped classes to support themes inside preview overlays */
+.theme-01 {
+  --background: #0A0A1A;
+  --foreground: #f8fafc;
+  --brand: #D4AF37;
+  --brand-light: rgba(255, 255, 255, 0.15);
+  --accent: #FF6B35;
+  --card-bg: rgba(255, 255, 255, 0.07);
+  --border-color: rgba(255, 255, 255, 0.12);
+  --border-focus: #D4AF37;
+  --font-heading: 'Cormorant Garamond', serif;
+}

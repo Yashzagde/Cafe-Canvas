@@ -1,30 +1,17 @@
-const postgres = require('postgres');
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
+const fs = require('fs');
 
-delete process.env.PGHOST;
-delete process.env.PGPORT;
-delete process.env.PGUSER;
-delete process.env.PGDATABASE;
-delete process.env.PGSSLMODE;
+const pagePath = 'd:\\Cafe Canva\\frontend\\src\\app\\[store_slug]\\page.tsx';
 
-const dbUrl = process.env.DATABASE_URL;
-const sql = postgres(dbUrl, { ssl: 'require', max: 1 });
-
-async function main() {
-  try {
-    console.log("Querying columns of staff_accounts...");
-    const columns = await sql`
-      SELECT column_name, data_type, is_nullable
-      FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'customers';
-    `;
-    console.log("Columns on staff_accounts:", columns);
-  } catch (err) {
-    console.error("❌ Query failed:", err);
-  } finally {
-    await sql.end();
+try {
+  const content = fs.readFileSync(pagePath, 'utf8');
+  const regex = /var\(--[a-zA-Z0-9-]+\)/g;
+  const matches = content.match(regex);
+  if (matches) {
+    console.log(`Found ${matches.length} matches for CSS variables:`);
+    console.log([...new Set(matches)]);
+  } else {
+    console.log('No CSS variables found in page.tsx');
   }
+} catch (err) {
+  console.error(err.message);
 }
-
-main();

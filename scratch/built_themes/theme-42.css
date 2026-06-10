@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue:wght@400;700;900&display=swap');
+
+:root {
+  --background: #FFFBEB;
+  --foreground: #1e293b;
+  --brand: #EA580C;
+  --brand-light: #EA580C15;
+  --accent: #F59E0B;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #EA580C;
+  --font-heading: 'Bebas Neue', serif;
+  
+  /* Additional details */
+  --shadow-warm: 0 4px 20px rgba(30, 41, 59, 0.04);
+  --shadow-hover: 0 10px 30px rgba(30, 41, 59, 0.08);
+}
+
+/* Scoped classes to support themes inside preview overlays */
+.theme-42 {
+  --background: #FFFBEB;
+  --foreground: #1e293b;
+  --brand: #EA580C;
+  --brand-light: #EA580C15;
+  --accent: #F59E0B;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #EA580C;
+  --font-heading: 'Bebas Neue', serif;
+}

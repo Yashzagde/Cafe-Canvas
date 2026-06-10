@@ -1,0 +1,28 @@
+:root {
+  --background: #F8FAFC;
+  --foreground: #1e293b;
+  --brand: #1E3A8A;
+  --brand-light: #1E3A8A15;
+  --accent: #64748B;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #1E3A8A;
+  --font-heading: 'Inter', serif;
+  
+  /* Additional details */
+  --shadow-warm: 0 4px 20px rgba(30, 41, 59, 0.04);
+  --shadow-hover: 0 10px 30px rgba(30, 41, 59, 0.08);
+}
+
+/* Scoped classes to support themes inside preview overlays */
+.theme-50 {
+  --background: #F8FAFC;
+  --foreground: #1e293b;
+  --brand: #1E3A8A;
+  --brand-light: #1E3A8A15;
+  --accent: #64748B;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #1E3A8A;
+  --font-heading: 'Inter', serif;
+}

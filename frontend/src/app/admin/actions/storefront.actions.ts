@@ -202,3 +202,37 @@ export async function getPublishHistoryAction(limit = 20) {
   return data ?? [];
 }
 
+/**
+ * Update the tenant/storefront name in the database.
+ * Only owners and managers can edit.
+ */
+export async function updateTenantNameAction(newName: string) {
+  const profile = await requirePermission('storefront.edit');
+  const supabase = await getSupabase();
+
+  const { data, error } = await supabase
+    .from('tenants')
+    .update({ name: newName })
+    .eq('id', profile.tenant_id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Audit event log
+  await logAuditEvent({
+    tenantId: profile.tenant_id,
+    branchId: profile.branch_id || undefined,
+    actorId: profile.id,
+    actorRole: profile.role,
+    action: 'storefront.update',
+    entityType: 'storefront',
+    entityId: profile.tenant_id,
+    newData: { name: newName }
+  });
+
+  return data;
+}
+

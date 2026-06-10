@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Rozha+One:wght@400;700;900&display=swap');
+
+:root {
+  --background: #FFF8DC;
+  --foreground: #1e293b;
+  --brand: #D4AF37;
+  --brand-light: #D4AF3715;
+  --accent: #8B0000;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #D4AF37;
+  --font-heading: 'Rozha One', serif;
+  
+  /* Additional details */
+  --shadow-warm: 0 4px 20px rgba(30, 41, 59, 0.04);
+  --shadow-hover: 0 10px 30px rgba(30, 41, 59, 0.08);
+}
+
+/* Scoped classes to support themes inside preview overlays */
+.theme-08 {
+  --background: #FFF8DC;
+  --foreground: #1e293b;
+  --brand: #D4AF37;
+  --brand-light: #D4AF3715;
+  --accent: #8B0000;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #D4AF37;
+  --font-heading: 'Rozha One', serif;
+}

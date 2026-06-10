@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Gujarati:wght@400;700;900&display=swap');
+
+:root {
+  --background: #FFFAF0;
+  --foreground: #1e293b;
+  --brand: #FF8C00;
+  --brand-light: #FF8C0015;
+  --accent: #FFD700;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #FF8C00;
+  --font-heading: 'Noto Serif Gujarati', serif;
+  
+  /* Additional details */
+  --shadow-warm: 0 4px 20px rgba(30, 41, 59, 0.04);
+  --shadow-hover: 0 10px 30px rgba(30, 41, 59, 0.08);
+}
+
+/* Scoped classes to support themes inside preview overlays */
+.theme-13 {
+  --background: #FFFAF0;
+  --foreground: #1e293b;
+  --brand: #FF8C00;
+  --brand-light: #FF8C0015;
+  --accent: #FFD700;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #FF8C00;
+  --font-heading: 'Noto Serif Gujarati', serif;
+}

@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@400;700;900&display=swap');
+
+:root {
+  --background: #FFF8F0;
+  --foreground: #1e293b;
+  --brand: #C0392B;
+  --brand-light: #C0392B15;
+  --accent: #F4A460;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #C0392B;
+  --font-heading: 'Bodoni Moda', serif;
+  
+  /* Additional details */
+  --shadow-warm: 0 4px 20px rgba(30, 41, 59, 0.04);
+  --shadow-hover: 0 10px 30px rgba(30, 41, 59, 0.08);
+}
+
+/* Scoped classes to support themes inside preview overlays */
+.theme-25 {
+  --background: #FFF8F0;
+  --foreground: #1e293b;
+  --brand: #C0392B;
+  --brand-light: #C0392B15;
+  --accent: #F4A460;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #C0392B;
+  --font-heading: 'Bodoni Moda', serif;
+}

@@ -1,24 +1,24 @@
 const fs = require('fs');
-const path = require('path');
 
-const biblePath = 'd:\\Cafe Canva\\extracted_master_theme_prompt.md';
+const cssPath = 'd:\\Cafe Canva\\extracted_theme-styles.css';
 
 try {
-  const content = fs.readFileSync(biblePath, 'utf8');
-  console.log('Bible file length:', content.length);
+  const content = fs.readFileSync(cssPath, 'utf8');
+  console.log('CSS file length:', content.length);
   
-  // Find all matches for "THEME-XX:"
-  const regex = /THEME-(\d+):\s*([^\r\n]+)/g;
+  // Regex to match theme classes
+  const regex = /\.theme-(\d+)\s*\{([\s\S]*?)\}/g;
   let match;
-  const matches = [];
+  let count = 0;
+  const foundThemes = [];
+  
   while ((match = regex.exec(content)) !== null) {
-    matches.push({ id: match[1], name: match[2].trim() });
+    count++;
+    foundThemes.push(`theme-${match[1]}`);
   }
   
-  console.log(`Found ${matches.length} theme headings in bible file.`);
-  matches.forEach(m => {
-    console.log(`- Theme ${m.id}: ${m.name}`);
-  });
+  console.log(`Found ${count} themes in CSS:`);
+  console.log(foundThemes.join(', '));
   
 } catch (err) {
   console.error('Error:', err);

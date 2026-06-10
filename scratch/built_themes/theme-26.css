@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Marathi:wght@400;700;900&display=swap');
+
+:root {
+  --background: #FFF9F0;
+  --foreground: #1e293b;
+  --brand: #D4930A;
+  --brand-light: #D4930A15;
+  --accent: #1A4B8C;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #D4930A;
+  --font-heading: 'Tiro Devanagari Marathi', serif;
+  
+  /* Additional details */
+  --shadow-warm: 0 4px 20px rgba(30, 41, 59, 0.04);
+  --shadow-hover: 0 10px 30px rgba(30, 41, 59, 0.08);
+}
+
+/* Scoped classes to support themes inside preview overlays */
+.theme-26 {
+  --background: #FFF9F0;
+  --foreground: #1e293b;
+  --brand: #D4930A;
+  --brand-light: #D4930A15;
+  --accent: #1A4B8C;
+  --card-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #D4930A;
+  --font-heading: 'Tiro Devanagari Marathi', serif;
+}

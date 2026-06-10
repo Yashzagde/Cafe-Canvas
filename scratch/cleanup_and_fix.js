@@ -1,54 +1,57 @@
-const postgres = require('postgres');
+const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
 
-delete process.env.PGHOST;
-delete process.env.PGPORT;
-delete process.env.PGUSER;
-delete process.env.PGDATABASE;
-delete process.env.PGSSLMODE;
+const pagePath = 'd:\\Cafe Canva\\frontend\\src\\app\\[store_slug]\\page.tsx';
 
-const dbUrl = process.env.DATABASE_URL;
-const sql = postgres(dbUrl, { ssl: 'require', max: 1 });
-
-async function main() {
-  try {
-    // 1. Check if the hook is registered in auth config
-    console.log("=== auth.flow_state (hooks config) ===");
-    try {
-      const hookConfig = await sql`
-        SELECT * FROM auth.flow_state LIMIT 5;
-      `;
-      console.log(hookConfig);
-    } catch(e) {
-      console.log("flow_state not accessible:", e.message);
-    }
-
-    // 2. Now let's clean up the duplicate and fix the real problem
-    // First, see all accounts with yzagde605@gmail.com
-    console.log("\n=== All staff accounts ===");
-    const all = await sql`
-      SELECT id, full_name, email, role, is_active, auth_user_id, created_at 
-      FROM public.staff_accounts 
-      ORDER BY created_at;
-    `;
-    console.table(all);
-
-    // 3. Delete the orphaned record that was created without proper auth
-    console.log("\n=== Deleting orphaned yzagde605@gmail.com record ===");
-    const deleted = await sql`
-      DELETE FROM public.staff_accounts 
-      WHERE email = 'yzagde605@gmail.com' 
-      AND auth_user_id IS NULL
-      RETURNING id, email;
-    `;
-    console.log("Deleted:", deleted);
+try {
+  let content = fs.readFileSync(pagePath, 'utf8');
+  const original = content;
+  
+  // Replacement mappings
+  const replacements = [
+    // Backgrounds
+    { from: /bg-\[\#fcfaf4\]/g, to: 'bg-background' },
+    { from: /bg-\[\#ffffff\]/g, to: 'bg-card-bg' },
+    { from: /bg-white(?=[\s'"`])/g, to: 'bg-card-bg' },
+    { from: /bg-\[\#fbeee7\]/g, to: 'bg-brand-light' },
+    { from: /bg-\[\#e05e35\]/g, to: 'bg-brand' },
+    { from: /bg-\[\#d97706\]/g, to: 'bg-brand' },
+    { from: /bg-\[\#4A3728\]\/45/g, to: 'bg-foreground/20' },
+    { from: /bg-\[\#23120b\]/g, to: 'bg-foreground' },
+    { from: /bg-stone-50/g, to: 'bg-brand-light/25' },
     
-  } catch (err) {
-    console.error("❌ Error:", err.message);
-  } finally {
-    await sql.end();
+    // Texts
+    { from: /text-\[\#4a2d22\]/g, to: 'text-foreground' },
+    { from: /text-\[\#e05e35\]/g, to: 'text-brand' },
+    { from: /text-\[\#d97706\]/g, to: 'text-brand' },
+    { from: /text-\[\#ca8a04\]/g, to: 'text-accent' },
+    { from: /text-\[\#1e293b\]/g, to: 'text-foreground' },
+    { from: /text-stone-500/g, to: 'text-foreground/60' },
+    
+    // Borders
+    { from: /border-\[\#eae5d8\]/g, to: 'border-border-color' },
+    { from: /border-\[\#e05e35\]/g, to: 'border-brand' },
+    { from: /border-amber-200/g, to: 'border-brand/35' },
+    { from: /border-\[\#e2e8f0\]/g, to: 'border-border-color' },
+    { from: /border-stone-100/g, to: 'border-border-color/40' },
+    
+    // Hover & Active States
+    { from: /hover:bg-\[\#b45309\]/g, to: 'hover:bg-brand/90' },
+    { from: /hover:bg-\[\#4A3728\]\/60/g, to: 'hover:bg-foreground/30' },
+    { from: /hover:border-\[\#e05e35\]\/40/g, to: 'hover:border-brand/40' }
+  ];
+  
+  replacements.forEach(rep => {
+    content = content.replace(rep.from, rep.to);
+  });
+  
+  if (content !== original) {
+    fs.writeFileSync(pagePath, content, 'utf8');
+    console.log('Successfully refactored page.tsx to use semantic theme variables!');
+  } else {
+    console.log('No replacements needed for page.tsx');
   }
+  
+} catch (err) {
+  console.error('Error during cleanup:', err.message);
 }
-
-main();

@@ -522,7 +522,7 @@ export default function CafeCanvaAdmin() {
               {page === "staff" && <StaffManager branchId={activeBranch?.id || ''} />}
               {page === "attendance" && <AttendanceTab branchId={activeBranch?.id || ''} />}
               {page === "feedback" && <FeedbackTab branchId={activeBranch?.id || ''} />}
-              {page === "storefront" && <StorefrontEditor tenantPublicId={publicId} tenantPrivateId={tenantId} />}
+              {page === "storefront" && <StorefrontEditor tenantPublicId={publicId} tenantPrivateId={tenantId} tenantName={tenantName} setTenantName={setTenantName} />}
               {page === "audit" && <AuditLogViewer />}
               {page === "activity" && <ActivityFeedTab />}
             </>
