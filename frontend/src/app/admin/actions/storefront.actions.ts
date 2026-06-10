@@ -71,7 +71,9 @@ export async function updateStorefrontConfigAction(configId: string, updateData:
     'show_prices',
     'allow_orders',
     'show_blog',
-    'hero_image_url'
+    'hero_image_url',
+    'hero_image_url_2',
+    'hero_image_url_3'
   ];
   
   for (const key of allowedKeys) {
