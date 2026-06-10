@@ -15,9 +15,9 @@ async function check() {
     const columns = await sql`
       SELECT column_name, data_type 
       FROM information_schema.columns 
-      WHERE table_name = 'notification_log'
+      WHERE table_name = 'order_items'
     `;
-    console.log("NOTIFICATION_LOG COLUMNS:");
+    console.log("ORDER_ITEMS COLUMNS:");
     console.table(columns);
   } catch (err) {
     console.error(err);
