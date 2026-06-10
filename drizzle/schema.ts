@@ -80,6 +80,20 @@ export const storefrontConfig = pgTable('storefront_config', {
   allowOrders: boolean('allow_orders').default(true).notNull(),
   showBlog: boolean('show_blog').default(false).notNull(),
   heroImageUrl: text('hero_image_url'),
+  heroImageUrl2: text('hero_image_url_2'),
+  heroImageUrl3: text('hero_image_url_3'),
+  logoUrl: text('logo_url'),
+  footerDescription: text('footer_description'),
+  footerHours: text('footer_hours'),
+  footerAddress: text('footer_address'),
+  footerPhone: text('footer_phone'),
+  footerEmail: text('footer_email'),
+  heroTitle: text('hero_title'),
+  heroSubtitle: text('hero_subtitle'),
+  heroTitle2: text('hero_title_2'),
+  heroSubtitle2: text('hero_subtitle_2'),
+  heroTitle3: text('hero_title_3'),
+  heroSubtitle3: text('hero_subtitle_3'),
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 

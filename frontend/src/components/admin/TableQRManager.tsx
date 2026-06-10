@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getTablesAction, createTableAction, updateTableAction, deleteTableAction, regenerateTableQRAction } from '@/app/admin/actions/table.actions';
+import { useState, useEffect, useRef } from 'react';
+import { getTablesAction, createTableAction, updateTableAction, deleteTableAction, regenerateTableQRAction, rearrangeTablesAction } from '@/app/admin/actions/table.actions';
 import { useToast } from '@/components/admin/UIPrimitives';
-import { Layers, Plus, RefreshCw, Trash2, Printer, MapPin } from 'lucide-react';
+import { Layers, Plus, RefreshCw, Trash2, Printer, MapPin, Move } from 'lucide-react';
 
 interface Table {
   id: string;
@@ -29,13 +29,29 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
   const [capacity, setCapacity] = useState(4);
   const [section, setSection] = useState('Indoor');
 
+  // Interactive Dragging and Section states
+  const [activeSection, setActiveSection] = useState<string>('Indoor');
+  const [draggingTableId, setDraggingTableId] = useState<string | null>(null);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [initialPos, setInitialPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const [toastItem, toast] = useToast();
 
   const loadTables = async () => {
     setLoading(true);
     try {
       const data = await getTablesAction(branchId);
-      setTables(data as Table[]);
+      const typedData = data as Table[];
+      setTables(typedData);
+      
+      // Auto-select first active section if current active section has no tables
+      if (typedData.length > 0) {
+        const sections = Array.from(new Set(typedData.map(t => t.section || 'Indoor')));
+        if (sections.length > 0 && !sections.includes(activeSection)) {
+          setActiveSection(sections[0]);
+        }
+      }
     } catch (err) {
       console.error('Failed to load tables:', err);
     } finally {
@@ -48,6 +64,58 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
       loadTables();
     }
   }, [branchId]);
+
+  // Derived helper arrays
+  const sections = Array.from(new Set(tables.map(t => t.section || 'Indoor')));
+  const filteredTables = tables.filter(t => (t.section || 'Indoor') === activeSection);
+
+  const handleMouseDown = (e: React.MouseEvent, table: Table) => {
+    e.preventDefault();
+    setDraggingTableId(table.id);
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setInitialPos({ x: table.floor_x, y: table.floor_y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!draggingTableId || !containerRef.current) return;
+    
+    const container = containerRef.current;
+    const rect = container.getBoundingClientRect();
+    
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    
+    const pctX = (dx / rect.width) * 100;
+    const pctY = (dy / rect.height) * 100;
+    
+    const newX = Math.max(0, Math.min(Math.round(initialPos.x + pctX), 88));
+    const newY = Math.max(0, Math.min(Math.round(initialPos.y + pctY), 88));
+    
+    setTables(prev => prev.map(t => t.id === draggingTableId ? { ...t, floor_x: newX, floor_y: newY } : t));
+  };
+
+  const handleMouseUp = async () => {
+    if (!draggingTableId) return;
+    
+    const draggedTable = tables.find(t => t.id === draggingTableId);
+    setDraggingTableId(null);
+    
+    if (draggedTable) {
+      try {
+        await rearrangeTablesAction([
+          {
+            id: draggedTable.id,
+            floor_x: draggedTable.floor_x,
+            floor_y: draggedTable.floor_y
+          }
+        ]);
+        toast('Table position saved!', 'success');
+      } catch (err) {
+        console.error('Failed to save table position:', err);
+        toast('Failed to save table position.', 'error');
+      }
+    }
+  };
 
   const handleAddTable = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,42 +210,94 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
         </div>
       ) : activeTab === 'floor' ? (
         /* Interactive Floor plan view grid */
-        <div className="relative w-full h-[500px] bg-[#fdfcf7] border border-[#e2e8f0] rounded-3xl overflow-hidden shadow-2xl p-6 flex items-center justify-center">
-          <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
-          {tables.length === 0 ? (
-            <span className="text-xs text-[#1e293b]/30 uppercase tracking-widest font-semibold relative z-10">
-              No tables placed. Add tables to design your layout.
-            </span>
-          ) : (
-            <div className="relative w-full h-full">
-              {tables.map((t) => {
-                const statusColors = {
-                  available: 'border-green-500/30 bg-green-500/10 text-green-600',
-                  occupied: 'border-red-500/30 bg-red-500/10 text-red-600',
-                  reserved: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
-                  cleaning: 'border-purple-500/30 bg-purple-500/10 text-purple-400'
-                };
-                return (
-                  <div
-                    key={t.id}
-                    className={`absolute p-4 border rounded-2xl w-28 h-28 flex flex-col justify-between shadow-lg hover:border-[#d97706]/50 transition-all ${statusColors[t.status]}`}
-                    style={{
-                      left: `${t.floor_x}%`,
-                      top: `${t.floor_y}%`
-                    }}
-                  >
-                    <div className="flex justify-between items-start">
-                      <span className="font-extrabold text-sm">{t.name}</span>
-                      <span className="text-[10px] opacity-50">{t.capacity}P</span>
-                    </div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-65">
-                      {t.status}
-                    </span>
-                  </div>
-                );
-              })}
+        <div className="space-y-4">
+          {/* Section Selector Tabs */}
+          {sections.length > 0 && (
+            <div className="flex flex-wrap gap-2 pb-1">
+              {sections.map((sec) => (
+                <button
+                  key={sec || 'Indoor'}
+                  type="button"
+                  onClick={() => setActiveSection(sec || 'Indoor')}
+                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1.5 shadow-sm ${
+                    activeSection === (sec || 'Indoor')
+                      ? 'bg-amber-500/10 border-amber-500/25 text-[#d97706]'
+                      : 'bg-[#ffffff] border-[#e2e8f0] text-[#1e293b]/50 hover:text-[#1e293b]'
+                  }`}
+                >
+                  <MapPin size={12} className={activeSection === (sec || 'Indoor') ? 'text-[#d97706]' : 'text-[#1e293b]/30'} />
+                  <span>{sec || 'Indoor'}</span>
+                  <span className="text-[10px] opacity-60 bg-stone-100 px-1.5 py-0.5 rounded-full ml-1">
+                    {tables.filter(t => (t.section || 'Indoor') === (sec || 'Indoor')).length}
+                  </span>
+                </button>
+              ))}
             </div>
           )}
+
+          <div
+            ref={containerRef}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            className="relative w-full h-[520px] bg-[#fdfcf7] border border-[#e2e8f0] rounded-3xl overflow-hidden shadow-2xl p-6 flex items-center justify-center select-none"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+            
+            {/* Helpful drag tooltip badge */}
+            <div className="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-xl bg-[#ffffff]/80 backdrop-blur border border-[#e2e8f0]/60 text-[10px] font-bold text-[#1e293b]/60 flex items-center gap-1.5 shadow-sm">
+              <Move size={12} className="text-[#d97706]" />
+              <span>Drag cards inside the grid to rearrange floor plan</span>
+            </div>
+
+            {filteredTables.length === 0 ? (
+              <span className="text-xs text-[#1e293b]/30 uppercase tracking-widest font-semibold relative z-10">
+                No tables in this section. Add tables to design your layout.
+              </span>
+            ) : (
+              <div className="relative w-full h-full">
+                {filteredTables.map((t) => {
+                  const statusColors = {
+                    available: 'border-green-500/30 bg-green-500/10 text-green-600',
+                    occupied: 'border-red-500/30 bg-red-500/10 text-red-650',
+                    reserved: 'border-blue-500/30 bg-blue-500/10 text-blue-500',
+                    cleaning: 'border-purple-500/30 bg-purple-500/10 text-purple-650'
+                  };
+                  const isDragging = draggingTableId === t.id;
+                  return (
+                    <div
+                      key={t.id}
+                      onMouseDown={(e) => handleMouseDown(e, t)}
+                      className={`absolute p-4 border rounded-2xl w-28 h-28 flex flex-col justify-between shadow-lg hover:border-[#d97706]/60 transition-all cursor-move active:scale-95 group ${
+                        isDragging ? 'border-[#d97706] ring-2 ring-[#d97706]/20 bg-amber-500/5 z-30 scale-105' : statusColors[t.status]
+                      }`}
+                      style={{
+                        left: `${t.floor_x}%`,
+                        top: `${t.floor_y}%`,
+                        touchAction: 'none'
+                      }}
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="font-extrabold text-xs tracking-tight truncate max-w-[70px]" title={t.name}>{t.name}</span>
+                        <span className="text-[9px] font-black opacity-55 flex items-center gap-0.5 shrink-0 bg-[#ffffff]/60 px-1 py-0.5 rounded">
+                          {t.capacity}P
+                        </span>
+                      </div>
+                      
+                      {/* Drag overlay icon */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <Move className="w-5 h-5 text-[#d97706]/40" />
+                      </div>
+
+                      <span className="text-[9px] uppercase font-black tracking-widest opacity-75">
+                        {t.status}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         /* Detailed List data table view */

@@ -26,6 +26,10 @@ export interface StorefrontConfig {
   // Visual layout config fields
   hero_title?: string;
   hero_subtitle?: string;
+  hero_title_2?: string;
+  hero_subtitle_2?: string;
+  hero_title_3?: string;
+  hero_subtitle_3?: string;
   about_title?: string;
   about_text?: string;
   about_image_url?: string;

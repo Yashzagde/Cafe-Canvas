@@ -49,6 +49,21 @@ interface Tenant {
   subdomain: string;
   public_id?: string;
   theme_id?: string;
+  hero_image_url?: string | null;
+  hero_image_url_2?: string | null;
+  hero_image_url_3?: string | null;
+  hero_title?: string | null;
+  hero_subtitle?: string | null;
+  hero_title_2?: string | null;
+  hero_subtitle_2?: string | null;
+  hero_title_3?: string | null;
+  hero_subtitle_3?: string | null;
+  logo_url?: string | null;
+  footer_description?: string | null;
+  footer_hours?: string | null;
+  footer_address?: string | null;
+  footer_phone?: string | null;
+  footer_email?: string | null;
 }
 
 interface MenuCategory {
@@ -263,6 +278,12 @@ export default function Storefront() {
         const heroUrl = Array.isArray(configData) ? configData[0]?.hero_image_url : configData?.hero_image_url;
         const heroUrl2 = Array.isArray(configData) ? configData[0]?.hero_image_url_2 : configData?.hero_image_url_2;
         const heroUrl3 = Array.isArray(configData) ? configData[0]?.hero_image_url_3 : configData?.hero_image_url_3;
+        const heroTitle = Array.isArray(configData) ? configData[0]?.hero_title : configData?.hero_title;
+        const heroSubtitle = Array.isArray(configData) ? configData[0]?.hero_subtitle : configData?.hero_subtitle;
+        const heroTitle2 = Array.isArray(configData) ? configData[0]?.hero_title_2 : configData?.hero_title_2;
+        const heroSubtitle2 = Array.isArray(configData) ? configData[0]?.hero_subtitle_2 : configData?.hero_subtitle_2;
+        const heroTitle3 = Array.isArray(configData) ? configData[0]?.hero_title_3 : configData?.hero_title_3;
+        const heroSubtitle3 = Array.isArray(configData) ? configData[0]?.hero_subtitle_3 : configData?.hero_subtitle_3;
         const logoUrl = Array.isArray(configData) ? configData[0]?.logo_url : configData?.logo_url;
         const footerDescription = Array.isArray(configData) ? configData[0]?.footer_description : configData?.footer_description;
         const footerHours = Array.isArray(configData) ? configData[0]?.footer_hours : configData?.footer_hours;
@@ -279,13 +300,19 @@ export default function Storefront() {
           hero_image_url: heroUrl || null,
           hero_image_url_2: heroUrl2 || null,
           hero_image_url_3: heroUrl3 || null,
+          hero_title: heroTitle || null,
+          hero_subtitle: heroSubtitle || null,
+          hero_title_2: heroTitle2 || null,
+          hero_subtitle_2: heroSubtitle2 || null,
+          hero_title_3: heroTitle3 || null,
+          hero_subtitle_3: heroSubtitle3 || null,
           logo_url: logoUrl || null,
           footer_description: footerDescription || null,
           footer_hours: footerHours || null,
           footer_address: footerAddress || null,
           footer_phone: footerPhone || null,
           footer_email: footerEmail || null
-        } as any);
+        });
 
         // 2. Fetch categories
         const { data: catData, error: catError } = await supabase
@@ -892,9 +919,15 @@ export default function Storefront() {
               {/* 1. Hero Carousel */}
               <HeroCarousel 
                 cafeName={tenant.name} 
-                heroImageUrl={(tenant as any).hero_image_url}
-                heroImageUrl2={(tenant as any).hero_image_url_2}
-                heroImageUrl3={(tenant as any).hero_image_url_3}
+                heroImageUrl={tenant.hero_image_url}
+                heroImageUrl2={tenant.hero_image_url_2}
+                heroImageUrl3={tenant.hero_image_url_3}
+                heroTitle={tenant.hero_title}
+                heroSubtitle={tenant.hero_subtitle}
+                heroTitle2={tenant.hero_title_2}
+                heroSubtitle2={tenant.hero_subtitle_2}
+                heroTitle3={tenant.hero_title_3}
+                heroSubtitle3={tenant.hero_subtitle_3}
               />
 
               {/* 2. Horizontal Categories Strip */}

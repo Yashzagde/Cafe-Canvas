@@ -42,6 +42,10 @@ export interface ReceiptData {
   dateTime: string;
   footerMessage: string;
   fssaiNumber?: string;
+  logoUrl?: string;
+  extraChargesAmount?: number;
+  extraChargesLabel?: string;
+  customerPhone?: string;
 }
 
 export type PrintMethod = 'browser' | 'escpos' | 'network';

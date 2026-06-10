@@ -582,6 +582,16 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_errorMessage != null) return Scaffold(body: CcErrorState(error: _errorMessage!, onRetry: _loadTables));
 
+    final double width = MediaQuery.of(context).size.width;
+    int crossAxisCount = 2;
+    if (width >= 900) {
+      crossAxisCount = 6;
+    } else if (width >= 600) {
+      crossAxisCount = 4;
+    }
+
+    final double childAspectRatio = crossAxisCount > 2 ? 1.05 : 0.9;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('FLOOR PLAN GRID'),
@@ -606,9 +616,9 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
       ),
       body: GridView.builder(
         padding: const EdgeInsets.all(CafeCanvaSpacing.lg),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.9,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          childAspectRatio: childAspectRatio,
           crossAxisSpacing: CafeCanvaSpacing.md,
           mainAxisSpacing: CafeCanvaSpacing.md,
         ),
@@ -844,15 +854,232 @@ class _OrderBuilderScreenState extends State<OrderBuilderScreen> {
     }
   }
 
+  void _showMobileCartSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: CafeCanvaRadius.lg),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final cart = _getPosCart(widget.tableId);
+            if (cart.isEmpty) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+              });
+            }
+
+            int subtotal = 0;
+            for (final i in cart) {
+              int itemCost = i['unitPrice'] as int;
+              final List mods = i['modifierSelections'] as List;
+              for (final m in mods) {
+                itemCost += (m['extra_price'] ?? 0) as int;
+              }
+              subtotal += itemCost * (i['quantity'] as int);
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                top: CafeCanvaSpacing.lg,
+                left: CafeCanvaSpacing.lg,
+                right: CafeCanvaSpacing.lg,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.75,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Active Table Ticket',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.0),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8.0),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: cart.length,
+                        itemBuilder: (context, idx) {
+                          final i = cart[idx];
+                          final List mods = i['modifierSelections'] as List;
+                          final List<String> modNames = mods.map((m) => m['name'] as String).toList();
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text('${i['itemName']} x${i['quantity']}'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (modNames.isNotEmpty)
+                                  Text(
+                                    'Mods: ${modNames.join(", ")}',
+                                    style: const TextStyle(fontSize: 12, color: CafeCanvaColors.stone500),
+                                  ),
+                                if (i['itemNotes'] != '')
+                                  Text(
+                                    'Notes: ${i['itemNotes']}',
+                                    style: const TextStyle(fontSize: 12, color: CafeCanvaColors.stone500, fontStyle: FontStyle.italic),
+                                  ),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CcPriceText(priceInPaise: (i['unitPrice'] as int) * (i['quantity'] as int)),
+                                const SizedBox(width: 8.0),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: CafeCanvaColors.error),
+                                  onPressed: () {
+                                    setState(() {
+                                      cart.removeAt(idx);
+                                    });
+                                    setSheetState(() {});
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const Divider(height: 24.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Estimated Subtotal:',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
+                        ),
+                        CcPriceText(
+                          priceInPaise: subtotal,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: CafeCanvaColors.primary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16.0),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14.0),
+                        backgroundColor: CafeCanvaColors.success,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _submitActiveCart();
+                      },
+                      child: const Text(
+                        'SEND TO KITCHEN',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.0, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_errorMessage != null) return Scaffold(body: CcErrorState(error: _errorMessage!, onRetry: _loadMenu));
 
     final cart = _getPosCart(widget.tableId);
+    final double width = MediaQuery.of(context).size.width;
+    final bool isMobile = width < 720;
+
+    int itemColumns = 2;
+    if (!isMobile) {
+      itemColumns = width >= 1024 ? 4 : 3;
+    }
+
+    final double totalPrice = cart.fold<double>(0.0, (sum, item) {
+      int itemCost = item['unitPrice'] as int;
+      final List mods = item['modifierSelections'] as List;
+      for (final m in mods) {
+        itemCost += (m['extra_price'] ?? 0) as int;
+      }
+      return sum + (itemCost * (item['quantity'] as int));
+    });
+
+    Widget? bottomBar;
+    if (isMobile && cart.isNotEmpty) {
+      bottomBar = Container(
+        padding: const EdgeInsets.all(CafeCanvaSpacing.md),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${cart.length} item(s) selected',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
+                    ),
+                    const SizedBox(height: 2.0),
+                    Row(
+                      children: [
+                        const Text('Total: ', style: TextStyle(color: CafeCanvaColors.stone500, fontSize: 12.0)),
+                        CcPriceText(
+                          priceInPaise: totalPrice.round(),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: CafeCanvaColors.primary),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: CafeCanvaColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () => _showMobileCartSheet(context),
+                icon: const Icon(Icons.shopping_cart_outlined, size: 18),
+                label: const Text('View Cart', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('POS ORDER BUILDER')),
+      bottomNavigationBar: bottomBar,
       body: Column(
         children: [
           SizedBox(
@@ -887,8 +1114,8 @@ class _OrderBuilderScreenState extends State<OrderBuilderScreen> {
                 Expanded(
                   child: GridView.builder(
                     padding: const EdgeInsets.all(CafeCanvaSpacing.md),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: itemColumns,
                       childAspectRatio: 0.82,
                       crossAxisSpacing: CafeCanvaSpacing.md,
                       mainAxisSpacing: CafeCanvaSpacing.md,
@@ -912,52 +1139,53 @@ class _OrderBuilderScreenState extends State<OrderBuilderScreen> {
                   ),
                 ),
                 
-                Container(
-                  width: 280.0,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(left: BorderSide(color: CafeCanvaColors.stone200)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(CafeCanvaSpacing.md),
-                        child: Text('Active Table Ticket', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
-                      ),
-                      const Divider(height: 1),
-                      Expanded(
-                        child: cart.isEmpty
-                            ? const Center(child: Text('No items added yet', style: TextStyle(color: Colors.black26)))
-                            : ListView.builder(
-                                itemCount: cart.length,
-                                itemBuilder: (context, idx) {
-                                  final i = cart[idx];
-                                  return ListTile(
-                                    title: Text('${i['itemName']} x${i['quantity']}'),
-                                    subtitle: i['itemNotes'] != '' ? Text(i['itemNotes']) : null,
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.delete, color: CafeCanvaColors.error),
-                                      onPressed: () {
-                                        setState(() {
-                                          cart.removeAt(idx);
-                                        });
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(CafeCanvaSpacing.md),
-                        child: ElevatedButton(
-                          onPressed: cart.isEmpty ? null : _submitActiveCart,
-                          child: const Text('SEND TO KITCHEN'),
+                if (!isMobile)
+                  Container(
+                    width: 280.0,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      border: Border(left: BorderSide(color: CafeCanvaColors.stone200)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.all(CafeCanvaSpacing.md),
+                          child: Text('Active Table Ticket', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
                         ),
-                      ),
-                    ],
+                        const Divider(height: 1),
+                        Expanded(
+                          child: cart.isEmpty
+                              ? const Center(child: Text('No items added yet', style: TextStyle(color: Colors.black26)))
+                              : ListView.builder(
+                                  itemCount: cart.length,
+                                  itemBuilder: (context, idx) {
+                                    final i = cart[idx];
+                                    return ListTile(
+                                      title: Text('${i['itemName']} x${i['quantity']}'),
+                                      subtitle: i['itemNotes'] != '' ? Text(i['itemNotes']) : null,
+                                      trailing: IconButton(
+                                        icon: const Icon(Icons.delete, color: CafeCanvaColors.error),
+                                        onPressed: () {
+                                          setState(() {
+                                            cart.removeAt(idx);
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(CafeCanvaSpacing.md),
+                          child: ElevatedButton(
+                            onPressed: cart.isEmpty ? null : _submitActiveCart,
+                            child: const Text('SEND TO KITCHEN'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -1006,11 +1234,56 @@ class _ActiveOrdersQueueState extends State<ActiveOrdersQueue> {
     _loadActive();
   }
 
+  Widget _buildOrderCard(OrderModel o, bool isGrid) {
+    final listWidget = ListView(
+      shrinkWrap: true,
+      physics: isGrid ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      children: o.items.map((i) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2.0),
+        child: Text('${i.itemName} x${i.quantity}', style: const TextStyle(fontSize: 13.0)),
+      )).toList(),
+    );
+
+    return CcCard(
+      padding: const EdgeInsets.all(CafeCanvaSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Order ID: ${o.id.substring(0, 6)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              CcStatusBadge(status: o.status),
+            ],
+          ),
+          const Divider(height: 16.0),
+          isGrid ? Expanded(child: listWidget) : listWidget,
+          const SizedBox(height: 8.0),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _markServed(o.id),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: CafeCanvaColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('SERVED OUT'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     final activeOrders = _orders.where((o) => o.status == 'ready' || o.status == 'preparing').toList();
+    final double width = MediaQuery.of(context).size.width;
+    final int crossAxisCount = width >= 1024 ? 3 : (width >= 720 ? 2 : 1);
 
     return Scaffold(
       appBar: AppBar(title: const Text('ACTIVE ORDERS QUEUE')),
@@ -1028,37 +1301,32 @@ class _ActiveOrdersQueueState extends State<ActiveOrdersQueue> {
       ),
       body: activeOrders.isEmpty
           ? const CcEmptyState(icon: Icons.check_circle_outline, title: 'No active orders in preparation', description: 'All kitchen tickets are served.')
-          : ListView.builder(
-              padding: const EdgeInsets.all(CafeCanvaSpacing.md),
-              itemCount: activeOrders.length,
-              itemBuilder: (context, index) {
-                final o = activeOrders[index];
-                return CcCard(
+          : crossAxisCount == 1
+              ? ListView.builder(
                   padding: const EdgeInsets.all(CafeCanvaSpacing.md),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Order ID: ${o.id.substring(0, 6)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4.0),
-                            ...o.items.map((i) => Text('${i.itemName} x${i.quantity}')),
-                            const SizedBox(height: 4.0),
-                            CcStatusBadge(status: o.status),
-                          ],
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => _markServed(o.id),
-                        child: const Text('SERVED OUT'),
-                      ),
-                    ],
+                  itemCount: activeOrders.length,
+                  itemBuilder: (context, index) {
+                    final o = activeOrders[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: CafeCanvaSpacing.md),
+                      child: _buildOrderCard(o, false),
+                    );
+                  },
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(CafeCanvaSpacing.md),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    childAspectRatio: crossAxisCount == 3 ? 1.4 : 1.6,
+                    crossAxisSpacing: CafeCanvaSpacing.md,
+                    mainAxisSpacing: CafeCanvaSpacing.md,
                   ),
-                );
-              },
-            ),
+                  itemCount: activeOrders.length,
+                  itemBuilder: (context, index) {
+                    final o = activeOrders[index];
+                    return _buildOrderCard(o, true);
+                  },
+                ),
     );
   }
 }
@@ -1178,118 +1446,155 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
     if (_errorMessage != null) return Scaffold(body: CcErrorState(error: _errorMessage!, onRetry: _triggerBillGeneration));
 
     final totalCost = _bill!.total;
+    final double width = MediaQuery.of(context).size.width;
+    final bool isTablet = width >= 720;
+
+    final invoiceCard = CcCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Text(
+              'TABLE INVOICE',
+              style: GoogleFonts.dmSans(fontWeight: FontWeight.bold, fontSize: 16.0),
+            ),
+          ),
+          const Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Subtotal'),
+              CcPriceText(priceInPaise: _bill!.subtotal),
+            ],
+          ),
+          const SizedBox(height: 6.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('CGST (2.50%)'),
+              CcPriceText(priceInPaise: (_bill!.tax / 2).round()),
+            ],
+          ),
+          const SizedBox(height: 4.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('SGST (2.50%)'),
+              CcPriceText(priceInPaise: (_bill!.tax / 2).round()),
+            ],
+          ),
+          const Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('GRAND TOTAL PAYABLE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
+              CcPriceText(
+                priceInPaise: totalCost,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: CafeCanvaColors.primary),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final paymentActions = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text('Cash settlement calculator:', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8.0),
+        TextField(
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            prefixText: '₹ ',
+            labelText: 'Cash Tendered',
+          ),
+          onChanged: (val) {
+            final double? amt = double.tryParse(val);
+            if (amt != null) {
+              setState(() {
+                _cashTendered = amt;
+                _changeDue = amt - (totalCost / 100.0);
+              });
+            }
+          },
+        ),
+        if (_cashTendered > 0) ...[
+          const SizedBox(height: 12.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Change Due back:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                '₹ ${_changeDue.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.0,
+                  color: _changeDue >= 0 ? CafeCanvaColors.success : CafeCanvaColors.error,
+                ),
+              ),
+            ],
+          ),
+        ],
+        const SizedBox(height: 24.0),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: CafeCanvaColors.success,
+            padding: const EdgeInsets.symmetric(vertical: 14.0),
+          ),
+          onPressed: () => _settleBill('cash'),
+          child: const Text('SETTLE BILL WITH CASH', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(height: 8.0),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: CafeCanvaColors.info,
+            padding: const EdgeInsets.symmetric(vertical: 14.0),
+          ),
+          onPressed: () => _settleBill('card'),
+          child: const Text('SETTLE BILL WITH CARD', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(height: 8.0),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: CafeCanvaColors.primary,
+            padding: const EdgeInsets.symmetric(vertical: 14.0),
+          ),
+          onPressed: () => _settleBill('upi'),
+          child: const Text('SETTLE BILL VIA UPI', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('BILL SETTLEMENT')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(CafeCanvaSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            CcCard(
-              child: Column(
+        child: isTablet
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: invoiceCard,
+                  ),
+                  const SizedBox(width: 32.0),
+                  Expanded(
+                    flex: 6,
+                    child: paymentActions,
+                  ),
+                ],
+              )
+            : Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(
-                    child: Text(
-                      'TABLE INVOICE',
-                      style: GoogleFonts.dmSans(fontWeight: FontWeight.bold, fontSize: 16.0),
-                    ),
-                  ),
-                  const Divider(height: 24),
-                  
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Subtotal'),
-                      CcPriceText(priceInPaise: _bill!.subtotal),
-                    ],
-                  ),
-                  const SizedBox(height: 6.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('CGST (2.50%)'),
-                      CcPriceText(priceInPaise: (_bill!.tax / 2).round()),
-                    ],
-                  ),
-                  const SizedBox(height: 4.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('SGST (2.50%)'),
-                      CcPriceText(priceInPaise: (_bill!.tax / 2).round()),
-                    ],
-                  ),
-                  const Divider(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('GRAND TOTAL PAYABLE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
-                      CcPriceText(priceInPaise: totalCost, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: CafeCanvaColors.primary)),
-                    ],
-                  ),
+                  invoiceCard,
+                  const SizedBox(height: 24.0),
+                  paymentActions,
                 ],
               ),
-            ),
-            const SizedBox(height: 24.0),
-            
-            const Text('Cash settlement calculator:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8.0),
-            TextField(
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                prefixText: '₹ ',
-                labelText: 'Cash Tendered',
-              ),
-              onChanged: (val) {
-                final double? amt = double.tryParse(val);
-                if (amt != null) {
-                  setState(() {
-                    _cashTendered = amt;
-                    _changeDue = amt - (totalCost / 100.0);
-                  });
-                }
-              },
-            ),
-            if (_cashTendered > 0) ...[
-              const SizedBox(height: 12.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Change Due back:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(
-                    '₹ ${_changeDue.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.0,
-                      color: _changeDue >= 0 ? CafeCanvaColors.success : CafeCanvaColors.error,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 24.0),
-            
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: CafeCanvaColors.success),
-              onPressed: () => _settleBill('cash'),
-              child: const Text('SETTLE BILL WITH CASH'),
-            ),
-            const SizedBox(height: 8.0),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: CafeCanvaColors.info),
-              onPressed: () => _settleBill('card'),
-              child: const Text('SETTLE BILL WITH CARD'),
-            ),
-            const SizedBox(height: 8.0),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: CafeCanvaColors.primary),
-              onPressed: () => _settleBill('upi'),
-              child: const Text('SETTLE BILL VIA UPI'),
-            ),
-          ],
-        ),
       ),
     );
   }

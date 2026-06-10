@@ -469,6 +469,7 @@ export default function StorefrontEditor({
   const { config, setConfig, updateField, isDirty, clearDirty } = useStorefrontEditorStore();
   const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'social' | 'connection' | 'footer'>('branding');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('mobile');
+  const [previewSlide, setPreviewSlide] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [storeName, setStoreName] = useState(tenantName);
@@ -1060,190 +1061,262 @@ export default function StorefrontEditor({
 
           {activeTab === 'hero' && (
             <>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                  Hero Welcome Title
-                </label>
-                <input
-                  type="text"
-                  value={config.hero_title || 'Indulge in Artful Brews'}
-                  onChange={(e) => updateField('hero_title', e.target.value)}
-                  className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                  Hero Subtitle
-                </label>
-                <textarea
-                  value={config.hero_subtitle || 'Taste the single-origin specialty blends crafted by master baristas.'}
-                  onChange={(e) => updateField('hero_subtitle', e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
-                />
-              </div>
-
-              {/* Hero Background Image Slide 1 */}
-              <div className="space-y-2 pt-2 border-t border-[#e2e8f0]/40">
-                <label className="text-xs font-black text-[#1e293b]/70 tracking-wider uppercase block">
-                  Hero Background (Slide 1 - Welcome)
-                </label>
+              {/* SLIDE 1 SECTION */}
+              <div className="space-y-4 p-4 rounded-2xl bg-amber-500/[0.03] border border-amber-500/10">
+                <span className="text-[10px] font-black text-[#d97706] tracking-widest uppercase block">
+                  Slide 1 - Welcome Header
+                </span>
                 
-                {config.hero_image_url ? (
-                  <div className="p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
-                      <img src={config.hero_image_url} alt="Hero Slide 1 Preview" className="w-full h-full object-cover" />
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Welcome Title
+                  </label>
+                  <input
+                    type="text"
+                    value={config.hero_title || 'Indulge in Artful Brews'}
+                    onChange={(e) => { updateField('hero_title', e.target.value); setPreviewSlide(1); }}
+                    onFocus={() => setPreviewSlide(1)}
+                    className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Welcome Subtitle
+                  </label>
+                  <textarea
+                    value={config.hero_subtitle || 'Taste the single-origin specialty blends crafted by master baristas.'}
+                    onChange={(e) => { updateField('hero_subtitle', e.target.value); setPreviewSlide(1); }}
+                    onFocus={() => setPreviewSlide(1)}
+                    rows={2}
+                    className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                  />
+                </div>
+
+                {/* Hero Background Image Slide 1 */}
+                <div className="space-y-2 pt-2 border-t border-[#e2e8f0]/40">
+                  <label className="text-[10px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Slide 1 Background Image
+                  </label>
+                  
+                  {config.hero_image_url ? (
+                    <div className="p-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
+                        <img src={config.hero_image_url} alt="Hero Slide 1 Preview" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-[10px] font-bold text-[#1e293b]/80 truncate max-w-[200px]">
+                          {config.hero_image_url.split('/').pop()}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImageForField('hero_image_url')}
+                          className="text-[9px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 size={10} />
+                          Remove Image
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-xs font-bold text-[#1e293b]/80 truncate max-w-[200px]">
-                        {config.hero_image_url.split('/').pop()}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImageForField('hero_image_url')}
-                        className="text-[10px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <Trash2 size={11} />
-                        Remove Image
-                      </button>
+                  ) : (
+                    <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => { handleUploadImageForField(e, 'hero_image_url'); setPreviewSlide(1); }}
+                        disabled={uploadingField !== null}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <div className="space-y-2 flex flex-col items-center justify-center">
+                        {uploadingField === 'hero_image_url' ? (
+                          <>
+                            <Loader2 className="w-6 h-6 text-[#d97706] animate-spin" />
+                            <p className="text-[10px] font-bold text-[#1e293b]/70">Uploading to Supabase...</p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 text-[#1e293b]/30" />
+                            <div>
+                              <p className="text-[10px] font-bold text-[#1e293b]/70">Click or drag image to upload</p>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-6 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleUploadImageForField(e, 'hero_image_url')}
-                      disabled={uploadingField !== null}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                    />
-                    <div className="space-y-2 flex flex-col items-center justify-center">
-                      {uploadingField === 'hero_image_url' ? (
-                        <>
-                          <Loader2 className="w-8 h-8 text-[#d97706] animate-spin" />
-                          <p className="text-xs font-bold text-[#1e293b]/70">Uploading to Supabase...</p>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-8 h-8 text-[#1e293b]/30" />
-                          <div>
-                            <p className="text-xs font-bold text-[#1e293b]/70">Click or drag image to upload</p>
-                            <p className="text-[10px] text-[#1e293b]/40 mt-1">Supports PNG, JPG, WEBP (Max 5MB)</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
-              {/* Hero Background Image Slide 2 */}
-              <div className="space-y-2 pt-4 border-t border-[#e2e8f0]/40">
-                <label className="text-xs font-black text-[#1e293b]/70 tracking-wider uppercase block">
-                  Hero Background (Slide 2 - Specialities)
-                </label>
+              {/* SLIDE 2 SECTION */}
+              <div className="space-y-4 p-4 rounded-2xl bg-amber-500/[0.03] border border-amber-500/10">
+                <span className="text-[10px] font-black text-[#d97706] tracking-widest uppercase block">
+                  Slide 2 - Specialities
+                </span>
                 
-                {config.hero_image_url_2 ? (
-                  <div className="p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
-                      <img src={config.hero_image_url_2} alt="Hero Slide 2 Preview" className="w-full h-full object-cover" />
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Specialities Title
+                  </label>
+                  <input
+                    type="text"
+                    value={config.hero_title_2 || "Our Barista's Masterpieces"}
+                    onChange={(e) => { updateField('hero_title_2', e.target.value); setPreviewSlide(2); }}
+                    onFocus={() => setPreviewSlide(2)}
+                    className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Specialities Subtitle
+                  </label>
+                  <textarea
+                    value={config.hero_subtitle_2 || 'Every cup is a canvas. Discover our premium organic blends and slow pour-overs.'}
+                    onChange={(e) => { updateField('hero_subtitle_2', e.target.value); setPreviewSlide(2); }}
+                    onFocus={() => setPreviewSlide(2)}
+                    rows={2}
+                    className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                  />
+                </div>
+
+                {/* Hero Background Image Slide 2 */}
+                <div className="space-y-2 pt-2 border-t border-[#e2e8f0]/40">
+                  <label className="text-[10px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Slide 2 Background Image
+                  </label>
+                  
+                  {config.hero_image_url_2 ? (
+                    <div className="p-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
+                        <img src={config.hero_image_url_2} alt="Hero Slide 2 Preview" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-[10px] font-bold text-[#1e293b]/80 truncate max-w-[200px]">
+                          {config.hero_image_url_2.split('/').pop()}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImageForField('hero_image_url_2')}
+                          className="text-[9px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 size={10} />
+                          Remove Image
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-xs font-bold text-[#1e293b]/80 truncate max-w-[200px]">
-                        {config.hero_image_url_2.split('/').pop()}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImageForField('hero_image_url_2')}
-                        className="text-[10px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <Trash2 size={11} />
-                        Remove Image
-                      </button>
+                  ) : (
+                    <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => { handleUploadImageForField(e, 'hero_image_url_2'); setPreviewSlide(2); }}
+                        disabled={uploadingField !== null}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <div className="space-y-2 flex flex-col items-center justify-center">
+                        {uploadingField === 'hero_image_url_2' ? (
+                          <>
+                            <Loader2 className="w-6 h-6 text-[#d97706] animate-spin" />
+                            <p className="text-[10px] font-bold text-[#1e293b]/70">Uploading to Supabase...</p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 text-[#1e293b]/30" />
+                            <div>
+                              <p className="text-[10px] font-bold text-[#1e293b]/70">Click or drag image to upload</p>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-6 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleUploadImageForField(e, 'hero_image_url_2')}
-                      disabled={uploadingField !== null}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                    />
-                    <div className="space-y-2 flex flex-col items-center justify-center">
-                      {uploadingField === 'hero_image_url_2' ? (
-                        <>
-                          <Loader2 className="w-8 h-8 text-[#d97706] animate-spin" />
-                          <p className="text-xs font-bold text-[#1e293b]/70">Uploading to Supabase...</p>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-8 h-8 text-[#1e293b]/30" />
-                          <div>
-                            <p className="text-xs font-bold text-[#1e293b]/70">Click or drag image to upload</p>
-                            <p className="text-[10px] text-[#1e293b]/40 mt-1">Supports PNG, JPG, WEBP (Max 5MB)</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
-              {/* Hero Background Image Slide 3 */}
-              <div className="space-y-2 pt-4 border-t border-[#e2e8f0]/40">
-                <label className="text-xs font-black text-[#1e293b]/70 tracking-wider uppercase block">
-                  Hero Background (Slide 3 - Boutique)
-                </label>
+              {/* SLIDE 3 SECTION */}
+              <div className="space-y-4 p-4 rounded-2xl bg-amber-500/[0.03] border border-amber-500/10">
+                <span className="text-[10px] font-black text-[#d97706] tracking-widest uppercase block">
+                  Slide 3 - Boutique
+                </span>
                 
-                {config.hero_image_url_3 ? (
-                  <div className="p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
-                      <img src={config.hero_image_url_3} alt="Hero Slide 3 Preview" className="w-full h-full object-cover" />
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Boutique Title
+                  </label>
+                  <input
+                    type="text"
+                    value={config.hero_title_3 || 'Hot Delights at Your Table'}
+                    onChange={(e) => { updateField('hero_title_3', e.target.value); setPreviewSlide(3); }}
+                    onFocus={() => setPreviewSlide(3)}
+                    className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Boutique Subtitle
+                  </label>
+                  <textarea
+                    value={config.hero_subtitle_3 || 'Freshly baked pastries and signature thalis prepared live in our kitchen.'}
+                    onChange={(e) => { updateField('hero_subtitle_3', e.target.value); setPreviewSlide(3); }}
+                    onFocus={() => setPreviewSlide(3)}
+                    rows={2}
+                    className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                  />
+                </div>
+
+                {/* Hero Background Image Slide 3 */}
+                <div className="space-y-2 pt-2 border-t border-[#e2e8f0]/40">
+                  <label className="text-[10px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Slide 3 Background Image
+                  </label>
+                  
+                  {config.hero_image_url_3 ? (
+                    <div className="p-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
+                        <img src={config.hero_image_url_3} alt="Hero Slide 3 Preview" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-[10px] font-bold text-[#1e293b]/80 truncate max-w-[200px]">
+                          {config.hero_image_url_3.split('/').pop()}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImageForField('hero_image_url_3')}
+                          className="text-[9px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 size={10} />
+                          Remove Image
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-xs font-bold text-[#1e293b]/80 truncate max-w-[200px]">
-                        {config.hero_image_url_3.split('/').pop()}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImageForField('hero_image_url_3')}
-                        className="text-[10px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <Trash2 size={11} />
-                        Remove Image
-                      </button>
+                  ) : (
+                    <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => { handleUploadImageForField(e, 'hero_image_url_3'); setPreviewSlide(3); }}
+                        disabled={uploadingField !== null}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <div className="space-y-2 flex flex-col items-center justify-center">
+                        {uploadingField === 'hero_image_url_3' ? (
+                          <>
+                            <Loader2 className="w-6 h-6 text-[#d97706] animate-spin" />
+                            <p className="text-[10px] font-bold text-[#1e293b]/70">Uploading to Supabase...</p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 text-[#1e293b]/30" />
+                            <div>
+                              <p className="text-[10px] font-bold text-[#1e293b]/70">Click or drag image to upload</p>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-6 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleUploadImageForField(e, 'hero_image_url_3')}
-                      disabled={uploadingField !== null}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                    />
-                    <div className="space-y-2 flex flex-col items-center justify-center">
-                      {uploadingField === 'hero_image_url_3' ? (
-                        <>
-                          <Loader2 className="w-8 h-8 text-[#d97706] animate-spin" />
-                          <p className="text-xs font-bold text-[#1e293b]/70">Uploading to Supabase...</p>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-8 h-8 text-[#1e293b]/30" />
-                          <div>
-                            <p className="text-xs font-bold text-[#1e293b]/70">Click or drag image to upload</p>
-                            <p className="text-[10px] text-[#1e293b]/40 mt-1">Supports PNG, JPG, WEBP (Max 5MB)</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </>
           )}
@@ -1462,26 +1535,68 @@ export default function StorefrontEditor({
               <div
                 className="p-6 text-center flex flex-col justify-center items-center gap-3 relative overflow-hidden"
                 style={{
-                  backgroundImage: config.hero_image_url ? `linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url(${config.hero_image_url})` : 'none',
+                  backgroundImage: (() => {
+                    const bgUrl = previewSlide === 1 ? config.hero_image_url :
+                                  previewSlide === 2 ? config.hero_image_url_2 :
+                                  config.hero_image_url_3;
+                    return bgUrl ? `linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url(${bgUrl})` : 'none';
+                  })(),
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  minHeight: '140px'
+                  minHeight: '145px'
                 }}
               >
-                {!config.hero_image_url && (
+                {!(previewSlide === 1 ? config.hero_image_url :
+                   previewSlide === 2 ? config.hero_image_url_2 :
+                   config.hero_image_url_3) && (
                   <div className="absolute inset-0 bg-brand-light opacity-30 z-0"></div>
                 )}
-                <h3 className="text-base font-extrabold tracking-tight font-display leading-tight z-10" style={{ fontFamily: config.font_heading, color: config.hero_image_url ? '#ffffff' : 'var(--foreground)' }}>
-                  {config.hero_title || 'Welcome Title'}
+
+                {/* Slide indicator pill / badge */}
+                <div className="absolute top-2 left-2 z-20 px-2 py-0.5 rounded-full bg-black/45 text-[8px] font-black text-white uppercase tracking-wider scale-90">
+                  Slide {previewSlide} Preview
+                </div>
+
+                <h3 className="text-sm font-extrabold tracking-tight font-display leading-tight z-10" style={{ fontFamily: config.font_heading, color: (
+                  previewSlide === 1 ? config.hero_image_url :
+                  previewSlide === 2 ? config.hero_image_url_2 :
+                  config.hero_image_url_3
+                ) ? '#ffffff' : 'var(--foreground)' }}>
+                  {(() => {
+                    const rawTitle = previewSlide === 1 ? (config.hero_title || 'Welcome to Cafe Canvas') :
+                                     previewSlide === 2 ? (config.hero_title_2 || "Our Barista's Masterpieces") :
+                                     (config.hero_title_3 || 'Hot Delights at Your Table');
+                    return rawTitle.replace('Cafe Canvas', storeName || 'CafeCanvas');
+                  })()}
                 </h3>
-                <p className="text-[10px] max-w-[200px] leading-relaxed z-10" style={{ color: config.hero_image_url ? 'rgba(255,255,255,0.85)' : 'var(--foreground)' }}>
-                  {config.hero_subtitle || 'Subtitle'}
+                <p className="text-[9px] max-w-[210px] leading-relaxed z-10" style={{ color: (
+                  previewSlide === 1 ? config.hero_image_url :
+                  previewSlide === 2 ? config.hero_image_url_2 :
+                  config.hero_image_url_3
+                ) ? 'rgba(255,255,255,0.85)' : 'var(--foreground)' }}>
+                  {previewSlide === 1 ? (config.hero_subtitle || 'Artisan coffee, handcrafted meals, and warm boutique hospitality.') :
+                   previewSlide === 2 ? (config.hero_subtitle_2 || 'Every cup is a canvas. Discover our premium organic blends and slow pour-overs.') :
+                   (config.hero_subtitle_3 || 'Freshly baked pastries and signature thalis prepared live in our kitchen.')}
                 </p>
                 <button
-                  className={`px-3 py-1.5 text-[9px] font-extrabold transition-all cursor-default z-10 ${themeDesign.buttonClass}`}
+                  className={`px-3 py-1.5 text-[8px] font-extrabold transition-all cursor-default z-10 ${themeDesign.buttonClass} scale-90`}
                 >
                   View Menu
                 </button>
+
+                {/* Swiper-like bullet indicators in preview */}
+                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-20 flex gap-1">
+                  {[1, 2, 3].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setPreviewSlide(num as 1 | 2 | 3)}
+                      className={`w-1.5 h-1.5 rounded-full transition-all cursor-pointer ${
+                        previewSlide === num ? 'bg-[#FFC9CD] scale-125' : 'bg-white/40'
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
 
               {/* Menu Sections Preview */}

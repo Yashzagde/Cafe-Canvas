@@ -281,6 +281,70 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['menu_item_modifier_groups']['Insert']>;
         Relationships: [];
       };
+      menu_categories: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          name: string;
+          name_hi: string | null;
+          description: string | null;
+          sort_order: number;
+          is_visible: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          name: string;
+          name_hi?: string | null;
+          description?: string | null;
+          sort_order?: number;
+          is_visible?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['menu_categories']['Insert']>;
+        Relationships: [];
+      };
+      menu_items: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          category_id: string | null;
+          name: string;
+          name_hi: string | null;
+          description: string | null;
+          price: number;
+          compare_price: number | null;
+          image_url: string | null;
+          is_available: boolean;
+          is_featured: boolean;
+          dietary_tags: string[];
+          prep_time_mins: number;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          category_id?: string | null;
+          name: string;
+          name_hi?: string | null;
+          description?: string | null;
+          price: number;
+          compare_price?: number | null;
+          image_url?: string | null;
+          is_available?: boolean;
+          is_featured?: boolean;
+          dietary_tags?: string[];
+          prep_time_mins?: number;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['menu_items']['Insert']>;
+        Relationships: [];
+      };
       inventory_items: {
         Row: {
           id: string;

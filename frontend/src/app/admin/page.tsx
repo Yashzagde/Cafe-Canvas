@@ -39,6 +39,7 @@ interface MenuItem {
   cat: string;
   status: 'available' | 'unavailable' | 'hidden';
   desc: string;
+  image_url?: string | null;
 }
 
 interface Table {
@@ -50,6 +51,7 @@ interface Table {
   floor_x: number;
   floor_y: number;
   qr_version: number;
+  table_number?: number;
 }
 
 interface BillItem {
@@ -204,8 +206,7 @@ export default function CafeCanvaAdmin() {
       const { data: catData } = await supabase
         .from('menu_categories')
         .select('id, name')
-        .eq('tenant_id', activeTenantId)
-        .is('deleted_at', null);
+        .eq('tenant_id', activeTenantId);
 
       const catsMap = new Map((catData || []).map(c => [c.id, c.name]));
 
@@ -214,7 +215,6 @@ export default function CafeCanvaAdmin() {
         .from('menu_items')
         .select('*')
         .eq('tenant_id', activeTenantId)
-        .is('deleted_at', null)
         .order('sort_order', { ascending: true });
 
       const mappedMenu: MenuItem[] = (itemsData || []).map(i => ({
@@ -223,7 +223,8 @@ export default function CafeCanvaAdmin() {
         price: i.price_paise ? i.price_paise / 100 : 0,
         cat: catsMap.get(i.category_id || "") || "Uncategorized",
         status: i.is_available ? 'available' : 'unavailable',
-        desc: i.description || ""
+        desc: i.description || "",
+        image_url: i.image_url || null
       }));
       setMenu(mappedMenu);
 
@@ -244,23 +245,26 @@ export default function CafeCanvaAdmin() {
         status: t.status as any,
         floor_x: t.floor_x,
         floor_y: t.floor_y,
-        qr_version: t.qr_version
+        qr_version: t.qr_version,
+        table_number: t.table_number
       }));
       setTables(mappedTables);
 
-      // Fetch active orders & order items
+      // Fetch active orders & today's paid orders & order items
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
       const { data: activeOrders } = await supabase
         .from('orders')
         .select('*, order_items(*)')
         .eq('tenant_id', activeTenantId)
         .eq('branch_id', currentBranchId)
-        .in('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed']);
+        .or(`status.in.(pending,confirmed,preparing,ready,served,billed),and(status.eq.paid,created_at.gte.${todayStart.toISOString()})`);
 
       const ordersByTable: Record<string, BillItem[]> = {};
       const recentOrdersList: RecentOrder[] = [];
 
       (activeOrders || []).forEach(o => {
-        if (o.table_id) {
+        if (o.table_id && o.status !== 'paid') {
           if (!ordersByTable[o.table_id]) ordersByTable[o.table_id] = [];
           
           (o.order_items || []).forEach((i: any) => {
@@ -269,7 +273,7 @@ export default function CafeCanvaAdmin() {
               _key: i.id,
               itemId: i.menu_item_id || "",
               name: i.item_name,
-              price: i.unit_price_paise / 100,
+              price: (i.unit_price || i.unit_price_paise || 0) / 100,
               qty: i.quantity
             });
           });
@@ -283,7 +287,7 @@ export default function CafeCanvaAdmin() {
           id: `#${o.id.substring(0, 4).toUpperCase()}`,
           tableId: mappedTables.find(t => t.id === o.table_id)?.name || "Table Guest",
           desc: orderSummary.length > 30 ? orderSummary.substring(0, 27) + "..." : orderSummary,
-          amount: (o.total_amount_paise || 0) / 100,
+          amount: (o.total || o.total_amount_paise || 0) / 100,
           status: o.status,
           age: `${mins}m ago`
         });
@@ -300,20 +304,23 @@ export default function CafeCanvaAdmin() {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      const mappedHistory: BillHistoryEntry[] = (billsData || []).map(b => ({
-        id: b.id.substring(0, 8).toUpperCase(),
-        table: mappedTables.find(t => t.id === b.table_id)?.name || "Table",
-        section: mappedTables.find(t => t.id === b.table_id)?.section || "Indoor",
-        time: new Date(b.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
-        method: b.payment_method || "CASH",
-        sub: b.subtotal_paise / 100,
-        gst: (b.cgst_paise + b.sgst_paise) / 100,
-        svc: b.service_charge_paise / 100,
-        discount: b.discount_paise / 100,
-        total: b.total_paise / 100,
-        itemsCount: 1,
-        billItems: []
-      }));
+      const mappedHistory: BillHistoryEntry[] = (billsData || []).map(b => {
+        const matchingTable = mappedTables.find(t => t.table_number === b.table_number);
+        return {
+          id: b.id.substring(0, 8).toUpperCase(),
+          table: matchingTable?.name || (b.table_number ? `Table ${b.table_number}` : "Table"),
+          section: matchingTable?.section || "Indoor",
+          time: new Date(b.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+          method: b.payment_method || "CASH",
+          sub: (b.subtotal || 0) / 100,
+          gst: ((b.cgst || 0) + (b.sgst || 0)) / 100,
+          svc: ((b.total || 0) - (b.subtotal || 0) - (b.cgst || 0) - (b.sgst || 0) + (b.discount_amount || 0)) / 100,
+          discount: (b.discount_amount || 0) / 100,
+          total: (b.total || 0) / 100,
+          itemsCount: 1,
+          billItems: []
+        };
+      });
       setBillHistory(mappedHistory);
 
       // Fetch customers
@@ -363,6 +370,11 @@ export default function CafeCanvaAdmin() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'order_items' },
+        () => { fetchDbData(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bills', filter: `tenant_id=eq.${tenantId}` },
         () => { fetchDbData(); }
       )
       .on(

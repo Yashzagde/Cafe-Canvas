@@ -79,7 +79,13 @@ export async function updateStorefrontConfigAction(configId: string, updateData:
     'footer_hours',
     'footer_address',
     'footer_phone',
-    'footer_email'
+    'footer_email',
+    'hero_title',
+    'hero_subtitle',
+    'hero_title_2',
+    'hero_subtitle_2',
+    'hero_title_3',
+    'hero_subtitle_3'
   ];
   
   for (const key of allowedKeys) {

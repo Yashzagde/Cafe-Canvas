@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { X, Printer, Download, Share2, Settings, Check } from 'lucide-react';
 import ReceiptTemplate from './ReceiptTemplate';
 import type { ReceiptData, PrintSettings } from './types';
@@ -19,6 +19,16 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
   const [shared, setShared] = useState(false);
   const [settings, setSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
   const [showSettings, setShowSettings] = useState(false);
+  const [whatsappPhone, setWhatsappPhone] = useState('');
+
+  useEffect(() => {
+    if (data.customerPhone) {
+      const cleanPhone = data.customerPhone.replace(/\D/g, '').slice(-10);
+      setWhatsappPhone(cleanPhone);
+    } else {
+      setWhatsappPhone('');
+    }
+  }, [data.customerPhone, show]);
 
   // ─── BROWSER PRINT ───
   const handleBrowserPrint = useCallback(() => {
@@ -130,10 +140,13 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
       `Paid via: ${data.paymentMethod.toUpperCase()}\n\n` +
       `${data.footerMessage}`
     );
-    window.open(`https://wa.me/?text=${message}`, '_blank');
+    const targetUrl = whatsappPhone.length === 10
+      ? `https://wa.me/91${whatsappPhone}?text=${message}`
+      : `https://wa.me/?text=${message}`;
+    window.open(targetUrl, '_blank');
     setShared(true);
     setTimeout(() => setShared(false), 3000);
-  }, [data]);
+  }, [data, whatsappPhone]);
 
   if (!show) return null;
 
@@ -273,6 +286,40 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
             overflow: 'hidden',
           }}>
             <ReceiptTemplate ref={receiptRef} data={data} />
+          </div>
+        </div>
+
+        {/* ─── WHATSAPP NUMBER INPUT ─── */}
+        <div style={{
+          padding: '12px 20px',
+          borderTop: '1px solid #f5f5f4',
+          background: '#fafaf9',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px'
+        }}>
+          <label style={{ fontSize: '11px', fontWeight: 700, color: '#57534e' }}>
+            Customer WhatsApp Number (to send bill directly)
+          </label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <span style={{
+              display: 'flex', alignItems: 'center', background: '#f5f5f4',
+              border: '1px solid #e7e5e4', borderRadius: '8px', padding: '0 10px',
+              fontSize: '12px', color: '#78716c', fontWeight: 600
+            }}>
+              +91
+            </span>
+            <input
+              type="tel"
+              placeholder="Enter 10-digit mobile number"
+              value={whatsappPhone}
+              onChange={(e) => setWhatsappPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              style={{
+                flex: 1, background: '#ffffff', border: '1px solid #e7e5e4',
+                borderRadius: '8px', padding: '6px 12px', color: '#1c1917', fontSize: '13px',
+                outline: 'none'
+              }}
+            />
           </div>
         </div>
 

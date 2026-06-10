@@ -89,6 +89,7 @@ export default function StaffPOS() {
 
   /* ─── Screen Tab Navigation ─── */
   const [activeTab, setActiveTab] = useState<'tables' | 'order' | 'queue' | 'performance'>('tables');
+  const [orderSubTab, setOrderSubTab] = useState<'menu' | 'cart'>('menu');
 
   /* ─── Database and Content States ─── */
   const [tables, setTables] = useState<any[]>([]);
@@ -191,7 +192,6 @@ export default function StaffPOS() {
         const { data: dbCats } = await supabase
           .from('menu_categories')
           .select('*')
-          .is('deleted_at', null)
           .order('sort_order');
         
         if (dbCats && dbCats.length > 0) {
@@ -203,7 +203,6 @@ export default function StaffPOS() {
         const { data: dbItems } = await supabase
           .from('menu_items')
           .select('*')
-          .is('deleted_at', null)
           .eq('is_available', true)
           .order('name');
         
@@ -503,67 +502,174 @@ export default function StaffPOS() {
   /* ────────────────────────────────────────────────────────
      3. KITCHEN TRANSACTION DISPATCH
   ──────────────────────────────────────────────────────── */
-  const dispatchOrderToKitchen = async () => {
+  const handleLoadActiveOrderToCart = async (tbl: any) => {
+    setOrderSubTab('menu');
+    if (demoMode) {
+      const mockOrd = activeOrdersQueue.find(o => o.table_name === tbl.name && o.status !== 'served' && o.status !== 'billed');
+      if (mockOrd) {
+        const loaded: CartItem[] = mockOrd.items.map((i: any) => ({
+          id: (i.id || 'mock-' + Math.random()) + '_' + Date.now(),
+          name: i.itemName,
+          price: 100,
+          qty: i.quantity,
+          notes: i.itemNotes || ''
+        }));
+        setCart(loaded);
+      }
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data: dbOrders, error: orderErr } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('tenant_id', profile.tenant_id)
+        .eq('table_id', tbl.id)
+        .in('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (orderErr) throw orderErr;
+
+      if (dbOrders && dbOrders.length > 0) {
+        const activeOrder = dbOrders[0];
+        const { data: dbOrderItems, error: itemsErr } = await supabase
+          .from('order_items')
+          .select('*')
+          .eq('order_id', activeOrder.id);
+
+        if (itemsErr) throw itemsErr;
+
+        if (dbOrderItems && dbOrderItems.length > 0) {
+          const loadedCart: CartItem[] = dbOrderItems.map(i => {
+            const baseId = i.menu_item_id || i.id;
+            return {
+              id: baseId + '_' + Date.now(),
+              name: i.item_name,
+              price: (i.unit_price || i.unit_price_paise || 0) / 100,
+              qty: i.quantity,
+              notes: i.notes || '',
+              modifier_selections: i.modifiers || []
+            };
+          });
+          setCart(loadedCart);
+          setOrderNotes(activeOrder.notes || '');
+        } else {
+          setCart([]);
+          setOrderNotes('');
+        }
+      } else {
+        setCart([]);
+        setOrderNotes('');
+      }
+    } catch (e: any) {
+      console.error("Failed to load active order:", e);
+      alert("Failed to load active order: " + e.message);
+      setCart([]);
+      setOrderNotes('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveOrSubmitOrder = async (targetStatus: 'pending' | 'confirmed', openPayment = false) => {
     if (!selectedTable || cart.length === 0) return;
     setSubmittingOrder(true);
 
     try {
       if (demoMode) {
-        // Mock Dispatch Logic
         const newMockOrderId = 'ord-' + billCounter;
         const newMockOrder = {
           id: newMockOrderId,
           table_name: selectedTable.name,
-          status: 'pending',
+          status: targetStatus,
           created_at: new Date().toISOString(),
           items: cart.map(i => ({
             itemName: i.name,
             quantity: i.qty,
             itemNotes: i.notes || '',
-            status: 'pending'
+            status: targetStatus
           }))
         };
 
-        // Update local state
         setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, status: 'occupied' } : t));
         setActiveOrdersQueue(prev => [newMockOrder, ...prev]);
         setShiftStats(prev => ({ ...prev, ordersHandled: prev.ordersHandled + 1 }));
         
-        // Go to success
-        setShowPayment(true);
+        if (openPayment) {
+          setShowPayment(true);
+        } else {
+          alert(targetStatus === 'pending' ? "Draft saved successfully! (Demo)" : "Order sent to kitchen! (Demo)");
+          if (targetStatus === 'pending') {
+            setCart([]);
+            setOrderNotes('');
+            setSelectedTable(null);
+            setActiveTab('tables');
+          }
+        }
         setSubmittingOrder(false);
         return;
       }
 
-      // Real Supabase Transaction Flow
       const subtotalInPaise = Math.round(subtotal * 100);
       const grandTotalInPaise = Math.round(grandTotal * 100);
 
-      // A. Insert Order row
-      const { data: newOrder, error: orderErr } = await supabase
+      const { data: activeOrders } = await supabase
         .from('orders')
-        .insert({
-          tenant_id: profile.tenant_id,
-          location_id: profile.branch_id,
-          table_id: selectedTable.id,
-          staff_id: profile.id,
-          status: 'pending',
-          subtotal: subtotalInPaise,
-          discount_amount: 0,
-          total: grandTotalInPaise,
-          notes: orderNotes || '',
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('tenant_id', profile.tenant_id)
+        .eq('table_id', selectedTable.id)
+        .in('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed'])
+        .limit(1);
 
-      if (orderErr) throw orderErr;
+      let targetOrderId = '';
+      if (activeOrders && activeOrders.length > 0) {
+        targetOrderId = activeOrders[0].id;
+        const { error: ordErr } = await supabase
+          .from('orders')
+          .update({
+            subtotal: subtotalInPaise,
+            total: grandTotalInPaise,
+            status: targetStatus,
+            notes: orderNotes || '',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', targetOrderId);
 
-      // B. Insert Order Items rows
+        if (ordErr) throw ordErr;
+
+        const { error: delErr } = await supabase
+          .from('order_items')
+          .delete()
+          .eq('order_id', targetOrderId);
+
+        if (delErr) throw delErr;
+      } else {
+        const { data: newOrder, error: orderErr } = await supabase
+          .from('orders')
+          .insert({
+            tenant_id: profile.tenant_id,
+            location_id: profile.branch_id,
+            table_id: selectedTable.id,
+            staff_id: profile.id,
+            status: targetStatus,
+            subtotal: subtotalInPaise,
+            discount_amount: 0,
+            total: grandTotalInPaise,
+            notes: orderNotes || '',
+          })
+          .select()
+          .single();
+
+        if (orderErr) throw orderErr;
+        targetOrderId = newOrder.id;
+      }
+
       const itemsPayload = cart.map(i => {
-        // Strip out the internal timestamp salt from the cart ID
         const baseItemId = i.id.split('_')[0];
         return {
-          order_id: newOrder.id,
+          order_id: targetOrderId,
           tenant_id: profile.tenant_id,
           menu_item_id: baseItemId.length > 5 ? baseItemId : null,
           quantity: i.qty,
@@ -580,7 +686,6 @@ export default function StaffPOS() {
 
       if (itemsErr) throw itemsErr;
 
-      // C. Set table status to occupied
       const { error: tableErr } = await supabase
         .from('tables')
         .update({ status: 'occupied' })
@@ -588,9 +693,19 @@ export default function StaffPOS() {
 
       if (tableErr) throw tableErr;
 
-      // Reset states
       await refreshOrdersQueue(profile);
-      setShowPayment(true);
+      
+      if (openPayment) {
+        setShowPayment(true);
+      } else {
+        alert(targetStatus === 'pending' ? "Draft saved successfully!" : "Order sent to kitchen!");
+        if (targetStatus === 'pending') {
+          setCart([]);
+          setOrderNotes('');
+          setSelectedTable(null);
+          setActiveTab('tables');
+        }
+      }
 
     } catch (e: any) {
       console.error("Order submission transaction failed:", e);
@@ -599,6 +714,10 @@ export default function StaffPOS() {
       setSubmittingOrder(false);
     }
   };
+
+  const dispatchOrderToKitchen = () => saveOrSubmitOrder('confirmed', false);
+  const dispatchSaveDraft = () => saveOrSubmitOrder('pending', false);
+  const dispatchSettleBill = () => saveOrSubmitOrder('confirmed', true);
 
   const processPayment = async () => {
     if (payMethod === 'cash' && (!cashReceived || Number(cashReceived) < grandTotal)) {
@@ -713,6 +832,7 @@ export default function StaffPOS() {
     setCashReceived('');
     setSelectedTable(null);
     setActiveTab('tables');
+    setOrderSubTab('menu');
   };
 
   /* ─── Receipt Data Builder ─── */
@@ -962,85 +1082,113 @@ export default function StaffPOS() {
                 </button>
               </div>
 
-              {selectedTable ? (
-                <>
-                  {/* Category Filter and Search */}
-                  <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-                    {/* Search */}
-                    <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl border border-stone-200 w-full sm:max-w-xs shadow-sm">
-                      <Search className="text-stone-400" size={16} />
-                      <input
-                        type="text"
-                        placeholder="Search menu..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="bg-transparent border-none outline-none w-full font-semibold text-xs text-stone-800 placeholder-stone-450"
-                      />
-                    </div>
-
-                    {/* Quick Settings shortcut */}
-                    <span className="text-xs text-stone-500 font-bold hidden sm:inline">
-                      GST ({billingSettings.cgstPercent + billingSettings.sgstPercent}%) + SVC ({billingSettings.serviceChargeValue}%) applied
-                    </span>
-                  </div>
-
-                  {/* Categories Row */}
-                  <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
-                    {['All', ...categories].map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => setActiveCat(cat)}
-                        className={`px-5 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all cursor-pointer ${
-                          activeCat === cat
-                            ? 'bg-amber-600 text-white shadow-md shadow-amber-600/10'
-                            : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Menu Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {filteredMenu.map(item => (
-                      <button
-                        key={item.id}
-                        onClick={() => addToCart(item)}
-                        className="bg-white border border-stone-200/80 hover:border-amber-600/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center aspect-square transition-all hover:scale-[1.02] hover:shadow-md group cursor-pointer"
-                      >
-                        <div className="w-12 h-12 rounded-full bg-amber-50 mb-3 flex items-center justify-center text-amber-700 border border-amber-200/50 group-hover:scale-110 transition-transform">
-                          <Coffee size={20} />
-                        </div>
-                        <span className="font-bold text-xs text-stone-800 mb-1 leading-tight group-hover:text-amber-700 transition-colors">{item.name}</span>
-                        <span className="text-stone-600 text-xs font-bold">₹{item.price}</span>
-                        {item.allows_modifiers && (
-                          <span className="text-[9px] mt-1.5 px-2 py-0.5 rounded bg-stone-100 text-amber-700 font-bold flex items-center gap-1">
-                            <Sparkles size={8} /> Modifiers
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border border-dashed border-stone-300 rounded-2xl bg-stone-50/50">
-                  <ShoppingBag size={48} className="text-stone-400 mb-4" />
-                  <h3 className="font-black text-stone-850 text-base">No Table Active</h3>
-                  <p className="text-xs text-stone-550 max-w-xs mt-1">Please select an active table on the live floor plan tab before adding items.</p>
+              {selectedTable && (
+                /* Mobile toggle for Menu vs Cart */
+                <div className="flex md:hidden bg-stone-100 p-1.5 rounded-xl border border-stone-200 w-full mb-1">
                   <button
-                    onClick={() => setActiveTab('tables')}
-                    className="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-amber-600/10"
+                    onClick={() => setOrderSubTab('menu')}
+                    type="button"
+                    className={`flex-1 py-2.5 rounded-lg font-black text-center text-xs transition-all cursor-pointer ${
+                      orderSubTab === 'menu' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+                    }`}
                   >
-                    Go to Floor Plan
+                    Menu Catalog
+                  </button>
+                  <button
+                    onClick={() => setOrderSubTab('cart')}
+                    type="button"
+                    className={`flex-1 py-2.5 rounded-lg font-black text-center text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      orderSubTab === 'cart' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-750'
+                    }`}
+                  >
+                    <ShoppingBag size={14} /> View Cart ({cart.reduce((s, i) => s + i.qty, 0)})
                   </button>
                 </div>
               )}
+
+              <div className={selectedTable ? (orderSubTab === 'menu' ? 'flex flex-col gap-4' : 'hidden md:flex md:flex-col md:gap-4') : 'flex flex-col gap-4'}>
+                {selectedTable ? (
+                  <>
+                    {/* Category Filter and Search */}
+                    <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+                      {/* Search */}
+                      <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl border border-stone-200 w-full sm:max-w-xs shadow-sm">
+                        <Search className="text-stone-400" size={16} />
+                        <input
+                          type="text"
+                          placeholder="Search menu..."
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          className="bg-transparent border-none outline-none w-full font-semibold text-xs text-stone-800 placeholder-stone-450"
+                        />
+                      </div>
+
+                      {/* Quick Settings shortcut */}
+                      <span className="text-xs text-stone-500 font-bold hidden sm:inline">
+                        GST ({billingSettings.cgstPercent + billingSettings.sgstPercent}%) + SVC ({billingSettings.serviceChargeValue}%) applied
+                      </span>
+                    </div>
+
+                    {/* Categories Row */}
+                    <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
+                      {['All', ...categories].map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => setActiveCat(cat)}
+                          className={`px-5 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all cursor-pointer ${
+                            activeCat === cat
+                              ? 'bg-amber-600 text-white shadow-md shadow-amber-600/10'
+                              : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Menu Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {filteredMenu.map(item => (
+                        <button
+                          key={item.id}
+                          onClick={() => addToCart(item)}
+                          className="bg-white border border-stone-200/80 hover:border-amber-600/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center aspect-square transition-all hover:scale-[1.02] hover:shadow-md group cursor-pointer"
+                        >
+                          <div className="w-12 h-12 rounded-full bg-amber-50 mb-3 flex items-center justify-center text-amber-700 border border-amber-200/50 group-hover:scale-110 transition-transform">
+                            <Coffee size={20} />
+                          </div>
+                          <span className="font-bold text-xs text-stone-800 mb-1 leading-tight group-hover:text-amber-700 transition-colors">{item.name}</span>
+                          <span className="text-stone-600 text-xs font-bold">₹{item.price}</span>
+                          {item.allows_modifiers && (
+                            <span className="text-[9px] mt-1.5 px-2 py-0.5 rounded bg-stone-100 text-amber-700 font-bold flex items-center gap-1">
+                              <Sparkles size={8} /> Modifiers
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border border-dashed border-stone-300 rounded-2xl bg-stone-50/50">
+                    <ShoppingBag size={48} className="text-stone-400 mb-4" />
+                    <h3 className="font-black text-stone-850 text-base">No Table Active</h3>
+                    <p className="text-xs text-stone-550 max-w-xs mt-1">Please select an active table on the live floor plan tab before adding items.</p>
+                    <button
+                      onClick={() => setActiveTab('tables')}
+                      className="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-amber-600/10"
+                    >
+                      Go to Floor Plan
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right side: Shopping Cart order overview */}
             {selectedTable && (
-              <div className="w-full md:w-80 flex flex-col bg-white border border-stone-200 rounded-2xl overflow-hidden self-start shadow-sm">
+              <div className={`w-full md:w-80 flex flex-col bg-white border border-stone-200 rounded-2xl overflow-hidden self-start shadow-sm ${
+                orderSubTab === 'cart' ? 'flex' : 'hidden md:flex'
+              }`}>
                 <div className="p-4 border-b border-stone-200 bg-stone-50 flex justify-between items-center">
                   <h3 className="text-sm font-black text-stone-900 flex items-center gap-2">
                     <ShoppingBag size={16} className="text-amber-600" />
@@ -1141,22 +1289,40 @@ export default function StaffPOS() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={dispatchOrderToKitchen}
-                      disabled={submittingOrder}
-                      className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-black py-3 rounded-xl text-xs transition-all shadow-md shadow-amber-600/25 active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      {submittingOrder ? (
-                        <>
-                          <div className="w-4 h-4 rounded-full border-2 border-stone-200 border-t-amber-600 animate-spin" />
-                          Sending to KDS...
-                        </>
-                      ) : (
-                        <>
-                          <Check size={16} /> Send to Kitchen
-                        </>
-                      )}
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={dispatchSaveDraft}
+                          disabled={submittingOrder}
+                          className="flex-1 bg-stone-100 hover:bg-stone-200 border border-stone-300 disabled:opacity-40 text-stone-750 font-bold py-3.5 rounded-xl text-xs transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          Save Draft
+                        </button>
+                        <button
+                          onClick={dispatchOrderToKitchen}
+                          disabled={submittingOrder}
+                          className="flex-[2] bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-black py-3.5 rounded-xl text-xs transition-all shadow-md shadow-amber-600/25 active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          {submittingOrder ? (
+                            <>
+                              <div className="w-4 h-4 rounded-full border-2 border-stone-200 border-t-amber-600 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <Check size={16} /> Send to Kitchen
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <button
+                        onClick={dispatchSettleBill}
+                        disabled={submittingOrder}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-black py-3.5 rounded-xl text-xs transition-all shadow-md shadow-emerald-600/20 active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <CreditCard size={16} /> Settle Bill / Checkout
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1390,7 +1556,16 @@ export default function StaffPOS() {
                 onClick={() => setShowPayment(false)}
                 className="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold py-3.5 rounded-xl text-xs transition-all"
               >
-                Back
+                Continue Editing
+              </button>
+              <button
+                onClick={async () => {
+                  setShowPayment(false);
+                  await dispatchSaveDraft();
+                }}
+                className="flex-1 bg-stone-50 hover:bg-stone-100 border border-stone-250 text-stone-700 font-bold py-3.5 rounded-xl text-xs transition-all"
+              >
+                Save Draft
               </button>
               <button
                 onClick={processPayment}
@@ -1459,6 +1634,19 @@ export default function StaffPOS() {
         </button>
       )}
 
+      {/* ═══ FLOATING CART INDICATOR ON MOBILE FOR ORDER TAB ═══ */}
+      {cart.length > 0 && activeTab === 'order' && orderSubTab === 'menu' && (
+        <button
+          onClick={() => setOrderSubTab('cart')}
+          className="fixed bottom-20 left-4 right-4 md:hidden bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-black py-4 rounded-2xl flex items-center justify-between px-6 shadow-xl shadow-emerald-600/20 animate-bounce z-40 cursor-pointer"
+        >
+          <span className="flex items-center gap-2 text-xs">
+            <ShoppingBag size={18} /> Cart ({cart.reduce((s, i) => s + i.qty, 0)} items) · ₹{subtotal.toLocaleString()}
+          </span>
+          <span className="text-sm font-black">Proceed to Settle →</span>
+        </button>
+      )}
+
       {/* ═══ TABLE QUICK DETAILS DRAWER (BOTTOM SHEET) ═══ */}
       {tableDrawerOpen && selectedTable && (
         <div 
@@ -1500,17 +1688,31 @@ export default function StaffPOS() {
             </div>
 
             <div className="flex flex-col gap-2.5 pt-2">
-              <button
-                onClick={() => {
-                  setCart([]); // Clear prior cart when starting new table session
-                  setOrderNotes('');
-                  setTableDrawerOpen(false);
-                  setActiveTab('order');
-                }}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-black py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-600/10 cursor-pointer"
-              >
-                <Plus size={16} /> Take New Order
-              </button>
+              {selectedTable.status === 'occupied' ? (
+                <button
+                  onClick={async () => {
+                    setTableDrawerOpen(false);
+                    await handleLoadActiveOrderToCart(selectedTable);
+                    setActiveTab('order');
+                  }}
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white font-black py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-600/10 cursor-pointer"
+                >
+                  <Clock size={16} /> Continue / Edit Order
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setCart([]);
+                    setOrderNotes('');
+                    setTableDrawerOpen(false);
+                    setActiveTab('order');
+                    setOrderSubTab('menu');
+                  }}
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white font-black py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-600/10 cursor-pointer"
+                >
+                  <Plus size={16} /> Take New Order
+                </button>
+              )}
               
               <div className="flex gap-2 w-full">
                 {selectedTable.status !== 'available' && (

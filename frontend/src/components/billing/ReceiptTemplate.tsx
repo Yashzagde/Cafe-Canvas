@@ -29,6 +29,20 @@ const ReceiptTemplate = forwardRef<HTMLDivElement, { data: ReceiptData }>(
       >
         {/* ─── STORE HEADER ─── */}
         <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+          {data.logoUrl && (
+            <img 
+              src={data.logoUrl} 
+              alt="Logo" 
+              style={{ 
+                maxWidth: '60px', 
+                maxHeight: '60px', 
+                objectFit: 'contain', 
+                marginBottom: '6px', 
+                borderRadius: '8px',
+                display: 'inline-block'
+              }} 
+            />
+          )}
           <div style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '2px' }}>
             {data.storeName}
           </div>
@@ -116,9 +130,16 @@ const ReceiptTemplate = forwardRef<HTMLDivElement, { data: ReceiptData }>(
           {data.customCharges?.map((c, i) => (
             <TotalRow key={i} label={c.label} value={c.amount} />
           ))}
+          {data.extraChargesAmount != null && data.extraChargesAmount > 0 && (
+            <TotalRow label={data.extraChargesLabel || 'Extra Charges'} value={data.extraChargesAmount} />
+          )}
           {data.discountAmount > 0 && (
             <TotalRow
-              label={`Discount (${data.discountPercent}%)${data.couponCode ? ` [${data.couponCode}]` : ''}`}
+              label={
+                data.discountPercent && data.discountPercent > 0 
+                  ? `Discount (${data.discountPercent}%)${data.couponCode ? ` [${data.couponCode}]` : ''}`
+                  : `Discount${data.couponCode ? ` [${data.couponCode}]` : ''}`
+              }
               value={-data.discountAmount}
               highlight
             />
