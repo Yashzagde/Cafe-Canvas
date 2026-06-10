@@ -227,7 +227,13 @@ export default function Storefront() {
             theme_id,
             hero_image_url,
             hero_image_url_2,
-            hero_image_url_3
+            hero_image_url_3,
+            logo_url,
+            footer_description,
+            footer_hours,
+            footer_address,
+            footer_phone,
+            footer_email
           )
         `);
         const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(storeSlug);
@@ -256,6 +262,12 @@ export default function Storefront() {
         const heroUrl = Array.isArray(configData) ? configData[0]?.hero_image_url : configData?.hero_image_url;
         const heroUrl2 = Array.isArray(configData) ? configData[0]?.hero_image_url_2 : configData?.hero_image_url_2;
         const heroUrl3 = Array.isArray(configData) ? configData[0]?.hero_image_url_3 : configData?.hero_image_url_3;
+        const logoUrl = Array.isArray(configData) ? configData[0]?.logo_url : configData?.logo_url;
+        const footerDescription = Array.isArray(configData) ? configData[0]?.footer_description : configData?.footer_description;
+        const footerHours = Array.isArray(configData) ? configData[0]?.footer_hours : configData?.footer_hours;
+        const footerAddress = Array.isArray(configData) ? configData[0]?.footer_address : configData?.footer_address;
+        const footerPhone = Array.isArray(configData) ? configData[0]?.footer_phone : configData?.footer_phone;
+        const footerEmail = Array.isArray(configData) ? configData[0]?.footer_email : configData?.footer_email;
 
         setTenant({
           id: tenantData.id,
@@ -265,7 +277,13 @@ export default function Storefront() {
           theme_id: resolvedThemeId || 'theme-02',
           hero_image_url: heroUrl || null,
           hero_image_url_2: heroUrl2 || null,
-          hero_image_url_3: heroUrl3 || null
+          hero_image_url_3: heroUrl3 || null,
+          logo_url: logoUrl || null,
+          footer_description: footerDescription || null,
+          footer_hours: footerHours || null,
+          footer_address: footerAddress || null,
+          footer_phone: footerPhone || null,
+          footer_email: footerEmail || null
         } as any);
 
         // 2. Fetch categories
@@ -2354,10 +2372,21 @@ export default function Storefront() {
       <footer className="bg-card-bg/60 border-t border-border-color/60 mt-12 py-10 text-xs text-foreground/60">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-3">
-            <h4 className="font-extrabold text-sm text-foreground uppercase tracking-wider">{tenant.name}</h4>
+            <div className="flex items-center gap-2">
+              {(tenant as any)?.logo_url && (
+                <img src={(tenant as any).logo_url} alt="Logo" className="w-8 h-8 rounded-lg object-contain bg-white/80 border border-border-color/30" />
+              )}
+              <h4 className="font-extrabold text-sm text-foreground uppercase tracking-wider">{tenant.name}</h4>
+            </div>
             <p className="text-[11px] leading-relaxed">
-              Serving organic micro-roasted coffees and artisan sourdough breads daily from our boutique kitchen.
+              {(tenant as any)?.footer_description || 'Serving organic micro-roasted coffees and artisan sourdough breads daily from our boutique kitchen.'}
             </p>
+            {(tenant as any)?.footer_address && (
+              <p className="text-[11px] leading-relaxed flex items-start gap-1">
+                <span className="shrink-0 mt-0.5">📍</span>
+                {(tenant as any).footer_address}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <h5 className="font-bold text-foreground uppercase text-[11px] tracking-wider">Quick Links</h5>
@@ -2369,18 +2398,32 @@ export default function Storefront() {
             </div>
           </div>
           <div className="space-y-2">
-            <h5 className="font-bold text-foreground uppercase text-[11px] tracking-wider">Services</h5>
+            <h5 className="font-bold text-foreground uppercase text-[11px] tracking-wider">Contact</h5>
             <div className="flex flex-col gap-1.5">
               <button onClick={() => setActiveTab('menu')} className="text-left hover:text-brand transition-colors">Digital Menu</button>
               <button onClick={() => setActiveTab('dine-in')} className="text-left hover:text-brand transition-colors">Dine-in QR</button>
-              <button onClick={() => setActiveTab('delivery')} className="text-left hover:text-brand transition-colors">Home Delivery</button>
-              <button onClick={() => setActiveTab('products')} className="text-left hover:text-brand transition-colors">combos & specials</button>
+              {(tenant as any)?.footer_phone && (
+                <a href={`tel:${(tenant as any).footer_phone}`} className="hover:text-brand transition-colors flex items-center gap-1">
+                  📞 {(tenant as any).footer_phone}
+                </a>
+              )}
+              {(tenant as any)?.footer_email && (
+                <a href={`mailto:${(tenant as any).footer_email}`} className="hover:text-brand transition-colors flex items-center gap-1">
+                  ✉️ {(tenant as any).footer_email}
+                </a>
+              )}
             </div>
           </div>
           <div className="space-y-2">
             <h5 className="font-bold text-foreground uppercase text-[11px] tracking-wider">Operating Hours</h5>
-            <p className="text-[11px]">Monday - Sunday<br />08:30 AM - 10:00 PM</p>
-            <p className="text-[11px] text-[#ca8a04]">Kitchen closes at 09:30 PM</p>
+            {(tenant as any)?.footer_hours ? (
+              <p className="text-[11px] whitespace-pre-line">{(tenant as any).footer_hours}</p>
+            ) : (
+              <>
+                <p className="text-[11px]">Monday - Sunday<br />08:30 AM - 10:00 PM</p>
+                <p className="text-[11px] text-[#ca8a04]">Kitchen closes at 09:30 PM</p>
+              </>
+            )}
           </div>
         </div>
         <div className="max-w-6xl mx-auto px-6 border-t border-border-color/30 mt-8 pt-6 text-center text-[10px] tracking-wider uppercase font-extrabold">
