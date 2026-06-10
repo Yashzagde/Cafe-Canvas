@@ -224,7 +224,10 @@ export default function Storefront() {
           slug,
           public_id,
           storefront_config (
-            theme_id
+            theme_id,
+            hero_image_url,
+            hero_image_url_2,
+            hero_image_url_3
           )
         `);
         const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(storeSlug);
@@ -250,12 +253,19 @@ export default function Storefront() {
           ? configData[0]?.theme_id
           : configData?.theme_id;
 
+        const heroUrl = Array.isArray(configData) ? configData[0]?.hero_image_url : configData?.hero_image_url;
+        const heroUrl2 = Array.isArray(configData) ? configData[0]?.hero_image_url_2 : configData?.hero_image_url_2;
+        const heroUrl3 = Array.isArray(configData) ? configData[0]?.hero_image_url_3 : configData?.hero_image_url_3;
+
         setTenant({
           id: tenantData.id,
           name: tenantData.name,
           subdomain: tenantData.slug,
           public_id: tenantData.public_id,
-          theme_id: resolvedThemeId || 'theme-02'
+          theme_id: resolvedThemeId || 'theme-02',
+          hero_image_url: heroUrl || null,
+          hero_image_url_2: heroUrl2 || null,
+          hero_image_url_3: heroUrl3 || null
         } as any);
 
         // 2. Fetch categories
@@ -956,7 +966,12 @@ export default function Storefront() {
               className="space-y-8"
             >
               {/* 1. Hero Carousel */}
-              <HeroCarousel cafeName={tenant.name} />
+              <HeroCarousel 
+                cafeName={tenant.name} 
+                heroImageUrl={(tenant as any).hero_image_url}
+                heroImageUrl2={(tenant as any).hero_image_url_2}
+                heroImageUrl3={(tenant as any).hero_image_url_3}
+              />
 
               {/* 2. Horizontal Categories Strip */}
               <div className="space-y-2">
