@@ -156,54 +156,6 @@
     "fontHeading": "Noto Serif Gujarati"
   },
   {
-    "id": "theme-26",
-    "name": "Bengali Fish Curry",
-    "tier": "Indian Regional",
-    "colors": [
-      "#FAF8F5",
-      "#D97706",
-      "#1E3A8A"
-    ],
-    "description": "Deep mustard yellow and sea blue accents.",
-    "fontHeading": "Playfair Display"
-  },
-  {
-    "id": "theme-27",
-    "name": "Kerala Backwater",
-    "tier": "Indian Regional",
-    "colors": [
-      "#F0FDF4",
-      "#166534",
-      "#15803D"
-    ],
-    "description": "Palm white background with tropical green accents.",
-    "fontHeading": "Inter"
-  },
-  {
-    "id": "theme-29",
-    "name": "Chettinad Spice",
-    "tier": "Indian Regional",
-    "colors": [
-      "#FAF5F0",
-      "#9A3412",
-      "#451A03"
-    ],
-    "description": "Terracotta and dark wood textures for traditional dining.",
-    "fontHeading": "Fraunces"
-  },
-  {
-    "id": "theme-30",
-    "name": "Hyderabadi Nawabi",
-    "tier": "Indian Regional",
-    "colors": [
-      "#FAF8FF",
-      "#7C3AED",
-      "#5B21B6"
-    ],
-    "description": "Royal purple and pearl white accents.",
-    "fontHeading": "Outfit"
-  },
-  {
     "id": "theme-14",
     "name": "Kashmiri Winter",
     "tier": "Global Cuisines",

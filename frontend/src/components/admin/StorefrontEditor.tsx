@@ -8,7 +8,8 @@ import {
   updateTenantNameAction
 } from '@/app/admin/actions/storefront.actions';
 import { useStorefrontEditorStore } from '@/store/storefront-editor';
-import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link } from 'lucide-react';
+import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link, Upload, Loader2, Trash2 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 interface StoreTheme {
   id: string
@@ -129,38 +130,7 @@ const PRESETS: StoreTheme[] = [
     description: 'Navratri and Diwali celebration. Festive orange and sweet yellow colors.',
     fontHeading: 'Noto Serif Gujarati'
   },
-  {
-    id: 'theme-26',
-    name: 'Bengali Fish Curry',
-    tier: 'Indian Regional',
-    colors: ['#FAF8F5', '#D97706', '#1E3A8A'],
-    description: 'Deep mustard yellow and sea blue accents.',
-    fontHeading: 'Playfair Display'
-  },
-  {
-    id: 'theme-27',
-    name: 'Kerala Backwater',
-    tier: 'Indian Regional',
-    colors: ['#F0FDF4', '#166534', '#15803D'],
-    description: 'Palm white background with tropical green accents.',
-    fontHeading: 'Inter'
-  },
-  {
-    id: 'theme-29',
-    name: 'Chettinad Spice',
-    tier: 'Indian Regional',
-    colors: ['#FAF5F0', '#9A3412', '#451A03'],
-    description: 'Terracotta and dark wood textures for traditional dining.',
-    fontHeading: 'Fraunces'
-  },
-  {
-    id: 'theme-30',
-    name: 'Hyderabadi Nawabi',
-    tier: 'Indian Regional',
-    colors: ['#FAF8FF', '#7C3AED', '#5B21B6'],
-    description: 'Royal purple and pearl white accents.',
-    fontHeading: 'Outfit'
-  },
+
 
   // 4. Global Cuisines (theme-14 to theme-25, theme-28)
   {
@@ -496,11 +466,51 @@ export default function StorefrontEditor({
 }) {
   const { config, setConfig, updateField, isDirty, clearDirty } = useStorefrontEditorStore();
   const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'social' | 'connection'>('branding');
-  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('mobile');
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [storeName, setStoreName] = useState(tenantName);
   const [isNameDirty, setIsNameDirty] = useState(false);
+
+  const supabase = createClient();
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `hero-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(filePath);
+
+      updateField('hero_image_url', publicUrl);
+      alert('🎉 Image uploaded successfully!');
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      alert('Upload failed: ' + err.message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    updateField('hero_image_url', '');
+  };
 
   useEffect(() => {
     setStoreName(tenantName);
@@ -875,15 +885,55 @@ export default function StorefrontEditor({
 
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                  Hero Background Image Link
+                  Hero Background Image
                 </label>
-                <input
-                  type="text"
-                  value={config.hero_image_url || ''}
-                  onChange={(e) => updateField('hero_image_url', e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
-                />
+                
+                {config.hero_image_url ? (
+                  <div className="p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
+                      <img src={config.hero_image_url} alt="Hero Background Preview" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-xs font-bold text-[#1e293b]/80 truncate max-w-[200px]">
+                        {config.hero_image_url.split('/').pop()}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="text-[10px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 size={11} />
+                        Remove Image
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-6 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleUploadImage}
+                      disabled={uploadingImage}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                    />
+                    <div className="space-y-2 flex flex-col items-center justify-center">
+                      {uploadingImage ? (
+                        <>
+                          <Loader2 className="w-8 h-8 text-[#d97706] animate-spin" />
+                          <p className="text-xs font-bold text-[#1e293b]/70">Uploading to Supabase...</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-8 h-8 text-[#1e293b]/30" />
+                          <div>
+                            <p className="text-xs font-bold text-[#1e293b]/70">Click or drag image to upload</p>
+                            <p className="text-[10px] text-[#1e293b]/40 mt-1">Supports PNG, JPG, WEBP (Max 5MB)</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -966,104 +1016,95 @@ export default function StorefrontEditor({
       </div>
 
       {/* Visual Live Preview Frame */}
-      <div className="flex flex-col gap-4 bg-[#fdfcf7] border border-[#e2e8f0]/50 rounded-3xl p-6 shadow-2xl relative min-h-[500px]">
-        {/* Device toggle toolbar */}
-        <div className="flex items-center justify-between border-b border-[#e2e8f0]/30 pb-3">
+      <div className="flex flex-col gap-4 bg-[#fdfcf7] border border-[#e2e8f0]/50 rounded-3xl p-6 shadow-2xl relative min-h-[500px] justify-center items-center">
+        {/* Mockup Top Header */}
+        <div className="w-full flex items-center justify-between border-b border-[#e2e8f0]/30 pb-3">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
             <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
             <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
           </div>
-          <div className="flex items-center gap-1 bg-[#ffffff] p-1 border border-[#e2e8f0] rounded-xl">
-            <button
-              onClick={() => setPreviewMode('desktop')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                previewMode === 'desktop' ? 'bg-[#d97706] text-[#ffffff]' : 'text-[#1e293b]/40 hover:text-[#1e293b]/70'
-              }`}
-            >
-              <Monitor size={14} />
-            </button>
-            <button
-              onClick={() => setPreviewMode('mobile')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                previewMode === 'mobile' ? 'bg-[#d97706] text-[#ffffff]' : 'text-[#1e293b]/40 hover:text-[#1e293b]/70'
-              }`}
-            >
-              <Smartphone size={14} />
-            </button>
-          </div>
+          <span className="text-xs font-black uppercase tracking-wider text-[#1e293b]/50">
+            Live Mobile Storefront Preview
+          </span>
         </div>
 
         {/* Live rendering container */}
-        <div className="flex-1 flex justify-center items-center overflow-hidden">
+        <div className="flex-1 w-full flex justify-center items-center py-4">
           <div
-            className="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl overflow-hidden transition-all shadow-inner relative flex flex-col"
+            className="bg-[#ffffff] border-8 border-stone-900 rounded-[38px] overflow-hidden transition-all shadow-2xl relative flex flex-col w-[300px] h-[520px] max-w-full select-none"
             style={{
-              width: previewMode === 'mobile' ? '320px' : '100%',
-              height: previewMode === 'mobile' ? '500px' : '100%',
               fontFamily: config.font_body
             }}
           >
-            {/* Nav Header */}
-            <div
-              className="px-4 py-3 flex items-center justify-between border-b border-[#e2e8f0]/30"
-              style={{ backgroundColor: config.accent_color }}
-            >
-              <span className="font-extrabold text-xs font-display" style={{ color: config.primary_color }}>
-                CafeCanvas
-              </span>
-              <div className="flex gap-2">
-                <span className="w-6 h-1 rounded bg-[#1e293b]/20"></span>
-                <span className="w-6 h-1 rounded bg-[#1e293b]/20"></span>
-              </div>
+            {/* Phone notch/camera */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-4 bg-stone-900 rounded-b-2xl z-50 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-stone-800 border border-stone-700/50"></div>
             </div>
 
-            {/* Hero Render */}
-            <div
-              className="p-6 text-center flex flex-col justify-center items-center gap-3 relative overflow-hidden"
-              style={{
-                backgroundImage: config.hero_image_url ? `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${config.hero_image_url})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundColor: config.accent_color,
-                minHeight: '140px'
-              }}
-            >
-              <h3 className="text-base font-extrabold tracking-tight font-display leading-tight" style={{ fontFamily: config.font_heading }}>
-                {config.hero_title || 'Welcome Title'}
-              </h3>
-              <p className="text-[10px] text-[#1e293b]/70 max-w-[200px] leading-relaxed">
-                {config.hero_subtitle || 'Subtitle'}
-              </p>
-              <button
-                className="px-3 py-1.5 text-[9px] font-extrabold transition-all"
+            {/* Screen Content Wrapper */}
+            <div className="flex-1 flex flex-col pt-4 overflow-y-auto scrollbar-none relative">
+              {/* Nav Header */}
+              <div
+                className="px-4 py-3 flex items-center justify-between border-b border-[#e2e8f0]/30"
+                style={{ backgroundColor: config.accent_color }}
+              >
+                <span className="font-extrabold text-xs font-display" style={{ color: config.primary_color }}>
+                  {storeName || 'CafeCanvas'}
+                </span>
+                <div className="flex gap-1">
+                  <span className="w-4 h-0.5 rounded bg-[#1e293b]/20"></span>
+                  <span className="w-4 h-0.5 rounded bg-[#1e293b]/20"></span>
+                </div>
+              </div>
+
+              {/* Hero Render */}
+              <div
+                className="p-6 text-center flex flex-col justify-center items-center gap-3 relative overflow-hidden"
                 style={{
-                  backgroundColor: config.primary_color,
-                  color: config.accent_color === '#ffffff' ? '#000000' : '#ffffff',
-                  borderRadius: '12px'
+                  backgroundImage: config.hero_image_url ? `linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url(${config.hero_image_url})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundColor: config.accent_color,
+                  minHeight: '140px'
                 }}
               >
-                View Menu
-              </button>
-            </div>
+                <h3 className="text-base font-extrabold tracking-tight font-display leading-tight" style={{ fontFamily: config.font_heading, color: config.hero_image_url ? '#ffffff' : config.primary_color }}>
+                  {config.hero_title || 'Welcome Title'}
+                </h3>
+                <p className="text-[10px] max-w-[200px] leading-relaxed" style={{ color: config.hero_image_url ? 'rgba(255,255,255,0.85)' : '#1e293b' }}>
+                  {config.hero_subtitle || 'Subtitle'}
+                </p>
+                <button
+                  className="px-3 py-1.5 text-[9px] font-extrabold transition-all cursor-default"
+                  style={{
+                    backgroundColor: config.primary_color,
+                    color: '#ffffff',
+                    borderRadius: '12px'
+                  }}
+                >
+                  View Menu
+                </button>
+              </div>
 
-            {/* Menu Sections Preview */}
-            <div className="p-4 flex-1 space-y-4">
-              <span className="text-[10px] font-extrabold text-[#1e293b]/40 uppercase tracking-widest block">
-                Featured Categories
-              </span>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-[#f1f5f9] border border-[#e2e8f0]/50 rounded-2xl flex flex-col gap-1 items-center">
-                  <div className="w-6 h-6 rounded-full bg-[#d97706]/20 flex items-center justify-center">
-                    <Sparkles size={12} className="text-[#d97706]" />
+              {/* Menu Sections Preview */}
+              <div className="p-4 flex-1 space-y-4">
+                <span className="text-[10px] font-extrabold text-[#1e293b]/40 uppercase tracking-widest block">
+                  Featured Categories
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-[#f1f5f9] border border-[#e2e8f0]/50 rounded-2xl flex flex-col gap-1 items-center">
+                    <div className="w-6 h-6 rounded-full bg-[#d97706]/20 flex items-center justify-center">
+                      <Sparkles size={12} className="text-[#d97706]" />
+                    </div>
+                    <span className="text-[10px] font-bold text-[#1e293b]/80 mt-1">Coffee</span>
                   </div>
-                  <span className="text-[10px] font-bold text-[#1e293b]/80 mt-1">Coffee</span>
-                </div>
-                <div className="p-3 bg-[#f1f5f9] border border-[#e2e8f0]/50 rounded-2xl flex flex-col gap-1 items-center">
-                  <div className="w-6 h-6 rounded-full bg-[#d97706]/20 flex items-center justify-center">
-                    <Sparkles size={12} className="text-[#d97706]" />
+                  <div className="p-3 bg-[#f1f5f9] border border-[#e2e8f0]/50 rounded-2xl flex flex-col gap-1 items-center">
+                    <div className="w-6 h-6 rounded-full bg-[#d97706]/20 flex items-center justify-center">
+                      <Sparkles size={12} className="text-[#d97706]" />
+                    </div>
+                    <span className="text-[10px] font-bold text-[#1e293b]/80 mt-1">Snacks</span>
                   </div>
-                  <span className="text-[10px] font-bold text-[#1e293b]/80 mt-1">Snacks</span>
                 </div>
               </div>
             </div>
