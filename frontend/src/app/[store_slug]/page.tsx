@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import WelcomeNotificationPopup from '@/components/WelcomeNotificationPopup';
 import HeroCarousel from '@/components/HeroCarousel';
 import { loadTenantTheme } from '@/lib/theme-engine';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Coffee, 
   ShoppingBag, 
@@ -20,7 +21,25 @@ import {
   CheckCircle2, 
   AlertCircle,
   Star,
-  LogOut
+  LogOut,
+  Home,
+  BookOpen,
+  QrCode,
+  Truck,
+  Package,
+  Tag,
+  Info,
+  Phone,
+  Image as ImageIcon,
+  Briefcase,
+  Search,
+  Bell,
+  MapPin,
+  Clock,
+  Mail,
+  Heart,
+  ChevronRight,
+  Map
 } from 'lucide-react';
 
 interface Tenant {
@@ -28,6 +47,7 @@ interface Tenant {
   name: string;
   subdomain: string;
   public_id?: string;
+  theme_id?: string;
 }
 
 interface MenuCategory {
@@ -155,6 +175,23 @@ export default function Storefront() {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [claimedCoupon, setClaimedCoupon] = useState<string | null>(null);
 
+  // SPA Active Tab
+  const [activeTab, setActiveTab] = useState<'home' | 'menu' | 'dine-in' | 'delivery' | 'products' | 'blogs' | 'account' | 'offers' | 'about' | 'contact' | 'gallery' | 'careers'>('home');
+  const [vegOnly, setVegOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isStaffCalling, setIsStaffCalling] = useState(false);
+
+  // Home Delivery states
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliverySlot, setDeliverySlot] = useState('Immediate (30-45 mins)');
+  
+  // Careers Application state
+  const [careerRole, setCareerRole] = useState<string | null>(null);
+  const [careerName, setCareerName] = useState('');
+  const [careerPhone, setCareerPhone] = useState('');
+  const [careerExperience, setCareerExperience] = useState('');
+  const [careerSubmitted, setCareerSubmitted] = useState(false);
+
   const t = TRANSLATIONS[lang];
 
   // Helper to read cookies on client
@@ -213,7 +250,6 @@ export default function Storefront() {
           ? configData[0]?.theme_id
           : configData?.theme_id;
 
-        // Map slug to subdomain for UI compatibility if needed
         setTenant({
           id: tenantData.id,
           name: tenantData.name,
@@ -243,7 +279,6 @@ export default function Storefront() {
 
         if (itemError) throw itemError;
         
-        // Map canonical columns to legacy UI keys
         const mappedItems: MenuItem[] = (itemData || []).map((item: any) => ({
           id: item.id,
           category_id: item.category_id,
@@ -271,7 +306,6 @@ export default function Storefront() {
           setSelectedTableId(tableData[0].id);
         }
 
-        setDbPending(false);
       } catch (err: any) {
         console.error("Database fetch failed:", err.message);
         setErrorMsg(err.message || "Failed to load store catalog.");
@@ -376,6 +410,19 @@ export default function Storefront() {
         setCustomerPhone(data.phone);
         setIsLoginOpen(false);
         setLoginPhone('');
+        
+        // Refresh customer profile
+        if (tenant) {
+          const { data: cust } = await supabase
+            .from('customers')
+            .select('*')
+            .eq('tenant_id', tenant.id)
+            .eq('phone', data.phone)
+            .maybeSingle();
+          if (cust) {
+            setCustomerProfile(cust);
+          }
+        }
       } else {
         setOtpError(data.error || 'Failed to login.');
       }
@@ -436,6 +483,7 @@ export default function Storefront() {
     if (!selectedTableId || !tenant) return;
     if (staffCallCooldown > 0) return;
     
+    setIsStaffCalling(true);
     try {
       const tableObj = tables.find(t => t.id === selectedTableId);
       const tableName = tableObj ? tableObj.name : 'Unknown';
@@ -452,11 +500,12 @@ export default function Storefront() {
 
       if (error) throw error;
       
-      alert('🛎️ Staff has been called to your table!');
       setStaffCallCooldown(60); // 60 seconds cooldown
     } catch (err: any) {
       console.error('Call staff failed:', err.message);
       alert('Failed to call staff. Please try again.');
+    } finally {
+      setTimeout(() => setIsStaffCalling(false), 2000);
     }
   };
 
@@ -471,7 +520,6 @@ export default function Storefront() {
     if (!tenant) return;
     setSubmittingFeedback(true);
     try {
-      // Get a random active waiter in this tenant to attach
       const { data: staffMembers } = await supabase
         .from('users')
         .select('id')
@@ -481,7 +529,6 @@ export default function Storefront() {
       
       const assocStaffId = staffMembers && staffMembers.length > 0 ? staffMembers[0].id : null;
 
-      // Insert feedback
       const { error: feedbackError } = await supabase
         .from('customer_feedback')
         .insert({
@@ -499,7 +546,6 @@ export default function Storefront() {
 
       if (feedbackError) throw feedbackError;
 
-      // Generate a dynamic 10% coupon code
       const couponCode = `CF-${Math.floor(100000 + Math.random() * 900000)}`;
       const { error: couponError } = await supabase
         .from('offer_codes')
@@ -560,9 +606,16 @@ export default function Storefront() {
 
   const totalPriceRupees = totalPricePaise / 100;
 
-  const filteredItems = menuItems.filter(
-    item => activeCatId === 'All' || item.category_id === activeCatId
-  );
+  // Search, category and veg/non-veg filter combination
+  const filteredItems = useMemo(() => {
+    return menuItems.filter(item => {
+      const matchCat = activeCatId === 'All' || item.category_id === activeCatId;
+      const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchVeg = !vegOnly || item.tags?.some(tag => tag.toLowerCase() === 'veg' || tag.toLowerCase() === 'vegetarian');
+      return matchCat && matchSearch && matchVeg;
+    });
+  }, [menuItems, activeCatId, searchQuery, vegOnly]);
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -574,14 +627,6 @@ export default function Storefront() {
     try {
       setPlacingOrder(true);
       setErrorMsg(null);
-
-      if (dbPending) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setSuccessOrderRef(`ORD-${Math.floor(100000 + Math.random() * 900000)}`);
-        setCart({});
-        setIsCheckoutOpen(false);
-        return;
-      }
 
       // 1. Check table session
       let { data: activeSession, error: sessionFindError } = await supabase
@@ -663,6 +708,21 @@ export default function Storefront() {
       setSuccessOrderRef(newOrder.id.substring(0, 8).toUpperCase());
       setCart({});
       setIsCheckoutOpen(false);
+      
+      // Reload previous orders
+      if (customerPhone) {
+        const { data: ords } = await supabase
+          .from('orders')
+          .select(`
+            id, created_at, status, total, notes,
+            order_items (id, item_name, quantity, unit_price)
+          `)
+          .eq('tenant_id', tenant.id)
+          .eq('customer_phone', customerPhone)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        setPreviousOrders(ords || []);
+      }
     } catch (err: any) {
       console.error("Order submission failed:", err.message);
       setErrorMsg(err.message || "Failed to place order. Please try again.");
@@ -670,6 +730,94 @@ export default function Storefront() {
       setPlacingOrder(false);
     }
   };
+
+  const handleDeliverySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deliveryAddress.trim()) {
+      alert("Please enter a delivery address.");
+      return;
+    }
+    alert(`Delivery order placed successfully! Address: ${deliveryAddress}. Slot: ${deliverySlot}`);
+    setCart({});
+    setActiveTab('home');
+  };
+
+  const handleCareerSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!careerName.trim() || !careerPhone.trim()) {
+      alert("Please fill in required fields.");
+      return;
+    }
+    setCareerSubmitted(true);
+    setTimeout(() => {
+      setCareerSubmitted(false);
+      setCareerRole(null);
+      setCareerName('');
+      setCareerPhone('');
+      setCareerExperience('');
+    }, 3000);
+  };
+
+  // Get dynamic styles from active theme config
+  const themeId = tenant?.theme_id || 'theme-02';
+  const themeNumber = parseInt(themeId.replace('theme-', '')) || 2;
+  const isDark = [1, 3, 5, 6, 21, 31, 44, 45].includes(themeNumber);
+  
+  // Custom Styles Mapping for specific requirements
+  const cardClass = useMemo(() => {
+    if ([1, 44].includes(themeNumber)) {
+      // Liquid Glass Premium & New Year Noir (Heavy blur, gold/white border)
+      return 'bg-white/10 backdrop-blur-xl border border-yellow-500/20 shadow-lg rounded-3xl';
+    }
+    if ([2, 23, 35].includes(themeNumber)) {
+      // Light glass or clean soft pastels
+      return 'bg-white/70 backdrop-blur-md border border-white/40 shadow-sm rounded-3xl';
+    }
+    if ([3, 21, 31, 45].includes(themeNumber)) {
+      // Solid dark charcoal/onyx cards
+      return 'bg-stone-900 border border-stone-800 shadow-xl rounded-2xl';
+    }
+    if ([4].includes(themeNumber)) {
+      // Classic Cafe Brown (Kraft paper look)
+      return 'bg-[#F4EBE1] border-2 border-[#8B5E3C]/30 shadow-md rounded-2xl';
+    }
+    if ([5, 34].includes(themeNumber)) {
+      // Artisan Roastery (Industrial Concrete/Parchment)
+      return 'bg-[#F2EAE1] border border-stone-300 shadow-sm rounded-none';
+    }
+    if ([7].includes(themeNumber)) {
+      // Matcha Zen (Washi paper, clean green edge)
+      return 'bg-[#FAF6F0] border-l-4 border-[#4A7C24] shadow-none rounded-none';
+    }
+    if ([8].includes(themeNumber)) {
+      // Rajasthani Royal (Regal arch, gold highlights)
+      return 'bg-[#FFFDF6] border-t-4 border-[#D4AF37] shadow-md rounded-b-3xl';
+    }
+    if ([11].includes(themeNumber)) {
+      // Punjabi Dhaba (Bold truck art border)
+      return 'bg-[#FFFEEB] border-2 border-dashed border-[#FF4500] shadow-sm rounded-xl';
+    }
+    return 'bg-card-bg border border-border-color shadow-warm rounded-3xl';
+  }, [themeNumber]);
+
+  const buttonClass = useMemo(() => {
+    if ([1, 44].includes(themeNumber)) {
+      return 'bg-[#D4AF37] hover:bg-[#C5A02E] text-stone-950 font-display uppercase tracking-widest font-black rounded-full';
+    }
+    if ([3, 30].includes(themeNumber)) {
+      return 'bg-[#C9A84C] hover:bg-[#B59640] text-stone-950 uppercase font-bold rounded-lg';
+    }
+    if ([5, 34].includes(themeNumber)) {
+      return 'bg-stone-950 hover:bg-stone-800 text-[#F97316] font-mono uppercase tracking-wider rounded-none';
+    }
+    if ([7].includes(themeNumber)) {
+      return 'bg-[#4A7C24] hover:bg-[#3E671E] text-white font-sans rounded-full';
+    }
+    if ([11].includes(themeNumber)) {
+      return 'bg-[#FF4500] hover:bg-[#E03D00] text-white font-black rounded-lg scale-105 transition-transform';
+    }
+    return 'bg-brand hover:opacity-90 text-white font-extrabold rounded-2xl';
+  }, [themeNumber]);
 
   if (loading) {
     return (
@@ -693,7 +841,7 @@ export default function Storefront() {
           </p>
           <a
             href="https://cafecanvas.bar"
-            className="inline-block bg-brand text-[#fcfaf4] font-extrabold px-6 py-3.5 rounded-xl hover:opacity-90 transition-all text-xs tracking-wider uppercase shadow-md"
+            className="inline-block bg-brand text-white font-extrabold px-6 py-3.5 rounded-xl hover:opacity-90 transition-all text-xs tracking-wider uppercase shadow-md"
           >
             Go to CafeCanva Home
           </a>
@@ -702,316 +850,1153 @@ export default function Storefront() {
     );
   }
 
-  if (menuItems.length === 0) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col justify-between relative overflow-x-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand/5 rounded-full blur-[120px] pointer-events-none"></div>
-
-        <div className="h-56 relative bg-stone-900 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-t from-[#23120b] via-[#23120b]/40 to-transparent z-10"></div>
-          <img 
-            src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80" 
-            alt="Cover" 
-            className="w-full h-full object-cover opacity-85"
-          />
-          <div className="absolute bottom-5 left-6 right-6 z-20 flex justify-between items-end">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-black text-[#fcfaf4] tracking-tight flex items-center gap-2">
-                {tenant.name} <Sparkles size={20} className="text-accent animate-pulse" />
-              </h1>
-            </div>
-          </div>
-        </div>
-
-        <main className="max-w-md mx-auto px-4 py-16 text-center flex-1 flex flex-col justify-center items-center gap-6 relative z-20">
-          <div className="w-16 h-16 bg-brand-light rounded-2xl flex items-center justify-center text-brand mx-auto border border-brand/10">
-            <Sparkles size={32} />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-black tracking-tight text-foreground">Menu Under Construction</h2>
-            <p className="text-foreground/60 text-xs leading-relaxed px-4">
-              We are working hard to set up our digital menu catalog. Please check back soon or ask our staff for assistance!
-            </p>
-          </div>
-        </main>
-
-        <footer className="text-center py-8 text-[10px] text-foreground/60/80">
-          <div>{t.powered} · {tenant.name}</div>
-        </footer>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background text-foreground pb-32 relative overflow-x-hidden">
-      {/* Liquid Floating Background Gradients */}
-      <div className="liquid-blob-1 top-10 left-10"></div>
-      <div className="liquid-blob-2 top-1/3 right-10"></div>
-      <div className="liquid-blob-3 bottom-10 left-20"></div>
-
-      {dbPending && (
-        <div className="bg-amber-500 text-stone-950 px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-1.5 sticky top-0 z-50 shadow-md">
-          <AlertCircle size={14} />
-          <span>Running in Offline Sandbox Mode. Run <code>node db_setup.js</code> to initialize live database structures.</span>
+    <div className={`min-h-screen bg-background text-foreground pb-24 relative overflow-x-hidden ${isDark ? 'dark' : ''}`}>
+      {/* Background patterns based on active theme */}
+      {themeNumber === 1 && (
+        // Bokeh floating circles for Liquid Glass Premium
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute w-60 h-60 rounded-full bg-yellow-500/5 blur-3xl top-1/4 left-1/4 animate-pulse"></div>
+          <div className="absolute w-80 h-80 rounded-full bg-[#FF6B35]/5 blur-3xl top-1/2 right-1/4 animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute w-56 h-56 rounded-full bg-yellow-500/5 blur-3xl bottom-1/4 left-1/3 animate-pulse" style={{ animationDelay: '4s' }}></div>
         </div>
       )}
+      
+      {themeNumber === 8 && (
+        // Rajasthani Jali gold lattice pattern
+        <div className="absolute inset-0 pointer-events-none opacity-5 z-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0l20 20-20 20L0 20z' fill='%23D4AF37' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat'
+        }}></div>
+      )}
 
-      {/* Header Banner / Hero Carousel */}
-      <div className="relative mb-6">
-        <HeroCarousel cafeName={tenant.name} />
-        
-        {/* Controls Overlay */}
-        <div className="absolute top-4 left-6 right-6 z-20 flex justify-between items-center">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground/20 backdrop-blur-md border border-white/10 text-xs font-bold text-white shadow-sm">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>{t.openStatus}</span>
+      {themeNumber === 9 && (
+        // Warli tribal art repeating pattern
+        <div className="absolute inset-0 pointer-events-none opacity-5 z-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 10l5 10h-10zm0 18l5-10h-10zm0-8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 14v10m-5-5h10' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat'
+        }}></div>
+      )}
+
+      {themeNumber === 10 && (
+        // Arabesque Islamic star pattern
+        <div className="absolute inset-0 pointer-events-none opacity-4 z-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 0l5 15h15l-12 9 4 15-12-9-12 9 4-15-12-9h15z' fill='%23D4AF37' fill-opacity='0.4'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat'
+        }}></div>
+      )}
+
+      {/* Top Navbar / Brand Header (Desktop) */}
+      <header className="bg-card-bg/80 backdrop-blur-md border-b border-border-color sticky top-0 z-40 transition-all">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
+            <div className="w-10 h-10 rounded-xl bg-brand-light flex items-center justify-center text-brand border border-brand/10">
+              <Coffee size={22} className="animate-pulse" />
+            </div>
+            <div>
+              <h1 className="font-extrabold text-sm md:text-base tracking-tight text-foreground flex items-center gap-1.5">
+                {tenant.name}
+              </h1>
+              <p className="text-[10px] text-foreground/50 tracking-wider uppercase font-extrabold">Menu Canvas</p>
+            </div>
           </div>
-          
-          <button 
-            onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground/20 backdrop-blur-md border border-white/10 text-xs font-bold text-white hover:bg-foreground/30 transition-all shadow-sm"
-          >
-            <Globe size={13} />
-            {lang === 'en' ? 'हिंदी' : 'English'}
-          </button>
-        </div>
-      </div>
 
-      <main className="max-w-3xl mx-auto px-4 mt-6 relative z-20">
-        {/* Loyalty Profile Section */}
-        {customerPhone ? (
-          <div className="bg-card-bg border border-brand/35 rounded-3xl p-5 shadow-lg space-y-4 mb-6 animate-fade-in">
-            <div className="flex justify-between items-center border-b border-border-color/60 pb-3">
-              <div>
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-brand">Loyalty Profile</span>
-                <h4 className="font-extrabold text-sm text-foreground">{customerProfile?.name || 'Valued Guest'}</h4>
-                <p className="text-[10px] text-foreground/40 font-semibold">{customerPhone}</p>
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-foreground/80">
+            <button onClick={() => setActiveTab('home')} className={`hover:text-brand transition-colors ${activeTab === 'home' ? 'text-brand' : ''}`}>Home</button>
+            <button onClick={() => setActiveTab('menu')} className={`hover:text-brand transition-colors ${activeTab === 'menu' ? 'text-brand' : ''}`}>Menu</button>
+            <button onClick={() => setActiveTab('dine-in')} className={`hover:text-brand transition-colors ${activeTab === 'dine-in' ? 'text-brand' : ''}`}>Dine-in QR</button>
+            <button onClick={() => setActiveTab('delivery')} className={`hover:text-brand transition-colors ${activeTab === 'delivery' ? 'text-brand' : ''}`}>Delivery</button>
+            <button onClick={() => setActiveTab('products')} className={`hover:text-brand transition-colors ${activeTab === 'products' ? 'text-brand' : ''}`}>Specials</button>
+            <button onClick={() => setActiveTab('offers')} className={`hover:text-brand transition-colors ${activeTab === 'offers' ? 'text-brand' : ''}`}>Offers</button>
+            <button onClick={() => setActiveTab('about')} className={`hover:text-brand transition-colors ${activeTab === 'about' ? 'text-brand' : ''}`}>About</button>
+            <button onClick={() => setActiveTab('contact')} className={`hover:text-brand transition-colors ${activeTab === 'contact' ? 'text-brand' : ''}`}>Contact</button>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}
+              className="px-3 py-1.5 rounded-full border border-border-color text-[11px] font-bold hover:bg-stone-50 transition-all flex items-center gap-1"
+            >
+              <Globe size={12} />
+              {lang === 'en' ? 'हिं' : 'EN'}
+            </button>
+            
+            {customerPhone ? (
+              <button 
+                onClick={() => setActiveTab('account')}
+                className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm"
+              >
+                {customerProfile?.name ? customerProfile.name[0] : <User size={14} />}
+              </button>
+            ) : (
+              <button 
+                onClick={() => setIsLoginOpen(true)}
+                className="px-4 py-2 bg-brand text-white font-bold text-xs rounded-xl hover:opacity-90 transition-all shadow-sm"
+              >
+                Login
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <main className="max-w-4xl mx-auto px-4 mt-6 relative z-10">
+        
+        {/* Dynamic Tab Switching */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'home' && (
+            <motion.div 
+              key="home" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-8"
+            >
+              {/* 1. Hero Carousel */}
+              <HeroCarousel cafeName={tenant.name} />
+
+              {/* 2. Horizontal Categories Strip */}
+              <div className="space-y-2">
+                <h3 className="font-extrabold text-sm uppercase tracking-wider text-foreground/50">Explore Categories</h3>
+                <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none">
+                  {categories.map(cat => (
+                    <button 
+                      key={cat.id} 
+                      onClick={() => { setActiveCatId(cat.id); setActiveTab('menu'); }}
+                      className="px-5 py-3 rounded-2xl bg-card-bg border border-border-color text-xs font-extrabold whitespace-nowrap shadow-sm hover:border-brand/40 transition-all flex items-center gap-2"
+                    >
+                      <Coffee className="w-3.5 h-3.5 text-brand" />
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="text-right flex flex-col items-end">
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-accent">Reward Points</span>
-                <p className="text-lg font-black text-accent">
-                  {Math.floor((customerProfile?.total_spent || 0) / 1000)} <span className="text-[10px] font-normal text-stone-400">pts</span>
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[9px] text-foreground/40 font-semibold">{customerProfile?.total_visits || 1} visits</span>
+
+              {/* 3. Featured Dishes Grid */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-black text-lg md:text-xl text-foreground">Chef Bestsellers</h3>
+                  <button onClick={() => setActiveTab('menu')} className="text-xs font-bold text-brand hover:underline flex items-center gap-1">
+                    View Full Menu <ChevronRight size={14} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {menuItems.slice(0, 4).map(item => (
+                    <div key={item.id} className={`${cardClass} p-4 flex gap-4 transition-all duration-300 hover:shadow-md`}>
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <h4 className="font-extrabold text-foreground text-sm">{item.name}</h4>
+                          {item.description && <p className="text-foreground/60 text-[11px] mt-1 line-clamp-2">{item.description}</p>}
+                        </div>
+                        <div className="flex justify-between items-center mt-3">
+                          <span className="font-black text-sm text-foreground">₹{(item.price / 100).toFixed(2)}</span>
+                          <button 
+                            onClick={() => handleQtyChange(item.id, 1)}
+                            className={`w-7 h-7 rounded-full ${buttonClass} flex items-center justify-center`}
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="w-20 h-20 shrink-0 relative rounded-xl overflow-hidden bg-stone-100 flex items-center justify-center">
+                        {item.image_url ? (
+                          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Coffee className="w-6 h-6 text-stone-300" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 4. Google Reviews Section */}
+              <div className="space-y-4">
+                <h3 className="font-black text-lg md:text-xl text-foreground text-center">Diner Google Reviews</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    { name: 'Amit Sharma', text: 'Best coffee and filter tea in town. The ambiance is exceptional, and QR ordering is super fast!', rating: 5 },
+                    { name: 'Priya Patel', text: 'Loved the wood fired pizzas and desserts. Very cozy space, friendly waiters. Highly recommended!', rating: 5 },
+                    { name: 'Vikram Singh', text: 'A perfect workplace cafe. High speed internet, amazing cold brews, and healthy food bowls.', rating: 5 }
+                  ].map((rev, index) => (
+                    <div key={index} className={`${cardClass} p-5 space-y-3`}>
+                      <div className="flex items-center gap-0.5">
+                        {[...Array(rev.rating)].map((_, i) => (
+                          <Star key={i} size={14} className="fill-[#ca8a04] text-[#ca8a04]" />
+                        ))}
+                      </div>
+                      <p className="text-xs text-foreground/75 leading-relaxed italic">"{rev.text}"</p>
+                      <div className="font-extrabold text-[11px] uppercase tracking-wider text-brand">{rev.name}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 5. Brand Story Teaser */}
+              <div className={`${cardClass} p-6 flex flex-col md:flex-row gap-6 items-center`}>
+                <div className="flex-1 space-y-4 text-center md:text-left">
+                  <h3 className="font-black text-lg md:text-xl text-foreground">Our Culinary Canvas</h3>
+                  <p className="text-xs text-foreground/70 leading-relaxed">
+                    Founded with a passion for creative culinary expression, {tenant.name} blends artisanal baking, micro-roasted specialty coffees, and organic regional delicacies. Every plate is crafted as a canvas of flavor and heritage.
+                  </p>
+                  <button onClick={() => setActiveTab('about')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${buttonClass}`}>
+                    Read Our Story
+                  </button>
+                </div>
+                <div className="w-full md:w-56 h-40 rounded-2xl overflow-hidden shrink-0">
+                  <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80" alt="Cafe interior" className="w-full h-full object-cover" />
+                </div>
+              </div>
+
+              {/* 6. Instagram Grid (6 Posts) */}
+              <div className="space-y-4">
+                <h3 className="font-black text-lg md:text-xl text-foreground text-center">Instagram Feed</h3>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                  {[
+                    'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=300&q=80',
+                    'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=300&q=80',
+                    'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=300&q=80',
+                    'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=300&q=80',
+                    'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=300&q=80',
+                    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=300&q=80'
+                  ].map((url, i) => (
+                    <a key={i} href="https://instagram.com" target="_blank" rel="noreferrer" className="block relative aspect-square rounded-xl overflow-hidden border border-border-color group">
+                      <img src={url} alt={`Insta post ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[10px] font-bold">
+                        View Post
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* 7. Blog Preview Cards */}
+              <div className="space-y-4">
+                <h3 className="font-black text-lg md:text-xl text-foreground">Bite-sized Food Stories</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { title: 'The Science of Perfect Coffee Extraction', excerpt: 'Discover brew ratios, temperatures, and water quality secrets from our Head Barista.', date: '05 Jun', time: '4 min read', image: 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=400&q=80' },
+                    { title: 'Crafting Sourdough: Sourdough Bread Demystified', excerpt: 'Why long fermentation makes bread healthier, tastier, and easier to digest.', date: '28 May', time: '5 min read', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=400&q=80' }
+                  ].map((blog, i) => (
+                    <div key={i} className={`${cardClass} overflow-hidden flex flex-col`}>
+                      <div className="h-40 relative">
+                        <img src={blog.image} alt={blog.title} className="w-full h-full object-cover" />
+                        <span className="absolute top-3 left-3 bg-brand text-white text-[9px] font-extrabold uppercase px-2 py-1 rounded-md">{blog.date}</span>
+                      </div>
+                      <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                        <div className="space-y-1">
+                          <h4 className="font-extrabold text-sm text-foreground">{blog.title}</h4>
+                          <p className="text-foreground/60 text-[11px] leading-relaxed">{blog.excerpt}</p>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-border-color/40 pt-3 mt-3">
+                          <span className="text-[10px] text-foreground/40 font-bold">{blog.time}</span>
+                          <button onClick={() => setActiveTab('blogs')} className="text-xs font-bold text-brand hover:underline">Read Story</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'menu' && (
+            <motion.div 
+              key="menu" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              {/* Menu Headers & Filters */}
+              <div className={`${cardClass} p-5 space-y-4`}>
+                <div className="flex flex-col md:flex-row justify-between gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Search for coffee, sourdough, combos..." 
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="w-full bg-background border border-border-color rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold outline-none focus:border-brand"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none text-foreground/75">
+                      <input 
+                        type="checkbox" 
+                        checked={vegOnly} 
+                        onChange={e => setVegOnly(e.target.checked)}
+                        className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
+                      />
+                      <span>Vegetarian Only 🟢</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Categories Chip Filters */}
+                <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
                   <button 
-                    onClick={handleLogoutCustomer} 
-                    className="text-[9px] text-rose-600 font-extrabold hover:underline flex items-center gap-0.5"
+                    onClick={() => setActiveCatId('All')}
+                    className={`px-4 py-2 rounded-full text-[11px] font-extrabold whitespace-nowrap shadow-sm border transition-all ${
+                      activeCatId === 'All' 
+                        ? 'bg-brand text-white border-brand' 
+                        : 'bg-background border-border-color text-foreground hover:border-brand/40'
+                    }`}
                   >
-                    <LogOut size={10} />
-                    <span>Logout</span>
+                    {t.all}
+                  </button>
+                  {categories.map(cat => (
+                    <button 
+                      key={cat.id} 
+                      onClick={() => setActiveCatId(cat.id)}
+                      className={`px-4 py-2 rounded-full text-[11px] font-extrabold whitespace-nowrap shadow-sm border transition-all ${
+                        activeCatId === cat.id 
+                          ? 'bg-brand text-white border-brand' 
+                          : 'bg-background border-border-color text-foreground hover:border-brand/40'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Menu Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredItems.map(item => {
+                  const qty = cart[item.id] || 0;
+                  return (
+                    <div 
+                      key={item.id} 
+                      className={`${cardClass} p-4 flex gap-4 transition-all duration-300 hover:shadow-md`}
+                    >
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <h3 className="font-extrabold text-foreground text-sm">
+                            {item.name}
+                          </h3>
+                          {item.description && (
+                            <p className="text-foreground/60 text-[11px] mt-1 leading-relaxed line-clamp-2">
+                              {item.description}
+                            </p>
+                          )}
+                          {item.tags && item.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {item.tags.map(tag => (
+                                <span key={tag} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 uppercase tracking-wider">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex justify-between items-center mt-4">
+                          <span className="font-black text-sm text-foreground">
+                            ₹{(item.price / 100).toFixed(2)}
+                          </span>
+                          
+                          {qty > 0 ? (
+                            <div className="flex items-center gap-2 bg-brand-light rounded-full px-2 py-1 border border-brand/20">
+                              <button 
+                                onClick={() => handleQtyChange(item.id, -1)}
+                                className="w-6 h-6 rounded-full bg-card-bg flex items-center justify-center text-brand hover:bg-brand hover:text-white transition-colors"
+                              >
+                                <Minus size={11} strokeWidth={3} />
+                              </button>
+                              <span className="font-bold text-xs text-brand px-1">{qty}</span>
+                              <button 
+                                onClick={() => handleQtyChange(item.id, 1)}
+                                className="w-6 h-6 rounded-full bg-card-bg flex items-center justify-center text-brand hover:bg-brand hover:text-white transition-colors"
+                              >
+                                <Plus size={11} strokeWidth={3} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button 
+                              onClick={() => handleQtyChange(item.id, 1)}
+                              className={`w-7 h-7 rounded-full ${buttonClass} flex items-center justify-center`}
+                            >
+                              <Plus size={14} strokeWidth={3} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="w-20 h-20 md:w-24 md:h-24 shrink-0 relative rounded-xl overflow-hidden border border-border-color bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
+                        {item.image_url ? (
+                          <img 
+                            src={item.image_url} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <Coffee className="w-6 h-6 text-stone-300" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'dine-in' && (
+            <motion.div 
+              key="dine-in" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className={`${cardClass} p-6 space-y-6`}>
+                <div className="text-center space-y-1.5">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-light flex items-center justify-center text-brand mx-auto">
+                    <QrCode size={24} />
+                  </div>
+                  <h3 className="font-black text-base md:text-lg text-foreground">Table Dining & Order Logs</h3>
+                  <p className="text-xs text-foreground/60">Scan QR codes at tables or select table below to place order directly.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground/60 uppercase tracking-wider block">Table Number</label>
+                    <select
+                      value={selectedTableId}
+                      onChange={(e) => setSelectedTableId(e.target.value)}
+                      className="w-full bg-background border border-border-color rounded-xl px-3 py-2.5 text-xs font-bold outline-none"
+                    >
+                      {tables.map(t => (
+                        <option key={t.id} value={t.id}>{t.name} ({t.section})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground/60 uppercase tracking-wider block">Diner Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="Enter name"
+                      value={customerName}
+                      onChange={e => setCustomerName(e.target.value)}
+                      className="w-full bg-background border border-border-color rounded-xl px-3 py-2.5 text-xs font-bold outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-border-color/40 flex justify-between items-center">
+                  <div>
+                    <span className="text-[10px] uppercase font-extrabold text-foreground/40">Assistance Alert</span>
+                    <h5 className="text-xs font-bold text-foreground mt-0.5">Need help from our team?</h5>
+                  </div>
+                  <button 
+                    onClick={handleCallStaff}
+                    disabled={staffCallCooldown > 0}
+                    className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
+                      staffCallCooldown > 0 
+                        ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                        : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
+                    }`}
+                  >
+                    {staffCallCooldown > 0 ? `Called (${staffCallCooldown}s)` : '🛎️ Call Staff'}
                   </button>
                 </div>
               </div>
-            </div>
 
-            {/* Exclusive Offers */}
-            {offers.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-foreground/40">Your Exclusive Offers</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  {offers.map(o => (
-                    <div key={o.id} className="bg-amber-50/40 border border-amber-100/70 rounded-2xl p-3 flex justify-between items-center gap-3">
-                      <div>
-                        <h5 className="font-bold text-xs text-brand">{o.title}</h5>
-                        <p className="text-[10px] text-foreground/60 mt-0.5">{o.description}</p>
+              {/* Active Orders Tracker */}
+              {previousOrders.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-black text-sm uppercase tracking-wider text-foreground/60">Live Kitchen status</h4>
+                  <div className="space-y-3">
+                    {previousOrders.slice(0, 3).map(ord => (
+                      <div key={ord.id} className={`${cardClass} p-4 space-y-3`}>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-mono text-stone-400">#REF-{ord.id.substring(0,8).toUpperCase()}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                            ['served', 'completed'].includes(ord.status) ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                          }`}>{ord.status}</span>
+                        </div>
+                        <div className="space-y-1">
+                          {ord.order_items?.map((item: any) => (
+                            <div key={item.id} className="flex justify-between text-xs text-foreground/85">
+                              <span>{item.item_name} <span className="text-stone-400">x{item.quantity}</span></span>
+                              <span>₹{(item.unit_price * item.quantity / 100).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex justify-between items-center pt-2 border-t border-border-color/30 text-xs font-bold">
+                          <span>Total Paid</span>
+                          <span>₹{(ord.total / 100).toFixed(2)}</span>
+                        </div>
                       </div>
-                      <div className="shrink-0 bg-brand text-white px-2.5 py-1 rounded-xl text-xs font-black">
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'delivery' && (
+            <motion.div 
+              key="delivery" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className={`${cardClass} p-6 space-y-6`}>
+                <div className="text-center space-y-1.5">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-light flex items-center justify-center text-brand mx-auto">
+                    <Truck size={24} />
+                  </div>
+                  <h3 className="font-black text-base md:text-lg text-foreground">Home Delivery Service</h3>
+                  <p className="text-xs text-foreground/60">Fresh meals and artisanal coffees delivered directly to your doorstep.</p>
+                </div>
+
+                <form onSubmit={handleDeliverySubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground/60 uppercase tracking-wider block">Delivery Address</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-stone-400" />
+                      <textarea 
+                        required
+                        placeholder="Enter full building, street and location details..."
+                        value={deliveryAddress}
+                        onChange={e => setDeliveryAddress(e.target.value)}
+                        className="w-full bg-background border border-border-color rounded-xl pl-10 pr-4 py-3 text-xs font-bold outline-none resize-none h-20"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground/60 uppercase tracking-wider block">Time Slot</label>
+                      <select 
+                        value={deliverySlot}
+                        onChange={e => setDeliverySlot(e.target.value)}
+                        className="w-full bg-background border border-border-color rounded-xl px-3 py-2.5 text-xs font-bold outline-none"
+                      >
+                        <option>Immediate (30-45 mins)</option>
+                        <option>Lunch (12:30 PM - 2:00 PM)</option>
+                        <option>Evening Snack (4:30 PM - 6:00 PM)</option>
+                        <option>Dinner (7:30 PM - 9:00 PM)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground/60 uppercase tracking-wider block">Contact Number</label>
+                      <input 
+                        type="tel" 
+                        required
+                        pattern="[0-9]{10}"
+                        placeholder="10-digit mobile number"
+                        className="w-full bg-background border border-border-color rounded-xl px-3 py-2.5 text-xs font-bold outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit"
+                    className={`w-full py-3.5 ${buttonClass} text-xs font-extrabold uppercase tracking-widest shadow-md`}
+                  >
+                    Confirm Delivery Order (₹{totalPriceRupees.toFixed(2)})
+                  </button>
+                </form>
+              </div>
+
+              {/* Delivery Tracking timeline */}
+              <div className={`${cardClass} p-5 space-y-4`}>
+                <h4 className="font-extrabold text-sm uppercase tracking-wider text-brand">Real-time Tracker</h4>
+                <div className="space-y-4 relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-stone-100 dark:before:bg-stone-800">
+                  <div className="relative flex items-start gap-4">
+                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 animate-pulse"></span>
+                    <div>
+                      <h5 className="font-bold text-xs text-foreground">Order Placed & Confirmed</h5>
+                      <p className="text-[10px] text-foreground/50">Kitchen is preparing your items.</p>
+                    </div>
+                  </div>
+                  <div className="relative flex items-start gap-4 opacity-50">
+                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-stone-300"></span>
+                    <div>
+                      <h5 className="font-bold text-xs text-foreground">Quality Check & Packaged</h5>
+                      <p className="text-[10px] text-foreground/50">Fresh hot food sealed safely.</p>
+                    </div>
+                  </div>
+                  <div className="relative flex items-start gap-4 opacity-50">
+                    <span className="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-stone-300"></span>
+                    <div>
+                      <h5 className="font-bold text-xs text-foreground">Out for Delivery</h5>
+                      <p className="text-[10px] text-foreground/50">Rider is heading to your destination.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'products' && (
+            <motion.div 
+              key="products" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="font-black text-xl text-foreground">Signature Specials & Combos</h3>
+                <p className="text-xs text-foreground/60">Curated specialty combinations and seasonal favorites from our head chef.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  { id: 'combo1', name: 'Barista Morning Combo', desc: 'Craft Cappuccino + Butter Croissant + Fresh Sourdough slice with jam.', price: 34900, tags: ['Bestseller', 'Breakfast'], image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=400&q=80' },
+                  { id: 'combo2', name: 'Chef Special Thali Combo', desc: 'Authentic regional curry, local rice, dal makhani, butter tandoori roti, and sweet lassi.', price: 49900, tags: ['Festive', 'Heavy Meal'], image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80' }
+                ].map(item => (
+                  <div key={item.id} className={`${cardClass} overflow-hidden flex flex-col justify-between`}>
+                    <div>
+                      <div className="h-44 relative bg-stone-100">
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        <div className="absolute top-3 right-3 flex gap-1.5">
+                          {item.tags.map(t => (
+                            <span key={t} className="bg-brand text-white text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <h4 className="font-extrabold text-sm text-foreground">{item.name}</h4>
+                        <p className="text-foreground/60 text-[11px] leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                    <div className="p-4 pt-0 flex justify-between items-center border-t border-border-color/30 mt-3">
+                      <span className="font-black text-sm text-foreground">₹{(item.price / 100).toFixed(2)}</span>
+                      <button 
+                        onClick={() => {
+                          // Try to add the first menu item or simulate adding to cart
+                          alert(`Signature combo "${item.name}" added to cart!`);
+                        }}
+                        className={`px-4 py-2 text-[10px] font-extrabold uppercase tracking-wider ${buttonClass}`}
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'blogs' && (
+            <motion.div 
+              key="blogs" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="font-black text-xl text-foreground">Canvas Food Chronicles</h3>
+                <p className="text-xs text-foreground/60">Stories of farm sourcing, baking artisan techniques, and barista science.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  { title: 'The Science of Perfect Coffee Extraction', excerpt: 'Discover brew ratios, temperatures, and water quality secrets from our Head Barista.', date: '05 Jun 2026', author: 'Vikram Barista', tags: ['Coffee', 'Brewing'], image: 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=400&q=80' },
+                  { title: 'Crafting Sourdough: Sourdough Bread Demystified', excerpt: 'Why long fermentation makes bread healthier, tastier, and easier to digest.', date: '28 May 2026', author: 'Chef Maria', tags: ['Baking', 'Sourdough'], image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=400&q=80' },
+                  { title: 'Behind The Scenes: Sourcing Single Origin Tea Leaves', excerpt: 'A journey into high-altitude organic tea farms of Darjeeling and Assam.', date: '12 May 2026', author: 'Sourcing Team', tags: ['Tea', 'Sourcing'], image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=400&q=80' },
+                  { title: 'Sweets & Celebrations: Regional Dessert Crafts', excerpt: 'The cultural stories behind Gulab Jamun, Puran Poli and Shahi Tukda.', date: '01 May 2026', author: 'Patissier Chef', tags: ['Dessert', 'Culture'], image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80' }
+                ].map((blog, i) => (
+                  <div key={i} className={`${cardClass} overflow-hidden flex flex-col justify-between`}>
+                    <div className="h-44 relative bg-stone-100">
+                      <img src={blog.image} alt={blog.title} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                      <div className="space-y-1.5">
+                        <div className="flex gap-1.5">
+                          {blog.tags.map(t => (
+                            <span key={t} className="text-[8px] font-black uppercase text-brand tracking-widest">{t}</span>
+                          ))}
+                        </div>
+                        <h4 className="font-extrabold text-sm text-foreground leading-snug">{blog.title}</h4>
+                        <p className="text-foreground/60 text-[11px] leading-relaxed line-clamp-3">{blog.excerpt}</p>
+                      </div>
+
+                      <div className="flex justify-between items-center border-t border-border-color/30 pt-3 text-[10px] text-stone-400 font-bold mt-4">
+                        <span>By {blog.author}</span>
+                        <span>{blog.date}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'account' && (
+            <motion.div 
+              key="account" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              {customerPhone ? (
+                <div className="space-y-6">
+                  {/* Loyalty Card */}
+                  <div className="bg-card-bg border border-brand/35 rounded-3xl p-5 shadow-lg space-y-4">
+                    <div className="flex justify-between items-center border-b border-border-color/60 pb-3">
+                      <div>
+                        <span className="text-[9px] uppercase tracking-wider font-extrabold text-brand">Loyalty Profile</span>
+                        <h4 className="font-extrabold text-sm text-foreground">{customerProfile?.name || 'Valued Guest'}</h4>
+                        <p className="text-[10px] text-foreground/40 font-semibold">{customerPhone}</p>
+                      </div>
+                      <div className="text-right flex flex-col items-end">
+                        <span className="text-[9px] uppercase tracking-wider font-extrabold text-accent">Reward Points</span>
+                        <p className="text-lg font-black text-accent">
+                          {Math.floor((customerProfile?.total_spent || 0) / 1000)} <span className="text-[10px] font-normal text-stone-400">pts</span>
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[9px] text-foreground/40 font-semibold">{customerProfile?.total_visits || 1} visits</span>
+                          <button 
+                            onClick={handleLogoutCustomer} 
+                            className="text-[9px] text-rose-600 font-extrabold hover:underline flex items-center gap-0.5"
+                          >
+                            <LogOut size={10} />
+                            <span>Logout</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Previous Orders */}
+                  <div className="space-y-4">
+                    <h3 className="font-black text-base uppercase tracking-wider text-foreground/50">Your Previous Orders</h3>
+                    {loadingOrders ? (
+                      <div className="text-center py-6 text-xs text-foreground/40 font-bold">Loading orders...</div>
+                    ) : previousOrders.length > 0 ? (
+                      <div className="space-y-3 pr-1">
+                        {previousOrders.map(order => (
+                          <div key={order.id} className={`${cardClass} p-4 space-y-3 text-xs`}>
+                            <div className="flex justify-between items-center">
+                              <span className="text-[10px] text-stone-400 font-bold">
+                                {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                                ['served', 'completed'].includes(order.status)
+                                  ? 'bg-emerald-50 text-emerald-600'
+                                  : order.status === 'cancelled'
+                                  ? 'bg-rose-50 text-rose-600'
+                                  : 'bg-amber-50 text-amber-600'
+                              }`}>
+                                {order.status}
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              {order.order_items?.map((item: any) => (
+                                <div key={item.id} className="flex justify-between text-stone-600">
+                                  <span>{item.item_name} <span className="text-stone-400 font-medium">x{item.quantity}</span></span>
+                                  <span>₹{(item.unit_price * item.quantity / 100).toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex justify-between items-center border-t border-border-color/40/60 pt-2 font-bold text-stone-800">
+                              <span>Total Paid</span>
+                              <span>₹{(order.total / 100).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-10 bg-card-bg border border-border-color rounded-3xl text-xs text-foreground/40 font-bold">
+                        No previous orders found for this phone number.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className={`${cardClass} p-8 text-center space-y-4 max-w-sm mx-auto`}>
+                  <div className="w-12 h-12 rounded-2xl bg-brand-light flex items-center justify-center text-brand mx-auto">
+                    <User size={22} />
+                  </div>
+                  <h3 className="font-black text-base text-foreground">Check Loyalty & Orders</h3>
+                  <p className="text-xs text-foreground/60 leading-relaxed">Login to view accumulated reward points, active coupons and trace previous dining logs.</p>
+                  <button 
+                    onClick={() => setIsLoginOpen(true)}
+                    className={`w-full py-3 ${buttonClass} text-xs font-bold uppercase tracking-wider shadow-sm`}
+                  >
+                    Login / Register
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'offers' && (
+            <motion.div 
+              key="offers" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="font-black text-xl text-foreground">Active Deals & Coupons</h3>
+                <p className="text-xs text-foreground/60">Exclusive savings for our online diners and premium members.</p>
+              </div>
+
+              {offers.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {offers.map(o => (
+                    <div key={o.id} className={`${cardClass} p-5 flex justify-between items-center gap-3`}>
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-sm text-brand">{o.title}</h4>
+                        <p className="text-xs text-foreground/60">{o.description}</p>
+                      </div>
+                      <div className="shrink-0 bg-brand text-white px-3 py-1.5 rounded-xl text-xs font-black">
                         {o.discount_percent}% OFF
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Previous Orders */}
-            {previousOrders.length > 0 && (
-              <div className="border-t border-border-color/60 pt-4 space-y-3">
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-foreground/40">Your Previous Orders</span>
-                <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                  {previousOrders.map(order => (
-                    <div key={order.id} className="bg-brand-light/25 border border-border-color/40 rounded-2xl p-3 space-y-2 text-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] text-stone-400 font-bold">
-                          {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                          order.status === 'served' || order.status === 'completed'
-                            ? 'bg-emerald-50 text-emerald-600'
-                            : order.status === 'cancelled'
-                            ? 'bg-rose-50 text-rose-600'
-                            : 'bg-amber-50 text-amber-600'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { title: 'Welcome 10% Discount', code: 'WELCOME10', desc: 'Claim 10% discount on your first online order of beverages and pastries.' },
+                    { title: 'Mid-week Barista Treat', code: 'COFFEE50', desc: 'Get 50% off on second cup of any hot brew ordered on Wednesdays.' },
+                    { title: 'Weekend Combo Saver', code: 'SAVER200', desc: 'Flat ₹200 off on ordering any signature combo above ₹999.' }
+                  ].map((deal, idx) => (
+                    <div key={idx} className={`${cardClass} p-5 space-y-4 flex flex-col justify-between`}>
                       <div className="space-y-1">
-                        {order.order_items?.map((item: any) => (
-                          <div key={item.id} className="flex justify-between text-stone-600">
-                            <span>{item.item_name} <span className="text-stone-400 font-medium">x{item.quantity}</span></span>
-                            <span>₹{(item.unit_price * item.quantity / 100).toFixed(2)}</span>
-                          </div>
-                        ))}
+                        <h4 className="font-extrabold text-sm text-foreground">{deal.title}</h4>
+                        <p className="text-[11px] text-foreground/60 leading-relaxed">{deal.desc}</p>
                       </div>
-                      <div className="flex justify-between items-center border-t border-border-color/40/60 pt-1.5 font-bold text-stone-800">
-                        <span>Total Paid</span>
-                        <span>₹{(order.total / 100).toFixed(2)}</span>
+                      <div className="flex justify-between items-center border-t border-border-color/30 pt-3">
+                        <span className="font-mono text-xs font-extrabold text-brand tracking-wider bg-brand-light px-2.5 py-1 rounded-lg">{deal.code}</span>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(deal.code);
+                            alert(`Code "${deal.code}" copied!`);
+                          }}
+                          className="text-xs font-bold text-brand hover:underline"
+                        >
+                          Copy Code
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'about' && (
+            <motion.div 
+              key="about" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="font-black text-xl text-foreground">Our Brand Story</h3>
+                <p className="text-xs text-foreground/60">The vision, team and certifications behind {tenant.name}.</p>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-card-bg border border-border-color rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h4 className="font-black text-sm text-foreground">Unlock Special Loyalty Offers</h4>
-              <p className="text-foreground/60 text-[11px] mt-0.5">Verify your WhatsApp number to check active discounts and points.</p>
-            </div>
-            <button
-              onClick={() => setIsLoginOpen(true)}
-              className="px-4 py-2 bg-brand hover:bg-brand/90 text-white font-bold text-xs rounded-xl cursor-pointer transition-all whitespace-nowrap shadow-sm self-stretch sm:self-auto text-center"
-            >
-              Login / Verify
-            </button>
-          </div>
-        )}
 
-        {/* Categories Chip Filters */}
-        <div className="flex gap-2.5 overflow-x-auto pb-3 sticky top-4 z-30 scrollbar-none">
-          <button 
-            onClick={() => setActiveCatId('All')}
-            className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-sm border transition-all ${
-              activeCatId === 'All' 
-                ? 'bg-brand text-[#fcfaf4] border-brand scale-105' 
-                : 'bg-white/80 backdrop-blur-sm border-border-color text-foreground hover:border-brand/40'
-            }`}
-          >
-            {t.all}
-          </button>
-          {categories.map(cat => (
-            <button 
-              key={cat.id} 
-              onClick={() => setActiveCatId(cat.id)}
-              className={`px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-sm border transition-all ${
-                activeCatId === cat.id 
-                  ? 'bg-brand text-[#fcfaf4] border-brand scale-105' 
-                  : 'bg-white/80 backdrop-blur-sm border-border-color text-foreground hover:border-brand/40'
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
+              <div className={`${cardClass} p-6 space-y-4`}>
+                <h4 className="font-black text-sm uppercase tracking-wider text-brand">Crafted with Passion</h4>
+                <p className="text-xs text-foreground/75 leading-relaxed">
+                  {tenant.name} was established in 2024 to redefine regional dining and micro-roasting hospitality. We source our coffee beans directly from high-altitude plantations in Chikmagalur and bake our sourdough bread fresh every morning.
+                </p>
+                <p className="text-xs text-foreground/75 leading-relaxed">
+                  Our professional kitchens operate under strict hygiene regulations. FSSAI certified and regularly audited, we promise fresh ingredients and clean dining spaces.
+                </p>
+              </div>
 
-        {/* Menu Items Grid */}
-        <div className="mt-8 space-y-8">
-          <div>
-            <h2 className="text-xl font-black tracking-tight mb-5 flex items-center gap-2">
-              {activeCatId === 'All' ? t.popular : categories.find(c => c.id === activeCatId)?.name}
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredItems.map(item => {
-                const qty = cart[item.id] || 0;
-                return (
-                  <div 
-                    key={item.id} 
-                    className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl border border-border-color flex gap-4 transition-all duration-300 hover:shadow-md hover:border-[#c5b293]"
-                  >
-                    <div className="flex-1 flex flex-col justify-between">
-                       <div>
-                        <h3 className="font-extrabold text-foreground text-sm md:text-base">
-                          {item.name}
-                        </h3>
-                        {item.description && (
-                          <p className="text-foreground/60 text-[11px] md:text-xs mt-1 leading-relaxed line-clamp-2">
-                            {item.description}
-                          </p>
-                        )}
-                        {item.tags && item.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {item.tags.map(tag => (
-                              <span key={tag} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-600 uppercase tracking-wider">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex justify-between items-center mt-4">
-                        <span className="font-black text-sm md:text-base text-foreground">
-                          ₹{(item.price / 100).toFixed(2)}
-                        </span>
-                        
-                        {qty > 0 ? (
-                          <div className="flex items-center gap-2 bg-brand-light rounded-full px-2 py-1 border border-brand/20">
-                            <button 
-                              onClick={() => handleQtyChange(item.id, -1)}
-                              className="w-6 h-6 rounded-full bg-card-bg flex items-center justify-center text-brand hover:bg-brand hover:text-[#fcfaf4] transition-colors"
-                            >
-                              <Minus size={12} strokeWidth={3} />
-                            </button>
-                            <span className="font-bold text-xs text-brand px-1">{qty}</span>
-                            <button 
-                              onClick={() => handleQtyChange(item.id, 1)}
-                              className="w-6 h-6 rounded-full bg-card-bg flex items-center justify-center text-brand hover:bg-brand hover:text-[#fcfaf4] transition-colors"
-                            >
-                              <Plus size={12} strokeWidth={3} />
-                            </button>
-                          </div>
-                        ) : (
-                          <button 
-                            onClick={() => handleQtyChange(item.id, 1)}
-                            className="w-8 h-8 rounded-full bg-brand-light text-brand flex items-center justify-center hover:bg-brand hover:text-[#fcfaf4] transition-all hover:scale-105 active:scale-95"
-                          >
-                            <Plus size={15} strokeWidth={3} />
-                          </button>
-                        )}
+              {/* FSSAI Mock Certificate */}
+              <div className={`${cardClass} p-5 flex items-center justify-between gap-4 border-l-4 border-amber-500`}>
+                <div className="space-y-1">
+                  <h4 className="font-extrabold text-xs text-stone-700">FSSAI Hygiene Certification</h4>
+                  <p className="text-[10px] text-stone-400">Registration Number: #12724999000104</p>
+                </div>
+                <div className="w-10 h-10 bg-amber-50 flex items-center justify-center text-amber-600 rounded-xl font-black text-xs border border-amber-200 shrink-0">
+                  Govt
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'contact' && (
+            <motion.div 
+              key="contact" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="font-black text-xl text-foreground">Contact & Assistance</h3>
+                <p className="text-xs text-foreground/60">Find our locations, hours, and direct connection details.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`${cardClass} p-5 space-y-4`}>
+                  <h4 className="font-extrabold text-sm text-foreground">Operating Details</h4>
+                  
+                  <div className="space-y-3 text-xs">
+                    <div className="flex items-center gap-3">
+                      <Clock size={16} className="text-brand shrink-0" />
+                      <div>
+                        <h5 className="font-bold text-stone-700">Timings</h5>
+                        <p className="text-[11px] text-stone-400">Mon - Sun: 08:30 AM - 10:00 PM</p>
                       </div>
                     </div>
-                    
-                    <div className="w-24 h-24 md:w-28 md:h-28 shrink-0 relative rounded-xl overflow-hidden border border-border-color bg-stone-100 flex items-center justify-center">
-                      {item.image_url ? (
-                        <img 
-                          src={item.image_url} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" 
-                        />
-                      ) : (
-                        <Coffee className="w-8 h-8 text-stone-300" />
-                      )}
+                    <div className="flex items-center gap-3">
+                      <Phone size={16} className="text-brand shrink-0" />
+                      <div>
+                        <h5 className="font-bold text-stone-700">Phone</h5>
+                        <p className="text-[11px] text-stone-400">+91 98765 43210</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Mail size={16} className="text-brand shrink-0" />
+                      <div>
+                        <h5 className="font-bold text-stone-700">Email Address</h5>
+                        <p className="text-[11px] text-stone-400">hello@cafecanvas.bar</p>
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+                </div>
+
+                {/* Feedback form */}
+                <div className={`${cardClass} p-5 space-y-4`}>
+                  <h4 className="font-extrabold text-sm text-foreground">Send Us Message</h4>
+                  <form onSubmit={e => { e.preventDefault(); alert("Message sent successfully!"); }} className="space-y-3">
+                    <input 
+                      type="text" 
+                      placeholder="Your Name" 
+                      required 
+                      className="w-full bg-background border border-border-color rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                    />
+                    <textarea 
+                      placeholder="Your thoughts..." 
+                      rows={2} 
+                      required 
+                      className="w-full bg-background border border-border-color rounded-xl px-3 py-2 text-xs font-bold outline-none resize-none"
+                    />
+                    <button type="submit" className={`w-full py-2 ${buttonClass} text-xs font-bold uppercase`}>Send</button>
+                  </form>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'gallery' && (
+            <motion.div 
+              key="gallery" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="font-black text-xl text-foreground">Canvas Ambiance</h3>
+                <p className="text-xs text-foreground/60">A photo journey through our sourdough kitchen, espresso bar and events.</p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=400&q=80',
+                  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80',
+                  'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=400&q=80',
+                  'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80',
+                  'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=400&q=80',
+                  'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=400&q=80',
+                  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80',
+                  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80'
+                ].map((url, i) => (
+                  <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-border-color shadow-sm relative group">
+                    <img src={url} alt={`Gallery ${i}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'careers' && (
+            <motion.div 
+              key="careers" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="font-black text-xl text-foreground">Join Our Culinary Team</h3>
+                <p className="text-xs text-foreground/60">We are always looking for passionate baristas, sourdough bakers and customer servers.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { role: 'Head Barista', type: 'Full-time', loc: 'Chikmagalur Premium Blend Store', salary: '₹35,000 - ₹45,000 / month' },
+                  { role: 'Sourdough Baker', type: 'Full-time', loc: 'Artisan Oven Section', salary: '₹30,000 - ₹38,000 / month' },
+                  { role: 'Guest Relations Host', type: 'Part-time', loc: 'Boutique Lounge', salary: '₹18,000 - ₹24,000 / month' }
+                ].map((job, idx) => (
+                  <div key={idx} className={`${cardClass} p-5 flex flex-col justify-between gap-4`}>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="bg-brand-light text-brand text-[8px] font-black uppercase px-2 py-0.5 rounded-full">{job.type}</span>
+                      </div>
+                      <h4 className="font-extrabold text-sm text-foreground">{job.role}</h4>
+                      <p className="text-[10px] text-foreground/60 font-semibold">{job.loc}</p>
+                    </div>
+                    
+                    <div className="space-y-3 pt-3 border-t border-border-color/30">
+                      <span className="text-[11px] font-bold text-foreground">{job.salary}</span>
+                      <button 
+                        onClick={() => setCareerRole(job.role)}
+                        className={`w-full py-2 ${buttonClass} text-[10px] font-bold uppercase`}
+                      >
+                        Apply Now
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Job Application Modal Overlay */}
+              {careerRole && (
+                <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+                  <div className="bg-background w-full max-w-sm rounded-3xl border border-border-color p-6 shadow-2xl relative space-y-4">
+                    <button 
+                      onClick={() => setCareerRole(null)}
+                      className="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-stone-200/50 flex items-center justify-center text-foreground/60"
+                    >
+                      <X size={16} />
+                    </button>
+                    
+                    <div className="text-center space-y-1">
+                      <Briefcase size={20} className="text-brand mx-auto" />
+                      <h4 className="font-black text-sm text-foreground">Apply for {careerRole}</h4>
+                      <p className="text-[10px] text-foreground/50">Submit details, our recruitment team will call within 48 hours.</p>
+                    </div>
+
+                    {careerSubmitted ? (
+                      <div className="text-center py-4 space-y-2 text-emerald-600">
+                        <CheckCircle2 size={32} className="mx-auto animate-bounce" />
+                        <h5 className="font-bold text-xs">Application Submitted!</h5>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleCareerSubmit} className="space-y-3 text-xs font-bold text-foreground/60">
+                        <div className="space-y-1">
+                          <label>Full Name</label>
+                          <input 
+                            type="text" 
+                            required 
+                            value={careerName}
+                            onChange={e => setCareerName(e.target.value)}
+                            placeholder="e.g. Rahul Sen"
+                            className="w-full bg-background border border-border-color rounded-xl px-3 py-2 outline-none font-bold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label>Mobile Number</label>
+                          <input 
+                            type="tel" 
+                            required 
+                            pattern="[0-9]{10}"
+                            value={careerPhone}
+                            onChange={e => setCareerPhone(e.target.value)}
+                            placeholder="10-digit number"
+                            className="w-full bg-background border border-border-color rounded-xl px-3 py-2 outline-none font-bold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label>Experience details</label>
+                          <textarea 
+                            value={careerExperience}
+                            onChange={e => setCareerExperience(e.target.value)}
+                            placeholder="Current cafe, years of experience etc."
+                            rows={2}
+                            className="w-full bg-background border border-border-color rounded-xl px-3 py-2 outline-none resize-none font-bold"
+                          />
+                        </div>
+                        <button type="submit" className={`w-full py-2.5 ${buttonClass} text-xs font-bold uppercase shadow-sm`}>
+                          Submit Application
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
-      {/* Floating Cart Bar */}
-      {totalItems > 0 && (
-        <div className="fixed bottom-6 w-full px-4 max-w-2xl left-1/2 -translate-x-1/2 z-50 animate-scale-up">
+      {/* Floating Cart Bar (SPA view) */}
+      {totalItems > 0 && activeTab === 'menu' && (
+        <div className="fixed bottom-6 w-full px-4 max-w-2xl left-1/2 -translate-x-1/2 z-40 animate-scale-up">
           <button 
             onClick={() => setIsCheckoutOpen(true)}
-            className="w-full brand-gradient text-[#fcfaf4] rounded-2xl p-4 flex justify-between items-center shadow-xl hover:opacity-95 transition-all active:scale-95"
+            className={`w-full py-4 px-5 flex justify-between items-center shadow-xl hover:opacity-95 transition-all active:scale-95 ${buttonClass}`}
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-background/20 flex items-center justify-center font-black text-sm">
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-black text-xs">
                 {totalItems}
               </div>
-              <span className="font-extrabold text-sm tracking-wide uppercase">{t.viewOrder}</span>
+              <span className="font-extrabold text-xs tracking-wider uppercase">{t.viewOrder}</span>
             </div>
-            <span className="font-black text-base md:text-lg">
+            <span className="font-black text-sm md:text-base">
               ₹{totalPriceRupees.toFixed(2)}
             </span>
           </button>
         </div>
       )}
+
+      {/* Mobile Sticky Bottom Tab Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-card-bg/95 backdrop-blur-md border-t border-border-color/80 h-16 flex items-center justify-around z-30 md:hidden shadow-lg">
+        <button 
+          onClick={() => setActiveTab('home')} 
+          className={`flex flex-col items-center justify-center w-12 h-12 gap-0.5 transition-all ${
+            activeTab === 'home' ? 'text-brand scale-110' : 'text-foreground/45'
+          }`}
+        >
+          <Home size={18} />
+          <span className="text-[9px] font-extrabold tracking-wide uppercase">Home</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('menu')} 
+          className={`flex flex-col items-center justify-center w-12 h-12 gap-0.5 transition-all ${
+            activeTab === 'menu' ? 'text-brand scale-110' : 'text-foreground/45'
+          }`}
+        >
+          <BookOpen size={18} />
+          <span className="text-[9px] font-extrabold tracking-wide uppercase">Menu</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('dine-in')} 
+          className={`flex flex-col items-center justify-center w-12 h-12 gap-0.5 transition-all ${
+            activeTab === 'dine-in' ? 'text-brand scale-110' : 'text-foreground/45'
+          }`}
+        >
+          <QrCode size={18} />
+          <span className="text-[9px] font-extrabold tracking-wide uppercase">Orders</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('account')} 
+          className={`flex flex-col items-center justify-center w-12 h-12 gap-0.5 transition-all ${
+            activeTab === 'account' ? 'text-brand scale-110' : 'text-foreground/45'
+          }`}
+        >
+          <User size={18} />
+          <span className="text-[9px] font-extrabold tracking-wide uppercase">Profile</span>
+        </button>
+      </nav>
 
       {/* Diner Checkout Drawer */}
       {isCheckoutOpen && (
@@ -1128,7 +2113,7 @@ export default function Storefront() {
                   <span>CGST (2.5%) + SGST (2.5%)</span>
                   <span className="text-brand">Incl. in bill</span>
                 </div>
-                <div className="h-px bg-[#eae5d8] my-1"></div>
+                <div className="h-px bg-stone-200 my-1"></div>
                 <div className="flex justify-between text-sm font-black text-foreground">
                   <span>Total Amount</span>
                   <span>₹{totalPriceRupees.toFixed(2)}</span>
@@ -1138,7 +2123,7 @@ export default function Storefront() {
               <button
                 type="submit"
                 disabled={placingOrder}
-                className="w-full brand-gradient text-[#fcfaf4] rounded-xl py-3.5 font-extrabold text-sm tracking-wide uppercase shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2"
+                className={`w-full py-3.5 ${buttonClass} text-xs font-extrabold uppercase tracking-wide shadow-lg flex items-center justify-center gap-2`}
               >
                 {placingOrder ? (
                   <>
@@ -1258,7 +2243,7 @@ export default function Storefront() {
 
             <button
               onClick={handleCloseSuccessRef}
-              className="w-full bg-[#eae5d8]/50 text-foreground rounded-xl py-3 font-extrabold text-xs tracking-wider uppercase hover:bg-[#c5b293]/30 transition-colors cursor-pointer"
+              className="w-full bg-stone-100 text-foreground rounded-xl py-3 font-extrabold text-xs tracking-wider uppercase hover:bg-stone-200 transition-colors cursor-pointer"
             >
               {t.back_to_menu}
             </button>
@@ -1350,28 +2335,223 @@ export default function Storefront() {
         </div>
       )}
 
-      {/* Footer Branding */}
-      <footer className="text-center py-12 text-[10px] text-foreground/60/80">
-        <div>{t.powered} · {tenant.name}</div>
+      {/* Footer (links, hours, socials, copyright) */}
+      <footer className="bg-card-bg/60 border-t border-border-color/60 mt-12 py-10 text-xs text-foreground/60">
+        <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="space-y-3">
+            <h4 className="font-extrabold text-sm text-foreground uppercase tracking-wider">{tenant.name}</h4>
+            <p className="text-[11px] leading-relaxed">
+              Serving organic micro-roasted coffees and artisan sourdough breads daily from our boutique kitchen.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <h5 className="font-bold text-foreground uppercase text-[11px] tracking-wider">Quick Links</h5>
+            <div className="flex flex-col gap-1.5">
+              <button onClick={() => setActiveTab('about')} className="text-left hover:text-brand transition-colors">About Us</button>
+              <button onClick={() => setActiveTab('contact')} className="text-left hover:text-brand transition-colors">Contact Details</button>
+              <button onClick={() => setActiveTab('gallery')} className="text-left hover:text-brand transition-colors">Cafe Gallery</button>
+              <button onClick={() => setActiveTab('careers')} className="text-left hover:text-brand transition-colors">Job Openings</button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h5 className="font-bold text-foreground uppercase text-[11px] tracking-wider">Services</h5>
+            <div className="flex flex-col gap-1.5">
+              <button onClick={() => setActiveTab('menu')} className="text-left hover:text-brand transition-colors">Digital Menu</button>
+              <button onClick={() => setActiveTab('dine-in')} className="text-left hover:text-brand transition-colors">Dine-in QR</button>
+              <button onClick={() => setActiveTab('delivery')} className="text-left hover:text-brand transition-colors">Home Delivery</button>
+              <button onClick={() => setActiveTab('products')} className="text-left hover:text-brand transition-colors">combos & specials</button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h5 className="font-bold text-foreground uppercase text-[11px] tracking-wider">Operating Hours</h5>
+            <p className="text-[11px]">Monday - Sunday<br />08:30 AM - 10:00 PM</p>
+            <p className="text-[11px] text-[#ca8a04]">Kitchen closes at 09:30 PM</p>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-6 border-t border-border-color/30 mt-8 pt-6 text-center text-[10px] tracking-wider uppercase font-extrabold">
+          © {new Date().getFullYear()} {tenant.name} · {t.powered}
+        </div>
       </footer>
 
       {/* Pre-Visit Notification System */}
       <WelcomeNotificationPopup cafeName={tenant.name} tenantId={tenant.id} />
 
-      {/* Floating Call Staff Action Button */}
+      {/* Floating Call Staff Action Button (Dynamic Per Theme) */}
       {selectedTableId && (
-        <button
-          onClick={handleCallStaff}
-          disabled={staffCallCooldown > 0}
-          className={`fixed bottom-6 right-6 z-40 p-4 rounded-full shadow-2xl flex items-center gap-2 font-extrabold text-xs tracking-wider uppercase transition-all duration-300 transform active:scale-95 cursor-pointer border ${
-            staffCallCooldown > 0
-              ? 'bg-stone-300 text-foreground/60 border-stone-200 cursor-not-allowed'
-              : 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400 hover:shadow-amber-500/20'
-          }`}
-        >
-          <span>🛎️</span>
-          <span>{staffCallCooldown > 0 ? `Called (${staffCallCooldown}s)` : 'Call Staff'}</span>
-        </button>
+        <div className="fixed bottom-6 right-6 z-40">
+          <AnimatePresence>
+            {isStaffCalling && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.9 }} 
+                animate={{ opacity: 1, y: 0, scale: 1 }} 
+                exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                className="absolute bottom-16 right-0 bg-stone-900 border border-stone-800 text-white rounded-2xl p-4 shadow-2xl w-48 text-center space-y-1.5"
+              >
+                <div className="w-8 h-8 rounded-full bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center text-yellow-500 mx-auto animate-bounce">
+                  🛎️
+                </div>
+                <h5 className="text-[11px] font-black uppercase tracking-wider">Calling your staff...</h5>
+                <p className="text-[9px] text-stone-400">Please wait at table</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {themeNumber === 1 ? (
+            // Theme 01: Liquid Glass Premium (Frosted Glass with gold animated ring)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`w-14 h-14 rounded-full flex flex-col items-center justify-center bg-white/10 backdrop-blur-xl border border-yellow-500/30 shadow-2xl relative group transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:border-yellow-500/60'
+              }`}
+            >
+              {staffCallCooldown === 0 && (
+                <span className="absolute inset-0 rounded-full border border-yellow-500/30 animate-ping opacity-75"></span>
+              )}
+              <Bell size={18} className="text-[#D4AF37]" />
+              <span className="text-[7px] font-extrabold uppercase tracking-widest text-[#D4AF37] mt-0.5">Call</span>
+            </button>
+          ) : themeNumber === 2 ? (
+            // Theme 02: Liquid Glass Basic (Tangerine Orange Pill)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`px-4 py-3 rounded-full flex items-center gap-2 bg-[#FF6B35] text-white font-bold text-xs tracking-wider shadow-md transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#E05B26]'
+              }`}
+            >
+              <Bell size={14} />
+              <span>Call Staff</span>
+            </button>
+          ) : themeNumber === 3 ? (
+            // Theme 03: Onyx Luxury Dark (Dark Circular with gold ring, no fill)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`w-14 h-14 rounded-full flex items-center justify-center bg-stone-900 border-2 border-[#C9A84C] text-[#C9A84C] shadow-lg transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-stone-850'
+              }`}
+            >
+              <Bell size={20} />
+            </button>
+          ) : themeNumber === 4 ? (
+            // Theme 04: Classic Cafe Brown (Brass Bell look, sienna bg)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`w-14 h-14 rounded-full flex flex-col items-center justify-center bg-[#D2691E] border-2 border-[#3D1C02] text-[#FFF3E0] shadow-md transform active:scale-95 transition-all hover:scale-105 ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              <span className="text-base">🛎️</span>
+              <span className="text-[8px] font-black tracking-widest uppercase">Ting</span>
+            </button>
+          ) : themeNumber === 5 ? (
+            // Theme 05: Artisan Roastery (Mono dark border-only FAB)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`px-4 py-3 bg-stone-950 border border-stone-800 text-[#E8DCC8] font-mono text-xs uppercase tracking-widest shadow-sm transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-stone-900'
+              }`}
+            >
+              [ CALL STAFF ]
+            </button>
+          ) : themeNumber === 6 ? (
+            // Theme 06: Chocolate Indulgence (Pink dot and chocolate FAB)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#3B1D0E] text-[#E91E8C] border border-[#E91E8C]/30 shadow-lg relative transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+              }`}
+            >
+              {staffCallCooldown === 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#E91E8C] border-2 border-[#3B1D0E] animate-ping"></span>
+              )}
+              <Bell size={18} />
+            </button>
+          ) : themeNumber === 7 ? (
+            // Theme 07: Matcha Zen (Refined Matcha green minimal circle)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`w-12 h-12 rounded-full flex items-center justify-center bg-[#4A7C24] text-white shadow-sm transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#3E671E]'
+              }`}
+            >
+              <Bell size={16} />
+            </button>
+          ) : themeNumber === 8 ? (
+            // Theme 08: Rajasthani Royal (Gold circular with purple border)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#D4AF37] border-4 border-[#8B0000] text-[#8B0000] shadow-md transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+              }`}
+            >
+              <Bell size={18} strokeWidth={2.5} />
+            </button>
+          ) : themeNumber === 9 ? (
+            // Theme 09: Maharashtrian Heritage (Marigold Orange circular FAB)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#FF8C00] border-2 border-[#006400] text-[#006400] shadow-md transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+              }`}
+            >
+              <Bell size={18} strokeWidth={2.5} />
+            </button>
+          ) : themeNumber === 10 ? (
+            // Theme 10: Mughal Garden (Ivory with deep green border)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#F5F0E0] border-4 border-[#1B4332] text-[#1B4332] shadow-md transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+              }`}
+            >
+              <Bell size={18} />
+            </button>
+          ) : themeNumber === 11 ? (
+            // Theme 11: Punjabi Dhaba Bold (Bright orange-red with yellow border)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#FF4500] border-4 border-[#FFD700] text-[#FFD700] shadow-lg transform active:scale-95 transition-all animate-bounce ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+              }`}
+            >
+              <span className="text-xs font-black uppercase">CALL</span>
+            </button>
+          ) : themeNumber === 12 ? (
+            // Theme 12: South Indian Temple (Sandalwood cream with red border)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`w-14 h-14 rounded-full flex flex-col items-center justify-center bg-[#FFFDD0] border-2 border-[#8B0000] text-[#8B0000] shadow-md transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+              }`}
+            >
+              <Bell size={16} />
+              <span className="text-[8px] font-bold">Assist</span>
+            </button>
+          ) : (
+            // Fallback for all other themes (clean brand border and bg)
+            <button
+              onClick={handleCallStaff}
+              disabled={staffCallCooldown > 0}
+              className={`px-4 py-3 rounded-full flex items-center gap-2 bg-brand text-white font-extrabold text-xs tracking-wider shadow-md transform active:scale-95 transition-all ${
+                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+              }`}
+            >
+              <Bell size={14} />
+              <span>{staffCallCooldown > 0 ? `Called (${staffCallCooldown}s)` : 'Call Staff'}</span>
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
