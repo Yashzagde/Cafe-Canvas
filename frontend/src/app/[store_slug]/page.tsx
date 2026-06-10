@@ -1879,7 +1879,7 @@ export default function Storefront() {
 
       {/* Floating Cart Bar (SPA view) */}
       {totalItems > 0 && activeTab === 'menu' && (
-        <div className="fixed bottom-6 w-full px-4 max-w-2xl left-1/2 -translate-x-1/2 z-40 animate-scale-up">
+        <div className="fixed bottom-20 w-full px-4 max-w-md left-1/2 -translate-x-1/2 z-40 animate-scale-up">
           <button 
             onClick={() => setIsCheckoutOpen(true)}
             className={`w-full py-4 px-5 flex justify-between items-center shadow-xl hover:opacity-95 transition-all active:scale-95 ${buttonClass}`}
@@ -1898,7 +1898,7 @@ export default function Storefront() {
       )}
 
       {/* Mobile Sticky Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card-bg/95 backdrop-blur-md border-t border-border-color/80 h-16 flex items-center justify-around z-30 md:hidden shadow-lg">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-card-bg/95 backdrop-blur-md border-t border-border-color/80 h-16 flex items-center justify-around z-30 shadow-lg">
         <button 
           onClick={() => setActiveTab('home')} 
           className={`flex flex-col items-center justify-center w-12 h-12 gap-0.5 transition-all ${
@@ -2342,7 +2342,7 @@ export default function Storefront() {
 
       {/* Floating Call Staff Action Button (Dynamic Per Theme) */}
       {selectedTableId && (
-        <div className="fixed bottom-6 right-6 z-40">
+        <div className="fixed bottom-24 right-4 md:right-[calc(50%-200px)] z-40">
           <AnimatePresence>
             {isStaffCalling && (
               <motion.div 
@@ -2360,163 +2360,15 @@ export default function Storefront() {
             )}
           </AnimatePresence>
 
-          {themeNumber === 1 ? (
-            // Theme 01: Liquid Glass Premium (Frosted Glass with gold animated ring)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`w-14 h-14 rounded-full flex flex-col items-center justify-center bg-white/10 backdrop-blur-xl border border-yellow-500/30 shadow-2xl relative group transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:border-yellow-500/60'
-              }`}
-            >
-              {staffCallCooldown === 0 && (
-                <span className="absolute inset-0 rounded-full border border-yellow-500/30 animate-ping opacity-75"></span>
-              )}
-              <Bell size={18} className="text-[#D4AF37]" />
-              <span className="text-[7px] font-extrabold uppercase tracking-widest text-[#D4AF37] mt-0.5">Call</span>
-            </button>
-          ) : themeNumber === 2 ? (
-            // Theme 02: Liquid Glass Basic (Tangerine Orange Pill)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`px-4 py-3 rounded-full flex items-center gap-2 bg-[#FF6B35] text-white font-bold text-xs tracking-wider shadow-md transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#E05B26]'
-              }`}
-            >
-              <Bell size={14} />
-              <span>Call Staff</span>
-            </button>
-          ) : themeNumber === 3 ? (
-            // Theme 03: Onyx Luxury Dark (Dark Circular with gold ring, no fill)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`w-14 h-14 rounded-full flex items-center justify-center bg-stone-900 border-2 border-[#C9A84C] text-[#C9A84C] shadow-lg transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-stone-850'
-              }`}
-            >
-              <Bell size={20} />
-            </button>
-          ) : themeNumber === 4 ? (
-            // Theme 04: Classic Cafe Brown (Brass Bell look, sienna bg)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`w-14 h-14 rounded-full flex flex-col items-center justify-center bg-[#D2691E] border-2 border-[#3D1C02] text-[#FFF3E0] shadow-md transform active:scale-95 transition-all hover:scale-105 ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <span className="text-base">🛎️</span>
-              <span className="text-[8px] font-black tracking-widest uppercase">Ting</span>
-            </button>
-          ) : themeNumber === 5 ? (
-            // Theme 05: Artisan Roastery (Mono dark border-only FAB)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`px-4 py-3 bg-stone-950 border border-stone-800 text-[#E8DCC8] font-mono text-xs uppercase tracking-widest shadow-sm transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-stone-900'
-              }`}
-            >
-              [ CALL STAFF ]
-            </button>
-          ) : themeNumber === 6 ? (
-            // Theme 06: Chocolate Indulgence (Pink dot and chocolate FAB)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#3B1D0E] text-[#E91E8C] border border-[#E91E8C]/30 shadow-lg relative transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
-              }`}
-            >
-              {staffCallCooldown === 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#E91E8C] border-2 border-[#3B1D0E] animate-ping"></span>
-              )}
-              <Bell size={18} />
-            </button>
-          ) : themeNumber === 7 ? (
-            // Theme 07: Matcha Zen (Refined Matcha green minimal circle)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`w-12 h-12 rounded-full flex items-center justify-center bg-[#4A7C24] text-white shadow-sm transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#3E671E]'
-              }`}
-            >
-              <Bell size={16} />
-            </button>
-          ) : themeNumber === 8 ? (
-            // Theme 08: Rajasthani Royal (Gold circular with purple border)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#D4AF37] border-4 border-[#8B0000] text-[#8B0000] shadow-md transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
-              }`}
-            >
-              <Bell size={18} strokeWidth={2.5} />
-            </button>
-          ) : themeNumber === 9 ? (
-            // Theme 09: Maharashtrian Heritage (Marigold Orange circular FAB)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#FF8C00] border-2 border-[#006400] text-[#006400] shadow-md transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
-              }`}
-            >
-              <Bell size={18} strokeWidth={2.5} />
-            </button>
-          ) : themeNumber === 10 ? (
-            // Theme 10: Mughal Garden (Ivory with deep green border)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#F5F0E0] border-4 border-[#1B4332] text-[#1B4332] shadow-md transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
-              }`}
-            >
-              <Bell size={18} />
-            </button>
-          ) : themeNumber === 11 ? (
-            // Theme 11: Punjabi Dhaba Bold (Bright orange-red with yellow border)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#FF4500] border-4 border-[#FFD700] text-[#FFD700] shadow-lg transform active:scale-95 transition-all animate-bounce ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
-              }`}
-            >
-              <span className="text-xs font-black uppercase">CALL</span>
-            </button>
-          ) : themeNumber === 12 ? (
-            // Theme 12: South Indian Temple (Sandalwood cream with red border)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`w-14 h-14 rounded-full flex flex-col items-center justify-center bg-[#FFFDD0] border-2 border-[#8B0000] text-[#8B0000] shadow-md transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
-              }`}
-            >
-              <Bell size={16} />
-              <span className="text-[8px] font-bold">Assist</span>
-            </button>
-          ) : (
-            // Fallback for all other themes (clean brand border and bg)
-            <button
-              onClick={handleCallStaff}
-              disabled={staffCallCooldown > 0}
-              className={`px-4 py-3 rounded-full flex items-center gap-2 bg-brand text-white font-extrabold text-xs tracking-wider shadow-md transform active:scale-95 transition-all ${
-                staffCallCooldown > 0 ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
-              }`}
-            >
-              <Bell size={14} />
-              <span>{staffCallCooldown > 0 ? `Called (${staffCallCooldown}s)` : 'Call Staff'}</span>
-            </button>
-          )}
+          {themeDesign.renderCallStaffButton({
+            onClick: handleCallStaff,
+            disabled: staffCallCooldown > 0,
+            cooldown: staffCallCooldown,
+            isCalling: isStaffCalling
+          })}
         </div>
       )}
+      </div>
     </div>
   );
 }

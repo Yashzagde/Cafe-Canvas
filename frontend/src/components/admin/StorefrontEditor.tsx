@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   getStorefrontConfigAction, 
   updateStorefrontConfigAction,
@@ -10,6 +10,8 @@ import {
 import { useStorefrontEditorStore } from '@/store/storefront-editor';
 import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link, Upload, Loader2, Trash2, Crop, ImageIcon, MapPin, Clock, Mail, PhoneCall, FileText } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { getThemeDesign } from '@/lib/theme-designs';
+import { loadTenantTheme } from '@/lib/theme-engine';
 
 interface StoreTheme {
   id: string
