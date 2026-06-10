@@ -508,6 +508,8 @@ export interface Database {
           allow_orders: boolean;
           show_blog: boolean;
           hero_image_url: string | null;
+          hero_image_url_2: string | null;
+          hero_image_url_3: string | null;
           updated_at: string;
         };
         Insert: {
@@ -523,6 +525,8 @@ export interface Database {
           allow_orders?: boolean;
           show_blog?: boolean;
           hero_image_url?: string | null;
+          hero_image_url_2?: string | null;
+          hero_image_url_3?: string | null;
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['storefront_config']['Insert']>;

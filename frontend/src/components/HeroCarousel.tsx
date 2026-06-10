@@ -7,34 +7,44 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
-const slides = [
-  {
-    bg: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80',
-    headline: 'Welcome to Cafe Canvas',
-    sub: 'Artisan coffee, handcrafted meals, and warm boutique hospitality.',
-    icon: <UtensilsCrossed className="w-5 h-5 text-[#FFC9CD]" />,
-    cta1: { text: 'Order Now', href: '#menu-section' },
-    cta2: { text: 'View Menu', href: '#menu-section' }
-  },
-  {
-    bg: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=1200&q=80',
-    headline: "Our Barista's Masterpieces",
-    sub: 'Every cup is a canvas. Discover our premium organic blends and slow pour-overs.',
-    icon: <CalendarDays className="w-5 h-5 text-[#B4F8C8]" />,
-    cta1: { text: 'Book Table', href: '#checkout-trigger' },
-    cta2: { text: 'Explore Blends', href: '#menu-section' }
-  },
-  {
-    bg: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
-    headline: 'Hot Delights at Your Table',
-    sub: 'Freshly baked pastries and signature thalis prepared live in our kitchen.',
-    icon: <ShoppingBag className="w-5 h-5 text-[#E2C9A3]" />,
-    cta1: { text: 'Dine-In QR', href: '#menu-section' },
-    cta2: { text: 'Our Story', href: '/about' }
-  }
-];
+export default function HeroCarousel({ 
+  cafeName,
+  heroImageUrl,
+  heroImageUrl2,
+  heroImageUrl3
+}: { 
+  cafeName: string;
+  heroImageUrl?: string | null;
+  heroImageUrl2?: string | null;
+  heroImageUrl3?: string | null;
+}) {
+  const slides = [
+    {
+      bg: heroImageUrl || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80',
+      headline: 'Welcome to Cafe Canvas',
+      sub: 'Artisan coffee, handcrafted meals, and warm boutique hospitality.',
+      icon: <UtensilsCrossed className="w-5 h-5 text-[#FFC9CD]" />,
+      cta1: { text: 'Order Now', href: '#menu-section' },
+      cta2: { text: 'View Menu', href: '#menu-section' }
+    },
+    {
+      bg: heroImageUrl2 || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=1200&q=80',
+      headline: "Our Barista's Masterpieces",
+      sub: 'Every cup is a canvas. Discover our premium organic blends and slow pour-overs.',
+      icon: <CalendarDays className="w-5 h-5 text-[#B4F8C8]" />,
+      cta1: { text: 'Book Table', href: '#checkout-trigger' },
+      cta2: { text: 'Explore Blends', href: '#menu-section' }
+    },
+    {
+      bg: heroImageUrl3 || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
+      headline: 'Hot Delights at Your Table',
+      sub: 'Freshly baked pastries and signature thalis prepared live in our kitchen.',
+      icon: <ShoppingBag className="w-5 h-5 text-[#E2C9A3]" />,
+      cta1: { text: 'Dine-In QR', href: '#menu-section' },
+      cta2: { text: 'Our Story', href: '/about' }
+    }
+  ];
 
-export default function HeroCarousel({ cafeName }: { cafeName: string }) {
   return (
     <div className="w-full relative h-[65vh] min-h-[460px] md:h-[75vh] rounded-3xl overflow-hidden shadow-lg border border-[#DEC5A4]/40 select-none bg-[#F7EEE2]">
       <Swiper
