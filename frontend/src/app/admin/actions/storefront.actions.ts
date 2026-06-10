@@ -73,7 +73,13 @@ export async function updateStorefrontConfigAction(configId: string, updateData:
     'show_blog',
     'hero_image_url',
     'hero_image_url_2',
-    'hero_image_url_3'
+    'hero_image_url_3',
+    'logo_url',
+    'footer_description',
+    'footer_hours',
+    'footer_address',
+    'footer_phone',
+    'footer_email'
   ];
   
   for (const key of allowedKeys) {

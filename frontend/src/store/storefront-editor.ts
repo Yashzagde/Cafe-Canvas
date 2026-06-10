@@ -15,6 +15,12 @@ export interface StorefrontConfig {
   hero_image_url: string | null;
   hero_image_url_2: string | null;
   hero_image_url_3: string | null;
+  logo_url: string | null;
+  footer_description: string | null;
+  footer_hours: string | null;
+  footer_address: string | null;
+  footer_phone: string | null;
+  footer_email: string | null;
   updated_at: string;
 
   // Visual layout config fields

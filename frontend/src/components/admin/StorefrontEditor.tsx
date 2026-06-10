@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   getStorefrontConfigAction, 
   updateStorefrontConfigAction,
@@ -8,7 +8,7 @@ import {
   updateTenantNameAction
 } from '@/app/admin/actions/storefront.actions';
 import { useStorefrontEditorStore } from '@/store/storefront-editor';
-import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link, Upload, Loader2, Trash2 } from 'lucide-react';
+import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link, Upload, Loader2, Trash2, Crop, ImageIcon, MapPin, Clock, Mail, PhoneCall, FileText } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 interface StoreTheme {
@@ -465,7 +465,7 @@ export default function StorefrontEditor({
   setTenantName: React.Dispatch<React.SetStateAction<string>>;
 }) {
   const { config, setConfig, updateField, isDirty, clearDirty } = useStorefrontEditorStore();
-  const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'social' | 'connection'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'social' | 'connection' | 'footer'>('branding');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('mobile');
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -475,7 +475,22 @@ export default function StorefrontEditor({
   const supabase = createClient();
   const [uploadingField, setUploadingField] = useState<string | null>(null);
 
-  const handleUploadImageForField = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'hero_image_url' | 'hero_image_url_2' | 'hero_image_url_3') => {
+  // Logo crop state
+  const [logoCropSrc, setLogoCropSrc] = useState<string | null>(null);
+  const [logoCropOpen, setLogoCropOpen] = useState(false);
+  const [cropPos, setCropPos] = useState({ x: 0, y: 0 });
+  const [cropSize, setCropSize] = useState(120);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const cropCanvasRef = useRef<HTMLCanvasElement>(null);
+  const cropImgRef = useRef<HTMLImageElement>(null);
+  const cropContainerRef = useRef<HTMLDivElement>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [naturalImgSize, setNaturalImgSize] = useState({ w: 0, h: 0 });
+  const [displayImgSize, setDisplayImgSize] = useState({ w: 0, h: 0 });
+
+  const handleUploadImageForField = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'hero_image_url' | 'hero_image_url_2' | 'hero_image_url_3' | 'logo_url') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -508,8 +523,118 @@ export default function StorefrontEditor({
     }
   };
 
-  const handleRemoveImageForField = (fieldName: 'hero_image_url' | 'hero_image_url_2' | 'hero_image_url_3') => {
+  const handleRemoveImageForField = (fieldName: 'hero_image_url' | 'hero_image_url_2' | 'hero_image_url_3' | 'logo_url') => {
     updateField(fieldName, '');
+  };
+
+  // Logo file picker → opens crop modal
+  const handleLogoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLogoCropSrc(reader.result as string);
+      setCropPos({ x: 20, y: 20 });
+      setCropSize(120);
+      setLogoCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    // Reset the input so the same file can be re-selected
+    e.target.value = '';
+  };
+
+  // When the crop image loads, record its natural and display dimensions
+  const handleCropImgLoad = () => {
+    const img = cropImgRef.current;
+    if (!img) return;
+    setNaturalImgSize({ w: img.naturalWidth, h: img.naturalHeight });
+    setDisplayImgSize({ w: img.clientWidth, h: img.clientHeight });
+    // Center the crop rect
+    const s = Math.min(120, img.clientWidth - 20, img.clientHeight - 20);
+    setCropSize(s);
+    setCropPos({ x: (img.clientWidth - s) / 2, y: (img.clientHeight - s) / 2 });
+  };
+
+  // Crop mouse events
+  const handleCropMouseDown = (e: React.MouseEvent, mode: 'drag' | 'resize') => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (mode === 'drag') {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - cropPos.x, y: e.clientY - cropPos.y });
+    } else {
+      setIsResizing(true);
+      setDragStart({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const handleCropMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!cropImgRef.current) return;
+    const imgW = cropImgRef.current.clientWidth;
+    const imgH = cropImgRef.current.clientHeight;
+
+    if (isDragging) {
+      let nx = e.clientX - dragStart.x;
+      let ny = e.clientY - dragStart.y;
+      nx = Math.max(0, Math.min(nx, imgW - cropSize));
+      ny = Math.max(0, Math.min(ny, imgH - cropSize));
+      setCropPos({ x: nx, y: ny });
+    } else if (isResizing) {
+      const dx = e.clientX - dragStart.x;
+      const dy = e.clientY - dragStart.y;
+      const delta = Math.max(dx, dy);
+      const newSize = Math.max(40, Math.min(cropSize + delta, imgW - cropPos.x, imgH - cropPos.y));
+      setCropSize(newSize);
+      setDragStart({ x: e.clientX, y: e.clientY });
+    }
+  }, [isDragging, isResizing, dragStart, cropSize, cropPos]);
+
+  const handleCropMouseUp = () => {
+    setIsDragging(false);
+    setIsResizing(false);
+  };
+
+  // Apply crop and upload
+  const handleApplyCrop = async () => {
+    if (!logoCropSrc || !cropImgRef.current) return;
+    setUploadingLogo(true);
+    try {
+      const img = cropImgRef.current;
+      const scaleX = img.naturalWidth / img.clientWidth;
+      const scaleY = img.naturalHeight / img.clientHeight;
+
+      const sx = cropPos.x * scaleX;
+      const sy = cropPos.y * scaleY;
+      const sw = cropSize * scaleX;
+      const sh = cropSize * scaleY;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d')!;
+
+      const srcImg = new window.Image();
+      srcImg.crossOrigin = 'anonymous';
+      srcImg.src = logoCropSrc;
+      await new Promise<void>((resolve) => { srcImg.onload = () => resolve(); if (srcImg.complete) resolve(); });
+
+      ctx.drawImage(srcImg, sx, sy, sw, sh, 0, 0, 256, 256);
+
+      const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), 'image/png'));
+      const filePath = `logo-${Date.now()}.png`;
+      const { error } = await supabase.storage.from('logos').upload(filePath, blob, { cacheControl: '3600', upsert: true });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(filePath);
+      updateField('logo_url', publicUrl);
+      setLogoCropOpen(false);
+      setLogoCropSrc(null);
+      alert('🎉 Logo uploaded and cropped successfully!');
+    } catch (err: any) {
+      console.error('Logo crop error:', err);
+      alert('Logo upload failed: ' + err.message);
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
   useEffect(() => {
@@ -614,7 +739,7 @@ export default function StorefrontEditor({
     );
   }
 
-  return (
+  return (<>
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 text-[#1e293b] animate-fade-in">
       {/* Settings Form */}
       <div className="space-y-6 bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-6 shadow-xl h-fit">
@@ -678,6 +803,15 @@ export default function StorefrontEditor({
           >
             <Link size={14} />
             <span>Storefront Link</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('footer')}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === 'footer' ? 'bg-[#f1f5f9] text-[#d97706]' : 'text-[#1e293b]/50 hover:text-[#1e293b]'
+            }`}
+          >
+            <FileText size={14} />
+            <span>Footer Info</span>
           </button>
         </div>
 
@@ -853,6 +987,61 @@ export default function StorefrontEditor({
                     <option value="Open Sans">Open Sans</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Logo Upload Section */}
+              <div className="space-y-3 pt-4 border-t border-[#e2e8f0]/40">
+                <label className="text-xs font-black text-[#1e293b]/70 tracking-wider uppercase block">
+                  Business Logo
+                </label>
+                <p className="text-[10px] text-[#1e293b]/40 -mt-1">Upload your logo. You can crop it to a square after selecting.</p>
+
+                {config.logo_url ? (
+                  <div className="p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-[#d97706]/20 shrink-0 bg-white flex items-center justify-center p-1">
+                      <img src={config.logo_url} alt="Logo Preview" className="w-full h-full object-contain" />
+                    </div>
+                    <div className="flex-1 space-y-1.5">
+                      <p className="text-xs font-bold text-[#1e293b]/80">Logo uploaded</p>
+                      <div className="flex gap-2">
+                        <label className="text-[10px] font-extrabold text-[#d97706] hover:underline flex items-center gap-1 cursor-pointer">
+                          <Crop size={11} />
+                          Replace & Crop
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoFileSelect}
+                            className="hidden"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImageForField('logo_url')}
+                          className="text-[10px] font-extrabold text-red-500 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 size={11} />
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-6 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoFileSelect}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="space-y-2 flex flex-col items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-[#1e293b]/30" />
+                      <div>
+                        <p className="text-xs font-bold text-[#1e293b]/70">Click to upload logo</p>
+                        <p className="text-[10px] text-[#1e293b]/40 mt-1">PNG, JPG, SVG (Max 5MB). Will be cropped to square.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -1121,6 +1310,91 @@ export default function StorefrontEditor({
               </div>
             </div>
           )}
+
+          {activeTab === 'footer' && (
+            <>
+              <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-700 text-xs leading-relaxed space-y-1">
+                <p className="font-bold flex items-center gap-1.5"><FileText size={13} /> Footer Information</p>
+                <p className="opacity-90">Customize the details shown in your storefront's footer. This appears at the bottom of every page for your customers.</p>
+              </div>
+
+              {/* Footer Description */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                  About Description
+                </label>
+                <textarea
+                  value={config.footer_description || ''}
+                  onChange={(e) => updateField('footer_description', e.target.value)}
+                  rows={3}
+                  placeholder="e.g. Serving organic micro-roasted coffees and artisan sourdough breads daily..."
+                  className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                />
+              </div>
+
+              {/* Operating Hours */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase flex items-center gap-1.5">
+                  <Clock size={12} />
+                  Operating Hours
+                </label>
+                <textarea
+                  value={config.footer_hours || ''}
+                  onChange={(e) => updateField('footer_hours', e.target.value)}
+                  rows={3}
+                  placeholder={'Monday - Sunday\n08:30 AM - 10:00 PM\nKitchen closes at 09:30 PM'}
+                  className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706] font-mono text-xs"
+                />
+              </div>
+
+              {/* Address */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase flex items-center gap-1.5">
+                  <MapPin size={12} />
+                  Address
+                </label>
+                <input
+                  type="text"
+                  value={config.footer_address || ''}
+                  onChange={(e) => updateField('footer_address', e.target.value)}
+                  placeholder="e.g. 123 Brew Lane, Indiranagar, Bangalore 560038"
+                  className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Phone */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase flex items-center gap-1.5">
+                    <PhoneCall size={12} />
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={config.footer_phone || ''}
+                    onChange={(e) => updateField('footer_phone', e.target.value)}
+                    placeholder="+91 98765 43210"
+                    className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase flex items-center gap-1.5">
+                    <Mail size={12} />
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={config.footer_email || ''}
+                    onChange={(e) => updateField('footer_email', e.target.value)}
+                    placeholder="hello@yourcafe.com"
+                    className="w-full px-4 py-3 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                  />
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -1158,9 +1432,14 @@ export default function StorefrontEditor({
                 className="px-4 py-3 flex items-center justify-between border-b border-[#e2e8f0]/30"
                 style={{ backgroundColor: config.accent_color }}
               >
-                <span className="font-extrabold text-xs font-display" style={{ color: config.primary_color }}>
-                  {storeName || 'CafeCanvas'}
-                </span>
+                <div className="flex items-center gap-2">
+                  {config.logo_url && (
+                    <img src={config.logo_url} alt="Logo" className="w-6 h-6 rounded-md object-contain bg-white/80" />
+                  )}
+                  <span className="font-extrabold text-xs font-display" style={{ color: config.primary_color }}>
+                    {storeName || 'CafeCanvas'}
+                  </span>
+                </div>
                 <div className="flex gap-1">
                   <span className="w-4 h-0.5 rounded bg-[#1e293b]/20"></span>
                   <span className="w-4 h-0.5 rounded bg-[#1e293b]/20"></span>
@@ -1221,5 +1500,82 @@ export default function StorefrontEditor({
         </div>
       </div>
     </div>
-  );
+
+    {/* Logo Crop Modal Overlay */}
+    {logoCropOpen && logoCropSrc && (
+      <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setLogoCropOpen(false); setLogoCropSrc(null); }}>
+        <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 space-y-4 relative" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-extrabold text-[#1e293b] flex items-center gap-2">
+              <Crop size={16} className="text-[#d97706]" />
+              Crop Your Logo
+            </h3>
+            <button onClick={() => { setLogoCropOpen(false); setLogoCropSrc(null); }} className="text-[#1e293b]/40 hover:text-[#1e293b] text-lg font-bold cursor-pointer">✕</button>
+          </div>
+
+          <p className="text-[10px] text-[#1e293b]/50">Drag the square to position. Drag the bottom-right corner to resize. Logo will be exported as 256×256 PNG.</p>
+
+          <div
+            ref={cropContainerRef}
+            className="relative inline-block mx-auto bg-[#f1f5f9] rounded-xl overflow-hidden border border-[#e2e8f0] select-none"
+            style={{ maxWidth: '100%', cursor: isDragging ? 'grabbing' : 'default' }}
+            onMouseMove={handleCropMouseMove}
+            onMouseUp={handleCropMouseUp}
+            onMouseLeave={handleCropMouseUp}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              ref={cropImgRef}
+              src={logoCropSrc}
+              alt="Crop preview"
+              onLoad={handleCropImgLoad}
+              className="block max-h-[320px] max-w-full object-contain"
+              draggable={false}
+            />
+            {/* Dark overlay outside crop */}
+            <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(0,0,0,0.45)', clipPath: `polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${cropPos.x}px ${cropPos.y}px, ${cropPos.x}px ${cropPos.y + cropSize}px, ${cropPos.x + cropSize}px ${cropPos.y + cropSize}px, ${cropPos.x + cropSize}px ${cropPos.y}px, ${cropPos.x}px ${cropPos.y}px)` }} />
+            {/* Crop selection box */}
+            <div
+              className="absolute border-2 border-white/90 shadow-lg"
+              style={{ left: cropPos.x, top: cropPos.y, width: cropSize, height: cropSize, cursor: 'grab' }}
+              onMouseDown={(e) => handleCropMouseDown(e, 'drag')}
+            >
+              {/* Grid lines */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white/30" />
+                <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white/30" />
+                <div className="absolute top-1/3 left-0 right-0 h-px bg-white/30" />
+                <div className="absolute top-2/3 left-0 right-0 h-px bg-white/30" />
+              </div>
+              {/* Resize handle */}
+              <div
+                className="absolute -right-1.5 -bottom-1.5 w-4 h-4 bg-white border-2 border-[#d97706] rounded-full shadow cursor-nwse-resize"
+                onMouseDown={(e) => handleCropMouseDown(e, 'resize')}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <button
+              onClick={() => { setLogoCropOpen(false); setLogoCropSrc(null); }}
+              className="px-4 py-2.5 bg-[#f1f5f9] border border-[#e2e8f0] text-[#1e293b]/70 text-xs font-bold rounded-xl cursor-pointer hover:bg-[#e2e8f0] transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleApplyCrop}
+              disabled={uploadingLogo}
+              className="px-5 py-2.5 bg-gradient-to-r from-[#d97706] to-[#f59e0b] text-white text-xs font-extrabold rounded-xl cursor-pointer transition-all disabled:opacity-40 disabled:pointer-events-none flex items-center gap-2"
+            >
+              {uploadingLogo ? (
+                <><Loader2 size={13} className="animate-spin" /> Uploading...</>
+              ) : (
+                <><Crop size={13} /> Crop & Upload Logo</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>);
 }
