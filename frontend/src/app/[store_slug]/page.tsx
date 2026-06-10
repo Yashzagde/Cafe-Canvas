@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import WelcomeNotificationPopup from '@/components/WelcomeNotificationPopup';
 import HeroCarousel from '@/components/HeroCarousel';
 import { loadTenantTheme } from '@/lib/theme-engine';
+import { getThemeDesign } from '@/lib/theme-designs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Coffee, 
@@ -788,64 +789,11 @@ export default function Storefront() {
 
   // Get dynamic styles from active theme config
   const themeId = tenant?.theme_id || 'theme-02';
+  const themeDesign = useMemo(() => getThemeDesign(themeId), [themeId]);
+  const isDark = themeDesign.isDark;
+  const cardClass = themeDesign.cardClass;
+  const buttonClass = themeDesign.buttonClass;
   const themeNumber = parseInt(themeId.replace('theme-', '')) || 2;
-  const isDark = [1, 3, 5, 6, 21, 31, 44, 45].includes(themeNumber);
-  
-  // Custom Styles Mapping for specific requirements
-  const cardClass = useMemo(() => {
-    if ([1, 44].includes(themeNumber)) {
-      // Liquid Glass Premium & New Year Noir (Heavy blur, gold/white border)
-      return 'bg-white/10 backdrop-blur-xl border border-yellow-500/20 shadow-lg rounded-3xl';
-    }
-    if ([2, 23, 35].includes(themeNumber)) {
-      // Light glass or clean soft pastels
-      return 'bg-white/70 backdrop-blur-md border border-white/40 shadow-sm rounded-3xl';
-    }
-    if ([3, 21, 31, 45].includes(themeNumber)) {
-      // Solid dark charcoal/onyx cards
-      return 'bg-stone-900 border border-stone-800 shadow-xl rounded-2xl';
-    }
-    if ([4].includes(themeNumber)) {
-      // Classic Cafe Brown (Kraft paper look)
-      return 'bg-[#F4EBE1] border-2 border-[#8B5E3C]/30 shadow-md rounded-2xl';
-    }
-    if ([5, 34].includes(themeNumber)) {
-      // Artisan Roastery (Industrial Concrete/Parchment)
-      return 'bg-[#F2EAE1] border border-stone-300 shadow-sm rounded-none';
-    }
-    if ([7].includes(themeNumber)) {
-      // Matcha Zen (Washi paper, clean green edge)
-      return 'bg-[#FAF6F0] border-l-4 border-[#4A7C24] shadow-none rounded-none';
-    }
-    if ([8].includes(themeNumber)) {
-      // Rajasthani Royal (Regal arch, gold highlights)
-      return 'bg-[#FFFDF6] border-t-4 border-[#D4AF37] shadow-md rounded-b-3xl';
-    }
-    if ([11].includes(themeNumber)) {
-      // Punjabi Dhaba (Bold truck art border)
-      return 'bg-[#FFFEEB] border-2 border-dashed border-[#FF4500] shadow-sm rounded-xl';
-    }
-    return 'bg-card-bg border border-border-color shadow-warm rounded-3xl';
-  }, [themeNumber]);
-
-  const buttonClass = useMemo(() => {
-    if ([1, 44].includes(themeNumber)) {
-      return 'bg-[#D4AF37] hover:bg-[#C5A02E] text-stone-950 font-display uppercase tracking-widest font-black rounded-full';
-    }
-    if ([3, 30].includes(themeNumber)) {
-      return 'bg-[#C9A84C] hover:bg-[#B59640] text-stone-950 uppercase font-bold rounded-lg';
-    }
-    if ([5, 34].includes(themeNumber)) {
-      return 'bg-stone-950 hover:bg-stone-800 text-[#F97316] font-mono uppercase tracking-wider rounded-none';
-    }
-    if ([7].includes(themeNumber)) {
-      return 'bg-[#4A7C24] hover:bg-[#3E671E] text-white font-sans rounded-full';
-    }
-    if ([11].includes(themeNumber)) {
-      return 'bg-[#FF4500] hover:bg-[#E03D00] text-white font-black rounded-lg scale-105 transition-transform';
-    }
-    return 'bg-brand hover:opacity-90 text-white font-extrabold rounded-2xl';
-  }, [themeNumber]);
 
   if (loading) {
     return (
@@ -879,98 +827,56 @@ export default function Storefront() {
   }
 
   return (
-    <div className={`min-h-screen bg-background text-foreground pb-24 relative overflow-x-hidden ${isDark ? 'dark' : ''}`}>
-      {/* Background patterns based on active theme */}
-      {themeNumber === 1 && (
-        // Bokeh floating circles for Liquid Glass Premium
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute w-60 h-60 rounded-full bg-yellow-500/5 blur-3xl top-1/4 left-1/4 animate-pulse"></div>
-          <div className="absolute w-80 h-80 rounded-full bg-[#FF6B35]/5 blur-3xl top-1/2 right-1/4 animate-pulse" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute w-56 h-56 rounded-full bg-yellow-500/5 blur-3xl bottom-1/4 left-1/3 animate-pulse" style={{ animationDelay: '4s' }}></div>
-        </div>
-      )}
-      
-      {themeNumber === 8 && (
-        // Rajasthani Jali gold lattice pattern
-        <div className="absolute inset-0 pointer-events-none opacity-5 z-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0l20 20-20 20L0 20z' fill='%23D4AF37' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat'
-        }}></div>
-      )}
+    <div className={`min-h-screen bg-stone-100 dark:bg-stone-950 flex justify-center items-start ${isDark ? 'dark' : ''}`}>
+      <div className="w-full max-w-md min-h-screen bg-background text-foreground pb-24 relative overflow-x-hidden border-x border-border-color/10 shadow-2xl flex flex-col">
+        {/* Background patterns based on active theme */}
+        {themeDesign.renderBackground()}
 
-      {themeNumber === 9 && (
-        // Warli tribal art repeating pattern
-        <div className="absolute inset-0 pointer-events-none opacity-5 z-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 10l5 10h-10zm0 18l5-10h-10zm0-8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 14v10m-5-5h10' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat'
-        }}></div>
-      )}
-
-      {themeNumber === 10 && (
-        // Arabesque Islamic star pattern
-        <div className="absolute inset-0 pointer-events-none opacity-4 z-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 0l5 15h15l-12 9 4 15-12-9-12 9 4-15-12-9h15z' fill='%23D4AF37' fill-opacity='0.4'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat'
-        }}></div>
-      )}
-
-      {/* Top Navbar / Brand Header (Desktop) */}
-      <header className="bg-card-bg/80 backdrop-blur-md border-b border-border-color sticky top-0 z-40 transition-all">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
-            <div className="w-10 h-10 rounded-xl bg-brand-light flex items-center justify-center text-brand border border-brand/10">
-              <Coffee size={22} className="animate-pulse" />
+        {/* Top Navbar / Brand Header (Mobile-Only) */}
+        <header className="bg-card-bg/80 backdrop-blur-md border-b border-border-color sticky top-0 z-40 transition-all">
+          <div className="w-full px-4 h-16 flex justify-between items-center">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
+              <div className="w-10 h-10 rounded-xl bg-brand-light flex items-center justify-center text-brand border border-brand/10">
+                <Coffee size={22} className="animate-pulse" />
+              </div>
+              <div>
+                <h1 className="font-extrabold text-xs tracking-tight text-foreground flex items-center gap-1.5">
+                  {tenant.name}
+                </h1>
+                <p className="text-[9px] text-foreground/50 tracking-wider uppercase font-extrabold">Menu Canvas</p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-extrabold text-sm md:text-base tracking-tight text-foreground flex items-center gap-1.5">
-                {tenant.name}
-              </h1>
-              <p className="text-[10px] text-foreground/50 tracking-wider uppercase font-extrabold">Menu Canvas</p>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}
+                className="px-2.5 py-1.5 rounded-full border border-border-color text-[10px] font-bold hover:bg-stone-50 transition-all flex items-center gap-1"
+              >
+                <Globe size={11} />
+                {lang === 'en' ? 'हिं' : 'EN'}
+              </button>
+              
+              {customerPhone ? (
+                <button 
+                  onClick={() => setActiveTab('account')}
+                  className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm"
+                >
+                  {customerProfile?.name ? customerProfile.name[0] : <User size={14} />}
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setIsLoginOpen(true)}
+                  className="px-3.5 py-1.5 bg-brand text-white font-bold text-xs rounded-xl hover:opacity-90 transition-all shadow-sm"
+                >
+                  Login
+                </button>
+              )}
             </div>
           </div>
+        </header>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-foreground/80">
-            <button onClick={() => setActiveTab('home')} className={`hover:text-brand transition-colors ${activeTab === 'home' ? 'text-brand' : ''}`}>Home</button>
-            <button onClick={() => setActiveTab('menu')} className={`hover:text-brand transition-colors ${activeTab === 'menu' ? 'text-brand' : ''}`}>Menu</button>
-            <button onClick={() => setActiveTab('dine-in')} className={`hover:text-brand transition-colors ${activeTab === 'dine-in' ? 'text-brand' : ''}`}>Dine-in QR</button>
-            <button onClick={() => setActiveTab('delivery')} className={`hover:text-brand transition-colors ${activeTab === 'delivery' ? 'text-brand' : ''}`}>Delivery</button>
-            <button onClick={() => setActiveTab('products')} className={`hover:text-brand transition-colors ${activeTab === 'products' ? 'text-brand' : ''}`}>Specials</button>
-            <button onClick={() => setActiveTab('offers')} className={`hover:text-brand transition-colors ${activeTab === 'offers' ? 'text-brand' : ''}`}>Offers</button>
-            <button onClick={() => setActiveTab('about')} className={`hover:text-brand transition-colors ${activeTab === 'about' ? 'text-brand' : ''}`}>About</button>
-            <button onClick={() => setActiveTab('contact')} className={`hover:text-brand transition-colors ${activeTab === 'contact' ? 'text-brand' : ''}`}>Contact</button>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}
-              className="px-3 py-1.5 rounded-full border border-border-color text-[11px] font-bold hover:bg-stone-50 transition-all flex items-center gap-1"
-            >
-              <Globe size={12} />
-              {lang === 'en' ? 'हिं' : 'EN'}
-            </button>
-            
-            {customerPhone ? (
-              <button 
-                onClick={() => setActiveTab('account')}
-                className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm"
-              >
-                {customerProfile?.name ? customerProfile.name[0] : <User size={14} />}
-              </button>
-            ) : (
-              <button 
-                onClick={() => setIsLoginOpen(true)}
-                className="px-4 py-2 bg-brand text-white font-bold text-xs rounded-xl hover:opacity-90 transition-all shadow-sm"
-              >
-                Login
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="max-w-4xl mx-auto px-4 mt-6 relative z-10">
+        {/* Main Container */}
+      <main className="w-full px-4 mt-4 relative z-10 flex-1">
         
         {/* Dynamic Tab Switching */}
         <AnimatePresence mode="wait">
