@@ -57,8 +57,8 @@ export default function CustomersTab({
             tenant_id: tenantId,
             name: newCust.name,
             phone: newCust.phone,
-            visit_count: 1,
-            total_spend: 0
+            total_visits: 1,
+            total_spent: 0
           })
           .select('id')
           .single();

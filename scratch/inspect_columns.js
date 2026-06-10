@@ -17,7 +17,7 @@ async function main() {
     const columns = await sql`
       SELECT column_name, data_type, is_nullable
       FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'staff_accounts';
+      WHERE table_schema = 'public' AND table_name = 'customers';
     `;
     console.log("Columns on staff_accounts:", columns);
   } catch (err) {

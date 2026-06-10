@@ -324,10 +324,10 @@ export default function CafeCanvaAdmin() {
         id: c.id,
         name: c.name,
         phone: c.phone || "—",
-        visits: c.visit_count || 1,
-        spend: (c.total_spend || 0) / 100,
+        visits: c.total_visits || 1,
+        spend: (c.total_spent || 0) / 100,
         last: new Date(c.created_at).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' }),
-        tier: (c.total_spend || 0) / 100 > 5000 ? "Platinum" : (c.total_spend || 0) / 100 > 2500 ? "Gold" : (c.total_spend || 0) / 100 > 1000 ? "Silver" : "Bronze"
+        tier: (c.total_spent || 0) / 100 > 5000 ? "Platinum" : (c.total_spent || 0) / 100 > 2500 ? "Gold" : (c.total_spent || 0) / 100 > 1000 ? "Silver" : "Bronze"
       }));
       setCustomers(mappedCustomers);
 
@@ -360,6 +360,21 @@ export default function CafeCanvaAdmin() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'order_items' },
         () => { fetchDbData(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'customers', filter: `tenant_id=eq.${tenantId}` },
+        () => { fetchDbData(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notification_log', filter: `tenant_id=eq.${tenantId}` },
+        (payload: any) => {
+          if (payload.new && payload.new.body) {
+            toast(payload.new.body, payload.new.type === 'customer_checkin' ? 'success' : 'warning');
+          }
+          fetchDbData();
+        }
       )
       .subscribe();
 

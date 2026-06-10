@@ -689,10 +689,10 @@ export default function Storefront() {
               <div className="text-right flex flex-col items-end">
                 <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#ca8a04]">Reward Points</span>
                 <p className="text-lg font-black text-[#ca8a04]">
-                  {Math.floor((customerProfile?.total_spend || 0) / 1000)} <span className="text-[10px] font-normal text-stone-400">pts</span>
+                  {Math.floor((customerProfile?.total_spent || 0) / 1000)} <span className="text-[10px] font-normal text-stone-400">pts</span>
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[9px] text-[#1e293b]/40 font-semibold">{customerProfile?.visit_count || 1} visits</span>
+                  <span className="text-[9px] text-[#1e293b]/40 font-semibold">{customerProfile?.total_visits || 1} visits</span>
                   <button 
                     onClick={handleLogoutCustomer} 
                     className="text-[9px] text-rose-600 font-extrabold hover:underline flex items-center gap-0.5"
@@ -1216,7 +1216,7 @@ export default function Storefront() {
       </footer>
 
       {/* Pre-Visit Notification System */}
-      <WelcomeNotificationPopup cafeName={tenant.name} />
+      <WelcomeNotificationPopup cafeName={tenant.name} tenantId={tenant.id} />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { X, Phone, ShieldCheck, CheckCircle2, Ticket } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-export default function WelcomeNotificationPopup({ cafeName }: { cafeName: string }) {
+export default function WelcomeNotificationPopup({ cafeName, tenantId }: { cafeName: string; tenantId: string }) {
   const [show, setShow] = useState(false);
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -33,41 +33,19 @@ export default function WelcomeNotificationPopup({ cafeName }: { cafeName: strin
     setLoading(true);
     setErrorMsg(null);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOtp({ phone: `+91${phone}` });
-      if (error) throw error;
-      setStep('otp');
-    } catch (err: any) {
-      console.error('Failed to send OTP:', err.message);
-      setErrorMsg(err.message || 'Failed to send OTP. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!/^\d{6}$/.test(otp)) {
-      setErrorMsg('Please enter a 6-digit OTP code.');
-      return;
-    }
-    setLoading(true);
-    setErrorMsg(null);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.verifyOtp({
-        phone: `+91${phone}`,
-        token: otp,
-        type: 'sms'
-      });
-      if (error) throw error;
-
-      // Save customer profile/phone locally
-      await fetch('/api/capture-customer-phone', {
+      const response = await fetch('/api/customer/otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: `+91${phone}` })
-      }).catch(err => console.error('Failed to save phone details:', err));
+        body: JSON.stringify({
+          action: 'quick_checkin',
+          phone: `+91${phone}`,
+          tenantId
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to register or check in.');
+      }
 
       // Trigger Confetti burst
       confetti({
@@ -80,11 +58,15 @@ export default function WelcomeNotificationPopup({ cafeName }: { cafeName: strin
       setStep('done');
       localStorage.setItem('cc_popup_seen', new Date().toISOString());
     } catch (err: any) {
-      console.error('OTP verification failed:', err.message);
-      setErrorMsg(err.message || 'Invalid or expired OTP. Please try again.');
+      console.error('Failed to check in:', err.message);
+      setErrorMsg(err.message || 'Failed to check in. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
   };
 
   const handleSkip = () => {
