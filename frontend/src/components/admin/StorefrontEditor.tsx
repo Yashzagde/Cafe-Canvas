@@ -883,15 +883,16 @@ export default function StorefrontEditor({
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                  Hero Background Image
+              {/* Hero Background Image Slide 1 */}
+              <div className="space-y-2 pt-2 border-t border-[#e2e8f0]/40">
+                <label className="text-xs font-black text-[#1e293b]/70 tracking-wider uppercase block">
+                  Hero Background (Slide 1 - Welcome)
                 </label>
                 
                 {config.hero_image_url ? (
                   <div className="p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
                     <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
-                      <img src={config.hero_image_url} alt="Hero Background Preview" className="w-full h-full object-cover" />
+                      <img src={config.hero_image_url} alt="Hero Slide 1 Preview" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 space-y-1">
                       <p className="text-xs font-bold text-[#1e293b]/80 truncate max-w-[200px]">
@@ -899,7 +900,7 @@ export default function StorefrontEditor({
                       </p>
                       <button
                         type="button"
-                        onClick={handleRemoveImage}
+                        onClick={() => handleRemoveImageForField('hero_image_url')}
                         className="text-[10px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
                       >
                         <Trash2 size={11} />
@@ -912,12 +913,120 @@ export default function StorefrontEditor({
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleUploadImage}
-                      disabled={uploadingImage}
+                      onChange={(e) => handleUploadImageForField(e, 'hero_image_url')}
+                      disabled={uploadingField !== null}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                     />
                     <div className="space-y-2 flex flex-col items-center justify-center">
-                      {uploadingImage ? (
+                      {uploadingField === 'hero_image_url' ? (
+                        <>
+                          <Loader2 className="w-8 h-8 text-[#d97706] animate-spin" />
+                          <p className="text-xs font-bold text-[#1e293b]/70">Uploading to Supabase...</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-8 h-8 text-[#1e293b]/30" />
+                          <div>
+                            <p className="text-xs font-bold text-[#1e293b]/70">Click or drag image to upload</p>
+                            <p className="text-[10px] text-[#1e293b]/40 mt-1">Supports PNG, JPG, WEBP (Max 5MB)</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Hero Background Image Slide 2 */}
+              <div className="space-y-2 pt-4 border-t border-[#e2e8f0]/40">
+                <label className="text-xs font-black text-[#1e293b]/70 tracking-wider uppercase block">
+                  Hero Background (Slide 2 - Specialities)
+                </label>
+                
+                {config.hero_image_url_2 ? (
+                  <div className="p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
+                      <img src={config.hero_image_url_2} alt="Hero Slide 2 Preview" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-xs font-bold text-[#1e293b]/80 truncate max-w-[200px]">
+                        {config.hero_image_url_2.split('/').pop()}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImageForField('hero_image_url_2')}
+                        className="text-[10px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 size={11} />
+                        Remove Image
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-6 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleUploadImageForField(e, 'hero_image_url_2')}
+                      disabled={uploadingField !== null}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                    />
+                    <div className="space-y-2 flex flex-col items-center justify-center">
+                      {uploadingField === 'hero_image_url_2' ? (
+                        <>
+                          <Loader2 className="w-8 h-8 text-[#d97706] animate-spin" />
+                          <p className="text-xs font-bold text-[#1e293b]/70">Uploading to Supabase...</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-8 h-8 text-[#1e293b]/30" />
+                          <div>
+                            <p className="text-xs font-bold text-[#1e293b]/70">Click or drag image to upload</p>
+                            <p className="text-[10px] text-[#1e293b]/40 mt-1">Supports PNG, JPG, WEBP (Max 5MB)</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Hero Background Image Slide 3 */}
+              <div className="space-y-2 pt-4 border-t border-[#e2e8f0]/40">
+                <label className="text-xs font-black text-[#1e293b]/70 tracking-wider uppercase block">
+                  Hero Background (Slide 3 - Boutique)
+                </label>
+                
+                {config.hero_image_url_3 ? (
+                  <div className="p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
+                      <img src={config.hero_image_url_3} alt="Hero Slide 3 Preview" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-xs font-bold text-[#1e293b]/80 truncate max-w-[200px]">
+                        {config.hero_image_url_3.split('/').pop()}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImageForField('hero_image_url_3')}
+                        className="text-[10px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 size={11} />
+                        Remove Image
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-6 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleUploadImageForField(e, 'hero_image_url_3')}
+                      disabled={uploadingField !== null}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                    />
+                    <div className="space-y-2 flex flex-col items-center justify-center">
+                      {uploadingField === 'hero_image_url_3' ? (
                         <>
                           <Loader2 className="w-8 h-8 text-[#d97706] animate-spin" />
                           <p className="text-xs font-bold text-[#1e293b]/70">Uploading to Supabase...</p>
