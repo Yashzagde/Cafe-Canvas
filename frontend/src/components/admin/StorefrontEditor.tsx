@@ -477,6 +477,16 @@ export default function StorefrontEditor({
   const supabase = createClient();
   const [uploadingField, setUploadingField] = useState<string | null>(null);
 
+  const themeDesign = useMemo(() => {
+    return getThemeDesign(config?.theme_id || 'theme-02');
+  }, [config?.theme_id]);
+
+  useEffect(() => {
+    if (config?.theme_id) {
+      loadTenantTheme(config.theme_id).catch(console.error);
+    }
+  }, [config?.theme_id]);
+
   // Logo crop state
   const [logoCropSrc, setLogoCropSrc] = useState<string | null>(null);
   const [logoCropOpen, setLogoCropOpen] = useState(false);
@@ -1417,7 +1427,7 @@ export default function StorefrontEditor({
         {/* Live rendering container */}
         <div className="flex-1 w-full flex justify-center items-center py-4">
           <div
-            className="bg-[#ffffff] border-8 border-stone-900 rounded-[38px] overflow-hidden transition-all shadow-2xl relative flex flex-col w-[300px] h-[520px] max-w-full select-none"
+            className={`theme-${config.theme_id ? config.theme_id.replace('theme-', '') : '02'} bg-background text-foreground border-8 border-stone-900 rounded-[38px] overflow-hidden transition-all shadow-2xl relative flex flex-col w-[300px] h-[520px] max-w-full select-none`}
             style={{
               fontFamily: config.font_body
             }}
@@ -1429,22 +1439,22 @@ export default function StorefrontEditor({
 
             {/* Screen Content Wrapper */}
             <div className="flex-1 flex flex-col pt-4 overflow-y-auto scrollbar-none relative">
+              {/* Background patterns based on active theme */}
+              {themeDesign.renderBackground()}
+
               {/* Nav Header */}
-              <div
-                className="px-4 py-3 flex items-center justify-between border-b border-[#e2e8f0]/30"
-                style={{ backgroundColor: config.accent_color }}
-              >
+              <div className="px-4 py-3 flex items-center justify-between border-b border-border-color/30 bg-card-bg/80 relative z-10">
                 <div className="flex items-center gap-2">
                   {config.logo_url && (
                     <img src={config.logo_url} alt="Logo" className="w-6 h-6 rounded-md object-contain bg-white/80" />
                   )}
-                  <span className="font-extrabold text-xs font-display" style={{ color: config.primary_color }}>
+                  <span className="font-extrabold text-xs font-display text-foreground">
                     {storeName || 'CafeCanvas'}
                   </span>
                 </div>
-                <div className="flex gap-1">
-                  <span className="w-4 h-0.5 rounded bg-[#1e293b]/20"></span>
-                  <span className="w-4 h-0.5 rounded bg-[#1e293b]/20"></span>
+                <div className="flex flex-col gap-0.5 opacity-60">
+                  <span className="w-3.5 h-0.5 rounded bg-foreground/60"></span>
+                  <span className="w-3.5 h-0.5 rounded bg-foreground/60"></span>
                 </div>
               </div>
 
@@ -1455,47 +1465,54 @@ export default function StorefrontEditor({
                   backgroundImage: config.hero_image_url ? `linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url(${config.hero_image_url})` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  backgroundColor: config.accent_color,
                   minHeight: '140px'
                 }}
               >
-                <h3 className="text-base font-extrabold tracking-tight font-display leading-tight" style={{ fontFamily: config.font_heading, color: config.hero_image_url ? '#ffffff' : config.primary_color }}>
+                {!config.hero_image_url && (
+                  <div className="absolute inset-0 bg-brand-light opacity-30 z-0"></div>
+                )}
+                <h3 className="text-base font-extrabold tracking-tight font-display leading-tight z-10" style={{ fontFamily: config.font_heading, color: config.hero_image_url ? '#ffffff' : 'var(--foreground)' }}>
                   {config.hero_title || 'Welcome Title'}
                 </h3>
-                <p className="text-[10px] max-w-[200px] leading-relaxed" style={{ color: config.hero_image_url ? 'rgba(255,255,255,0.85)' : '#1e293b' }}>
+                <p className="text-[10px] max-w-[200px] leading-relaxed z-10" style={{ color: config.hero_image_url ? 'rgba(255,255,255,0.85)' : 'var(--foreground)' }}>
                   {config.hero_subtitle || 'Subtitle'}
                 </p>
                 <button
-                  className="px-3 py-1.5 text-[9px] font-extrabold transition-all cursor-default"
-                  style={{
-                    backgroundColor: config.primary_color,
-                    color: '#ffffff',
-                    borderRadius: '12px'
-                  }}
+                  className={`px-3 py-1.5 text-[9px] font-extrabold transition-all cursor-default z-10 ${themeDesign.buttonClass}`}
                 >
                   View Menu
                 </button>
               </div>
 
               {/* Menu Sections Preview */}
-              <div className="p-4 flex-1 space-y-4">
-                <span className="text-[10px] font-extrabold text-[#1e293b]/40 uppercase tracking-widest block">
+              <div className="p-4 flex-1 space-y-4 relative z-10">
+                <span className="text-[10px] font-extrabold text-foreground/40 uppercase tracking-widest block">
                   Featured Categories
                 </span>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-[#f1f5f9] border border-[#e2e8f0]/50 rounded-2xl flex flex-col gap-1 items-center">
-                    <div className="w-6 h-6 rounded-full bg-[#d97706]/20 flex items-center justify-center">
-                      <Sparkles size={12} className="text-[#d97706]" />
+                  <div className={`${themeDesign.cardClass} p-3 flex flex-col gap-1 items-center`}>
+                    <div className="w-6 h-6 rounded-full bg-brand-light flex items-center justify-center text-brand">
+                      <Sparkles size={12} />
                     </div>
-                    <span className="text-[10px] font-bold text-[#1e293b]/80 mt-1">Coffee</span>
+                    <span className="text-[10px] font-bold text-foreground mt-1">Coffee</span>
                   </div>
-                  <div className="p-3 bg-[#f1f5f9] border border-[#e2e8f0]/50 rounded-2xl flex flex-col gap-1 items-center">
-                    <div className="w-6 h-6 rounded-full bg-[#d97706]/20 flex items-center justify-center">
-                      <Sparkles size={12} className="text-[#d97706]" />
+                  <div className={`${themeDesign.cardClass} p-3 flex flex-col gap-1 items-center`}>
+                    <div className="w-6 h-6 rounded-full bg-brand-light flex items-center justify-center text-brand">
+                      <Sparkles size={12} />
                     </div>
-                    <span className="text-[10px] font-bold text-[#1e293b]/80 mt-1">Snacks</span>
+                    <span className="text-[10px] font-bold text-foreground mt-1">Snacks</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Floating Call Staff Button Preview */}
+              <div className="absolute bottom-4 right-4 z-20">
+                {themeDesign.renderCallStaffButton({
+                  onClick: () => {},
+                  disabled: false,
+                  cooldown: 0,
+                  isCalling: false
+                })}
               </div>
             </div>
           </div>
