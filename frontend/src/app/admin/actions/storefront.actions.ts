@@ -59,12 +59,30 @@ export async function updateStorefrontConfigAction(configId: string, updateData:
     .eq('tenant_id', profile.tenant_id)
     .single();
 
+  // Filter payload to only allowed database columns of storefront_config
+  const allowedData: any = {};
+  const allowedKeys = [
+    'theme_id',
+    'primary_color',
+    'accent_color',
+    'font_heading',
+    'font_body',
+    'banner_text',
+    'show_prices',
+    'allow_orders',
+    'show_blog',
+    'hero_image_url'
+  ];
+  
+  for (const key of allowedKeys) {
+    if (key in updateData) {
+      allowedData[key] = (updateData as any)[key];
+    }
+  }
+
   const { data: newData, error } = await supabase
     .from('storefront_config')
-    .update({
-      ...updateData,
-      updated_at: new Date().toISOString()
-    })
+    .update(allowedData)
     .eq('id', configId)
     .eq('tenant_id', profile.tenant_id)
     .select()

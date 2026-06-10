@@ -234,33 +234,65 @@ const PRESETS: StoreTheme[] = [
     id: 'theme-23',
     name: 'French Patisserie',
     tier: 'Global Cuisines',
-    colors: ['#FAF5FF', '#8E44AD', '#34495E'],
-    description: 'Lavender base and royal blue accents for elegant patisseries.',
+    colors: ['#F9F5F0', '#8E3A7D', '#D4A873'],
+    description: 'Parisian macaron display. Dusty mauve, gold leaf, and crème patissière elegance.',
     fontHeading: 'Cormorant Garamond'
   },
   {
     id: 'theme-24',
     name: 'Middle Eastern Souk',
     tier: 'Global Cuisines',
-    colors: ['#FFFDF5', '#D97706', '#2D3748'],
-    description: 'Rich amber gold and charcoal tones.',
-    fontHeading: 'Fraunces'
+    colors: ['#F5EDE0', '#B8860B', '#1A3C34'],
+    description: 'Spice market at golden hour. Saffron amber, deep cedar green, and hammered brass.',
+    fontHeading: 'Amiri'
   },
   {
     id: 'theme-25',
     name: 'Spanish Tapas',
     tier: 'Global Cuisines',
-    colors: ['#FFF9F5', '#EA580C', '#7C2D12'],
-    description: 'Warm ochre and rust red accents.',
-    fontHeading: 'Playfair Display'
+    colors: ['#FFF8F0', '#C0392B', '#F4A460'],
+    description: 'Terracotta warmth and sangria red. Flamenco energy meets Andalusian sunsets.',
+    fontHeading: 'Bodoni Moda'
+  },
+  {
+    id: 'theme-26',
+    name: 'Bengali Fish Curry',
+    tier: 'Indian Regional',
+    colors: ['#FFF9F0', '#D4930A', '#1A4B8C'],
+    description: 'Mustard yellow and monsoon-blue clay. Kolkata lane-food energy on terracotta plates.',
+    fontHeading: 'Tiro Devanagari Marathi'
+  },
+  {
+    id: 'theme-27',
+    name: 'Kerala Backwater',
+    tier: 'Indian Regional',
+    colors: ['#F0FDF4', '#0D6B3A', '#8B5E3C'],
+    description: 'Houseboat at dawn. Coconut palm green, teakwood brown, and backwater mist.',
+    fontHeading: 'Noto Serif Malayalam'
   },
   {
     id: 'theme-28',
     name: 'Goan Beach Shack',
     tier: 'Global Cuisines',
-    colors: ['#F0FDFD', '#0D9488', '#D97706'],
-    description: 'Cool turquoise and beach sand colors.',
-    fontHeading: 'Outfit'
+    colors: ['#F0FFFE', '#0E8A7D', '#E8A317'],
+    description: 'Sun-bleached shoreline vibes. Teal sea, amber sunlight, and barefoot dining.',
+    fontHeading: 'Pacifico'
+  },
+  {
+    id: 'theme-29',
+    name: 'Chettinad Spice',
+    tier: 'Indian Regional',
+    colors: ['#FAF0E6', '#8B2500', '#3E1607'],
+    description: 'Athangudi tiles and pepper vine darkness. Deep terracotta and Karaikudi heritage.',
+    fontHeading: 'Noto Serif Tamil'
+  },
+  {
+    id: 'theme-30',
+    name: 'Hyderabadi Nawabi',
+    tier: 'Indian Regional',
+    colors: ['#FAF5FF', '#6B21A8', '#C9A84C'],
+    description: 'Charminar dusk. Royal purple, champagne gold, and Nizami pearl accents.',
+    fontHeading: 'Amiri'
   },
 
   // 5. Modern & Trendy (theme-31 to theme-35)
@@ -268,40 +300,40 @@ const PRESETS: StoreTheme[] = [
     id: 'theme-31',
     name: 'Neon Street Food',
     tier: 'Modern & Trendy',
-    colors: ['#0D0D1A', '#EC4899', '#06B6D4'],
-    description: 'Cyberpunk dark mode with neon pink and cyan glows.',
+    colors: ['#0A0A14', '#EC4899', '#06D6A0'],
+    description: 'Cyberpunk midnight bazaar. Hot neon pink, electric mint, and holographic overlays.',
     fontHeading: 'Space Grotesk'
   },
   {
     id: 'theme-32',
     name: 'Y2K Retro Pop',
     tier: 'Modern & Trendy',
-    colors: ['#FFF1F2', '#F43F5E', '#0EA5E9'],
-    description: 'High-energy Y2K aesthetic with pastel pink and neon blue.',
+    colors: ['#FFF0F5', '#F43F5E', '#00B4D8'],
+    description: 'Bubblegum millennium nostalgia. Chrome accents, glossy rose, and electric ocean.',
     fontHeading: 'Outfit'
   },
   {
     id: 'theme-33',
     name: 'Botanical Garden',
     tier: 'Modern & Trendy',
-    colors: ['#F0FDF4', '#15803D', '#14532D'],
-    description: 'Lush forest greens and leaf textures for plant cafes.',
-    fontHeading: 'Inter'
+    colors: ['#F0FDF4', '#166534', '#2D5016'],
+    description: 'Living wall conservatory. Deep emerald, moss shadow, and pressed-fern textures.',
+    fontHeading: 'Fraunces'
   },
   {
     id: 'theme-34',
     name: 'Industrial Craft',
     tier: 'Modern & Trendy',
-    colors: ['#F1F5F9', '#64748B', '#EA580C'],
-    description: 'Concrete grey and rust orange for modern loft cafes.',
+    colors: ['#F0F2F5', '#64748B', '#E85D04'],
+    description: 'Exposed brick and steel girders. Concrete grey, ember orange, and craft typography.',
     fontHeading: 'Space Grotesk'
   },
   {
     id: 'theme-35',
     name: 'Pastels Kawaii',
     tier: 'Modern & Trendy',
-    colors: ['#FFF5F5', '#FF8787', '#A5F3FC'],
-    description: 'Soft baby pink and mint green for bubble tea shops.',
+    colors: ['#FFF5F7', '#FF6B9D', '#7DD3FC'],
+    description: 'Soft-serve dreamscape. Cotton candy rose, baby blue, and marshmallow rounded forms.',
     fontHeading: 'Poppins'
   },
 
@@ -310,57 +342,57 @@ const PRESETS: StoreTheme[] = [
     id: 'theme-37',
     name: 'Diwali Glow',
     tier: 'Seasonal & Festive',
-    colors: ['#FFFDF0', '#D97706', '#7C2D12'],
-    description: 'Golden clay lamp colors and festive lights.',
-    fontHeading: 'Playfair Display'
+    colors: ['#FFFCEB', '#D4930A', '#8B2500'],
+    description: 'Festival of lights. Deep diya amber, rangoli vermillion, and sparkler gold halos.',
+    fontHeading: 'Rozha One'
   },
   {
     id: 'theme-38',
     name: 'Holi Splash',
     tier: 'Seasonal & Festive',
-    colors: ['#FCFAFF', '#EC4899', '#EAB308'],
-    description: 'Energetic splash of magenta, yellow, and green.',
-    fontHeading: 'Space Grotesk'
+    colors: ['#FEFAFF', '#D946EF', '#F59E0B'],
+    description: 'Gulal explosion. Magenta, turmeric yellow, and peacock teal color-burst energy.',
+    fontHeading: 'Baloo Paaji 2'
   },
   {
     id: 'theme-39',
     name: 'Christmas Cosy',
     tier: 'Seasonal & Festive',
-    colors: ['#FFFDFD', '#15803D', '#DC2626'],
-    description: 'Pine green background and berry red highlights.',
-    fontHeading: 'Fraunces'
+    colors: ['#FDFBFB', '#166534', '#B91C1C'],
+    description: 'Fireside warmth. Pine needle green, cranberry red, and cinnamon stick accents.',
+    fontHeading: 'Playfair Display'
   },
   {
     id: 'theme-40',
     name: 'Eid Crescent',
     tier: 'Seasonal & Festive',
-    colors: ['#F4FBF7', '#047857', '#B39034'],
-    description: 'Emerald green and golden crescent moon accents.',
-    fontHeading: 'Cormorant Garamond'
+    colors: ['#F5FBF7', '#047857', '#C9A84C'],
+    description: 'Moonlit feast. Emerald green, crescent gold, and arabesque lantern patterns.',
+    fontHeading: 'Amiri'
   },
   {
     id: 'theme-41',
     name: 'Monsoon Cafe',
     tier: 'Seasonal & Festive',
-    colors: ['#F0F4F8', '#475569', '#3B82F6'],
-    description: 'Earthy rain blue and slate grey tones.',
+    colors: ['#EFF3F8', '#475569', '#2563EB'],
+    description: 'Petrichor season. Raincloud slate, electric puddle-splash blue, and misted glass.',
     fontHeading: 'Nunito'
   },
   {
     id: 'theme-42',
     name: 'Summer Burst',
     tier: 'Seasonal & Festive',
-    colors: ['#FFFBEB', '#F97316', '#EAB308'],
-    description: 'Bright citrus orange and sunny yellow.',
-    fontHeading: 'Outfit'
+    colors: ['#FFFBEB', '#EA580C', '#F59E0B'],
+    description: 'Mango-season energy. Citrus orange, lemonade yellow, and sugarcane green details.',
+    fontHeading: 'Bebas Neue'
   },
   {
     id: 'theme-43',
     name: 'Valentine Blush',
     tier: 'Seasonal & Festive',
-    colors: ['#FFF5F5', '#BE123C', '#FDA4AF'],
-    description: 'Blush pink and deep red tones for dessert cafes.',
-    fontHeading: 'Poppins'
+    colors: ['#FFF5F5', '#9F1239', '#FDA4AF'],
+    description: 'Rose-petal romance. Deep burgundy, blush pink, and champagne-fizz sparkle.',
+    fontHeading: 'Cormorant Garamond'
   },
 
   // 7. Specialized Displays (theme-36, theme-44 to theme-52)
@@ -368,24 +400,24 @@ const PRESETS: StoreTheme[] = [
     id: 'theme-36',
     name: 'Bakehouse Warm',
     tier: 'Specialized Displays',
-    colors: ['#FAF8F6', '#D97706', '#BE185D'],
-    description: 'Warm, cozy colors perfect for family bakery houses and pastry shops.',
+    colors: ['#FBF7F4', '#C4714A', '#A13670'],
+    description: 'Fresh-from-the-oven glow. Sourdough crust brown, berry jam, and floury surfaces.',
     fontHeading: 'Fraunces'
   },
   {
     id: 'theme-44',
     name: 'New Year Noir',
     tier: 'Specialized Displays',
-    colors: ['#0A0A0A', '#C9A84C', '#1A1A1A'],
-    description: 'Celebration theme with dark noir background and champagne gold.',
+    colors: ['#080808', '#D4AF37', '#1C1C1C'],
+    description: 'Midnight countdown. Jet black, champagne gold confetti, and obsidian glass surfaces.',
     fontHeading: 'Playfair Display'
   },
   {
     id: 'theme-45',
     name: 'Dark Mode Espresso',
     tier: 'Specialized Displays',
-    colors: ['#121212', '#FAF5F0', '#3E1F07'],
-    description: 'Standard optimized dark mode with warm espresso accents.',
+    colors: ['#121212', '#EADCC8', '#5C3310'],
+    description: 'Late-night caffeine. Pure OLED black, parchment cream, and fresh-pull espresso brown.',
     fontHeading: 'Outfit'
   },
   {
@@ -393,55 +425,55 @@ const PRESETS: StoreTheme[] = [
     name: 'High Contrast',
     tier: 'Specialized Displays',
     colors: ['#FFFFFF', '#000000', '#0000EE'],
-    description: 'Pure black and white with high-contrast blue for accessibility.',
+    description: 'WCAG AAA accessibility mode. Maximum black-on-white contrast with blue action links.',
     fontHeading: 'Inter'
   },
   {
     id: 'theme-47',
     name: 'Print-Ready Menu',
     tier: 'Specialized Displays',
-    colors: ['#FFFFFF', '#1A1A1A', '#7F7F7F'],
-    description: 'Clean monochrome layout optimized for physical paper printing.',
+    colors: ['#FFFFFF', '#1A1A1A', '#6B7280'],
+    description: 'Paper-optimized monochrome. Ink-black text, subtle grey dividers, zero color waste.',
     fontHeading: 'Inter'
   },
   {
     id: 'theme-48',
     name: 'Kiosk Display',
     tier: 'Specialized Displays',
-    colors: ['#F8FAFC', '#0F172A', '#3B82F6'],
-    description: 'Large tap targets and clear contrast for digital self-service kiosks.',
+    colors: ['#F8FAFC', '#0F172A', '#2563EB'],
+    description: 'Touch-screen first. Large 48px tap targets, high contrast navy, and action blue CTAs.',
     fontHeading: 'Space Grotesk'
   },
   {
     id: 'theme-49',
     name: 'Delivery-First',
     tier: 'Specialized Displays',
-    colors: ['#FFF8F5', '#EA580C', '#1E293B'],
-    description: 'App-first layout optimized for fast mobile deliveries.',
+    colors: ['#FFF7F3', '#EA580C', '#1E293B'],
+    description: 'Swiggy/Zomato energy. Urgent orange, rapid-scroll layout, and one-tap basket flow.',
     fontHeading: 'Outfit'
   },
   {
     id: 'theme-50',
     name: 'Catering Corporate',
     tier: 'Specialized Displays',
-    colors: ['#F8FAFC', '#1E3A8A', '#475569'],
-    description: 'Professional executive corporate blue and slate.',
+    colors: ['#F8FAFC', '#1E3A8A', '#64748B'],
+    description: 'Board-room professional. Executive navy, polished slate, and quarterly-report precision.',
     fontHeading: 'Inter'
   },
   {
     id: 'theme-51',
     name: 'Wedding & Events',
     tier: 'Specialized Displays',
-    colors: ['#FFFBFB', '#C29F6F', '#E8A598'],
-    description: 'Elegant champagne gold and rose for marriage lawns and event caterers.',
+    colors: ['#FFFBFA', '#C29F6F', '#D4A0A0'],
+    description: 'Mandap & marquee. Champagne gold, blush rose, and heirloom lace textures.',
     fontHeading: 'Cormorant Garamond'
   },
   {
     id: 'theme-52',
     name: 'Kids & Family',
     tier: 'Specialized Displays',
-    colors: ['#FFFDF5', '#EC4899', '#3B82F6'],
-    description: 'Bright bubblegum pink and sky blue colors for family restaurants.',
+    colors: ['#FFFEF5', '#EC4899', '#3B82F6'],
+    description: 'Crayon-bright playground. Bubblegum pink, sky blue, and hand-drawn doodle borders.',
     fontHeading: 'Poppins'
   }
 ];
@@ -687,6 +719,7 @@ export default function StorefrontEditor() {
                     <option value="Amiri">Amiri</option>
                     <option value="Baloo Paaji 2">Baloo Paaji 2</option>
                     <option value="Noto Serif Tamil">Noto Serif Tamil</option>
+                    <option value="Noto Serif Malayalam">Noto Serif Malayalam</option>
                     <option value="Noto Serif Gujarati">Noto Serif Gujarati</option>
                     <option value="Noto Nastaliq Urdu">Noto Nastaliq Urdu</option>
                     <option value="Noto Serif SC">Noto Serif SC</option>
