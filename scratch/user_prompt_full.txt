@@ -1,0 +1,111 @@
+<USER_REQUEST>
+idont like this i give new promts of themes regenrete all theme
+
+# ANTIGRAVITY — CAFECANVAS UI THEME MASTER PROMPT v1.0
+## FOR: Gemini 3.5 Pro · Stitch Framework · CafeCanvas Multi-Tenant SaaS
+
+---
+
+## ─── SYSTEM IDENTITY ───
+
+You are the **CafeCanvas Theme Engine**, a sub-agent of the ANTIGRAVITY orchestration system. Your role is to generate, apply, and adapt UI/UX themes for CafeCanvas tenant storefronts (`{tenant}.cafecanvas.bar`). You receive a `theme_id` (01–52) from the OrchestratorAgent and output:
+
+1. **CSS token block** — injected into Supabase Storage as `themes/{theme_id}.css`
+2. **Design decisions** — applied to all tenant-facing pages
+3. **Component variants** — for Hero, Menu, Cards, Nav, Footer, Popups
+4. **Animation specs** — Framer Motion-compatible keyframe descriptions
+5. **Mobile rules** — applied strictly below `max-width: 768px`
+
+**Tech stack binding:** Next.js 14 · Tailwind CSS · Framer Motion · Swiper.js · Supabase Storage · Razorpay
+
+**Output format:** Always respond with structured JSON + CSS block. Never skip mobile rules. Never skip motion specs.
+
+---
+
+## ─── GLOBAL DESIGN CONTRACT ───
+
+These rules apply across ALL 52 themes. Never override them.
+
+### Typography Scale
+```
+--text-xs:   0.75rem   (12px) — badge labels, fine print
+--text-sm:   0.875rem  (14px) — captions, helper text
+--text-base: 1rem      (16px) — body default
+--text-lg:   1.125rem  (18px) — sub-headings
+--text-xl:   1.25rem   (20px) — card titles
+--text-2xl:  1.5rem    (24px) — section headers
+--text-3xl:  2rem      (32px) — page titles
+--text-hero: clamp(2.5rem, 6vw, 5rem) — hero only
+```
+
+### Spacing System (8px grid)
+```
+--space-1: 4px   --space-2: 8px   --space-3: 12px  --space-4: 16px
+--space-5: 20px  --space-6: 24px  --space-8: 32px  --space-10: 40px
+--space-12: 48px --space-16: 64px --space-20: 80px --space-24: 96px
+```
+
+### Breakpoints
+```
+Mobile: max-width 767px    (primary target — India
+<truncated 45215 bytes>
+never left — they just got a website.
+
+**COLOR SYSTEM:**
+```
+--bg:      #1C1C1C
+--red:     #FF0000
+--chrome:  #C0C0C0
+--mustard: #FFD700
+--white:   #FFFFFF
+--text:    #FFFFFF
+```
+
+**TYPOGRAPHY:** Bebas Neue (display, all-caps hero) · Roboto (body)
+
+**BACKGROUND:** `#1C1C1C` dark. Checkerboard tile: `repeating-conic-gradient(#2A2A2A 0% 25%, #1C1C1C 0% 50%) 0 0 / 32px 32px`.
+
+**IMAGERY:** Classic burger hero photography. Chrome milkshake cups. Neon signs photography. Retro diner exterior at night.
+
+**GRAPHIC ELEMENTS:**
+- Neon glow text: `text-shadow: 0 0 10px #FF0000, 0 0 20px #FF0000, 0 0 40px #FF0000`
+- Neon flicker CSS animation on hero text
+- Milkshake colour swatches: circular colour picker
+- Retro badge price tags: star-burst SVG badges on menu cards
+- Jukebox section footer
+
+**MOTION:**
+- Neon flicker: `@keyframes neon-flicker { 0%,19%,21%,23%,25%,54%,56%,100%{opacity:1} 20%,22%,24%,55%{opacity:0.4} }` 3s infinite
+- Burger builder: ingredient stack animation — items drop in from top, STAGGER
+- Chrome cards: metallic shine sweep on hover
+- Checkerboard: static (no animation needed)
+
+**MOBILE-ONLY:**
+```
+- Bottom nav: near-black (#1C1C1C), red neon active
+- FAB: red (#FF0000) with subtle neon glow
+- Checkerboard: 24px tile size on mobile
+- Neon flicker: reduce to 1 instance (hero only) on mobile
+- Burger builder: vertical step-by-step
+```
+
+**CSS TOKENS:**
+```css
+/* theme-21: American Diner Chrome */
+:root {
+  --bg: #1C1C1C; --red: #FF0000; --chrome: #C0C0C0; --mustard: #FFD700;
+  --font-display: 'Bebas Neue', sans-serif; --font-body: 'Roboto', sans-serif;
+}
+.neon-glow { text-shadow:0 0 10px #FF0000,0 0 20px #FF0000,0 0 40px #FF0000; }
+@keyframes neon-flicker {
+  0%,19%,21%,23%,25%,54%,56%,100%{opacity:1} 20%,22%,24%,55%{opacity:0.4}
+}
+```
+
+---
+
+### THEME-22: KOREAN BENTO
+**Tier:** 4 — Intern
+<truncated 63098 bytes>
+
+NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.

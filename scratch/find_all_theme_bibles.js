@@ -1,9 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const geminiPath = 'C:\\Users\\yash\\.gemini';
+const pathsToSearch = [
+  'C:\\Users\\yash\\.gemini',
+  'd:\\Cafe Canva'
+];
 
-function searchInFiles(dir) {
+function searchForPrompt(dir) {
   let results = [];
   try {
     const list = fs.readdirSync(dir);
@@ -16,17 +19,15 @@ function searchInFiles(dir) {
         return;
       }
       if (stat && stat.isDirectory()) {
-        // Skip log directory if it's too large, or limit search
         if (file === 'node_modules' || file === '.git' || file === 'cache') return;
-        results = results.concat(searchInFiles(fullPath));
+        results = results.concat(searchForPrompt(fullPath));
       } else {
         const ext = path.extname(file).toLowerCase();
         if (ext === '.md' || ext === '.json' || ext === '.txt' || ext === '.sql' || ext === '.js' || ext === '.ts') {
           try {
-            // Check size first to avoid reading huge files
-            if (stat.size < 10000000) { // < 10MB
+            if (stat.size < 5000000) { // < 5MB
               const content = fs.readFileSync(fullPath, 'utf8');
-              if (content.includes('Korean Bento') && content.includes('theme-52')) {
+              if (content.includes('THEME MASTER PROMPT') && content.includes('THEME-22')) {
                 results.push({ path: fullPath, size: stat.size });
               }
             }
@@ -38,9 +39,11 @@ function searchInFiles(dir) {
   return results;
 }
 
-console.log('Searching for files containing "Korean Bento" and "theme-52"...');
-const found = searchInFiles(geminiPath);
-console.log(`Found ${found.length} matching files:`);
-found.forEach((f, i) => {
-  console.log(`${i + 1}. ${f.path} (${f.size} bytes)`);
+pathsToSearch.forEach(searchPath => {
+  console.log(`Searching in ${searchPath}...`);
+  const found = searchForPrompt(searchPath);
+  console.log(`Found ${found.length} matching files in ${searchPath}:`);
+  found.forEach((f, i) => {
+    console.log(`${i + 1}. ${f.path} (${f.size} bytes)`);
+  });
 });

@@ -27,7 +27,7 @@ const STORE_THEMES: StoreTheme[] = [
     name: 'Liquid Glass Premium',
     tier: 'Premium & Luxury',
     colors: ['#0A0A1A', '#D4AF37', '#FF6B35'],
-    description: 'Gold and dark blue premium theme with extreme glassmorphism overlays.',
+    description: 'Frosted glassmorphism on deep navy with elegant gold and ember accents.',
     fontHeading: 'Cormorant Garamond'
   },
   {
@@ -35,15 +35,15 @@ const STORE_THEMES: StoreTheme[] = [
     name: 'Liquid Glass Basic',
     tier: 'Premium & Luxury',
     colors: ['#F8F9FA', '#FF6B35', '#1A1A2E'],
-    description: 'Clean transparent design with bright orange accents.',
+    description: 'Clean transparent design on light with warm orange energy.',
     fontHeading: 'Fraunces'
   },
   {
     id: 'theme-03',
     name: 'Onyx Luxury Dark',
     tier: 'Premium & Luxury',
-    colors: ['#121212', '#C9A84C', '#1C1C1C'],
-    description: 'Matte black background with rich gold foil accents for fine dining.',
+    colors: ['#0D0D0D', '#C9A84C', '#1C1C1C'],
+    description: 'Absolute black with champagne gold. Pure material darkness, chef table aesthetic.',
     fontHeading: 'Playfair Display'
   },
 
@@ -52,33 +52,33 @@ const STORE_THEMES: StoreTheme[] = [
     id: 'theme-04',
     name: 'Classic Cafe Brown',
     tier: 'Cafe & Roastery',
-    colors: ['#FAF6F0', '#78350F', '#3E1F07'],
-    description: 'Warm cream foundations and dark espresso brown tones.',
-    fontHeading: 'Playfair Display'
+    colors: ['#FFF3E0', '#D2691E', '#3D1C02'],
+    description: 'Warm nostalgia. Kraft paper, espresso, and chocolate accents.',
+    fontHeading: 'Abril Fatface'
   },
   {
     id: 'theme-05',
     name: 'Artisan Roastery',
     tier: 'Cafe & Roastery',
-    colors: ['#F5EBE0', '#4E3629', '#D5BDAF'],
-    description: 'Artisan minimalist coffee culture palette with earthy brown hues.',
-    fontHeading: 'Outfit'
+    colors: ['#1B1B1B', '#F97316', '#E8DCC8'],
+    description: 'Dark industrial concrete walls and warm parchment coffee bags.',
+    fontHeading: 'Space Grotesk'
   },
   {
     id: 'theme-06',
     name: 'Chocolate Indulgence',
     tier: 'Cafe & Roastery',
-    colors: ['#3D1E12', '#DDA15E', '#F4A261'],
-    description: 'Rich dark chocolate tones and pink accents for dessert cafes.',
-    fontHeading: 'Poppins'
+    colors: ['#3B1D0E', '#D2A679', '#E91E8C'],
+    description: 'Deep chocolate luxury meets playful pink with drip details.',
+    fontHeading: 'Bodoni Moda'
   },
   {
     id: 'theme-07',
     name: 'Matcha Zen',
     tier: 'Cafe & Roastery',
-    colors: ['#EDF4EC', '#15803D', '#A3B18A'],
-    description: 'Organic sage greens and tranquil bamboo textures.',
-    fontHeading: 'Nunito'
+    colors: ['#F5F0E8', '#4A7C24', '#C8A882'],
+    description: 'Wabi-sabi restraint, washi paper and matcha green accents.',
+    fontHeading: 'Noto Serif JP'
   },
 
   // 3. Indian Regional Heritage (theme-08 to theme-13, theme-26, theme-27, theme-29, theme-30)
@@ -86,49 +86,49 @@ const STORE_THEMES: StoreTheme[] = [
     id: 'theme-08',
     name: 'Rajasthani Royal',
     tier: 'Indian Regional',
-    colors: ['#FDF3E7', '#C2410C', '#9A3412'],
-    description: 'Saffron orange, deep marigold, and copper patterns.',
-    fontHeading: 'Playfair Display'
+    colors: ['#FFF8DC', '#D4AF37', '#8B0000'],
+    description: 'Rajputana palace vibes. Gold jali screens and deep maroon details.',
+    fontHeading: 'Rozha One'
   },
   {
     id: 'theme-09',
     name: 'Maharashtrian Heritage',
     tier: 'Indian Regional',
-    colors: ['#FDF2F4', '#BE123C', '#E11D48'],
-    description: 'Rich saffron red background with royal maroon borders.',
-    fontHeading: 'Poppins'
+    colors: ['#FFF5EE', '#FF8C00', '#006400'],
+    description: 'Vibrant street energy of Maharashtra. Saffron marigold and green accents.',
+    fontHeading: 'Tiro Devanagari Marathi'
   },
   {
     id: 'theme-10',
     name: 'Mughal Garden',
     tier: 'Indian Regional',
-    colors: ['#ECF8F4', '#047857', '#065F46'],
-    description: 'Deep emerald greens and delicate white marble accents.',
-    fontHeading: 'Cormorant Garamond'
+    colors: ['#F5F0E0', '#D4AF37', '#1B4332'],
+    description: 'Emperor garden at dusk. Garden green, ivory, and gold arabesque.',
+    fontHeading: 'Amiri'
   },
   {
     id: 'theme-11',
     name: 'Punjabi Dhaba Bold',
     tier: 'Indian Regional',
-    colors: ['#FFFDF0', '#DC2626', '#FACC15'],
-    description: 'Vibrant yellow and red accents for high-energy traditional dhabas.',
-    fontHeading: 'Space Grotesk'
+    colors: ['#FFFACD', '#FF4500', '#FFD700'],
+    description: 'Grand Trunk Road energy. Bold truck-art orange-red and yellow colors.',
+    fontHeading: 'Baloo Paaji 2'
   },
   {
     id: 'theme-12',
     name: 'South Indian Temple',
     tier: 'Indian Regional',
-    colors: ['#FCF8F2', '#B91C1C', '#D97706'],
-    description: 'Sandalwood base with vermillion red highlights.',
-    fontHeading: 'Playfair Display'
+    colors: ['#FFFDD0', '#8B0000', '#B8860B'],
+    description: 'Sandalwood cream and temple vermillion red with gold highlights.',
+    fontHeading: 'Noto Serif Tamil'
   },
   {
     id: 'theme-13',
     name: 'Gujarat Mithai Gold',
     tier: 'Indian Regional',
-    colors: ['#FFFDF5', '#E28743', '#F0A050'],
-    description: 'Festive gold and sweet orange highlights.',
-    fontHeading: 'Outfit'
+    colors: ['#FFFAF0', '#FF8C00', '#FFD700'],
+    description: 'Navratri and Diwali celebration. Festive orange and sweet yellow colors.',
+    fontHeading: 'Noto Serif Gujarati'
   },
   {
     id: 'theme-26',
@@ -168,73 +168,73 @@ const STORE_THEMES: StoreTheme[] = [
     id: 'theme-14',
     name: 'Kashmiri Winter',
     tier: 'Global Cuisines',
-    colors: ['#F0F9FF', '#0284C7', '#075985'],
-    description: 'Cool ice blue and slate tones for a winter lounge feel.',
-    fontHeading: 'Inter'
+    colors: ['#F5F5F5', '#1E3A5F', '#DAA520'],
+    description: 'Snow and saffron. Deep blue Kashmiri winter sky and silver details.',
+    fontHeading: 'Noto Nastaliq Urdu'
   },
   {
     id: 'theme-15',
     name: 'Italian Trattoria',
     tier: 'Global Cuisines',
-    colors: ['#FDF2F2', '#15803D', '#B91C1C'],
-    description: 'Tuscan olive green and sun-dried tomato red accents.',
+    colors: ['#F5F0DC', '#CE2B37', '#009246'],
+    description: 'Napoli parchment and Italian tricolore. Olive and dried tomato colors.',
     fontHeading: 'Playfair Display'
   },
   {
     id: 'theme-16',
     name: 'Chinese Dynasty Red',
     tier: 'Global Cuisines',
-    colors: ['#FFF5F5', '#E11D48', '#991B1B'],
-    description: 'Dynasty crimson red and imperial gold accents.',
-    fontHeading: 'Cormorant Garamond'
+    colors: ['#FFF8DC', '#DC143C', '#FFD700'],
+    description: 'Imperial palace dining. Crimson red, dragon clouds, and gold accents.',
+    fontHeading: 'Noto Serif SC'
   },
   {
     id: 'theme-17',
     name: 'Japanese Sakura',
     tier: 'Global Cuisines',
-    colors: ['#FDF2F8', '#DB2777', '#9D174D'],
-    description: 'Soft cherry blossom pink and dark slate stone accents.',
-    fontHeading: 'Poppins'
+    colors: ['#F5F0E0', '#FFB7C5', '#1C1C1C'],
+    description: 'Cherry blossom season. Washi paper background and sakura pink accents.',
+    fontHeading: 'Noto Serif JP'
   },
   {
     id: 'theme-18',
     name: 'Mediterranean Blue',
     tier: 'Global Cuisines',
-    colors: ['#F0F7FF', '#2563EB', '#FBBF24'],
-    description: 'Stunning azure blue and sunny yellow highlights.',
-    fontHeading: 'Outfit'
+    colors: ['#FFFFFF', '#1E90FF', '#F5DEB3'],
+    description: 'Santorini whitewash and Aegean blue with sun-drenched meander patterns.',
+    fontHeading: 'Philosopher'
   },
   {
     id: 'theme-19',
     name: 'Mexican Fiesta',
     tier: 'Global Cuisines',
-    colors: ['#FFFBEB', '#16A34A', '#DC2626'],
-    description: 'Cactus green and chili red for high-energy cafes.',
-    fontHeading: 'Space Grotesk'
+    colors: ['#FFFACD', '#FF0000', '#FFD700'],
+    description: 'Papel picado and street taco energy. Loud red and vibrant yellow.',
+    fontHeading: 'Pacifico'
   },
   {
     id: 'theme-20',
     name: 'Thai Tropical',
     tier: 'Global Cuisines',
-    colors: ['#ECFEFF', '#0891B2', '#EA580C'],
-    description: 'Vibrant teal and sweet orange highlights.',
-    fontHeading: 'Nunito'
+    colors: ['#FAFFFE', '#006400', '#FFD700'],
+    description: 'Lemongrass and tropical leaves. Deep forest green and gold details.',
+    fontHeading: 'Mitr'
   },
   {
     id: 'theme-21',
     name: 'American Diner Chrome',
     tier: 'Global Cuisines',
-    colors: ['#FFF5F5', '#EF4444', '#3B82F6'],
-    description: 'Checkerboard patterns, retro red, and chrome blue accents.',
-    fontHeading: 'Space Grotesk'
+    colors: ['#1C1C1C', '#FF0000', '#C0C0C0'],
+    description: 'Checkerboard tiles, retro red neon lights, and chrome metal accents.',
+    fontHeading: 'Bebas Neue'
   },
   {
     id: 'theme-22',
     name: 'Korean Bento',
     tier: 'Global Cuisines',
     colors: ['#FFFFFF', '#E8002D', '#003478'],
-    description: 'Taegukgi-inspired palette of bold red and deep navy.',
-    fontHeading: 'Inter'
+    description: 'Taegukgi flag-inspired palette of bold red, navy, and hanji paper beige.',
+    fontHeading: 'Noto Sans KR'
   },
   {
     id: 'theme-23',
@@ -589,6 +589,22 @@ export function StorefrontConfigScreen() {
                   { value: 'Cormorant Garamond', label: 'Cormorant Garamond' },
                   { value: 'Fraunces', label: 'Fraunces' },
                   { value: 'Space Grotesk', label: 'Space Grotesk' },
+                  { value: 'Abril Fatface', label: 'Abril Fatface' },
+                  { value: 'Bodoni Moda', label: 'Bodoni Moda' },
+                  { value: 'Noto Serif JP', label: 'Noto Serif JP' },
+                  { value: 'Rozha One', label: 'Rozha One' },
+                  { value: 'Tiro Devanagari Marathi', label: 'Tiro Devanagari Marathi' },
+                  { value: 'Amiri', label: 'Amiri' },
+                  { value: 'Baloo Paaji 2', label: 'Baloo Paaji 2' },
+                  { value: 'Noto Serif Tamil', label: 'Noto Serif Tamil' },
+                  { value: 'Noto Serif Gujarati', label: 'Noto Serif Gujarati' },
+                  { value: 'Noto Nastaliq Urdu', label: 'Noto Nastaliq Urdu' },
+                  { value: 'Noto Serif SC', label: 'Noto Serif SC' },
+                  { value: 'Philosopher', label: 'Philosopher' },
+                  { value: 'Pacifico', label: 'Pacifico' },
+                  { value: 'Mitr', label: 'Mitr' },
+                  { value: 'Bebas Neue', label: 'Bebas Neue' },
+                  { value: 'Noto Sans KR', label: 'Noto Sans KR' },
                 ]}
               />
               <Input label="Tagline" value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="e.g. Crafted with love, served with passion" />
