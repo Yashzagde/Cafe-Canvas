@@ -473,16 +473,16 @@ export default function StorefrontEditor({
   const [isNameDirty, setIsNameDirty] = useState(false);
 
   const supabase = createClient();
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
 
-  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadImageForField = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'hero_image_url' | 'hero_image_url_2' | 'hero_image_url_3') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadingImage(true);
+    setUploadingField(fieldName);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `hero-${Date.now()}.${fileExt}`;
+      const fileName = `hero-${fieldName}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
       const { data, error } = await supabase.storage
@@ -498,18 +498,18 @@ export default function StorefrontEditor({
         .from('logos')
         .getPublicUrl(filePath);
 
-      updateField('hero_image_url', publicUrl);
+      updateField(fieldName, publicUrl);
       alert('🎉 Image uploaded successfully!');
     } catch (err: any) {
       console.error('Upload error:', err);
       alert('Upload failed: ' + err.message);
     } finally {
-      setUploadingImage(false);
+      setUploadingField(null);
     }
   };
 
-  const handleRemoveImage = () => {
-    updateField('hero_image_url', '');
+  const handleRemoveImageForField = (fieldName: 'hero_image_url' | 'hero_image_url_2' | 'hero_image_url_3') => {
+    updateField(fieldName, '');
   };
 
   useEffect(() => {
