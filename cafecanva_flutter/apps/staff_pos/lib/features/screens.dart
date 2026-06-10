@@ -1249,7 +1249,7 @@ class _ActiveOrdersQueueState extends State<ActiveOrdersQueue> {
       padding: const EdgeInsets.all(CafeCanvaSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: isGrid ? MainAxisSize.max : MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1362,6 +1362,43 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
   }
 
   Future<void> _triggerBillGeneration() async {
+    try {
+      setState(() => _isLoading = true);
+      // Try to load existing open bill for this table first
+      final existingBill = await BillingRepository.getOpenBillForTable(widget.tableId);
+      if (existingBill != null) {
+        setState(() {
+          _bill = existingBill;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
+      final branchId = AuthService.branchId ?? 'demo-branch-7777';
+      final createdBy = AuthService.currentUser?.id ?? 'demo-user-1234-5678';
+      final bill = await BillingRepository.generateBill(
+        tableId: widget.tableId,
+        tenantId: tenantId,
+        branchId: branchId,
+        createdBy: createdBy,
+      );
+
+      if (mounted) {
+        setState(() {
+          _bill = bill;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = CcError.friendly(e);
+          _isLoading = false;
+        });
+      }
+    }
+  }
     try {
       setState(() => _isLoading = true);
       final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';

@@ -40,6 +40,21 @@ class BillingRepository {
 
   /// Record a payment (cash/card/UPI).
   static Future<void> recordPayment({
+
+  /// Save a draft of bill items for a table (locally).
+  static Future<void> saveDraftBillItems(String tableId, List<Map<String, dynamic>> items) async {
+    // Store draft cart in Hive under 'drafts' box keyed by tableId.
+    final box = await Hive.openBox('drafts');
+    await box.put(tableId, items);
+  }
+
+  /// Load draft bill items for a table.
+  static Future<List<Map<String, dynamic>>?> loadDraftBillItems(String tableId) async {
+    final box = await Hive.openBox('drafts');
+    return box.get(tableId) as List<Map<String, dynamic>>?;
+  }
+
+  static Future<void> recordPayment({
     required String billId,
     required String paymentMethod,
   }) async {
