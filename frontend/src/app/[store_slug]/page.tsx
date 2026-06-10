@@ -53,6 +53,7 @@ interface Table {
   capacity: number;
   section: string;
   status: 'available' | 'occupied' | 'reserved' | 'cleaning';
+  location_id: string;
 }
 
 const TRANSLATIONS = {
@@ -235,7 +236,7 @@ export default function Storefront() {
         // 4. Fetch tables
         const { data: tableData, error: tableError } = await supabase
           .from('tables')
-          .select('id, name, capacity, section, status')
+          .select('id, name, capacity, section, status, location_id')
           .eq('tenant_id', tenantData.id)
           .is('deleted_at', null)
           .order('name', { ascending: true });
@@ -496,7 +497,7 @@ export default function Storefront() {
         .select('id')
         .eq('tenant_id', tenant.id)
         .eq('table_id', selectedTableId)
-        .is('session_end', null)
+        .is('ended_at', null)
         .maybeSingle();
 
       if (sessionFindError) throw sessionFindError;
@@ -509,8 +510,10 @@ export default function Storefront() {
           .insert({
             tenant_id: tenant.id,
             table_id: selectedTableId,
-            opened_by: '00000000-0000-0000-0000-000000000000', // anonymous customer
-            session_start: new Date().toISOString()
+            customer_name: customerName,
+            customer_phone: customerPhone || null,
+            started_at: new Date().toISOString(),
+            pax: customerCount
           })
           .select('id')
           .single();
@@ -519,20 +522,26 @@ export default function Storefront() {
         sessionId = newSession.id;
       }
 
+      // Find the location_id from the selected table
+      const selectedTableObj = tables.find(t => t.id === selectedTableId);
+      const locationId = selectedTableObj?.location_id || 'd1000000-0000-0000-0000-000000000001';
+
       // 2. Insert order
       const { data: newOrder, error: orderInsertError } = await supabase
         .from('orders')
         .insert({
           tenant_id: tenant.id,
+          location_id: locationId,
           table_id: selectedTableId,
-          table_session_id: sessionId,
           customer_name: customerName,
-          customer_count: customerCount,
-          subtotal_paise: totalPricePaise,
-          discount_paise: 0,
-          total_paise: totalPricePaise,
+          customer_phone: customerPhone || null,
+          subtotal: totalPricePaise,
+          tax_amount: 0,
+          discount_amount: 0,
+          total: totalPricePaise,
           notes: orderNotes || null,
-          status: 'pending'
+          status: 'pending',
+          order_type: 'dine_in'
         })
         .select('id')
         .single();
@@ -543,13 +552,13 @@ export default function Storefront() {
       const orderItemsToInsert = Object.entries(cart).map(([itemId, qty]) => {
         const item = menuItems.find(i => i.id === itemId)!;
         return {
+          tenant_id: tenant.id,
           order_id: newOrder.id,
           menu_item_id: item.id,
           item_name: item.name,
-          unit_price_paise: item.price,
+          unit_price: item.price,
           quantity: qty,
-          modifiers: [],
-          kds_status: 'pending'
+          modifiers: []
         };
       });
 
