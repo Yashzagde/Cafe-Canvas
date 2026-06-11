@@ -125,13 +125,17 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loginWithEmailPassword() async {
-    final email = _emailCtrl.text.trim();
+    final emailInput = _emailCtrl.text.trim();
     final password = _passwordCtrl.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (emailInput.isEmpty || password.isEmpty) {
       setState(() => _errorMsg = 'Email and password are required.');
       return;
     }
+
+    final email = RegExp(r'^\d{10}$').hasMatch(emailInput)
+        ? '$emailInput@cafecanvas.bar'
+        : emailInput;
 
     setState(() {
       _isLoading = true;

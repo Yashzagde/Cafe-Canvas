@@ -73,9 +73,10 @@ async function main() {
 
     // 2. Insert Tenant
     console.log("1. Registering tenant in public.tenants...");
+    const tenantEmail = `info@${slug}.com`;
     await sql`
-      INSERT INTO public.tenants (id, name, slug, public_id, private_id, created_at)
-      VALUES (${tenantId}, ${storeName}, ${slug}, ${publicId}, ${privateId}, NOW())
+      INSERT INTO public.tenants (id, name, slug, email, phone, address, city, state, pincode, subscription_tier, is_active, public_id, private_id, created_at)
+      VALUES (${tenantId}, ${storeName}, ${slug}, ${tenantEmail}, '1234567890', '123 Canva Street', 'Mumbai', 'Maharashtra', '400001', 'Enterprise', true, ${publicId}, ${privateId}, NOW())
     `;
 
     // 3. Insert Location
@@ -132,27 +133,29 @@ async function main() {
       )
     `;
 
-    // 6. Create 20 Staff sub-accounts
-    console.log("\n5. Registering 20 Staff sub-accounts...");
+    // 6. Create 20 Staff sub-accounts using phone numbers
+    console.log("\n5. Registering 20 Staff sub-accounts using phone numbers...");
+    const basePhone = 9876500000;
     for (let i = 1; i <= 20; i++) {
-      const staffEmail = `staff${i}@${slug}.com`;
+      const phoneNum = String(basePhone + i);
+      const staffEmail = `${phoneNum}@cafecanvas.bar`;
       const staffPassword = `staffpassword123`;
       const staffPin = `20${String(i).padStart(2, '0')}`; // PIN: 2001, 2002, ..., 2020
       const staffUserId = crypto.randomUUID();
       const staffIdentityId = crypto.randomUUID();
       const staffName = `Staff Member ${i}`;
 
-      console.log(`   - Creating ${staffName} (${staffEmail}) with PIN ${staffPin}...`);
+      console.log(`   - Creating ${staffName} (Phone: ${phoneNum}) with PIN ${staffPin}...`);
 
       await sql`
         INSERT INTO auth.users (
-          instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+          instance_id, id, aud, role, email, phone, encrypted_password, email_confirmed_at, phone_confirmed_at,
           raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous, created_at, updated_at
         ) VALUES (
           '00000000-0000-0000-0000-000000000000', ${staffUserId}, 'authenticated', 'authenticated',
-          ${staffEmail}, crypt(${staffPassword}, gen_salt('bf', 10)), NOW(),
+          ${staffEmail}, ${phoneNum}, crypt(${staffPassword}, gen_salt('bf', 10)), NOW(), NOW(),
           '{"provider": "email", "providers": ["email"]}'::jsonb,
-          ${sql.json({ name: staffName, email_verified: true })},
+          ${sql.json({ name: staffName, email_verified: true, phone_verified: true })},
           false, false, NOW(), NOW()
         )
       `;
@@ -169,9 +172,9 @@ async function main() {
 
       await sql`
         INSERT INTO public.staff_accounts (
-          id, tenant_id, location_id, auth_user_id, full_name, email, role, pin, is_active, created_at
+          id, tenant_id, location_id, auth_user_id, full_name, email, phone, role, pin, is_active, created_at
         ) VALUES (
-          ${staffUserId}, ${tenantId}, ${locationId}, ${staffUserId}, ${staffName}, ${staffEmail}, 'staff', ${staffPin}, true, NOW()
+          ${staffUserId}, ${tenantId}, ${locationId}, ${staffUserId}, ${staffName}, ${staffEmail}, ${phoneNum}, 'staff', ${staffPin}, true, NOW()
         )
       `;
     }
@@ -183,8 +186,9 @@ async function main() {
     console.log(`- Store Slug:               ${slug}`);
     console.log("\nAccounts List:");
     console.log(`- 1x Store Admin:           ${adminEmail} (password: ${adminPassword}, PIN: ${adminPin})`);
-    console.log(`- 20x Staff Sub-accounts:   staff1@${slug}.com to staff20@${slug}.com`);
+    console.log(`- 20x Staff Sub-accounts:   Phone numbers 9876500001 to 9876500020`);
     console.log(`                             (password: staffpassword123, PINs: 2001 to 2020)`);
+    console.log(`                             (constructed emails: <phone>@cafecanvas.bar)`);
     console.log("===============================================");
 
   } catch (err) {
