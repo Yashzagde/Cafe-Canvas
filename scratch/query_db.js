@@ -34,8 +34,8 @@ async function query() {
       console.table(tables);
 
       console.log(`\nFetching staff calls for tenant ${tenantId}...`);
-      const calls = await sql`SELECT * FROM staff_calls WHERE tenant_id = ${tenantId}`;
-      console.table(calls);
+      const columns = await sql`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'staff_calls'`;
+      console.table(columns);
     }
   } catch (err) {
     console.error("Query failed:", err);
