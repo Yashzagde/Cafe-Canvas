@@ -45,14 +45,14 @@ export function Modal({ isOpen, onClose, title, subtitle, size = 'md', children,
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-canvas-brown/30 backdrop-blur-md animate-fade-in"
+        className="absolute inset-0 bg-canvas-brown/30 backdrop-blur-md"
         onClick={onClose}
       />
 
       {/* Dialog */}
       <div
         className={cn(
-          'relative w-full mx-4 bg-canvas-cream rounded-2xl shadow-boutique-lg border border-canvas-border/50 animate-slide-up flex flex-col max-h-[85vh]',
+          'relative w-full mx-4 bg-canvas-cream rounded-2xl shadow-boutique-lg border border-canvas-border/50 flex flex-col max-h-[85vh]',
           sizeStyles[size]
         )}
       >

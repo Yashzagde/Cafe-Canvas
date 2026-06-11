@@ -64,7 +64,7 @@ function ToastItem({ t, onDismiss }: { t: Toast; onDismiss: (id: string) => void
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-4 rounded-xl border shadow-boutique-md animate-slide-up max-w-sm backdrop-blur-sm',
+        'flex items-start gap-3 p-4 rounded-xl border shadow-boutique-md max-w-sm backdrop-blur-sm',
         bgStyles[t.type]
       )}
     >
