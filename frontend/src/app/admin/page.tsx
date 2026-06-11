@@ -220,7 +220,7 @@ export default function CafeCanvaAdmin() {
       const mappedMenu: MenuItem[] = (itemsData || []).map(i => ({
         id: i.id,
         name: i.name,
-        price: i.price_paise ? i.price_paise / 100 : 0,
+        price: (i.price ?? i.price_paise ?? 0) / 100,
         cat: catsMap.get(i.category_id || "") || "Uncategorized",
         status: i.is_available ? 'available' : 'unavailable',
         desc: i.description || "",
