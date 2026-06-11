@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createClient } from '@/utils/supabase/client';
-import { X, Phone, ShieldCheck, CheckCircle2, Ticket } from 'lucide-react';
+import { X, Phone, CheckCircle2, Ticket } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function WelcomeNotificationPopup({ cafeName, tenantId }: { cafeName: string; tenantId: string }) {
   const [show, setShow] = useState(false);
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'phone' | 'otp' | 'done'>('phone');
+
+  const [step, setStep] = useState<'phone' | 'done'>('phone');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -63,10 +62,6 @@ export default function WelcomeNotificationPopup({ cafeName, tenantId }: { cafeN
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
   };
 
   const handleSkip = () => {
@@ -175,54 +170,6 @@ export default function WelcomeNotificationPopup({ cafeName, tenantId }: { cafeN
                     Read More →
                   </a>
                 </div>
-              </div>
-            )}
-
-            {step === 'otp' && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <h3 className="text-lg font-black text-[#4A3728] tracking-tight">
-                    🔑 Verify Your Number
-                  </h3>
-                  <p className="text-xs text-[#8B7355] mt-1.5">
-                    We have dispatched a 6-digit OTP code to your number <span className="font-bold">+91 {phone}</span>.
-                  </p>
-                </div>
-
-                <form onSubmit={handleVerify} className="space-y-3">
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8B7355]">
-                      <ShieldCheck size={16} />
-                    </span>
-                    <input
-                      type="text"
-                      required
-                      pattern="[0-9]{6}"
-                      placeholder="Enter 6-digit OTP code"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                      maxLength={6}
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-[#DEC5A4]/60 bg-white text-xs font-bold text-[#4A3728] focus:outline-none focus:border-[#FFC9CD] tracking-widest text-center"
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => { setStep('phone'); setErrorMsg(null); }}
-                      className="flex-1 border border-[#DEC5A4]/60 text-[#8B7355] rounded-2xl py-3 text-xs font-bold hover:bg-[#4A3728]/5 transition-colors cursor-pointer"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-2 bg-[#B4F8C8] hover:bg-[#8CE0A8] active:scale-[0.98] text-[#4A3728] rounded-2xl py-3 text-xs font-extrabold uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
-                    >
-                      {loading ? 'Verifying...' : 'Verify & Subscribe'}
-                    </button>
-                  </div>
-                </form>
               </div>
             )}
 
