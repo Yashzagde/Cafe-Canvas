@@ -139,6 +139,7 @@ async function main() {
     // 6. Create 20 Staff sub-accounts using phone numbers
     console.log("\n5. Registering 20 Staff sub-accounts using phone numbers...");
     const basePhone = 9876500000;
+    const createdStaff = [];
     for (let i = 1; i <= 20; i++) {
       const phoneNum = String(basePhone + i);
       const staffEmail = `${phoneNum}@cafecanvas.bar`;
@@ -183,6 +184,14 @@ async function main() {
           ${staffUserId}, ${tenantId}, ${locationId}, ${staffUserId}, ${staffName}, ${staffEmail}, ${phoneNum}, 'staff', ${staffPin}, true, NOW()
         )
       `;
+
+      createdStaff.push({
+        "Staff Name": staffName,
+        "Phone / Username": phoneNum,
+        "Password": staffPassword,
+        "POS PIN": staffPin,
+        "Role": "staff"
+      });
     }
 
     console.log("\n===============================================");
@@ -192,9 +201,8 @@ async function main() {
     console.log(`- Store Slug:               ${slug}`);
     console.log("\nAccounts List:");
     console.log(`- 1x Store Admin:           ${adminEmail} (password: ${adminPassword}, PIN: ${adminPin})`);
-    console.log(`- 20x Staff Sub-accounts:   Phone numbers 9876500001 to 9876500020`);
-    console.log(`                             (password: staffpassword123, PINs: 2001 to 2020)`);
-    console.log(`                             (constructed emails: <phone>@cafecanvas.bar)`);
+    console.log("\n- 20x Staff Sub-accounts details:");
+    console.table(createdStaff);
     console.log("===============================================");
 
   } catch (err) {
