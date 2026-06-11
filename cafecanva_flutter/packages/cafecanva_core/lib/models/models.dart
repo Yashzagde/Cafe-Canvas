@@ -273,7 +273,7 @@ class MenuItem {
   factory MenuItem.fromJson(Map<String, dynamic> json) => MenuItem(
     id: json['id'] as String,
     tenantId: (json['tenant_id'] ?? json['org_id']) as String,
-    branchId: json['branch_id'] as String,
+    branchId: (json['branch_id'] ?? json['location_id'] ?? '') as String,
     categoryId: json['category_id'] as String,
     name: json['name'] as String,
     description: json['description'] as String?,
