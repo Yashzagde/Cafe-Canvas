@@ -31,6 +31,7 @@ class MenuRepository {
     final data = await SupabaseService.from('menu_categories')
         .select()
         .eq('tenant_id', tenantId)
+        .eq('branch_id', branchId)
         .isFilter('deleted_at', null)
         .order('sort_order');
     return (data as List).map((e) => MenuCategory.fromJson(e)).toList();
@@ -60,6 +61,7 @@ class MenuRepository {
     var query = SupabaseService.from('menu_items')
         .select()
         .eq('tenant_id', tenantId)
+        .eq('branch_id', branchId)
         .isFilter('deleted_at', null);
     if (categoryId != null) {
       query = query.eq('category_id', categoryId);
@@ -72,6 +74,7 @@ class MenuRepository {
     final data = await SupabaseService.from('menu_items')
         .select()
         .eq('tenant_id', tenantId)
+        .eq('branch_id', branchId)
         .eq('status', 'available')
         .isFilter('deleted_at', null)
         .order('sort_order');

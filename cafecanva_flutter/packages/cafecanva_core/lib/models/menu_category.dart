@@ -25,7 +25,7 @@ class MenuCategory {
   factory MenuCategory.fromJson(Map<String, dynamic> json) => MenuCategory(
         id: json['id'] as String,
         tenantId: json['tenant_id'] as String,
-        branchId: (json['branch_id'] ?? json['location_id'] ?? '') as String,
+        branchId: json['branch_id'] as String,
         name: json['name'] as String,
         icon: json['icon'] as String?,
         sortOrder: json['sort_order'] as int? ?? 0,
