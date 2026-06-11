@@ -1,4 +1,5 @@
 'use client';
+import { useToast } from '@/components/admin/UIPrimitives';
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
@@ -34,6 +35,7 @@ interface AttendanceTabProps {
 export default function AttendanceTab({ branchId }: AttendanceTabProps) {
   const supabase = createClient();
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
+  const [toastItem, toast] = useToast();
   const [loading, setLoading] = useState(true);
   const [selectedSelfie, setSelectedSelfie] = useState<string | null>(null);
   const [selectedMap, setSelectedMap] = useState<{ lat: number; lng: number; label: string } | null>(null);
@@ -50,7 +52,7 @@ export default function AttendanceTab({ branchId }: AttendanceTabProps) {
       if (error) throw error;
       setLogs((data || []) as unknown as AttendanceLog[]);
     } catch (err) {
-      console.error('Failed to load attendance logs:', err);
+      toast('Failed to load attendance logs', 'error');
     } finally {
       setLoading(false);
     }
