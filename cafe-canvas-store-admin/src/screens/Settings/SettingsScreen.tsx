@@ -13,7 +13,7 @@ import {
 import { useTenantStore } from '../../store/tenant.store'
 import { supabase } from '../../lib/supabase'
 
-type TabType = 'general' | 'hours' | 'tax' | 'payments' | 'subscription' | 'account' | 'theme'
+type TabType = 'general' | 'hours' | 'tax' | 'payments' | 'subscription' | 'account'
 
 export function SettingsScreen() {
   const { tenant, settings, updateSettings, fetchTenantData } = useTenantStore()
@@ -40,9 +40,7 @@ export function SettingsScreen() {
   const [razorpayKey, setRazorpayKey] = useState('')
   const [upiId, setUpiId] = useState('')
 
-  // Theme tab states
-  const [primaryColor, setPrimaryColor] = useState('#ff6600')
-  const [secondaryColor, setSecondaryColor] = useState('#ffcc00')
+
 
   // Hours tab states
   const [openTime, setOpenTime] = useState('09:00')
@@ -66,8 +64,7 @@ export function SettingsScreen() {
       setUpiId(settings.upi_id || '')
       setOpenTime(settings.open_time?.slice(0, 5) || '09:00')
       setCloseTime(settings.close_time?.slice(0, 5) || '22:00')
-      setPrimaryColor(settings.theme_primary || '#ff6600')
-      setSecondaryColor(settings.theme_secondary || '#ffcc00')
+
     }
   }, [tenant, settings])
 
@@ -124,9 +121,8 @@ export function SettingsScreen() {
       updates = { razorpay_key_id: razorpayKey, upi_id: upiId }
     } else if (activeTab === 'hours') {
       updates = { open_time: openTime, close_time: closeTime }
-    } else if (activeTab === 'theme') {
-      updates = { theme_primary: primaryColor, theme_secondary: secondaryColor }
     }
+
 
     const res = await updateSettings(updates)
     setIsSaving(false)
@@ -148,7 +144,7 @@ export function SettingsScreen() {
     { id: 'payments' as TabType, label: 'Payment Gateway', icon: CreditCard },
     { id: 'subscription' as TabType, label: 'Merchant Plan', icon: Sparkles },
     { id: 'account' as TabType, label: 'System Access', icon: ShieldCheck },
-    { id: 'theme' as TabType, label: 'Brand Theme', icon: Palette },
+
   ]
 
   return (

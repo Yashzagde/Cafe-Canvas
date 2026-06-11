@@ -155,9 +155,17 @@ export default function Storefront() {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
-  const [dbPending, setDbPending] = useState(false);
-
-  // Form states
+  // Form/Checkout/Table session states
+  const [selectedTableId, setSelectedTableId] = useState<string>('');
+  const [customerName, setCustomerName] = useState<string>('');
+  const [customerCount, setCustomerCount] = useState<number>(1);
+  const [orderNotes, setOrderNotes] = useState<string>('');
+  const [placingOrder, setPlacingOrder] = useState<boolean>(false);
+  const [successOrderRef, setSuccessOrderRef] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [cart, setCart] = useState<Record<string, number>>({});
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
+  const [activeTablesCount, setActiveTablesCount] = useState<number>(0);
 
 
   // Loyalty & OTP Login states
@@ -353,6 +361,16 @@ export default function Storefront() {
         setTables(tableData || []);
         if (tableData && tableData.length > 0) {
           setSelectedTableId(tableData[0].id);
+        }
+
+        // 5. Fetch active table sessions count
+        const { count: activeCount, error: activeError } = await supabase
+          .from('table_sessions')
+          .select('id', { count: 'exact', head: true })
+          .is('ended_at', null);
+
+        if (!activeError) {
+          setActiveTablesCount(activeCount || 0);
         }
 
       } catch (err: any) {
