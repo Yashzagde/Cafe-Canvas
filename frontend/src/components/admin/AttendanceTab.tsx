@@ -1,5 +1,5 @@
 'use client';
-import { useToast } from '@/components/admin/UIPrimitives';
+import { useToast, Toast } from '@/components/admin/UIPrimitives';
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
@@ -289,6 +289,7 @@ export default function AttendanceTab({ branchId }: AttendanceTabProps) {
           </div>
         </div>
       )}
+      {toastItem && <Toast msg={toastItem.msg} type={toastItem.type} onClose={() => { }} />}
     </div>
   );
 }

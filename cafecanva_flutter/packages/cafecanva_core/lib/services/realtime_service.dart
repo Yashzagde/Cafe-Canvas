@@ -72,12 +72,13 @@ class RealtimeService {
     return channel;
   }
 
-  /// Subscribe staff to active "Call Waiter" requests in a branch
+  /// Subscribe staff to active "Call Waiter" requests in a branch and private broadcasts
   RealtimeChannel subscribeToStaffCalls({
     required String branchId,
-    required void Function(PostgresChangePayload payload) onCallReceived,
+    required String tenantId,
+    required void Function(Map<String, dynamic> record) onCallReceived,
   }) {
-    final key = 'calls:branch:$branchId';
+    final key = 'private-calls:$tenantId:$branchId';
     _channels[key]?.unsubscribe();
 
     final channel = SupabaseService.client
@@ -91,7 +92,23 @@ class RealtimeService {
             column: 'location_id',
             value: branchId,
           ),
-          callback: onCallReceived,
+          callback: (payload) {
+            onCallReceived(payload.newRecord);
+          },
+        )
+        .onBroadcast(
+          event: 'staff_call_relay',
+          callback: (payload) {
+            onCallReceived(payload);
+          },
+        )
+        .onBroadcast(
+          event: 'forward_call',
+          callback: (payload) {
+            final Map<String, dynamic> forwarded = Map<String, dynamic>.from(payload);
+            forwarded['is_forwarded'] = true;
+            onCallReceived(forwarded);
+          },
         )
         .subscribe();
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:hive/hive.dart';
 import '../models/bill.dart';
 import '../services/supabase_service.dart';
 import '../utils/constants.dart';
@@ -38,8 +39,6 @@ class BillingRepository {
     return Bill.fromJson(json['bill'] as Map<String, dynamic>);
   }
 
-  /// Record a payment (cash/card/UPI).
-  static Future<void> recordPayment({
 
   /// Save a draft of bill items for a table (locally).
   static Future<void> saveDraftBillItems(String tableId, List<Map<String, dynamic>> items) async {

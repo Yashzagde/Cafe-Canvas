@@ -3,6 +3,8 @@ import { useAuthStore } from '../store/auth.store'
 import { useTenantStore } from '../store/tenant.store'
 import { useUIStore, type ScreenType } from '../store/ui.store'
 import { useNotificationsStore } from '../store/notifications.store'
+import { useStaffCallsStore } from '../store/staffCalls.store'
+import { Modal } from '../components/ui/Modal'
 
 import { TitleBar } from '../components/layout/TitleBar'
 import { Sidebar } from '../components/layout/Sidebar'
@@ -52,9 +54,18 @@ const SCREEN_TITLES: Record<ScreenType, string> = {
 
 export default function App() {
   const { session, tenantId, isLoading: authLoading, initialize } = useAuthStore()
-  const { fetchTenantData } = useTenantStore()
+  const { fetchTenantData, tenant } = useTenantStore()
   const { currentScreen, setScreen } = useUIStore()
   const { fetchNotifications, subscribeToNotifications } = useNotificationsStore()
+  const { 
+    escalatedCall, 
+    availableStaff, 
+    fetchActiveCalls, 
+    fetchAvailableStaff, 
+    subscribeToStaffCalls, 
+    forwardCall, 
+    clearEscalation 
+  } = useStaffCallsStore()
 
   // Initialize session on mount
   useEffect(() => {
@@ -86,6 +97,19 @@ export default function App() {
       if (unsub) unsub()
     }
   }, [session, tenantId, fetchNotifications, subscribeToNotifications])
+
+  // Sync staff calls
+  useEffect(() => {
+    let unsub: (() => void) | undefined
+    if (session && tenantId && tenant?.public_id) {
+      fetchActiveCalls(tenantId)
+      fetchAvailableStaff(tenantId)
+      unsub = subscribeToStaffCalls(tenant.public_id, tenantId, tenant.id)
+    }
+    return () => {
+      if (unsub) unsub()
+    }
+  }, [session, tenantId, tenant, fetchActiveCalls, fetchAvailableStaff, subscribeToStaffCalls])
 
   // ── Global Keyboard Shortcuts ────────────────────────────────────────────
   const handleKeyboard = useCallback(
@@ -187,6 +211,53 @@ export default function App() {
 
       {/* Connection & app details status bar */}
       <StatusBar />
+
+      {/* Global Escalation Modal */}
+      {escalatedCall && (
+        <Modal
+          isOpen={!!escalatedCall}
+          onClose={clearEscalation}
+          title="🚨 Staff Call Escalation Alert!"
+        >
+          <div className="space-y-4 p-2 font-body text-canvas-brown">
+            <p className="text-sm font-medium">
+              The staff call from <strong className="text-canvas-terracotta">{escalatedCall.tableName}</strong> has remained unanswered for over 1 minute.
+            </p>
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-canvas-brown">
+                Forward/Assign to Staff:
+              </label>
+              <select
+                className="w-full rounded-xl border border-canvas-border bg-canvas-cream p-3 text-sm text-canvas-brown font-semibold focus:outline-none focus:ring-2 focus:ring-canvas-rose"
+                defaultValue=""
+                onChange={async (e) => {
+                  const staffId = e.target.value
+                  if (staffId && tenant) {
+                    await forwardCall(escalatedCall.id, staffId, tenant.id)
+                  }
+                }}
+              >
+                <option value="" disabled>-- Select Available Staff --</option>
+                {availableStaff
+                  .filter(s => s.role !== 'owner' && s.role !== 'manager')
+                  .map((staff) => (
+                    <option key={staff.id} value={staff.id}>
+                      {staff.name} ({staff.role})
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={clearEscalation}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-canvas-border/30 hover:bg-canvas-border/50 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Global toast notifications */}
       <ToastContainer />

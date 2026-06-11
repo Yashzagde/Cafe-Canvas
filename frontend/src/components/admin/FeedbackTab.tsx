@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast, Toast } from '@/components/admin/UIPrimitives';
 import { createClient } from '@/utils/supabase/client';
 import { Star, MessageSquare, Phone, User, Utensils, Award, Smile, Frown } from 'lucide-react';
 
@@ -32,6 +33,7 @@ interface FeedbackTabProps {
 export default function FeedbackTab({ branchId }: FeedbackTabProps) {
   const supabase = createClient();
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [toastItem, toast] = useToast();
   const [loading, setLoading] = useState(true);
 
   const loadFeedback = async () => {
@@ -46,6 +48,7 @@ export default function FeedbackTab({ branchId }: FeedbackTabProps) {
       setFeedbacks((data || []) as unknown as FeedbackItem[]);
     } catch (err) {
       console.error('Failed to load guest feedback:', err);
+      toast('Failed to load guest feedback', 'error');
     } finally {
       setLoading(false);
     }
@@ -239,6 +242,7 @@ export default function FeedbackTab({ branchId }: FeedbackTabProps) {
           )}
         </div>
       )}
+      {toastItem && <Toast msg={toastItem.msg} type={toastItem.type} onClose={() => { }} />}
     </div>
   );
 }

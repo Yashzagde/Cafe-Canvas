@@ -2,6 +2,8 @@ export interface Tenant {
   id:                string
   name:              string
   slug:              string
+  public_id?:        string
+  private_id?:       string
   email:             string
   phone?:            string
   address?:          string

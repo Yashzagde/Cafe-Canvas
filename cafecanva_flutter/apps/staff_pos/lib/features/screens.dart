@@ -469,7 +469,114 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
           }
         },
       );
+
+      RealtimeService.instance.subscribeToStaffCalls(
+        branchId: branchId,
+        tenantId: tenantId,
+        onCallReceived: (record) {
+          _showStaffCallAlert(record);
+        },
+      );
     }
+  }
+
+  void _showStaffCallAlert(Map<String, dynamic> record) {
+    if (!mounted) return;
+    
+    final callId = record['id'] as String? ?? '';
+    final tableName = record['tableName'] as String? ?? 'Table ${record['table_number'] ?? ''}';
+    final isForwarded = record['is_forwarded'] as bool? ?? false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: Colors.white,
+          title: Row(
+            children: [
+              const Icon(Icons.notifications_active, color: CafeCanvaColors.primary, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isForwarded ? '⚠️ Call Assigned to You' : '🛎️ Staff Call Requested',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$tableName needs assistance.',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+              if (isForwarded) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'This call was forwarded to you by the Store Admin.',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Ignore', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                try {
+                  final userId = AuthService.currentUser?.id ?? 'unknown';
+                  await StaffRepository.attendCall(callId, userId);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Call accepted!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to accept call: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: CafeCanvaColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Accept', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _loadTables() async {
@@ -1399,33 +1506,6 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
       }
     }
   }
-    try {
-      setState(() => _isLoading = true);
-      final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
-      final branchId = AuthService.branchId ?? 'demo-branch-7777';
-      final createdBy = AuthService.currentUser?.id ?? 'demo-user-1234-5678';
-      final bill = await BillingRepository.generateBill(
-        tableId: widget.tableId,
-        tenantId: tenantId,
-        branchId: branchId,
-        createdBy: createdBy,
-      );
-
-      if (mounted) {
-        setState(() {
-          _bill = bill;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = CcError.friendly(e);
-          _isLoading = false;
-        });
-      }
-    }
-  }
 
   Future<void> _settleBill(String method) async {
     if (_bill == null) return;
@@ -1486,49 +1566,83 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
     final double width = MediaQuery.of(context).size.width;
     final bool isTablet = width >= 720;
 
-    final invoiceCard = CcCard(
+    // Beautiful glassmorphism styled invoice card with Inter font and draft badge
+    final invoiceCard = Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(CafeCanvaSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Center(
-            child: Text(
-              'TABLE INVOICE',
-              style: GoogleFonts.dmSans(fontWeight: FontWeight.bold, fontSize: 16.0),
-            ),
-          ),
-          const Divider(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Subtotal'),
-              CcPriceText(priceInPaise: _bill!.subtotal),
+              Text(
+                'TABLE INVOICE',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 16.0, letterSpacing: 0.5),
+              ),
+              if (_bill!.status == 'open')
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: CafeCanvaColors.primary.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Text(
+                    'DRAFT',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10.0,
+                      color: CafeCanvaColors.primary,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const Divider(height: 24, color: CafeCanvaColors.stone200),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Subtotal', style: GoogleFonts.inter(color: CafeCanvaColors.stone500)),
+              CcPriceText(priceInPaise: _bill!.subtotal, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 8.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('CGST (2.50%)', style: GoogleFonts.inter(color: CafeCanvaColors.stone500)),
+              CcPriceText(priceInPaise: (_bill!.tax / 2).round(), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 6.0),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('CGST (2.50%)'),
-              CcPriceText(priceInPaise: (_bill!.tax / 2).round()),
+              Text('SGST (2.50%)', style: GoogleFonts.inter(color: CafeCanvaColors.stone500)),
+              CcPriceText(priceInPaise: (_bill!.tax / 2).round(), style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
             ],
           ),
-          const SizedBox(height: 4.0),
+          const Divider(height: 24, color: CafeCanvaColors.stone200),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('SGST (2.50%)'),
-              CcPriceText(priceInPaise: (_bill!.tax / 2).round()),
-            ],
-          ),
-          const Divider(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('GRAND TOTAL PAYABLE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
+              Text('GRAND TOTAL PAYABLE', style: GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 15.0)),
               CcPriceText(
                 priceInPaise: totalCost,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0, color: CafeCanvaColors.primary),
+                style: GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 16.0, color: CafeCanvaColors.primary),
               ),
             ],
           ),

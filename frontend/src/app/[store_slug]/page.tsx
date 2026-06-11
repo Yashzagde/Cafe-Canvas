@@ -543,18 +543,36 @@ export default function Storefront() {
     try {
       const tableObj = tables.find(t => t.id === selectedTableId);
       const tableName = tableObj ? tableObj.name : 'Unknown';
+      const publicId = tenant.public_id || tenant.id;
 
-      const { error } = await supabase
-        .from('notification_log')
-        .insert({
-          tenant_id: tenant.id,
-          type: 'staff_call',
-          title: '🛎️ Staff Assistance Requested',
-          body: `Table ${tableName} has requested staff assistance.`,
-          read: false
+      // Broadcast the staff call to the Store Admin on the public channel
+      const channel = supabase.channel(`public-calls:${publicId}`);
+      await new Promise<void>((resolve, reject) => {
+        channel.subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            try {
+              const res = await channel.send({
+                type: 'broadcast',
+                event: 'staff_call',
+                payload: {
+                  tableId: selectedTableId,
+                  tableName: tableName,
+                  publicId: publicId,
+                  locationId: tableObj?.location_id || null,
+                  calledAt: new Date().toISOString()
+                }
+              });
+              if (res === 'ok' || res === 'sent') {
+                resolve();
+              } else {
+                reject(new Error('Failed to broadcast: ' + res));
+              }
+            } catch (err) {
+              reject(err);
+            }
+          }
         });
-
-      if (error) throw error;
+      });
       
       setStaffCallCooldown(60); // 60 seconds cooldown
     } catch (err: any) {
