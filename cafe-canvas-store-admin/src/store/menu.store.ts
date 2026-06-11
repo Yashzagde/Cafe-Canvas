@@ -188,9 +188,15 @@ export const useMenuStore = create<MenuState>((set, get) => ({
         query = query.eq('category_id', categoryId)
       }
 
-      const { data, error } = await query
-      if (error) throw error
-      set({ items: data || [] })
+       const { data, error } = await query
+       if (error) throw error
+       // Map DB price fields to UI-friendly names
+       const mappedItems = (data || []).map((itm: any) => ({
+         ...itm,
+         price: itm.price_paise,
+         compare_price: itm.compare_price_paise,
+       }));
+       set({ items: mappedItems })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to fetch items'
       toast.error('Error', msg)
@@ -212,8 +218,8 @@ export const useMenuStore = create<MenuState>((set, get) => ({
           name: data.name || 'New Item',
           name_hi: data.name_hi,
           description: data.description,
-          price: data.price || 0,
-          compare_price: data.compare_price,
+          price_paise: data.price || 0,
+          compare_price_paise: data.compare_price,
           image_url: data.image_url,
           is_available: true,
           is_featured: data.is_featured || false,
@@ -236,7 +242,13 @@ export const useMenuStore = create<MenuState>((set, get) => ({
 
   updateItem: async (id, data) => {
     try {
-      const { error } = await supabase.from('menu_items').update(data).eq('id', id)
+       // Map UI fields to DB column names
+       const dbData = {
+         ...(data.price !== undefined && { price_paise: data.price }),
+         ...(data.compare_price !== undefined && { compare_price_paise: data.compare_price }),
+         ...data,
+       };
+       const { error } = await supabase.from('menu_items').update(dbData).eq('id', id)
       if (error) return { error: error.message }
       set({
         items: get().items.map((i) => (i.id === id ? { ...i, ...data } : i)),
