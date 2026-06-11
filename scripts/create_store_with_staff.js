@@ -105,13 +105,16 @@ async function main() {
     await sql`
       INSERT INTO auth.users (
         instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-        raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous, created_at, updated_at
+        raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
+        confirmation_token, recovery_token, email_change_token_new, email_change,
+        phone_change, phone_change_token, email_change_token_current, email_change_confirm_status,
+        created_at, updated_at
       ) VALUES (
         '00000000-0000-0000-0000-000000000000', ${adminUserId}, 'authenticated', 'authenticated',
         ${adminEmail}, crypt(${adminPassword}, gen_salt('bf', 10)), NOW(),
         '{"provider": "email", "providers": ["email"]}'::jsonb,
         ${sql.json({ name: "Store Admin", email_verified: true })},
-        false, false, NOW(), NOW()
+        false, false, '', '', '', '', '', '', '', 0, NOW(), NOW()
       )
     `;
 
@@ -150,13 +153,16 @@ async function main() {
       await sql`
         INSERT INTO auth.users (
           instance_id, id, aud, role, email, phone, encrypted_password, email_confirmed_at, phone_confirmed_at,
-          raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous, created_at, updated_at
+          raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
+          confirmation_token, recovery_token, email_change_token_new, email_change,
+          phone_change, phone_change_token, email_change_token_current, email_change_confirm_status,
+          created_at, updated_at
         ) VALUES (
           '00000000-0000-0000-0000-000000000000', ${staffUserId}, 'authenticated', 'authenticated',
           ${staffEmail}, ${phoneNum}, crypt(${staffPassword}, gen_salt('bf', 10)), NOW(), NOW(),
           '{"provider": "email", "providers": ["email"]}'::jsonb,
           ${sql.json({ name: staffName, email_verified: true, phone_verified: true })},
-          false, false, NOW(), NOW()
+          false, false, '', '', '', '', '', '', '', 0, NOW(), NOW()
         )
       `;
 
