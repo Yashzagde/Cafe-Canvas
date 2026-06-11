@@ -1912,18 +1912,6 @@ export default function Storefront() {
         </AnimatePresence>
       </main>
 
-              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-black text-xs">
-                {totalItems}
-              </div>
-              <span className="font-extrabold text-xs tracking-wider uppercase">{t.viewOrder}</span>
-            </div>
-            <span className="font-black text-sm md:text-base">
-              ₹{totalPriceRupees.toFixed(2)}
-            </span>
-          </button>
-        </div>
-      )}
-
       {/* Mobile Sticky Bottom Tab Bar */}
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-card-bg/95 backdrop-blur-md border-t border-border-color/80 h-16 flex items-center justify-around z-30 shadow-lg">
         <button 
