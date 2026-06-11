@@ -147,7 +147,7 @@ export default function Storefront() {
 
   const [lang, setLang] = useState<'en' | 'hi'>('en');
   const [activeCatId, setActiveCatId] = useState<string>('All');
-  const [cart, setCart] = useState<Record<string, number>>({});
+
   
   // Dynamic database states
   const [loading, setLoading] = useState(true);
@@ -158,14 +158,7 @@ export default function Storefront() {
   const [dbPending, setDbPending] = useState(false);
 
   // Form states
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [selectedTableId, setSelectedTableId] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [customerCount, setCustomerCount] = useState(1);
-  const [orderNotes, setOrderNotes] = useState('');
-  const [placingOrder, setPlacingOrder] = useState(false);
-  const [successOrderRef, setSuccessOrderRef] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
 
   // Loyalty & OTP Login states
   const [customerPhone, setCustomerPhone] = useState<string | null>(null);
@@ -1293,7 +1286,7 @@ export default function Storefront() {
                         : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
                     }`}
                   >
-                    {staffCallCooldown > 0 ? `Called (${staffCallCooldown}s)` : '🛎️ Call Staff'}
+                    {staffCallCooldown > 0 ? `Called (${staffCallCooldown}s)` : `${activeTablesCount} – 🛎️ Call Staff`}
                   </button>
                 </div>
               </div>
@@ -1464,15 +1457,6 @@ export default function Storefront() {
                     </div>
                     <div className="p-4 pt-0 flex justify-between items-center border-t border-border-color/30 mt-3">
                       <span className="font-black text-sm text-foreground">₹{(item.price / 100).toFixed(2)}</span>
-                      <button 
-                        onClick={() => {
-                          // Try to add the first menu item or simulate adding to cart
-                          alert(`Signature combo "${item.name}" added to cart!`);
-                        }}
-                        className={`px-4 py-2 text-[10px] font-extrabold uppercase tracking-wider ${buttonClass}`}
-                      >
-                        Add to Cart
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -1928,14 +1912,6 @@ export default function Storefront() {
         </AnimatePresence>
       </main>
 
-      {/* Floating Cart Bar (SPA view) */}
-      {totalItems > 0 && activeTab === 'menu' && (
-        <div className="fixed bottom-20 w-full px-4 max-w-md left-1/2 -translate-x-1/2 z-40 animate-scale-up">
-          <button 
-            onClick={() => setIsCheckoutOpen(true)}
-            className={`w-full py-4 px-5 flex justify-between items-center shadow-xl hover:opacity-95 transition-all active:scale-95 ${buttonClass}`}
-          >
-            <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-black text-xs">
                 {totalItems}
               </div>
