@@ -566,13 +566,12 @@ export default function BillingTab({
           table_number: tableNum.toString(),
           customer_name: 'Walk-in Guest',
           customer_phone: customerPhone || null,
-          subtotal: Math.round(subtotal * 100),
-          cgst: Math.round(cgstAmt * 100),
-          sgst: Math.round(sgstAmt * 100),
-          discount_amount: Math.round(discountAmt * 100),
-          total: Math.round(grandTotal * 100),
-          status: 'paid' as const,
+          subtotal_paise: Math.round(subtotal * 100),
+          cgst_paise: Math.round(cgstAmt * 100),
+          sgst_paise: Math.round(sgstAmt * 100),
+          total_paise: Math.round(grandTotal * 100),
           payment_method: payMethod.toLowerCase(),
+          status: 'paid' as const,
           paid_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           items: billItems.map(i => ({
@@ -593,7 +592,6 @@ export default function BillingTab({
           action: 'insert',
           payload: {
             ...dbBillPayload,
-            // Replicate exactly what online insert does
             order_ids: [],
             table_number: tableNum
           }

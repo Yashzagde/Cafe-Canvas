@@ -11,12 +11,12 @@ interface AnalyticsTabProps {
   bills?: any[];
 }
 
-function aggregateRevenue(bills: any[], period: 'weekly' | 'monthly' | 'yearly') {
+function aggregateRevenue(bills: any[], period: 'weekly' | 'monthly' | 'yearly'): Array<{ t: string; v: number }> {
   const now = new Date();
   
   if (period === 'weekly') {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const weeklyData = [];
+    const weeklyData: Array<{ t: string; dateStr: string; v: number }> = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(now.getDate() - i);
@@ -34,7 +34,7 @@ function aggregateRevenue(bills: any[], period: 'weekly' | 'monthly' | 'yearly')
   }
   
   if (period === 'monthly') {
-    const monthlyData = [];
+    const monthlyData: Array<{ t: string; dateStr: string; v: number }> = [];
     for (let i = 29; i >= 0; i--) {
       const d = new Date();
       d.setDate(now.getDate() - i);

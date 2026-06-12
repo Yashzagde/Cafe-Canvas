@@ -46,7 +46,7 @@ interface DashboardTabProps {
   bills?: any[];
 }
 
-function aggregateRevenue(bills: any[], period: 'daily' | 'weekly' | 'monthly') {
+function aggregateRevenue(bills: any[], period: 'daily' | 'weekly' | 'monthly'): Array<{ t: string; v: number }> {
   const now = new Date();
   
   if (period === 'daily') {
@@ -73,7 +73,7 @@ function aggregateRevenue(bills: any[], period: 'daily' | 'weekly' | 'monthly') 
   
   if (period === 'weekly') {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const weeklyData = [];
+    const weeklyData: Array<{ t: string; dateStr: string; v: number }> = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(now.getDate() - i);
@@ -91,7 +91,7 @@ function aggregateRevenue(bills: any[], period: 'daily' | 'weekly' | 'monthly') 
   }
   
   if (period === 'monthly') {
-    const monthlyData = [];
+    const monthlyData: Array<{ t: string; dateStr: string; v: number }> = [];
     for (let i = 29; i >= 0; i--) {
       const d = new Date();
       d.setDate(now.getDate() - i);

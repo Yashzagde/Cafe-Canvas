@@ -45,10 +45,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       // Validate staff role
       final role = (response.session!.user.appMetadata['role'] as String?)?.toLowerCase();
-      final blocked = ['manager', 'owner', 'admin'];
-      if (role == null || blocked.contains(role)) {
+      if (role == null) {
         await Supabase.instance.client.auth.signOut();
-        setState(() => _error = 'Access denied: Staff roles only.');
+        setState(() => _error = 'Access denied: No role assigned.');
         return;
       }
 

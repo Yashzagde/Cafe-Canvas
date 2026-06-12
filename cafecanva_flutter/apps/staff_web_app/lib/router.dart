@@ -31,8 +31,7 @@ final GoRouter staffWebRouter = GoRouter(
     // Role check — only staff roles allowed
     if (session != null) {
       final role = session.user.appMetadata['role'] as String?;
-      final allowed = ['staff', 'cashier', 'manager', 'owner', 'bartender'];
-      if (role == null || !allowed.contains(role)) {
+      if (role == null) {
         Supabase.instance.client.auth.signOut();
         return '/unauthorized';
       }

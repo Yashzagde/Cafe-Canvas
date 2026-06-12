@@ -154,11 +154,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       final role = AuthService.userRole?.toLowerCase();
-      final blocked = ['manager', 'owner', 'admin'];
-      if (role == null || blocked.contains(role)) {
+      if (role == null) {
         await AuthService.signOut();
         setState(() {
-          _errorMsg = 'Access denied: Staff roles only.';
+          _errorMsg = 'Access denied: No role assigned.';
           _isLoading = false;
         });
         return;

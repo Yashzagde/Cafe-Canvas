@@ -14,7 +14,7 @@ final GoRouter staffPosRouter = GoRouter(
     }
 
     final role = AuthService.userRole?.toLowerCase();
-    if (role == null || role == 'manager' || role == 'owner' || role == 'admin') {
+    if (role == null) {
       Supabase.instance.client.auth.signOut();
       return '/unauthorized';
     }

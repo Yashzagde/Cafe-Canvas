@@ -147,6 +147,7 @@ export default function CafeCanvaAdmin() {
   const [tableOrders, setTableOrders] = useState<Record<string, BillItem[]>>({});
   const [billHistory, setBillHistory] = useState<BillHistoryEntry[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [orders, setOrders] = useState<RecentOrder[]>([]);
   const [dbPending, setDbPending] = useState(false);
   const [isOnlineState, setIsOnlineState] = useState(true);
   const [offlineBillsCount, setOfflineBillsCount] = useState(0);
@@ -210,7 +211,7 @@ export default function CafeCanvaAdmin() {
       todayStart.setHours(0, 0, 0, 0);
 
       // --- STAGE 1: Parallel Fetching of Branch List ---
-      let branchList = [];
+      let branchList: any[] = [];
       if (isSystemOnline) {
         const branchResult = await supabase.from('branches').select('*').eq('tenant_id', activeTenantId).eq('active', true);
         if (!branchResult.error) {
@@ -225,13 +226,13 @@ export default function CafeCanvaAdmin() {
       const currentBranchId = activeBranch?.id || branchList?.[0]?.id || '';
 
       // --- STAGE 2: Fetch Data (Online or Offline cache) ---
-      let tenData = null;
-      let catData = [];
-      let itemsData = [];
-      let billsData = [];
-      let customersData = [];
-      let tablesData = [];
-      let ordersData = [];
+      let tenData: any = null;
+      let catData: any[] = [];
+      let itemsData: any[] = [];
+      let billsData: any[] = [];
+      let customersData: any[] = [];
+      let tablesData: any[] = [];
+      let ordersData: any[] = [];
 
       if (isSystemOnline) {
         const [
@@ -298,10 +299,10 @@ export default function CafeCanvaAdmin() {
       }
 
       // Extract Menu Categories
-      const catsMap = new Map(catData.map(c => [c.id, c.name]));
+      const catsMap = new Map(catData.map((c: any) => [c.id, c.name]));
 
       // Extract Menu Items
-      const mappedMenu: MenuItem[] = itemsData.map(i => ({
+      const mappedMenu: MenuItem[] = itemsData.map((i: any) => ({
         id: i.id,
         name: i.name,
         price: (i.price ?? i.price_paise ?? 0) / 100,
@@ -313,7 +314,7 @@ export default function CafeCanvaAdmin() {
       setMenu(mappedMenu);
 
       // Extract Tables
-      const mappedTables: Table[] = tablesData.map(t => ({
+      const mappedTables: Table[] = tablesData.map((t: any) => ({
         id: t.id,
         name: t.name,
         capacity: t.capacity,
@@ -331,7 +332,7 @@ export default function CafeCanvaAdmin() {
       const ordersByTable: Record<string, BillItem[]> = {};
       const recentOrdersList: RecentOrder[] = [];
 
-      ordersData.forEach(o => {
+      ordersData.forEach((o: any) => {
         if (o.table_id && o.status !== 'paid') {
           if (!ordersByTable[o.table_id]) ordersByTable[o.table_id] = [];
           
@@ -353,7 +354,7 @@ export default function CafeCanvaAdmin() {
 
         recentOrdersList.push({
           id: `#${o.id.substring(0, 4).toUpperCase()}`,
-          tableId: mappedTables.find(t => t.id === o.table_id)?.name || "Table Guest",
+          tableId: mappedTables.find((t: any) => t.id === o.table_id)?.name || "Table Guest",
           desc: orderSummary.length > 30 ? orderSummary.substring(0, 27) + "..." : orderSummary,
           amount: (o.total || o.total_amount_paise || 0) / 100,
           status: o.status,
@@ -365,8 +366,8 @@ export default function CafeCanvaAdmin() {
       setOrders(recentOrdersList);
 
       // Parse Bills History
-      const mappedHistory: BillHistoryEntry[] = mergedBills.map(b => {
-        const matchingTable = mappedTables.find(t => t.table_number === b.table_number || t.table_number?.toString() === b.table_number?.toString());
+      const mappedHistory: BillHistoryEntry[] = mergedBills.map((b: any) => {
+        const matchingTable = mappedTables.find((t: any) => t.table_number === b.table_number || t.table_number?.toString() === b.table_number?.toString());
         const billItemsList: BillItem[] = (b.items || []).map((item: any) => ({
           id: item.id || `item-${Date.now()}-${Math.random()}`,
           _key: item.id || `item-${Date.now()}-${Math.random()}`,
@@ -395,7 +396,7 @@ export default function CafeCanvaAdmin() {
 
       // Parse Customers
       const custData = customersData || [];
-      const mappedCustomers: Customer[] = custData.map(c => ({
+      const mappedCustomers: Customer[] = custData.map((c: any) => ({
         id: c.id,
         name: c.name,
         phone: c.phone || "—",

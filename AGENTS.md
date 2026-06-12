@@ -53,8 +53,7 @@ boundaries.
 
 ### 2.2 Role Enforcement
 - **Store Admin surface** → only allow roles: `owner`, `manager`, `admin`.
-- **Staff POS / Staff Web** → only allow roles: `staff`, `cashier`, `bartender`, `chef`,
-  `waiter`, `kitchen`, `delivery`, or any role prefixed `staff_*`.
+- **Staff POS / Staff Web** → allow all staff accounts, including roles: `owner`, `manager`, `admin`, `staff`, `cashier`, `bartender`, `chef`, `waiter`, `kitchen`, `delivery`, or any role prefixed `staff_*`.
 - **Storefront** → unauthenticated or `customer` role only.
 - If a role mismatch is detected, immediately call `AuthAgent.blockAndSignOut()` and
   return the appropriate denial message. Never proceed with the request.
@@ -635,9 +634,10 @@ pending → confirmed → preparing → served → (triggers BillingAgent)
        RETURN { error: "Access denied. Only managers and owners can log in to Store Admin." }
 
 5. IF surface IN ["staff_pos", "staff_web"]:
-     blockedRoles = ["owner", "manager", "admin"]
-     IF role IN blockedRoles:
-       RETURN { error: "Access denied. Use the Store Admin app for manager accounts." }
+     -- All staff accounts (including owner, manager, admin) can log in and work here.
+     -- We only check that the user has a valid role.
+     IF role IS NULL:
+       RETURN { error: "Access denied. No role assigned." }
 
 6. CREATE session { user_id: account.id, tenant_id: account.tenant_id,
                     role: role, surface: surface }
@@ -972,7 +972,7 @@ All items verified as of Sprint 5 completion. ✅
 ```
 [✅] 1.  OrchestratorAgent.health_check() returns all 9 agents ✓
 [✅] 2.  AuthAgent blocks chef login on store_admin surface
-[✅] 3.  AuthAgent blocks manager login on staff_pos surface
+[✅] 3.  AuthAgent allows manager/owner/admin logins on staff_pos surface
 [✅] 4.  CustomerAgent.verify_otp() writes to notification_log type=customer_checkin
 [✅] 5.  NotificationAgent receives real-time INSERT → toast on store_admin
 [✅] 6.  NotificationAgent receives real-time INSERT → SnackBar on staff_pos
