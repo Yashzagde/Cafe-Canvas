@@ -622,6 +622,8 @@ export interface Database {
           close_time: string | null;
           receipt_header: string | null;
           receipt_footer: string | null;
+          service_charge_type: string;
+          service_charge_value: number;
           created_at: string;
         };
         Insert: {
@@ -637,6 +639,8 @@ export interface Database {
           close_time?: string | null;
           receipt_header?: string | null;
           receipt_footer?: string | null;
+          service_charge_type?: string;
+          service_charge_value?: number;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['store_settings']['Insert']>;

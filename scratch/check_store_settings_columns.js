@@ -2,8 +2,8 @@ const postgres = require('postgres');
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Load environment variables from frontend/.env.local or root env if present
-dotenv.config({ path: path.join(__dirname, '../frontend/.env.local') });
+// Load environment variables from root env.local
+dotenv.config({ path: path.join(__dirname, '../.env.local') });
 
 const dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
