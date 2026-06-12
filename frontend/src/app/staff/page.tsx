@@ -931,9 +931,12 @@ export default function StaffPOS() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fbfbf9] flex flex-col items-center justify-center text-stone-700">
-        <div className="w-12 h-12 rounded-full border-4 border-amber-600/10 border-t-amber-600 animate-spin mb-4" />
-        <span className="font-bold tracking-wider text-xs uppercase text-stone-600">Syncing Cafe Canva Staff POS...</span>
+      <div className="min-h-screen bg-[#fbfbf9] flex flex-col items-center justify-center text-stone-700 gap-5">
+        <div className="relative flex items-center justify-center w-12 h-12">
+          <div className="w-12 h-12 rounded-full border-4 border-amber-600/10 border-t-amber-600 animate-spin absolute" />
+          <Coffee className="w-5 h-5 text-amber-600" />
+        </div>
+        <span className="font-bold tracking-wider text-xs uppercase text-stone-500 animate-pulse">Syncing Cafe Canva Staff POS...</span>
       </div>
     );
   }

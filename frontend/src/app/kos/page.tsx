@@ -229,8 +229,11 @@ export default function KOSDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0f0f11] text-zinc-400 flex flex-col justify-center items-center gap-4">
-        <Coffee className="w-12 h-12 text-[#e05e35] animate-spin" />
+      <div className="min-h-screen bg-[#0f0f11] text-zinc-400 flex flex-col justify-center items-center gap-5">
+        <div className="relative flex items-center justify-center w-12 h-12">
+          <div className="w-12 h-12 rounded-full border-4 border-zinc-800 border-t-[#e05e35] animate-spin absolute" />
+          <Coffee className="w-5 h-5 text-[#e05e35]" />
+        </div>
         <span className="font-black text-xs tracking-widest uppercase opacity-75">Booting Kitchen Core...</span>
       </div>
     );

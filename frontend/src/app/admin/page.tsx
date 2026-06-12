@@ -408,8 +408,11 @@ export default function CafeCanvaAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fdfcf7] text-[#1e293b] flex flex-col justify-center items-center gap-4">
-        <Coffee className="w-12 h-12 text-[#d97706] animate-spin" />
+      <div className="min-h-screen bg-[#fdfcf7] text-[#1e293b] flex flex-col justify-center items-center gap-5">
+        <div className="relative flex items-center justify-center w-12 h-12">
+          <div className="w-12 h-12 rounded-full border-4 border-stone-200 border-t-[#d97706] animate-spin absolute" />
+          <Coffee className="w-5 h-5 text-[#d97706]" />
+        </div>
         <span className="font-extrabold text-xs tracking-widest uppercase opacity-75">Syncing OS Core...</span>
       </div>
     );
@@ -536,7 +539,7 @@ export default function CafeCanvaAdmin() {
               {page === "staff" && <StaffManager branchId={activeBranch?.id || ''} />}
               {page === "attendance" && <AttendanceTab branchId={activeBranch?.id || ''} />}
               {page === "feedback" && <FeedbackTab branchId={activeBranch?.id || ''} />}
-              {page === "storefront" && <StorefrontEditor tenantPublicId={publicId} tenantSlug={tenantSlug} tenantPrivateId={tenantId} tenantName={tenantName} setTenantName={setTenantName} tenantLogoUrl={tenantLogoUrl} />}
+              {page === "storefront" && <StorefrontEditor tenantPublicId={publicId} tenantPrivateId={tenantId} tenantName={tenantName} setTenantName={setTenantName} tenantLogoUrl={tenantLogoUrl} tenantSlug={tenantSlug} />}
               {page === "settings" && <SettingsTab toast={toast} tenantName={tenantName} setTenantName={setTenantName} setTenantLogoUrl={setTenantLogoUrl} />}
               {page === "audit" && <AuditLogViewer />}
               {page === "activity" && <ActivityFeedTab />}

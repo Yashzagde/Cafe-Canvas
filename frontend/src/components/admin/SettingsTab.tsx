@@ -13,7 +13,8 @@ import {
   Save,
   Loader2,
   Copy,
-  Check
+  Check,
+  Coffee
 } from 'lucide-react';
 import { T, ff, Btn, Input, Sel } from '@/components/admin/UIPrimitives';
 import { getSettingsAction, updateGeneralSettingsAction, updateStoreSettingsAction } from '@/app/admin/actions/settings.actions';
@@ -311,8 +312,11 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
 
   if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center py-20 gap-3 text-[#1c1917]">
-        <Loader2 className="w-8 h-8 text-[#d97706] animate-spin" />
+      <div className="flex flex-col justify-center items-center py-20 gap-5 text-[#1c1917]">
+        <div className="relative flex items-center justify-center w-12 h-12">
+          <div className="w-12 h-12 rounded-full border-4 border-stone-200 border-t-[#d97706] animate-spin absolute" />
+          <Coffee className="w-5 h-5 text-[#d97706]" />
+        </div>
         <span className="text-xs font-bold tracking-wider uppercase opacity-60">Loading Store Profiles...</span>
       </div>
     );

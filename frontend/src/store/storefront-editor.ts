@@ -33,7 +33,7 @@ export interface StorefrontConfig {
   about_title?: string | null;
   about_text?: string | null;
   about_image_url?: string | null;
-  button_radius?: number;
+  button_radius?: number | null;
   show_reviews?: boolean;
   show_instagram?: boolean;
   show_story?: boolean;

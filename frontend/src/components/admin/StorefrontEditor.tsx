@@ -463,18 +463,18 @@ const PRESETS: StoreTheme[] = [
 
 export default function StorefrontEditor({ 
   tenantPublicId, 
-  tenantSlug,
   tenantPrivateId,
   tenantName,
   setTenantName,
-  tenantLogoUrl
+  tenantLogoUrl,
+  tenantSlug
 }: { 
   tenantPublicId: string; 
-  tenantSlug: string;
   tenantPrivateId: string;
   tenantName: string;
   setTenantName: React.Dispatch<React.SetStateAction<string>>;
   tenantLogoUrl?: string | null;
+  tenantSlug?: string;
 }) {
   const { config, setConfig, updateField, isDirty, clearDirty } = useStorefrontEditorStore();
   const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'layout' | 'blogs' | 'social' | 'connection' | 'footer'>('branding');
@@ -818,7 +818,7 @@ export default function StorefrontEditor({
     try {
       const data = await getStorefrontConfigAction();
       if (data) {
-        setConfig(data as any);
+        setConfig(data);
       }
     } catch (err) {
       console.error('Failed to load storefront configuration:', err);
@@ -842,7 +842,7 @@ export default function StorefrontEditor({
       }
       const updated = await updateStorefrontConfigAction(config.id, config);
       if (updated) {
-        setConfig(updated as any);
+        setConfig(updated);
         clearDirty();
       }
     } catch (err: any) {
@@ -868,7 +868,7 @@ export default function StorefrontEditor({
         }
         const updated = await updateStorefrontConfigAction(config.id, config);
         if (updated) {
-          setConfig(updated as any);
+          setConfig(updated);
           clearDirty();
         }
       }
@@ -1511,59 +1511,57 @@ export default function StorefrontEditor({
                   </button>
                 </div>
 
-                {/* Brand Story Edit Controls (visible when toggle is on) */}
                 {config.show_story && (
-                  <div className="space-y-4 p-4 rounded-2xl bg-gradient-to-br from-amber-50/60 to-orange-50/40 border border-amber-200/40 animate-fade-in">
-                    <p className="text-[10px] font-black text-[#d97706] tracking-widest uppercase flex items-center gap-1.5">
-                      <BookOpen size={12} /> Customize Brand Story
-                    </p>
-
+                  <div className="p-4 rounded-2xl bg-[#f1f5f9] border border-[#e2e8f0] space-y-4 animate-fade-in mt-2 ml-4 pl-4 border-l-4 border-l-[#d97706]">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[#d97706]">📖 Brand Story Customization</h4>
+                    
                     {/* Brand Story Title */}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                        Section Title
+                      <label className="text-[9px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                        Story Section Title
                       </label>
                       <input
                         type="text"
+                        placeholder="Our Culinary Canvas"
                         value={config.about_title || ''}
                         onChange={(e) => updateField('about_title', e.target.value)}
-                        placeholder="e.g. Our Culinary Canvas"
-                        className="w-full px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                        className="w-full px-4 py-2 bg-white border border-[#e2e8f0] rounded-xl text-xs focus:outline-none focus:border-[#d97706]"
                       />
                     </div>
 
-                    {/* Brand Story Description */}
+                    {/* Brand Story Text */}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                        Story Narrative
+                      <label className="text-[9px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                        Story Narrative / Description
                       </label>
                       <textarea
+                        rows={3}
+                        placeholder="Founded with a passion for creative culinary expression..."
                         value={config.about_text || ''}
                         onChange={(e) => updateField('about_text', e.target.value)}
-                        rows={4}
-                        placeholder="e.g. Founded with a passion for creative culinary expression, we blend artisanal baking, micro-roasted specialty coffees, and organic regional delicacies..."
-                        className="w-full px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706] leading-relaxed"
+                        className="w-full px-4 py-2 bg-white border border-[#e2e8f0] rounded-xl text-xs focus:outline-none focus:border-[#d97706]"
                       />
                     </div>
 
                     {/* Brand Story Image */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                        Featured Image
+                      <label className="text-[9px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                        Story Featured Image
                       </label>
+                      
                       {config.about_image_url ? (
                         <div className="p-3 bg-white border border-[#e2e8f0] rounded-xl flex items-center gap-4">
-                          <div className="w-16 h-12 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100 flex items-center justify-center">
                             <img src={config.about_image_url} alt="Brand story preview" className="w-full h-full object-cover" />
                           </div>
                           <div className="flex-1 space-y-1">
-                            <p className="text-[10px] font-bold text-[#1e293b]/80 truncate max-w-[180px]">
+                            <p className="text-[9px] font-bold text-[#1e293b]/80 truncate max-w-[200px]">
                               {config.about_image_url.split('/').pop()}
                             </p>
                             <button
                               type="button"
-                              onClick={() => handleRemoveImageForField('about_image_url' as any)}
-                              className="text-[9px] font-extrabold text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
+                              onClick={() => handleRemoveImageForField('about_image_url')}
+                              className="text-[9px] font-extrabold text-red-650 hover:underline flex items-center gap-1 cursor-pointer"
                             >
                               <Trash2 size={10} />
                               Remove Image
@@ -1571,24 +1569,24 @@ export default function StorefrontEditor({
                           </div>
                         </div>
                       ) : (
-                        <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-white hover:bg-[#FAF6F0]">
+                        <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-3 text-center transition-all bg-white hover:bg-[#FAF6F0]">
                           <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => handleUploadImageForField(e, 'about_image_url' as any)}
+                            onChange={(e) => handleUploadImageForField(e, 'about_image_url')}
                             disabled={uploadingField !== null}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                           />
-                          <div className="space-y-2 flex flex-col items-center justify-center">
+                          <div className="space-y-1 flex flex-col items-center justify-center">
                             {uploadingField === 'about_image_url' ? (
                               <>
-                                <Loader2 className="w-5 h-5 text-[#d97706] animate-spin" />
-                                <p className="text-[10px] font-bold text-[#1e293b]/70">Uploading...</p>
+                                <Loader2 className="w-4 h-4 text-[#d97706] animate-spin" />
+                                <p className="text-[9px] font-bold text-[#1e293b]/70">Uploading image...</p>
                               </>
                             ) : (
                               <>
-                                <ImageIcon className="w-5 h-5 text-[#1e293b]/30" />
-                                <p className="text-[10px] font-bold text-[#1e293b]/60">Click to upload Brand Story image</p>
+                                <Upload className="w-4 h-4 text-[#1e293b]/30" />
+                                <p className="text-[9px] font-bold text-[#1e293b]/70">Click or drag image to upload</p>
                               </>
                             )}
                           </div>
@@ -1954,83 +1952,76 @@ export default function StorefrontEditor({
           )}
 
           {activeTab === 'connection' && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fade-in">
               <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[#d97706] text-xs leading-relaxed space-y-1">
-                <p className="font-bold flex items-center gap-1.5">📲 Your Digital Storefront Link</p>
-                <p className="opacity-90">This link is used by your customers to access your storefront menu, place table orders, view visit history, and contact your staff. Click "Copy Link" to copy it or "Open Link" to view the live menu.</p>
+                <p className="font-bold flex items-center gap-1.5">📲 Your Digital Storefront Links</p>
+                <p className="opacity-90">These links are used by your customers to access your storefront menu, place table orders, view visit history, and contact your staff.</p>
               </div>
 
-              {/* Storefront Subdomain URL */}
+              {/* Live Production URL */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                  Storefront URL Link
+                  Live Production URL
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     readOnly
-                    value={tenantSlug ? `https://${tenantSlug}.cafecanvas.bar` : (tenantPublicId ? `https://cafecanvas.bar/${tenantPublicId}` : 'https://cafecanvas.bar/store')}
+                    value={`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`}
                     className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
                   />
                   <button
+                    type="button"
                     onClick={() => {
-                      const url = tenantSlug ? `https://${tenantSlug}.cafecanvas.bar` : (tenantPublicId ? `https://cafecanvas.bar/${tenantPublicId}` : 'https://cafecanvas.bar/store');
-                      navigator.clipboard.writeText(url);
-                      alert('Storefront URL Link copied!');
+                      navigator.clipboard.writeText(`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`);
+                      alert('Live URL copied!');
                     }}
-                    className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl cursor-pointer transition-all"
+                    className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer transition-all"
                   >
-                    Copy Link
+                    Copy
                   </button>
+                  <a
+                    href={`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all"
+                  >
+                    Open ↗
+                  </a>
                 </div>
               </div>
 
-              {/* Path-based alternative URL (works on localhost too) */}
-              {tenantPublicId && (
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                    Direct Path Link (For Testing)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={typeof window !== 'undefined' ? `${window.location.origin}/${tenantSlug || tenantPublicId}` : `https://cafecanvas.bar/${tenantSlug || tenantPublicId}`}
-                      className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-400"
-                    />
-                    <button
-                      onClick={() => {
-                        const url = typeof window !== 'undefined' ? `${window.location.origin}/${tenantSlug || tenantPublicId}` : `https://cafecanvas.bar/${tenantSlug || tenantPublicId}`;
-                        navigator.clipboard.writeText(url);
-                        alert('Direct path link copied!');
-                      }}
-                      className="px-4 py-2.5 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#1e293b]/80 text-xs font-bold rounded-xl cursor-pointer transition-all border border-[#e2e8f0]"
-                    >
-                      Copy
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end pr-1 gap-3">
-                {tenantPublicId && (
+              {/* Local Dev / Testing URL */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                  Local Dev / Testing URL
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`http://localhost:3000/${tenantSlug || tenantPublicId || 'store'}`}
+                    className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`http://localhost:3000/${tenantSlug || tenantPublicId || 'store'}`);
+                      alert('Local Dev URL copied!');
+                    }}
+                    className="px-4 py-2.5 bg-stone-500 hover:bg-stone-600 text-white text-xs font-bold rounded-xl cursor-pointer transition-all"
+                  >
+                    Copy
+                  </button>
                   <a
-                    href={typeof window !== 'undefined' ? `${window.location.origin}/${tenantSlug || tenantPublicId}` : `https://cafecanvas.bar/${tenantSlug || tenantPublicId}`}
+                    href={`http://localhost:3000/${tenantSlug || tenantPublicId || 'store'}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs font-extrabold text-[#64748b] hover:underline flex items-center gap-1"
+                    className="px-4 py-2.5 bg-stone-700 hover:bg-stone-850 text-white text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all"
                   >
-                    Open Direct Path ↗
+                    Open ↗
                   </a>
-                )}
-                <a
-                  href={tenantSlug ? `https://${tenantSlug}.cafecanvas.bar` : (tenantPublicId ? `https://cafecanvas.bar/${tenantPublicId}` : 'https://cafecanvas.bar')}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-extrabold text-[#d97706] hover:underline flex items-center gap-1"
-                >
-                  Open Live Storefront ↗
-                </a>
+                </div>
               </div>
             </div>
           )}
@@ -2257,6 +2248,23 @@ export default function StorefrontEditor({
                     <span className="text-[10px] font-bold text-foreground mt-1">Snacks</span>
                   </div>
                 </div>
+
+                {/* Brand Story Preview */}
+                {config.show_story && (
+                  <div className={`${themeDesign.cardClass} p-3 mt-4 space-y-2 text-left`}>
+                    <h5 className="font-extrabold text-[10px] text-foreground">
+                      {config.about_title || 'Our Culinary Canvas'}
+                    </h5>
+                    <p className="text-[8px] text-foreground/60 leading-relaxed line-clamp-3">
+                      {config.about_text || 'Founded with a passion for creative culinary expression...'}
+                    </p>
+                    {config.about_image_url && (
+                      <div className="w-full h-16 rounded-lg overflow-hidden mt-1 bg-stone-100">
+                        <img src={config.about_image_url} alt="Brand story preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Floating Call Staff Button Preview */}

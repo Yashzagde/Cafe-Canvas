@@ -952,9 +952,11 @@ export default function Storefront() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center gap-4">
-        {/* Modern standard circular spinner */}
-        <div className="w-10 h-10 rounded-full border-3 border-stone-200 dark:border-stone-800 border-t-brand animate-spin" />
+      <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center gap-5">
+        <div className="relative flex items-center justify-center w-12 h-12">
+          <div className="w-12 h-12 rounded-full border-3 border-stone-200 dark:border-stone-800 border-t-brand animate-spin absolute" />
+          <Coffee className="w-5 h-5 text-brand" />
+        </div>
         <span className="text-[11px] font-extrabold tracking-widest text-foreground/60 uppercase">
           Loading...
         </span>
@@ -1144,16 +1146,18 @@ export default function Storefront() {
               {showStory && (
                 <div className={`${cardClass} p-6 flex flex-col md:flex-row gap-6 items-center`}>
                   <div className="flex-1 space-y-4 text-center md:text-left">
-                    <h3 className="font-black text-lg md:text-xl text-foreground">Our Culinary Canvas</h3>
+                    <h3 className="font-black text-lg md:text-xl text-foreground">
+                      {tenant.about_title || 'Our Culinary Canvas'}
+                    </h3>
                     <p className="text-xs text-foreground/70 leading-relaxed">
-                      Founded with a passion for creative culinary expression, {tenant.name} blends artisanal baking, micro-roasted specialty coffees, and organic regional delicacies. Every plate is crafted as a canvas of flavor and heritage.
+                      {tenant.about_text || `Founded with a passion for creative culinary expression, ${tenant.name} blends artisanal baking, micro-roasted specialty coffees, and organic regional delicacies. Every plate is crafted as a canvas of flavor and heritage.`}
                     </p>
                     <button onClick={() => setActiveTab('about')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${buttonClass}`}>
                       Read Our Story
                     </button>
                   </div>
-                  <div className="w-full md:w-56 h-40 rounded-2xl overflow-hidden shrink-0">
-                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80" alt="Cafe interior" className="w-full h-full object-cover" />
+                  <div className="w-full md:w-56 h-40 rounded-2xl overflow-hidden shrink-0 bg-stone-100 flex items-center justify-center">
+                    <img src={tenant.about_image_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80'} alt="Cafe interior" className="w-full h-full object-cover" />
                   </div>
                 </div>
               )}
@@ -1187,19 +1191,25 @@ export default function Storefront() {
                 <div className="space-y-4">
                   <h3 className="font-black text-lg md:text-xl text-foreground">Bite-sized Food Stories</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
+                    {(blogs && blogs.length > 0 ? blogs.slice(0, 2).map((b: any) => ({
+                      title: b.title,
+                      excerpt: b.excerpt,
+                      date: new Date(b.published_at || b.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+                      time: `${Math.ceil((b.content || '').split(' ').length / 200) || 3} min read`,
+                      image: b.image_url || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80'
+                    })) : [
                       { title: 'The Science of Perfect Coffee Extraction', excerpt: 'Discover brew ratios, temperatures, and water quality secrets from our Head Barista.', date: '05 Jun', time: '4 min read', image: 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=400&q=80' },
                       { title: 'Crafting Sourdough: Sourdough Bread Demystified', excerpt: 'Why long fermentation makes bread healthier, tastier, and easier to digest.', date: '28 May', time: '5 min read', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=400&q=80' }
-                    ].map((blog, i) => (
+                    ]).map((blog, i) => (
                       <div key={i} className={`${cardClass} overflow-hidden flex flex-col`}>
-                        <div className="h-40 relative">
+                        <div className="h-40 relative bg-stone-100">
                           <img src={blog.image} alt={blog.title} className="w-full h-full object-cover" />
                           <span className="absolute top-3 left-3 bg-brand text-white text-[9px] font-extrabold uppercase px-2 py-1 rounded-md">{blog.date}</span>
                         </div>
                         <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
                           <div className="space-y-1">
                             <h4 className="font-extrabold text-sm text-foreground">{blog.title}</h4>
-                            <p className="text-foreground/60 text-[11px] leading-relaxed">{blog.excerpt}</p>
+                            <p className="text-foreground/60 text-[11px] leading-relaxed line-clamp-2">{blog.excerpt}</p>
                           </div>
                           <div className="flex justify-between items-center border-t border-border-color/40 pt-3 mt-3">
                             <span className="text-[10px] text-foreground/40 font-bold">{blog.time}</span>
@@ -1812,18 +1822,27 @@ export default function Storefront() {
               className="space-y-6"
             >
               <div className="text-center space-y-1">
-                <h3 className="font-black text-xl text-foreground">Our Brand Story</h3>
+                <h3 className="font-black text-xl text-foreground">
+                  {tenant.about_title || 'Our Brand Story'}
+                </h3>
                 <p className="text-xs text-foreground/60">The vision, team and certifications behind {tenant.name}.</p>
               </div>
 
               <div className={`${cardClass} p-6 space-y-4`}>
                 <h4 className="font-black text-sm uppercase tracking-wider text-brand">Crafted with Passion</h4>
+                {tenant.about_image_url && (
+                  <div className="w-full h-48 rounded-2xl overflow-hidden mb-4 bg-stone-100">
+                    <img src={tenant.about_image_url} alt="Our Story" className="w-full h-full object-cover" />
+                  </div>
+                )}
                 <p className="text-xs text-foreground/75 leading-relaxed">
-                  {tenant.name} was established in 2024 to redefine regional dining and micro-roasting hospitality. We source our coffee beans directly from high-altitude plantations in Chikmagalur and bake our sourdough bread fresh every morning.
+                  {tenant.about_text || `${tenant.name} was established in 2024 to redefine regional dining and micro-roasting hospitality. We source our coffee beans directly from high-altitude plantations in Chikmagalur and bake our sourdough bread fresh every morning.`}
                 </p>
-                <p className="text-xs text-foreground/75 leading-relaxed">
-                  Our professional kitchens operate under strict hygiene regulations. FSSAI certified and regularly audited, we promise fresh ingredients and clean dining spaces.
-                </p>
+                {!tenant.about_text && (
+                  <p className="text-xs text-foreground/75 leading-relaxed">
+                    Our professional kitchens operate under strict hygiene regulations. FSSAI certified and regularly audited, we promise fresh ingredients and clean dining spaces.
+                  </p>
+                )}
               </div>
 
               {/* FSSAI Mock Certificate */}
