@@ -31,7 +31,7 @@ export interface ReceiptData {
   sgstAmount?: number;
   serviceCharge: number;
   servicePercent: number;
-  serviceChargeType?: 'percent' | 'flat';
+  serviceChargeType?: 'percent' | 'flat' | 'none';
   discountPercent: number;
   discountAmount: number;
   couponCode: string;

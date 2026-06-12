@@ -7,6 +7,8 @@ import {
 import type { ReceiptData } from '@/components/billing/types';
 import { DEFAULT_STORE_INFO } from '@/components/billing/types';
 
+const InputAny = Input as any;
+
 interface MenuItem {
   id: string;
   name: string;
@@ -605,7 +607,7 @@ export default function BillingTab({
       sgstAmount: sgstAmt,
       serviceCharge: svcAmt,
       servicePercent: billingSettings.serviceChargeType === 'percent' ? billingSettings.serviceChargeValue : 0,
-      serviceChargeType: billingSettings.serviceChargeType,
+      serviceChargeType: billingSettings.serviceChargeType === 'none' ? undefined : (billingSettings.serviceChargeType as 'flat' | 'percent'),
       discountPercent: discountType === 'percent' ? discountValue : 0,
       discountAmount: discountAmt,
       couponCode: couponCode,
@@ -649,7 +651,7 @@ export default function BillingTab({
       sgstAmount: entry.gst - Math.round(entry.gst / 2),
       serviceCharge: entry.svc,
       servicePercent: billingSettings.serviceChargeType === 'percent' ? billingSettings.serviceChargeValue : 0,
-      serviceChargeType: billingSettings.serviceChargeType,
+      serviceChargeType: billingSettings.serviceChargeType === 'none' ? undefined : (billingSettings.serviceChargeType as 'flat' | 'percent'),
       discountPercent: 0,
       discountAmount: 0,
       couponCode: '',
@@ -1248,13 +1250,13 @@ export default function BillingTab({
               </div>
             </div>
 
-            <Input
+            <InputAny
               label={billingSettings.serviceChargeType === 'none' ? "Service Charge (Disabled)" : billingSettings.serviceChargeType === 'flat' ? "Service Charge Flat Amount (₹)" : "Service Charge Rate (%)"}
               type="number"
               step="0.01"
               disabled={billingSettings.serviceChargeType === 'none'}
               value={billingSettings.serviceChargeValue}
-              onChange={e => saveBillingSettings({ ...billingSettings, serviceChargeValue: parseFloat(e.target.value) || 0 })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => saveBillingSettings({ ...billingSettings, serviceChargeValue: parseFloat(e.target.value) || 0 })}
             />
           </div>
 

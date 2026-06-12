@@ -17,6 +17,8 @@ import { T, ff, Btn, Input, Sel } from '@/components/admin/UIPrimitives';
 import { getSettingsAction, updateGeneralSettingsAction, updateStoreSettingsAction } from '@/app/admin/actions/settings.actions';
 import { createClient } from '@/utils/supabase/client';
 
+const InputAny = Input as any;
+
 type TabType = 'general' | 'hours' | 'tax' | 'payments' | 'subscription' | 'account';
 
 interface SettingsTabProps {
@@ -540,13 +542,13 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
                     <option value="flat">Flat Amount (₹)</option>
                   </Sel>
                   
-                  <Input
+                  <InputAny
                     label={serviceChargeType === 'flat' ? "Charge Value (₹)" : "Charge Value (%)"}
                     type="number"
                     step="0.01"
                     disabled={serviceChargeType === 'none'}
                     value={serviceChargeValue}
-                    onChange={(e) => setServiceChargeValue(parseFloat(e.target.value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setServiceChargeValue(parseFloat(e.target.value) || 0)}
                   />
                 </div>
               </div>

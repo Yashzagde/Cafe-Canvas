@@ -132,18 +132,29 @@ export interface InputProps {
   type?: string;
   style?: React.CSSProperties;
   step?: string;
+  disabled?: boolean;
 }
 
-export function Input({ label, value, onChange, placeholder, type = "text", style, step }: InputProps) {
+export function Input({ label, value, onChange, placeholder, type = "text", style, step, disabled }: InputProps) {
   const [foc, setFoc] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "5px", ...style }}>
       {label && <label style={{ fontSize: "10px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</label>}
-      <input type={type} value={value} onChange={onChange} placeholder={placeholder} step={step}
+      <input type={type} value={value} onChange={onChange} placeholder={placeholder} step={step} disabled={disabled}
         style={{
-          background: "#ffffff", border: `1px solid ${foc ? T.ind : T.bdr}`, borderRadius: "8px",
-          padding: "8px 11px", color: T.tx, fontSize: "12px", fontFamily: ff, outline: "none", width: "100%",
-          transition: "border-color 0.15s", boxSizing: "border-box"
+          background: disabled ? "#f5f5f4" : "#ffffff",
+          border: `1px solid ${foc ? T.ind : T.bdr}`,
+          borderRadius: "8px",
+          padding: "8px 11px",
+          color: disabled ? T.mu : T.tx,
+          fontSize: "12px",
+          fontFamily: ff,
+          outline: "none",
+          width: "100%",
+          transition: "border-color 0.15s",
+          boxSizing: "border-box",
+          cursor: disabled ? "not-allowed" : "text",
+          opacity: disabled ? 0.7 : 1
         }}
         onFocus={() => setFoc(true)} onBlur={() => setFoc(false)}
       />
