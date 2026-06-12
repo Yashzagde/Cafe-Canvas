@@ -240,12 +240,12 @@ export default function Storefront() {
           name,
           slug,
           public_id,
+          logo_url,
           storefront_config (
             theme_id,
             hero_image_url,
             hero_image_url_2,
             hero_image_url_3,
-            logo_url,
             footer_description,
             footer_hours,
             footer_address,
@@ -285,7 +285,6 @@ export default function Storefront() {
         const heroSubtitle2 = Array.isArray(configData) ? configData[0]?.hero_subtitle_2 : configData?.hero_subtitle_2;
         const heroTitle3 = Array.isArray(configData) ? configData[0]?.hero_title_3 : configData?.hero_title_3;
         const heroSubtitle3 = Array.isArray(configData) ? configData[0]?.hero_subtitle_3 : configData?.hero_subtitle_3;
-        const logoUrl = Array.isArray(configData) ? configData[0]?.logo_url : configData?.logo_url;
         const footerDescription = Array.isArray(configData) ? configData[0]?.footer_description : configData?.footer_description;
         const footerHours = Array.isArray(configData) ? configData[0]?.footer_hours : configData?.footer_hours;
         const footerAddress = Array.isArray(configData) ? configData[0]?.footer_address : configData?.footer_address;
@@ -307,7 +306,7 @@ export default function Storefront() {
           hero_subtitle_2: heroSubtitle2 || null,
           hero_title_3: heroTitle3 || null,
           hero_subtitle_3: heroSubtitle3 || null,
-          logo_url: logoUrl || null,
+          logo_url: tenantData.logo_url || null,
           footer_description: footerDescription || null,
           footer_hours: footerHours || null,
           footer_address: footerAddress || null,

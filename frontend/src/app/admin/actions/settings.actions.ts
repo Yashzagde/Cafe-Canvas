@@ -75,6 +75,7 @@ export async function updateGeneralSettingsAction(updateData: {
   city?: string | null;
   state?: string | null;
   pincode?: string | null;
+  logo_url?: string | null;
 }) {
   const profile = await requirePermission('settings.edit');
   const supabase = await getSupabase();
@@ -82,7 +83,7 @@ export async function updateGeneralSettingsAction(updateData: {
   // Fetch old data for audit log
   const { data: oldData } = await supabase
     .from('tenants')
-    .select('name, phone, address, city, state, pincode')
+    .select('name, phone, address, city, state, pincode, logo_url')
     .eq('id', profile.tenant_id)
     .single();
 
@@ -95,6 +96,7 @@ export async function updateGeneralSettingsAction(updateData: {
       city: updateData.city ?? null,
       state: updateData.state ?? null,
       pincode: updateData.pincode ?? null,
+      logo_url: updateData.logo_url ?? undefined,
     })
     .eq('id', profile.tenant_id)
     .select()

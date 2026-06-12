@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { T, ff, Btn, Input } from '@/components/admin/UIPrimitives';
 import { getSettingsAction, updateGeneralSettingsAction, updateStoreSettingsAction } from '@/app/admin/actions/settings.actions';
+import { createClient } from '@/utils/supabase/client';
 
 type TabType = 'general' | 'hours' | 'tax' | 'payments' | 'subscription' | 'account';
 
@@ -22,12 +23,14 @@ interface SettingsTabProps {
   toast: (msg: string, type?: "success" | "error" | "warning") => void;
   tenantName: string;
   setTenantName: React.Dispatch<React.SetStateAction<string>>;
+  setTenantLogoUrl?: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-export default function SettingsTab({ toast, tenantName, setTenantName }: SettingsTabProps) {
+export default function SettingsTab({ toast, tenantName, setTenantName, setTenantLogoUrl }: SettingsTabProps) {
   const [activeTab, setActiveTab] = useState<TabType>('general');
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const supabase = createClient();
 
   // General tab states
   const [storeName, setStoreName] = useState('');
@@ -37,6 +40,8 @@ export default function SettingsTab({ toast, tenantName, setTenantName }: Settin
   const [storeState, setStoreState] = useState('');
   const [storePincode, setStorePincode] = useState('');
   const [subscriptionTier, setSubscriptionTier] = useState<'Free' | 'Pro' | 'Growth' | 'Enterprise'>('Free');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Tax tab states
   const [cgst, setCgst] = useState(2.5);
@@ -67,6 +72,7 @@ export default function SettingsTab({ toast, tenantName, setTenantName }: Settin
         setStoreState(tenant.state || '');
         setStorePincode(tenant.pincode || '');
         setSubscriptionTier(tenant.subscription_tier || 'Free');
+        setLogoUrl(tenant.logo_url || '');
 
         // Populate store configurations (converting basis points back to percentages)
         if (settings) {
@@ -91,6 +97,43 @@ export default function SettingsTab({ toast, tenantName, setTenantName }: Settin
     loadConfig();
   }, []);
 
+  const handleLogoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `logo-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(filePath);
+
+      setLogoUrl(publicUrl);
+      toast('🎉 Logo uploaded successfully!', 'success');
+    } catch (err: any) {
+      console.error('Logo upload error:', err);
+      toast(err.message || 'Logo upload failed.', 'error');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoUrl('');
+  };
+
   const handleSaveGeneral = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!storeName.trim()) {
@@ -106,10 +149,14 @@ export default function SettingsTab({ toast, tenantName, setTenantName }: Settin
         city: storeCity,
         state: storeState,
         pincode: storePincode,
+        logo_url: logoUrl,
       });
 
       if (updated) {
         setTenantName(updated.name);
+        if (setTenantLogoUrl) {
+          setTenantLogoUrl(updated.logo_url || null);
+        }
         toast('Store details successfully updated!', 'success');
       }
     } catch (err: any) {
@@ -242,6 +289,73 @@ export default function SettingsTab({ toast, tenantName, setTenantName }: Settin
             </div>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* Business Logo Upload */}
+              <div style={{ display: "flex", alignItems: "center", gap: "20px", padding: "16px", background: "#fbfbf9", border: `1px solid ${T.bdr}`, borderRadius: "12px" }}>
+                <div style={{
+                  width: "64px",
+                  height: "64px",
+                  borderRadius: "50%",
+                  background: "#fafaf9",
+                  border: `1px solid ${T.bdr}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  flexShrink: 0
+                }}>
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Store Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <span style={{ fontSize: "20px" }}>🏪</span>
+                  )}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: T.tx }}>Business Logo</span>
+                  <span style={{ fontSize: "9px", color: T.mu, fontWeight: 500 }}>Recommend 256x256 square PNG/JPG image.</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "2px" }}>
+                    <label style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                      background: T.iA(0.12),
+                      color: T.ind,
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: "all 0.15s"
+                    }}>
+                      <span>{uploadingLogo ? 'Uploading...' : 'Upload Logo'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoFileSelect}
+                        disabled={uploadingLogo}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                    {logoUrl && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveLogo}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: T.rose,
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          padding: "4px 8px"
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <Input
                 label="Store Name"
                 value={storeName}

@@ -137,6 +137,7 @@ export default function CafeCanvaAdmin() {
   const [loading, setLoading] = useState(true);
   const [tenantId, setTenantId] = useState("");
   const [tenantName, setTenantName] = useState("My Cafe");
+  const [tenantLogoUrl, setTenantLogoUrl] = useState<string | null>(null);
   const [publicId, setPublicId] = useState("");
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [discounts, setDiscounts] = useState<Discount[]>([]);
@@ -200,7 +201,7 @@ export default function CafeCanvaAdmin() {
         customersResult
       ] = await Promise.all([
         supabase.from('branches').select('*').eq('tenant_id', activeTenantId).eq('active', true),
-        supabase.from('tenants').select('name, public_id').eq('id', activeTenantId).maybeSingle(),
+        supabase.from('tenants').select('name, public_id, logo_url').eq('id', activeTenantId).maybeSingle(),
         supabase.from('menu_categories').select('id, name').eq('tenant_id', activeTenantId),
         supabase.from('menu_items').select('*').eq('tenant_id', activeTenantId).order('sort_order', { ascending: true }),
         supabase.from('bills').select('*').eq('tenant_id', activeTenantId).order('created_at', { ascending: false }).limit(10),
@@ -224,6 +225,7 @@ export default function CafeCanvaAdmin() {
       if (tenData) {
         setTenantName(tenData.name);
         setPublicId(tenData.public_id || "");
+        setTenantLogoUrl(tenData.logo_url || null);
       }
 
       // Extract Menu Categories
@@ -532,8 +534,8 @@ export default function CafeCanvaAdmin() {
               {page === "staff" && <StaffManager branchId={activeBranch?.id || ''} />}
               {page === "attendance" && <AttendanceTab branchId={activeBranch?.id || ''} />}
               {page === "feedback" && <FeedbackTab branchId={activeBranch?.id || ''} />}
-              {page === "storefront" && <StorefrontEditor tenantPublicId={publicId} tenantPrivateId={tenantId} tenantName={tenantName} setTenantName={setTenantName} />}
-              {page === "settings" && <SettingsTab toast={toast} tenantName={tenantName} setTenantName={setTenantName} />}
+              {page === "storefront" && <StorefrontEditor tenantPublicId={publicId} tenantPrivateId={tenantId} tenantName={tenantName} setTenantName={setTenantName} tenantLogoUrl={tenantLogoUrl} />}
+              {page === "settings" && <SettingsTab toast={toast} tenantName={tenantName} setTenantName={setTenantName} setTenantLogoUrl={setTenantLogoUrl} />}
               {page === "audit" && <AuditLogViewer />}
               {page === "activity" && <ActivityFeedTab />}
             </>

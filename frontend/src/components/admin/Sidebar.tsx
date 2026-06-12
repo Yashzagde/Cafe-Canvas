@@ -29,13 +29,9 @@ const NAV = [
   { id: "customers", label: "Customers", icon: "👥" },
   { id: "discounts", label: "Discounts", icon: "🏷" },
   { id: "analytics", label: "Analytics", icon: "📈" },
-  { id: "staff", label: "Staffing", icon: "👥" },
-  { id: "attendance", label: "Attendance", icon: "📅" },
   { id: "feedback", label: "Guest Feedbacks", icon: "💬" },
   { id: "storefront", label: "Storefront", icon: "🏪" },
   { id: "audit", label: "Audit Logs", icon: "📋" },
-  { id: "activity", label: "Activity Feed", icon: "⚡" },
-  { id: "settings", label: "Settings", icon: "🛠️" },
 ];
 
 export default function Sidebar({
@@ -177,7 +173,7 @@ export default function Sidebar({
                 }}
               >
                 <span>🛠️</span>
-                <span>Store Settings</span>
+                <span>Settings</span>
               </button>
               <button
                 onClick={() => {
@@ -202,11 +198,11 @@ export default function Sidebar({
                 }}
               >
                 <span>👥</span>
-                <span>Staff Management</span>
+                <span>Staffing & Attendance</span>
               </button>
               <button
                 onClick={() => {
-                  setPage("analytics");
+                  setPage("activity");
                   setMenuOpen(false);
                 }}
                 style={{
@@ -216,8 +212,8 @@ export default function Sidebar({
                   padding: "8px 10px",
                   borderRadius: "6px",
                   border: "none",
-                  background: page === "analytics" ? T.iA(0.12) : "transparent",
-                  color: page === "analytics" ? T.ind : T.mu,
+                  background: page === "activity" ? T.iA(0.12) : "transparent",
+                  color: page === "activity" ? T.ind : T.mu,
                   fontSize: "11px",
                   fontWeight: 700,
                   cursor: "pointer",
@@ -226,8 +222,8 @@ export default function Sidebar({
                   fontFamily: ff
                 }}
               >
-                <span>📈</span>
-                <span>Analytics Feed</span>
+                <span>⚡</span>
+                <span>Activity Feed</span>
               </button>
             </div>
           )}

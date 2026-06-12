@@ -459,12 +459,14 @@ export default function StorefrontEditor({
   tenantPublicId, 
   tenantPrivateId,
   tenantName,
-  setTenantName
+  setTenantName,
+  tenantLogoUrl
 }: { 
   tenantPublicId: string; 
   tenantPrivateId: string;
   tenantName: string;
   setTenantName: React.Dispatch<React.SetStateAction<string>>;
+  tenantLogoUrl?: string | null;
 }) {
   const { config, setConfig, updateField, isDirty, clearDirty } = useStorefrontEditorStore();
   const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'social' | 'connection' | 'footer'>('branding');
@@ -1002,60 +1004,7 @@ export default function StorefrontEditor({
                 </div>
               </div>
 
-              {/* Logo Upload Section */}
-              <div className="space-y-3 pt-4 border-t border-[#e2e8f0]/40">
-                <label className="text-xs font-black text-[#1e293b]/70 tracking-wider uppercase block">
-                  Business Logo
-                </label>
-                <p className="text-[10px] text-[#1e293b]/40 -mt-1">Upload your logo. You can crop it to a square after selecting.</p>
 
-                {config.logo_url ? (
-                  <div className="p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-[#d97706]/20 shrink-0 bg-white flex items-center justify-center p-1">
-                      <img src={config.logo_url} alt="Logo Preview" className="w-full h-full object-contain" />
-                    </div>
-                    <div className="flex-1 space-y-1.5">
-                      <p className="text-xs font-bold text-[#1e293b]/80">Logo uploaded</p>
-                      <div className="flex gap-2">
-                        <label className="text-[10px] font-extrabold text-[#d97706] hover:underline flex items-center gap-1 cursor-pointer">
-                          <Crop size={11} />
-                          Replace & Crop
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleLogoFileSelect}
-                            className="hidden"
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImageForField('logo_url')}
-                          className="text-[10px] font-extrabold text-red-500 hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <Trash2 size={11} />
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-6 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoFileSelect}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <div className="space-y-2 flex flex-col items-center justify-center">
-                      <ImageIcon className="w-8 h-8 text-[#1e293b]/30" />
-                      <div>
-                        <p className="text-xs font-bold text-[#1e293b]/70">Click to upload logo</p>
-                        <p className="text-[10px] text-[#1e293b]/40 mt-1">PNG, JPG, SVG (Max 5MB). Will be cropped to square.</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
             </>
           )}
 
@@ -1518,8 +1467,8 @@ export default function StorefrontEditor({
               {/* Nav Header */}
               <div className="px-4 py-3 flex items-center justify-between border-b border-border-color/30 bg-card-bg/80 relative z-10">
                 <div className="flex items-center gap-2">
-                  {config.logo_url && (
-                    <img src={config.logo_url} alt="Logo" className="w-6 h-6 rounded-md object-contain bg-white/80" />
+                  {tenantLogoUrl && (
+                    <img src={tenantLogoUrl} alt="Logo" className="w-6 h-6 rounded-md object-contain bg-white/80" />
                   )}
                   <span className="font-extrabold text-xs font-display text-foreground">
                     {storeName || 'CafeCanvas'}
