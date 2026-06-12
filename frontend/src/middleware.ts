@@ -23,7 +23,8 @@ export async function middleware(request: NextRequest) {
   // Parse subdomain (e.g. brewhouse.cafecanvas.bar -> brewhouse)
   if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
     const parts = host.split('.')
-    if (parts.length > 2) {
+    const isPlatformDomain = host.includes('run.app') || host.includes('vercel.app') || host.includes('supabase.co')
+    if (parts.length > 2 && !isPlatformDomain) {
       tenantSlug = parts[0]
     }
   }
