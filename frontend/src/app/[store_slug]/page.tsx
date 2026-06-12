@@ -884,94 +884,12 @@ export default function Storefront() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full relative bg-[#0C0A09] text-stone-100 flex flex-col justify-center items-center overflow-hidden font-sans">
-        {/* Soft elegant background glows */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.08)_0%,transparent_65%)] z-0 pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none z-0 animate-pulse" style={{ animationDuration: '4s' }} />
-
-        {/* Glassmorphic Loader Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="z-10 flex flex-col items-center p-8 rounded-[2.5rem] bg-stone-900/60 backdrop-blur-md border border-white/5 shadow-[0_32px_64px_rgba(0,0,0,0.6)] max-w-xs w-full text-center gap-6"
-        >
-          {/* Animated Spinner & Cup */}
-          <div className="relative w-24 h-24 flex items-center justify-center">
-            {/* Outer Rotating Segmented Ring */}
-            <motion.div 
-              className="absolute inset-0 rounded-full border border-stone-800/40"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 10, ease: "linear", repeat: Infinity }}
-            />
-            <motion.div 
-              className="absolute inset-0 rounded-full border-t-2 border-r-2 border-amber-500/80 shadow-[0_0_20px_rgba(245,158,11,0.35)]"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1.6, ease: "linear", repeat: Infinity }}
-            />
-            
-            {/* Floating Logo Box */}
-            <motion.div
-              animate={{ 
-                y: [0, -5, 0],
-                scale: [1, 1.02, 1]
-              }}
-              transition={{ 
-                duration: 2.2, 
-                ease: "easeInOut", 
-                repeat: Infinity 
-              }}
-              className="w-14 h-14 bg-gradient-to-br from-amber-500/10 to-amber-500/25 rounded-2xl border border-amber-500/25 flex items-center justify-center text-amber-500 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
-            >
-              <Coffee className="w-7 h-7 stroke-[1.5]" />
-            </motion.div>
-            
-            {/* Subtle sparkle effect */}
-            <motion.div
-              className="absolute top-2 right-2 text-amber-400/90"
-              animate={{ opacity: [0.3, 1, 0.3], scale: [0.85, 1.15, 0.85] }}
-              transition={{ duration: 1.8, repeat: Infinity }}
-            >
-              <Sparkles className="w-4 h-4" />
-            </motion.div>
-          </div>
-
-          {/* Texts Section */}
-          <div className="space-y-2.5 w-full">
-            <span className="text-[10px] tracking-[0.3em] uppercase font-semibold text-stone-500 block">
-              Cafe Canvas
-            </span>
-            <div className="h-6 flex items-center justify-center overflow-hidden">
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={loadingMsgIndex}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.35, ease: "easeInOut" }}
-                  className="text-stone-300 text-[13px] font-medium tracking-wide"
-                >
-                  {LOADING_MESSAGES[loadingMsgIndex]}
-                </motion.span>
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Loading Progress Line */}
-          <div className="w-32 h-[3px] bg-stone-800 rounded-full overflow-hidden relative">
-            <motion.div 
-              className="absolute top-0 left-0 h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full"
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ 
-                duration: 2.5, 
-                ease: "easeInOut",
-                repeat: Infinity,
-                repeatType: "loop"
-              }}
-            />
-          </div>
-        </motion.div>
+      <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center gap-4">
+        {/* Modern standard circular spinner */}
+        <div className="w-10 h-10 rounded-full border-3 border-stone-200 dark:border-stone-800 border-t-brand animate-spin" />
+        <span className="text-[11px] font-extrabold tracking-widest text-foreground/60 uppercase">
+          Loading...
+        </span>
       </div>
     );
   }
