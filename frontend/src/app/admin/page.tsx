@@ -463,27 +463,70 @@ export default function CafeCanvaAdmin() {
       // Stale-while-revalidate: Load from local cache immediately so UI is instant
       const loadFromOfflineCache = async () => {
         try {
-          const cachedMenu = await getCachedMenuItems();
-          const cachedCats = await getCachedCategories();
-          if (cachedMenu.length > 0) {
-            // Map the cached items back to MenuItem format
-            const catsMap = new Map(cachedCats.map(c => [c.id, c.name]));
-            const mappedMenu: MenuItem[] = cachedMenu.map(i => ({
-              id: i.id,
-              name: i.name,
-              price: (i.price ?? i.price_paise ?? 0) / 100,
-              cat: catsMap.get(i.category_id || "") || "Uncategorized",
-              status: i.is_available ? 'available' : 'unavailable',
-              desc: i.description || "",
-              image_url: i.image_url || null
-            }));
-            setMenu(mappedMenu);
+          const cachedUser = localStorage.getItem('cc_cached_user');
+          if (cachedUser) {
+            const parsed = JSON.parse(cachedUser);
+            const activeTenantId = parsed.profile?.tenant_id;
+            const currentBranchId = activeBranch?.id || '';
+            
+            if (activeTenantId) {
+              const cachedTenant = localStorage.getItem(`cc_tenant_${activeTenantId}`);
+              if (cachedTenant) {
+                const tenData = JSON.parse(cachedTenant);
+                setTenantName(tenData.name);
+                setPublicId(tenData.public_id || "");
+                setTenantSlug(tenData.slug || "");
+                setTenantLogoUrl(tenData.logo_url || null);
+              }
+            }
+
+            const cachedMenu = await getCachedMenuItems();
+            const cachedCats = await getCachedCategories();
+            if (cachedMenu.length > 0) {
+              const catsMap = new Map(cachedCats.map(c => [c.id, c.name]));
+              const mappedMenu: MenuItem[] = cachedMenu.map(i => ({
+                id: i.id,
+                name: i.name,
+                price: (i.price ?? i.price_paise ?? 0) / 100,
+                cat: catsMap.get(i.category_id || "") || "Uncategorized",
+                status: i.is_available ? 'available' : 'unavailable',
+                desc: i.description || "",
+                image_url: i.image_url || null
+              }));
+              setMenu(mappedMenu);
+            }
+
+            if (currentBranchId) {
+              const cachedTables = localStorage.getItem(`cc_tables_${currentBranchId}`);
+              if (cachedTables) {
+                const tablesData = JSON.parse(cachedTables);
+                const mappedTables: Table[] = tablesData.map((t: any) => ({
+                  id: t.id,
+                  name: t.name,
+                  capacity: t.capacity,
+                  section: t.section,
+                  status: t.status as any,
+                  floor_x: t.floor_x,
+                  floor_y: t.floor_y,
+                  qr_version: t.qr_version,
+                  table_number: t.table_number,
+                  location_id: t.location_id
+                }));
+                setTables(mappedTables);
+              }
+            }
+
+            if (cachedMenu.length > 0) {
+              setLoading(false);
+            }
           }
         } catch (err) {
           console.error("Failed to load from offline cache:", err);
         }
       };
-      loadFromOfflineCache();
+      loadFromOfflineCache().then(() => {
+        fetchDbData();
+      });
 
       return () => {
         window.removeEventListener('online', handleOnline);
