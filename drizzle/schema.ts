@@ -111,6 +111,20 @@ export const storefrontConfig = pgTable('storefront_config', {
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
+export const storefrontBlogs = pgTable('storefront_blogs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  title: text('title').notNull(),
+  excerpt: text('excerpt').notNull(),
+  content: text('content').notNull(),
+  imageUrl: text('image_url'),
+  author: text('author').default('Chef Barista').notNull(),
+  tags: text('tags').array().default([]).notNull(),
+  publishedAt: timestamp('published_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
 // ---------- Menu Management ----------
 
 export const menuCategories = pgTable('menu_categories', {

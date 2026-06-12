@@ -24,6 +24,19 @@ interface TableQRManagerProps {
 
 export default function TableQRManager({ branchId }: TableQRManagerProps) {
   const supabase = createClient();
+  const getTableUrl = (tableName: string) => {
+    const host = typeof window !== 'undefined' ? window.location.host : 'cafecanvas.bar';
+    const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
+    const storefrontSlug = branding?.slug || 'store';
+    const tableSlug = tableName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    
+    const parts = host.split('.');
+    const isPlatformDomain = host.includes('run.app') || host.includes('vercel.app') || host.includes('supabase.co');
+    if (parts.length > 2 && !isPlatformDomain && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+      return `${protocol}//${host}/${tableSlug}`;
+    }
+    return `${protocol}//${host}/${storefrontSlug}/${tableSlug}`;
+  };
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'floor' | 'list'>('floor');
@@ -113,7 +126,7 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
       const storefrontSlug = branding?.slug || 'store';
 
       for (const table of tables) {
-        const tableUrl = `${protocol}//${host}/${storefrontSlug}?table=${table.id}`;
+        const tableUrl = getTableUrl(table.name);
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tableUrl)}`;
         try {
           const res = await fetch(qrUrl);
@@ -296,10 +309,7 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
 
   // Shared component renderer for canvas/print cards
   const renderQRCardContent = (table: Table) => {
-    const host = typeof window !== 'undefined' ? window.location.host : 'cafecanvas.bar';
-    const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
-    const storefrontSlug = branding?.slug || 'store';
-    const tableUrl = `${protocol}//${host}/${storefrontSlug}?table=${table.id}`;
+    const tableUrl = getTableUrl(table.name);
 
     const qrSrc = qrBase64s[table.id] || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
       tableUrl

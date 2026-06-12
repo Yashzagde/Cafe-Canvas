@@ -614,6 +614,36 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['storefront_config']['Insert']>;
         Relationships: [];
       };
+      storefront_blogs: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          title: string;
+          excerpt: string;
+          content: string;
+          image_url: string | null;
+          author: string;
+          tags: string[];
+          published_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          title: string;
+          excerpt: string;
+          content: string;
+          image_url?: string | null;
+          author?: string;
+          tags?: string[];
+          published_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['storefront_blogs']['Insert']>;
+        Relationships: [];
+      };
       store_settings: {
         Row: {
           id: string;
