@@ -66,8 +66,8 @@ export async function createBlogAction(
     branchId: profile.branch_id || undefined,
     actorId: profile.id,
     actorRole: profile.role,
-    action: 'blog.create',
-    entityType: 'storefront_blogs',
+    action: 'storefront.update',
+    entityType: 'storefront',
     entityId: data.id,
     newData: data as Record<string, unknown>
   });
@@ -121,8 +121,8 @@ export async function updateBlogAction(
     branchId: profile.branch_id || undefined,
     actorId: profile.id,
     actorRole: profile.role,
-    action: 'blog.update',
-    entityType: 'storefront_blogs',
+    action: 'storefront.update',
+    entityType: 'storefront',
     entityId: id,
     oldData: oldData as Record<string, unknown>,
     newData: newData as Record<string, unknown>
@@ -167,8 +167,8 @@ export async function deleteBlogAction(id: string) {
     branchId: profile.branch_id || undefined,
     actorId: profile.id,
     actorRole: profile.role,
-    action: 'blog.delete',
-    entityType: 'storefront_blogs',
+    action: 'storefront.update',
+    entityType: 'storefront',
     entityId: id,
     oldData: oldData as Record<string, unknown>
   });

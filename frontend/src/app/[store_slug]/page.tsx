@@ -191,6 +191,7 @@ export default function Storefront() {
   const [showReviews, setShowReviews] = useState<boolean>(true);
   const [showInstagram, setShowInstagram] = useState<boolean>(true);
   const [showStory, setShowStory] = useState<boolean>(true);
+  const [blogs, setBlogs] = useState<any[]>([]);
 
 
   // Loyalty & OTP Login states
@@ -446,6 +447,17 @@ export default function Storefront() {
 
         if (!activeError) {
           setActiveTablesCount(activeCount || 0);
+        }
+
+        // 6. Fetch storefront blog posts
+        const { data: blogData, error: blogError } = await supabase
+          .from('storefront_blogs')
+          .select('*')
+          .eq('tenant_id', tenantData.id)
+          .order('published_at', { ascending: false });
+
+        if (!blogError && blogData) {
+          setBlogs(blogData);
         }
 
       } catch (err: any) {
@@ -1582,12 +1594,19 @@ export default function Storefront() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[
+                {(blogs && blogs.length > 0 ? blogs.map((b: any) => ({
+                  title: b.title,
+                  excerpt: b.excerpt,
+                  date: new Date(b.published_at || b.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+                  author: b.author,
+                  tags: b.tags || [],
+                  image: b.image_url || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80'
+                })) : [
                   { title: 'The Science of Perfect Coffee Extraction', excerpt: 'Discover brew ratios, temperatures, and water quality secrets from our Head Barista.', date: '05 Jun 2026', author: 'Vikram Barista', tags: ['Coffee', 'Brewing'], image: 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=400&q=80' },
                   { title: 'Crafting Sourdough: Sourdough Bread Demystified', excerpt: 'Why long fermentation makes bread healthier, tastier, and easier to digest.', date: '28 May 2026', author: 'Chef Maria', tags: ['Baking', 'Sourdough'], image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=400&q=80' },
                   { title: 'Behind The Scenes: Sourcing Single Origin Tea Leaves', excerpt: 'A journey into high-altitude organic tea farms of Darjeeling and Assam.', date: '12 May 2026', author: 'Sourcing Team', tags: ['Tea', 'Sourcing'], image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=400&q=80' },
                   { title: 'Sweets & Celebrations: Regional Dessert Crafts', excerpt: 'The cultural stories behind Gulab Jamun, Puran Poli and Shahi Tukda.', date: '01 May 2026', author: 'Patissier Chef', tags: ['Dessert', 'Culture'], image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80' }
-                ].map((blog, i) => (
+                ]).map((blog: any, i: number) => (
                   <div key={i} className={`${cardClass} overflow-hidden flex flex-col justify-between`}>
                     <div className="h-44 relative bg-stone-100">
                       <img src={blog.image} alt={blog.title} className="w-full h-full object-cover" />
@@ -1595,7 +1614,7 @@ export default function Storefront() {
                     <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                       <div className="space-y-1.5">
                         <div className="flex gap-1.5">
-                          {blog.tags.map(t => (
+                          {blog.tags.map((t: string) => (
                             <span key={t} className="text-[8px] font-black uppercase text-brand tracking-widest">{t}</span>
                           ))}
                         </div>
