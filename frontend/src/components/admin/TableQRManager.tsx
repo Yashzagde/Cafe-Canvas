@@ -33,7 +33,7 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
   const [section, setSection] = useState('Indoor');
 
   // Exporter & branding state
-  const [branding, setBranding] = useState<{ name: string; logoUrl: string | null; logoBase64: string | null } | null>(null);
+  const [branding, setBranding] = useState<{ name: string; slug: string; logoUrl: string | null; logoBase64: string | null } | null>(null);
   const [qrBase64s, setQrBase64s] = useState<Record<string, string>>({});
   const [selectedTableForQR, setSelectedTableForQR] = useState<Table | null>(null);
   const [showBulkQRModal, setShowBulkQRModal] = useState(false);
@@ -80,7 +80,7 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
         if (branch?.tenant_id) {
           const { data: tenant } = await supabase
             .from('tenants')
-            .select('name, logo_url')
+            .select('name, slug, logo_url')
             .eq('id', branch.tenant_id)
             .single();
             
@@ -91,6 +91,7 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
             }
             setBranding({
               name: tenant.name || 'CafeCanvas',
+              slug: tenant.slug || '',
               logoUrl: tenant.logo_url,
               logoBase64
             });
@@ -107,8 +108,12 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
   useEffect(() => {
     const loadBase64Qrs = async () => {
       const newBase64s: Record<string, string> = {};
+      const host = typeof window !== 'undefined' ? window.location.host : 'cafecanvas.bar';
+      const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
+      const storefrontSlug = branding?.slug || 'store';
+
       for (const table of tables) {
-        const tableUrl = `https://cafecanvas.bar/table/${table.id}?v=${table.qr_version}`;
+        const tableUrl = `${protocol}//${host}/${storefrontSlug}?table=${table.id}`;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tableUrl)}`;
         try {
           const res = await fetch(qrUrl);
@@ -129,10 +134,10 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
       setQrBase64s(prev => ({ ...prev, ...newBase64s }));
     };
 
-    if (tables.length > 0) {
+    if (tables.length > 0 && branding?.slug) {
       loadBase64Qrs();
     }
-  }, [tables]);
+  }, [tables, branding]);
 
   // Download QR Card as high-resolution PNG
   const downloadQRCard = async (table: Table) => {
@@ -291,8 +296,13 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
 
   // Shared component renderer for canvas/print cards
   const renderQRCardContent = (table: Table) => {
+    const host = typeof window !== 'undefined' ? window.location.host : 'cafecanvas.bar';
+    const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
+    const storefrontSlug = branding?.slug || 'store';
+    const tableUrl = `${protocol}//${host}/${storefrontSlug}?table=${table.id}`;
+
     const qrSrc = qrBase64s[table.id] || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-      `https://cafecanvas.bar/table/${table.id}?v=${table.qr_version}`
+      tableUrl
     )}`;
 
     return (

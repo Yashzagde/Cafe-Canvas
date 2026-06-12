@@ -359,8 +359,23 @@ export default function Storefront() {
 
         if (tableError) throw tableError;
         setTables(tableData || []);
-        if (tableData && tableData.length > 0) {
-          setSelectedTableId(tableData[0].id);
+        
+        let initialTableId = '';
+        if (typeof window !== 'undefined') {
+          const searchParams = new URLSearchParams(window.location.search);
+          const urlTableId = searchParams.get('table') || searchParams.get('table_id');
+          if (urlTableId && tableData?.some(t => t.id === urlTableId)) {
+            initialTableId = urlTableId;
+            setActiveTab('dine-in');
+          }
+        }
+        
+        if (!initialTableId && tableData && tableData.length > 0) {
+          initialTableId = tableData[0].id;
+        }
+        
+        if (initialTableId) {
+          setSelectedTableId(initialTableId);
         }
 
         // 5. Fetch active table sessions count
