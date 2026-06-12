@@ -69,6 +69,7 @@ Deno.serve(async (req) => {
       .insert({
         tenant_id: tenantId,
         location_id: branchId,
+        table_id: tableId,
         order_ids: activeOrders.map(o => o.id),
         table_number: tableRecord?.table_number || null,
         customer_name: customerName,

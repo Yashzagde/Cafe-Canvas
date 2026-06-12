@@ -690,6 +690,10 @@ export interface Database {
           session_end: string | null;
           notes: string | null;
           created_at: string;
+          check_in_at: string | null;
+          check_out_at: string | null;
+          total_revenue: number | null;
+          bill_id: string | null;
         };
         Insert: {
           id?: string;
@@ -704,6 +708,10 @@ export interface Database {
           session_end?: string | null;
           notes?: string | null;
           created_at?: string;
+          check_in_at?: string | null;
+          check_out_at?: string | null;
+          total_revenue?: number | null;
+          bill_id?: string | null;
         };
         Update: Partial<Database['public']['Tables']['table_sessions']['Insert']>;
         Relationships: [];

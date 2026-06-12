@@ -22,14 +22,14 @@ Deno.serve(async (req) => {
     const twoMinsAgo = new Date(Date.now() - 120000).toISOString()
     const { data: recentCall } = await supabase
       .from('staff_calls')
-      .select('id, called_at')
+      .select('id, created_at')
       .eq('table_id', tableId)
-      .gte('called_at', twoMinsAgo)
+      .gte('created_at', twoMinsAgo)
       .limit(1)
       .maybeSingle()
 
     if (recentCall) {
-      const remaining = 120000 - (Date.now() - new Date(recentCall.called_at).getTime())
+      const remaining = 120000 - (Date.now() - new Date(recentCall.created_at).getTime())
       return Response.json(
         { cooldown: true, remainingSeconds: Math.ceil(remaining / 1000) },
         { headers: corsHeaders }
