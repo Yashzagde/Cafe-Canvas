@@ -28,6 +28,7 @@ export type AuditAction =
   | 'table.qr_regenerate' | 'table.floor_rearrange'
   // Storefront
   | 'storefront.update' | 'storefront.theme_change' | 'storefront.publish' | 'storefront.rollback'
+  | 'settings.update'
   // Auth
   | 'auth.login' | 'auth.logout' | 'auth.password_change'
   // Inventory
@@ -38,7 +39,7 @@ export type AuditEntityType =
   | 'order' | 'bill' | 'order_item'
   | 'staff' | 'shift' | 'attendance' | 'leave'
   | 'table' | 'storefront' | 'inventory' | 'storefront_publish_history'
-  | 'auth'
+  | 'auth' | 'settings'
 
 export interface AuditEventParams {
   tenantId:   string

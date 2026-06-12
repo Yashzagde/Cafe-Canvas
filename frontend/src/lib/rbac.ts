@@ -78,7 +78,7 @@ const PERMISSIONS: Record<StaffRole, ReadonlySet<Permission>> = {
     'performance.view_own', 'performance.view_all',
     'inventory.view', 'inventory.edit',
     'analytics.view',
-    'settings.view',
+    'settings.view', 'settings.edit',
   ]),
 
   cashier: new Set<Permission>([
