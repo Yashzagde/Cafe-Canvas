@@ -47,13 +47,20 @@ export default function LoginPage() {
         // Fetch role from custom users table/view
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('role, tenant_id, branch_id')
+          .select('role, tenant_id, branch_id, active')
           .eq('id', data.user.id)
           .single();
           
         if (userError) {
           console.error('Error fetching user role:', userError);
           setError('User profile not found. Please contact your system administrator.');
+          setLoading(false);
+          return;
+        }
+
+        if (!userData.active) {
+          await supabase.auth.signOut();
+          setError('Access Denied. Your account has been suspended or deactivated.');
           setLoading(false);
           return;
         }

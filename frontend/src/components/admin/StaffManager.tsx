@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { 
   getStaffListAction, 
   createStaffAction, 
-  reviewLeaveAction 
+  reviewLeaveAction,
+  toggleStaffStatusAction,
+  updateStaffPinAction
 } from '@/app/admin/actions/staff.actions';
 import { createClient } from '@/utils/supabase/client';
 import { useToast } from '@/components/admin/UIPrimitives';
-import { UserCheck, Calendar, Plus, X, AlertTriangle } from 'lucide-react';
+import { UserCheck, Calendar, Plus, X, AlertTriangle, Eye, EyeOff, Edit3, Lock } from 'lucide-react';
 
 interface StaffProfile {
   id: string;
@@ -16,6 +18,7 @@ interface StaffProfile {
   role: 'owner' | 'manager' | 'cashier' | 'kitchen' | 'staff';
   phone: string | null;
   is_active: boolean;
+  pin_hash?: string | null;
 }
 
 interface LeaveRequest {
@@ -43,6 +46,58 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
   const [activeSubTab, setActiveSubTab] = useState<'roster' | 'leaves'>('roster');
   const [showAddForm, setShowAddForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const [visiblePins, setVisiblePins] = useState<Record<string, boolean>>({});
+  const [editingPinStaff, setEditingPinStaff] = useState<StaffProfile | null>(null);
+  const [newPinCode, setNewPinCode] = useState('');
+  const [updatingPin, setUpdatingPin] = useState(false);
+
+  const togglePinVisibility = (id: string) => {
+    setVisiblePins(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleToggleStatus = async (staffId: string, currentActive: boolean) => {
+    if (!confirm(`Are you sure you want to ${currentActive ? 'suspend' : 'activate'} this staff member?`)) {
+      return;
+    }
+    try {
+      const res = await toggleStaffStatusAction(staffId, !currentActive);
+      if (res.success) {
+        toast(`Account status updated!`, 'success');
+        loadData();
+      }
+    } catch (err: any) {
+      toast(err.message || 'Failed to update status.', 'error');
+    }
+  };
+
+  const handleOpenChangePinModal = (profile: StaffProfile) => {
+    setEditingPinStaff(profile);
+    setNewPinCode('');
+  };
+
+  const handleUpdatePin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPinStaff) return;
+    if (!/^\d{4}$/.test(newPinCode)) {
+      toast('PIN must be exactly 4 digits.', 'error');
+      return;
+    }
+    setUpdatingPin(true);
+    try {
+      const res = await updateStaffPinAction(editingPinStaff.id, newPinCode);
+      if (res.success) {
+        toast(`PIN updated successfully!`, 'success');
+        setEditingPinStaff(null);
+        setNewPinCode('');
+        loadData();
+      }
+    } catch (err: any) {
+      toast(err.message || 'Failed to update PIN.', 'error');
+    } finally {
+      setUpdatingPin(false);
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -327,11 +382,49 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
                     <span className="text-[10px] text-[#d97706] font-bold uppercase tracking-wider">{s.role}</span>
                   </div>
                 </div>
-                <div className="border-t border-[#e2e8f0]/40 pt-3 flex justify-between items-center text-xs text-[#1e293b]/50">
-                  <span>Phone: {s.phone || '—'}</span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${s.is_active ? 'bg-green-500/15 text-green-600' : 'bg-red-500/15 text-red-600'}`}>
-                    {s.is_active ? 'Active' : 'Suspended'}
-                  </span>
+                 <div className="flex flex-col gap-2.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[#1e293b]/50">Phone: {s.phone || '—'}</span>
+                    <button
+                      onClick={() => handleToggleStatus(s.id, s.is_active)}
+                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer hover:opacity-85 transition-all ${
+                        s.is_active 
+                          ? 'bg-green-500/15 text-green-600 border border-green-500/20' 
+                          : 'bg-red-500/15 text-red-600 border border-red-500/20'
+                      }`}
+                      title="Click to toggle account status"
+                    >
+                      {s.is_active ? 'Active' : 'Suspended'}
+                    </button>
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-xs border-t border-[#e2e8f0]/40 pt-2.5">
+                    <span className="text-[#1e293b]/50 flex items-center gap-1">
+                      <Lock size={12} className="text-[#ca8a04]" />
+                      <span>POS PIN:</span>
+                      <strong className="font-mono text-[#1e293b] font-bold text-sm tracking-widest">
+                        {visiblePins[s.id] 
+                          ? (s.pin_hash || '1111') 
+                          : '••••'}
+                      </strong>
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => togglePinVisibility(s.id)}
+                        className="p-1 text-[#1e293b]/40 hover:text-[#d97706] cursor-pointer"
+                        title={visiblePins[s.id] ? "Hide PIN" : "Show PIN"}
+                      >
+                        {visiblePins[s.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                      <button
+                        onClick={() => handleOpenChangePinModal(s)}
+                        className="p-1 text-[#1e293b]/40 hover:text-[#d97706] cursor-pointer"
+                        title="Change PIN"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -402,8 +495,62 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
         </div>
       )}
 
+      {/* Change PIN Modal */}
+      {editingPinStaff && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-6 shadow-2xl space-y-4 max-w-sm w-full animate-fade-in text-xs font-semibold">
+            <div className="flex items-center justify-between border-b border-[#e2e8f0]/50 pb-3 text-slate-800">
+              <h3 className="font-extrabold text-sm text-[#1e293b] flex items-center gap-1.5">
+                <Lock size={16} className="text-[#d97706]" />
+                <span>Update POS PIN: {editingPinStaff.full_name}</span>
+              </h3>
+              <button 
+                onClick={() => setEditingPinStaff(null)}
+                className="text-[#1e293b]/40 hover:text-[#1e293b]/70 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdatePin} className="space-y-4 text-slate-800">
+              <div>
+                <label className="block text-[#1e293b]/60 mb-1">New 4-Digit PIN Code</label>
+                <input 
+                  type="password" 
+                  required
+                  maxLength={4}
+                  pattern="[0-9]{4}"
+                  placeholder="e.g. 5555"
+                  value={newPinCode}
+                  onChange={e => setNewPinCode(e.target.value)}
+                  className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2.5 outline-none focus:border-[#d97706] text-[#1e293b] text-sm font-bold tracking-widest text-center transition-all"
+                />
+                <p className="text-[10px] text-[#1e293b]/40 mt-1">This PIN will be used for offline screen lock and terminal login.</p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingPinStaff(null)}
+                  className="px-4 py-2 border border-[#e2e8f0] text-[#1e293b]/60 hover:bg-[#f1f5f9] rounded-xl cursor-pointer font-bold transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingPin}
+                  className="px-5 py-2 bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl cursor-pointer font-bold transition-all disabled:opacity-50"
+                >
+                  {updatingPin ? 'Updating...' : 'Save PIN'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification Container */}
-      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-2xl text-xs font-bold shadow-lg">{toastItem.msg}</div>}
+      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-2xl text-xs font-bold shadow-lg text-slate-800">{toastItem.msg}</div>}
     </div>
   );
 }

@@ -414,7 +414,7 @@ export async function createStaffAction(params: {
     email,
     phone: params.phone,
     role: params.role,
-    pin_hash: pinHash,
+    pin_hash: params.pin,
     active: true,
   });
 
@@ -463,3 +463,101 @@ export async function createStaffAction(params: {
 
   return { success: true };
 }
+
+/**
+ * Toggle the status of a staff member's account (Active vs Suspended)
+ */
+export async function toggleStaffStatusAction(staffId: string, active: boolean) {
+  const profile = await requirePermission('staff.deactivate');
+  
+  const admin = createAdminClient();
+  if (!admin) {
+    throw new Error('Service role key is not configured.');
+  }
+
+  // Update users view directly so it triggers public.handle_users_view_update()
+  const { data, error } = await admin
+    .from('users')
+    .update({ active: active })
+    .eq('id', staffId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Log Audit Event
+  await logAuditEvent({
+    tenantId: profile.tenant_id,
+    branchId: data.branch_id,
+    actorId: profile.id,
+    actorRole: profile.role,
+    action: active ? 'staff.update' : 'staff.deactivate',
+    entityType: 'staff',
+    entityId: staffId,
+    newData: {
+      id: staffId,
+      name: data.name,
+      active,
+    },
+  });
+
+  return { success: true };
+}
+
+/**
+ * Update a staff member's login PIN code and auth password
+ */
+export async function updateStaffPinAction(staffId: string, newPin: string) {
+  const profile = await requirePermission('staff.update');
+
+  if (!/^\d{4}$/.test(newPin)) {
+    throw new Error('PIN must be exactly a 4-digit number.');
+  }
+  
+  const admin = createAdminClient();
+  if (!admin) {
+    throw new Error('Service role key is not configured.');
+  }
+
+  // Update users view directly so it triggers public.handle_users_view_update()
+  const { data, error } = await admin
+    .from('users')
+    .update({ pin_hash: newPin })
+    .eq('id', staffId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Also update the Supabase Auth user password so they stay synchronized
+  const newPassword = `Cc_${newPin}_reset`;
+  const { error: authError } = await admin.auth.admin.updateUserById(staffId, {
+    password: newPassword
+  });
+
+  if (authError) {
+    throw new Error(authError.message);
+  }
+
+  // Log Audit Event
+  await logAuditEvent({
+    tenantId: profile.tenant_id,
+    branchId: data.branch_id,
+    actorId: profile.id,
+    actorRole: profile.role,
+    action: 'staff.update',
+    entityType: 'staff',
+    entityId: staffId,
+    newData: {
+      id: staffId,
+      name: data.name,
+    },
+  });
+
+  return { success: true };
+}
+
