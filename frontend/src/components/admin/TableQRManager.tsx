@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { getTablesAction, createTableAction, updateTableAction, deleteTableAction, regenerateTableQRAction, rearrangeTablesAction } from '@/app/admin/actions/table.actions';
 import { useToast } from '@/components/admin/UIPrimitives';
-import { Layers, Plus, RefreshCw, Trash2, Printer, MapPin, Move } from 'lucide-react';
+import { Layers, Plus, RefreshCw, Trash2, Printer, MapPin, Move, QrCode, X, Download } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
+import html2canvas from 'html2canvas';
 
 interface Table {
   id: string;
@@ -21,6 +23,7 @@ interface TableQRManagerProps {
 }
 
 export default function TableQRManager({ branchId }: TableQRManagerProps) {
+  const supabase = createClient();
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'floor' | 'list'>('floor');
@@ -28,6 +31,13 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
   const [tableName, setTableName] = useState('');
   const [capacity, setCapacity] = useState(4);
   const [section, setSection] = useState('Indoor');
+
+  // Exporter & branding state
+  const [branding, setBranding] = useState<{ name: string; logoUrl: string | null; logoBase64: string | null } | null>(null);
+  const [qrBase64s, setQrBase64s] = useState<Record<string, string>>({});
+  const [selectedTableForQR, setSelectedTableForQR] = useState<Table | null>(null);
+  const [showBulkQRModal, setShowBulkQRModal] = useState(false);
+  const [downloadingTableId, setDownloadingTableId] = useState<string | null>(null);
 
   // Interactive Dragging and Section states
   const [activeSection, setActiveSection] = useState<string>('Indoor');
@@ -37,6 +47,318 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [toastItem, toast] = useToast();
+
+  // Helper: fetch image and convert to base64 to avoid CORS in html2canvas
+  const fetchImageAsBase64 = async (url: string): Promise<string | null> => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.error('Failed to fetch image as base64:', err);
+      return null;
+    }
+  };
+
+  // Fetch active store/tenant branding
+  useEffect(() => {
+    async function fetchBranding() {
+      if (!branchId) return;
+      try {
+        const { data: branch } = await supabase
+          .from('branches')
+          .select('name, tenant_id')
+          .eq('id', branchId)
+          .single();
+          
+        if (branch?.tenant_id) {
+          const { data: tenant } = await supabase
+            .from('tenants')
+            .select('name, logo_url')
+            .eq('id', branch.tenant_id)
+            .single();
+            
+          if (tenant) {
+            let logoBase64: string | null = null;
+            if (tenant.logo_url) {
+              logoBase64 = await fetchImageAsBase64(tenant.logo_url);
+            }
+            setBranding({
+              name: tenant.name || 'CafeCanvas',
+              logoUrl: tenant.logo_url,
+              logoBase64
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load store branding:', err);
+      }
+    }
+    fetchBranding();
+  }, [branchId]);
+
+  // Pre-fetch all QR Codes as base64 to avoid CORS issues when downloading cards via html2canvas
+  useEffect(() => {
+    const loadBase64Qrs = async () => {
+      const newBase64s: Record<string, string> = {};
+      for (const table of tables) {
+        const tableUrl = `https://cafecanvas.bar/table/${table.id}?v=${table.qr_version}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tableUrl)}`;
+        try {
+          const res = await fetch(qrUrl);
+          if (res.ok) {
+            const blob = await res.blob();
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+            newBase64s[table.id] = base64;
+          }
+        } catch (err) {
+          console.error(`Failed to fetch QR base64 for table ${table.name}:`, err);
+        }
+      }
+      setQrBase64s(prev => ({ ...prev, ...newBase64s }));
+    };
+
+    if (tables.length > 0) {
+      loadBase64Qrs();
+    }
+  }, [tables]);
+
+  // Download QR Card as high-resolution PNG
+  const downloadQRCard = async (table: Table) => {
+    setDownloadingTableId(table.id);
+    try {
+      const element = document.getElementById(`qr-card-print-${table.id}`);
+      if (!element) return;
+      
+      const canvas = await html2canvas(element, {
+        scale: 3, // High-DPI export
+        useCORS: true,
+        backgroundColor: '#FCFAF6',
+        logging: false
+      });
+      
+      const image = canvas.toDataURL('image/png', 1.0);
+      const link = document.createElement('a');
+      link.download = `${table.name.replace(/\s+/g, '_')}_QR_Card.png`;
+      link.href = image;
+      link.click();
+      toast('QR card downloaded successfully!', 'success');
+    } catch (err) {
+      console.error('Download failed:', err);
+      toast('Failed to download QR card.', 'error');
+    } finally {
+      setDownloadingTableId(null);
+    }
+  };
+
+  // Print single QR Card
+  const printQRCard = (tableId: string) => {
+    const cardElement = document.getElementById(`qr-card-print-${tableId}`);
+    if (!cardElement) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    let styles = '';
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => {
+      styles += el.outerHTML;
+    });
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Table QR Card</title>
+          ${styles}
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              background-color: white;
+            }
+            @page {
+              size: 100mm 150mm;
+              margin: 0mm;
+            }
+            @media print {
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div style="transform: scale(1.0); transform-origin: center;">
+            ${cardElement.innerHTML}
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+                window.close();
+              }, 600);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  // Bulk print all QR Cards
+  const printAllQRCards = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    let styles = '';
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => {
+      styles += el.outerHTML;
+    });
+
+    let cardsHtml = '';
+    tables.forEach((table) => {
+      const cardElement = document.getElementById(`qr-card-print-${table.id}`);
+      if (cardElement) {
+        cardsHtml += `
+          <div class="print-page" style="page-break-after: always; break-after: page; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+            ${cardElement.innerHTML}
+          </div>
+        `;
+      }
+    });
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Bulk Table QR Cards</title>
+          ${styles}
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background-color: white;
+            }
+            .print-page {
+              page-break-after: always;
+              break-after: page;
+            }
+            .print-page:last-child {
+              page-break-after: avoid;
+              break-after: avoid;
+            }
+            @page {
+              size: 100mm 150mm;
+              margin: 0mm;
+            }
+            @media print {
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          ${cardsHtml}
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+                window.close();
+              }, 800);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  // Shared component renderer for canvas/print cards
+  const renderQRCardContent = (table: Table) => {
+    const qrSrc = qrBase64s[table.id] || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+      `https://cafecanvas.bar/table/${table.id}?v=${table.qr_version}`
+    )}`;
+
+    return (
+      <div
+        className="w-[340px] h-[520px] bg-[#FAF8F5] border-8 border-double border-[#d97706]/30 rounded-[32px] p-6 shadow-2xl flex flex-col justify-between items-center text-center relative overflow-hidden select-none"
+        style={{ fontFamily: "'Outfit', 'Inter', sans-serif" }}
+      >
+        <div className="absolute inset-2.5 border border-[#d97706]/15 rounded-[22px] pointer-events-none"></div>
+        
+        <div className="flex flex-col items-center gap-1 mt-4">
+          {branding?.logoBase64 ? (
+            <img 
+              src={branding.logoBase64} 
+              alt={branding.name} 
+              className="w-14 h-14 rounded-full object-cover shadow-md border border-[#d97706]/20" 
+            />
+          ) : branding?.logoUrl ? (
+            <img 
+              src={branding.logoUrl} 
+              alt={branding.name} 
+              className="w-14 h-14 rounded-full object-cover shadow-md border border-[#d97706]/20" 
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-[#d97706]/10 flex items-center justify-center font-black text-[#d97706] text-2xl border-2 border-[#d97706]/20 shadow-inner">
+              {branding?.name ? branding.name.charAt(0).toUpperCase() : 'C'}
+            </div>
+          )}
+          <h3 className="font-extrabold text-[#1e293b] text-base tracking-wide mt-2 max-w-[280px] truncate">
+            {branding?.name || 'CafeCanvas'}
+          </h3>
+          <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-[#d97706]/40 to-transparent my-0.5"></div>
+          <p className="text-[9px] uppercase font-black text-[#d97706] tracking-[0.2em]">
+            Order & Pay Dine-In
+          </p>
+        </div>
+
+        <div className="my-1.5 bg-[#d97706]/5 border border-[#d97706]/20 rounded-2xl px-6 py-2 shadow-sm">
+          <h4 className="text-xl font-black text-[#b45309] tracking-tight uppercase">
+            {table.name}
+          </h4>
+        </div>
+
+        <div className="bg-[#ffffff] p-4 rounded-[24px] shadow-md border border-[#e2e8f0]/40 flex items-center justify-center w-[180px] h-[180px]">
+          <img
+            src={qrSrc}
+            alt={`QR Code for ${table.name}`}
+            className="w-full h-full object-contain"
+          />
+        </div>
+
+        <div className="flex flex-col items-center gap-1.5 mb-4 max-w-[280px]">
+          <span className="text-[10px] uppercase font-black tracking-[0.15em] text-[#d97706] bg-amber-500/10 px-4 py-1.5 rounded-full">
+            Scan QR Code
+          </span>
+          <p className="text-[9px] text-[#1e293b]/55 leading-relaxed font-semibold mt-1">
+            Browse our fresh digital menu, customize your order, and complete payment directly from your seat.
+          </p>
+        </div>
+
+        <div className="mb-2 text-[8px] font-bold text-[#1e293b]/30 uppercase tracking-[0.25em] flex items-center gap-1">
+          <span>Powered by</span>
+          <span className="text-[#d97706]">CafeCanvas</span>
+        </div>
+      </div>
+    );
+  };
 
   const loadTables = async () => {
     setLoading(true);
@@ -195,6 +517,13 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
             </button>
           </div>
           <button
+            onClick={() => setShowBulkQRModal(true)}
+            className="px-4 py-2 bg-[#ffffff] hover:bg-[#f1f5f9] border border-[#e2e8f0] text-[#1e293b]/70 font-extrabold rounded-2xl text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <Printer size={14} className="text-[#d97706]" />
+            <span>Bulk Export QRs</span>
+          </button>
+          <button
             onClick={() => setShowAddModal(true)}
             className="px-4 py-2 bg-gradient-to-r from-[#d97706] to-[#ca8a04] hover:opacity-95 text-[#ffffff] font-extrabold rounded-2xl text-xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
@@ -289,9 +618,22 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
                         <Move className="w-5 h-5 text-[#d97706]/40" />
                       </div>
 
-                      <span className="text-[9px] uppercase font-black tracking-widest opacity-75">
-                        {t.status}
-                      </span>
+                      <div className="flex justify-between items-end">
+                        <span className="text-[9px] uppercase font-black tracking-widest opacity-75">
+                          {t.status}
+                        </span>
+                        <button
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTableForQR(t);
+                          }}
+                          className="p-1.5 bg-[#ffffff] hover:bg-[#d97706] hover:text-[#ffffff] text-[#d97706] rounded-lg border border-[#e2e8f0]/40 shadow-sm transition-all cursor-pointer relative z-10 flex items-center justify-center shrink-0"
+                          title="View QR Card"
+                        >
+                          <QrCode size={10} />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -326,14 +668,13 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
                       <td className="py-4 px-6 font-semibold">{t.capacity} Diner seats</td>
                       <td className="py-4 px-6 font-mono text-xs text-[#d97706] font-bold">V.{t.qr_version}</td>
                       <td className="py-4 px-6">
-                        <a
-                          href={qrUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[#d97706] hover:underline text-xs font-bold"
+                        <button
+                          onClick={() => setSelectedTableForQR(t)}
+                          className="px-3 py-1.5 bg-[#d97706]/10 border border-[#d97706]/20 text-[#d97706] hover:bg-[#d97706] hover:text-[#ffffff] rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 inline-flex"
                         >
-                          View QR Image
-                        </a>
+                          <QrCode size={12} />
+                          <span>QR Card</span>
+                        </button>
                       </td>
                       <td className="py-4 px-6 text-right space-x-2">
                         <button
@@ -421,8 +762,122 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
         </div>
       )}
 
+      {/* Single QR Card Modal Popup */}
+      {selectedTableForQR && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50 animate-fade-in backdrop-blur-sm">
+          <div className="w-full max-w-[400px] bg-[#ffffff] border border-[#e2e8f0] rounded-[36px] p-6 shadow-2xl flex flex-col items-center gap-6 relative">
+            <button
+              onClick={() => setSelectedTableForQR(null)}
+              className="absolute top-4 right-4 p-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#1e293b]/60 rounded-full transition-all cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            
+            <h3 className="font-extrabold text-[#1e293b] text-base font-display text-center">
+              Table QR Card Preview
+            </h3>
+            
+            <div className="border border-[#e2e8f0]/80 rounded-[34px] p-2 bg-[#fdfcfb] shadow-sm">
+              {renderQRCardContent(selectedTableForQR)}
+            </div>
+            
+            <div className="flex gap-4 w-full justify-center">
+              <button
+                onClick={() => downloadQRCard(selectedTableForQR)}
+                disabled={downloadingTableId !== null}
+                className="flex items-center gap-2 px-5 py-3 bg-[#ffffff] border border-[#e2e8f0] hover:border-[#d97706]/40 text-[#1e293b]/80 hover:text-[#d97706] font-extrabold rounded-2xl text-xs transition-all cursor-pointer shadow-sm w-1/2 justify-center disabled:opacity-50"
+              >
+                <Download size={14} />
+                <span>{downloadingTableId === selectedTableForQR.id ? 'Downloading...' : 'Download PNG'}</span>
+              </button>
+              <button
+                onClick={() => printQRCard(selectedTableForQR.id)}
+                className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-[#d97706] to-[#ca8a04] hover:opacity-95 text-[#ffffff] font-extrabold rounded-2xl text-xs transition-all cursor-pointer shadow-md w-1/2 justify-center"
+              >
+                <Printer size={14} />
+                <span>Print Card</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk QR Exporter Modal Popup */}
+      {showBulkQRModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50 animate-fade-in backdrop-blur-sm">
+          <div className="w-full max-w-[960px] max-h-[85vh] bg-[#ffffff] border border-[#e2e8f0] rounded-[36px] p-8 shadow-2xl flex flex-col justify-between relative overflow-hidden">
+            <button
+              onClick={() => setShowBulkQRModal(false)}
+              className="absolute top-4 right-4 p-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#1e293b]/60 rounded-full transition-all cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            
+            <div className="border-b border-[#e2e8f0]/60 pb-4 mb-6">
+              <h3 className="font-extrabold text-[#1e293b] text-xl font-display flex items-center gap-2">
+                <Printer className="text-[#d97706]" />
+                <span>Bulk QR Exporter</span>
+              </h3>
+              <p className="text-xs text-[#1e293b]/50 mt-1">
+                Preview and print QR cards for all {tables.length} tables in this branch. Each card will print on its own page.
+              </p>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto px-2 py-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center max-h-[50vh]">
+              {tables.map(table => (
+                <div key={table.id} className="relative group border border-[#e2e8f0] rounded-[34px] p-2 bg-[#ffffff] shadow-md">
+                  {renderQRCardContent(table)}
+                  <div className="absolute inset-0 bg-[#ffffff]/0 hover:bg-[#ffffff]/85 opacity-0 hover:opacity-100 flex flex-col items-center justify-center gap-3 rounded-[34px] transition-all duration-300">
+                    <button
+                      onClick={() => downloadQRCard(table)}
+                      disabled={downloadingTableId !== null}
+                      className="px-4 py-2 bg-[#ffffff] border border-[#e2e8f0] text-stone-700 hover:text-[#d97706] hover:border-[#d97706]/40 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <Download size={14} />
+                      <span>{downloadingTableId === table.id ? 'Downloading...' : 'Download'}</span>
+                    </button>
+                    <button
+                      onClick={() => printQRCard(table.id)}
+                      className="px-4 py-2 bg-[#d97706] text-white hover:opacity-95 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <Printer size={14} />
+                      <span>Print Card</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex gap-4 justify-end pt-6 mt-6 border-t border-[#e2e8f0]/60">
+              <button
+                onClick={() => setShowBulkQRModal(false)}
+                className="px-5 py-2.5 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#1e293b]/70 font-bold rounded-2xl text-xs cursor-pointer transition-all"
+              >
+                Close Exporter
+              </button>
+              <button
+                onClick={printAllQRCards}
+                className="px-6 py-2.5 bg-gradient-to-r from-[#d97706] to-[#ca8a04] hover:opacity-95 text-[#ffffff] font-extrabold rounded-2xl text-xs flex items-center gap-2 cursor-pointer shadow-md"
+              >
+                <Printer size={14} />
+                <span>Print All ({tables.length} Cards)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Off-screen hidden container for printing/downloading */}
+      <div className="absolute top-[-9999px] left-[-9999px]">
+        {tables.map(table => (
+          <div key={table.id} id={`qr-card-print-${table.id}`}>
+            {renderQRCardContent(table)}
+          </div>
+        ))}
+      </div>
+
       {/* Toast Notification Container */}
-      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-2xl text-xs font-bold">{toastItem.msg}</div>}
+      {toastItem && <div className="fixed bottom-6 right-6 p-4 bg-[#f1f5f9] border border-[#e2e8f0] rounded-2xl text-xs font-bold shadow-lg">{toastItem.msg}</div>}
     </div>
   );
 }
