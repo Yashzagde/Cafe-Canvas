@@ -38,6 +38,7 @@ class CafeCanvaColors {
   static const stone300 = Color(0xFFD6D3D1);
   static const stone400 = Color(0xFFA8A29E);
   static const stone500 = Color(0xFF78716C);
+  static const stone600 = Color(0xFF57534E);
   static const stone800 = Color(0xFF1C1917);
 }
 

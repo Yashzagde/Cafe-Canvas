@@ -22,6 +22,7 @@ class StoreSettings {
   final String? paytmTerminalId;
   final String? bharatpeMerchantId;
   final String? bharatpeTerminalId;
+  final String? razorpayKeyId;
   final DateTime? updatedAt;
 
   const StoreSettings({
@@ -47,6 +48,7 @@ class StoreSettings {
     this.paytmTerminalId,
     this.bharatpeMerchantId,
     this.bharatpeTerminalId,
+    this.razorpayKeyId,
     this.updatedAt,
   });
 
@@ -86,6 +88,7 @@ class StoreSettings {
         paytmTerminalId: json['paytm_terminal_id'] as String?,
         bharatpeMerchantId: json['bharatpe_merchant_id'] as String?,
         bharatpeTerminalId: json['bharatpe_terminal_id'] as String?,
+        razorpayKeyId: json['razorpay_key_id'] as String?,
         updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : null,
       );
 
@@ -111,6 +114,7 @@ class StoreSettings {
         'paytm_terminal_id': paytmTerminalId,
         'bharatpe_merchant_id': bharatpeMerchantId,
         'bharatpe_terminal_id': bharatpeTerminalId,
+        'razorpay_key_id': razorpayKeyId,
       };
 
   StoreSettings copyWith({
@@ -133,6 +137,7 @@ class StoreSettings {
     String? paytmTerminalId,
     String? bharatpeMerchantId,
     String? bharatpeTerminalId,
+    String? razorpayKeyId,
   }) =>
       StoreSettings(
         id: id,
@@ -157,6 +162,7 @@ class StoreSettings {
         paytmTerminalId: paytmTerminalId ?? this.paytmTerminalId,
         bharatpeMerchantId: bharatpeMerchantId ?? this.bharatpeMerchantId,
         bharatpeTerminalId: bharatpeTerminalId ?? this.bharatpeTerminalId,
+        razorpayKeyId: razorpayKeyId ?? this.razorpayKeyId,
         updatedAt: updatedAt,
       );
 }

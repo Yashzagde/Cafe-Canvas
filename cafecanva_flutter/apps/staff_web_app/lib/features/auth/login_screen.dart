@@ -19,13 +19,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _error;
 
   Future<void> _login() async {
-    final email = _emailCtrl.text.trim();
+    final emailInput = _emailCtrl.text.trim();
     final password = _passwordCtrl.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (emailInput.isEmpty || password.isEmpty) {
       setState(() => _error = 'Email and password are required');
       return;
     }
+
+    final email = RegExp(r'^\d{10}$').hasMatch(emailInput)
+        ? '$emailInput@cafecanvas.bar'
+        : emailInput;
 
     setState(() {
       _loading = true;

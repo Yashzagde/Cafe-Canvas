@@ -46,7 +46,7 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self' https: 'unsafe-inline' 'unsafe-eval' data: blob:;"
+          "default-src 'self' http: https: 'unsafe-inline' 'unsafe-eval' data: blob:;"
         ]
       }
     });
