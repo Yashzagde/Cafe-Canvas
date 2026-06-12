@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:bluetooth_print/bluetooth_print.dart';
 import 'package:bluetooth_print/bluetooth_print_model.dart';
@@ -125,5 +128,49 @@ class BluetoothPrintService implements PrintService {
     ));
 
     await bluetoothPrint.printReceipt(config, list);
+  }
+}
+
+class HardwareService {
+  static const MethodChannel _channel = MethodChannel('com.cafecanva.pos/hardware');
+
+  /// Checks if any USB device is connected (via Android UsbManager MethodChannel)
+  static Future<bool> isUsbConnected() async {
+    if (kIsWeb) return false;
+    try {
+      if (Platform.isAndroid) {
+        final bool? isConnected = await _channel.invokeMethod<bool>('isUsbDeviceConnected');
+        return isConnected ?? false;
+      }
+    } catch (e) {
+      debugPrint('Error checking USB device connection: $e');
+    }
+    return false;
+  }
+
+  /// Checks if any Bluetooth device is connected (via bluetooth_print plugin)
+  static Future<bool> isBluetoothConnected() async {
+    try {
+      final bool? isConnected = await BluetoothPrint.instance.isConnected;
+      return isConnected ?? false;
+    } catch (e) {
+      debugPrint('Error checking Bluetooth connection: $e');
+    }
+    return false;
+  }
+
+  /// Helper to determine if a terminal is available (either USB or Bluetooth)
+  /// In debug/simulator mode or non-mobile platforms, defaults to true so testing is not blocked.
+  static Future<bool> isPaymentMachineAvailable() async {
+    if (kDebugMode) {
+      // Allow simulator/local testing fallback
+      return true;
+    }
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
+      return true;
+    }
+    final usb = await isUsbConnected();
+    final bt = await isBluetoothConnected();
+    return usb || bt;
   }
 }

@@ -114,6 +114,28 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/download') ||
     pathname.startsWith('/comingsoon')
 
+  // 4b. Table QR / Deep Link Path Resolution (/[store_slug]/[table_uuid] or /[store_slug]/table/[table_uuid])
+  if (!isGlobalRoute) {
+    const subdirectoryMatch = pathname.match(/^\/([^\/]+)\/(?:table\/)?([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/)
+    if (subdirectoryMatch) {
+      const storeSlug = subdirectoryMatch[1]
+      const tableId = subdirectoryMatch[2]
+      
+      const url = request.nextUrl.clone()
+      url.pathname = `/${storeSlug}`
+      url.searchParams.set('table', tableId)
+      
+      const rewriteResponse = NextResponse.rewrite(url)
+      supabaseResponse.headers.forEach((value, key) => {
+        rewriteResponse.headers.set(key, value)
+      })
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        rewriteResponse.cookies.set(cookie.name, cookie.value)
+      })
+      return rewriteResponse
+    }
+  }
+
   // 5. Rewrite tenant subdomain requests to the dynamic tenant route /[store_slug]
   if (
     !isGlobalRoute &&
@@ -125,7 +147,17 @@ export async function middleware(request: NextRequest) {
     !host.includes('127.0.0.1')
   ) {
     const url = request.nextUrl.clone()
-    url.pathname = `/${tenantSlug}${pathname}`
+    
+    // Check if the path points to a table UUID: /[table_uuid] or /table/[table_uuid]
+    const match = pathname.match(/^\/(?:table\/)?([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/)
+    
+    if (match) {
+      const tableId = match[1]
+      url.pathname = `/${tenantSlug}`
+      url.searchParams.set('table', tableId)
+    } else {
+      url.pathname = `/${tenantSlug}${pathname}`
+    }
     
     const rewriteResponse = NextResponse.rewrite(url)
     

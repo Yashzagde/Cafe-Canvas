@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
 import 'package:cafecanva_billing/cafecanva_billing.dart';
+import '../src/native_billing.dart';
 final Map<String, List<Map<String, dynamic>>> _posTableCarts = {};
 
 List<Map<String, dynamic>> _getPosCart(String tableId) {
@@ -1466,10 +1467,60 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
   double _cashTendered = 0.0;
   double _changeDue = 0.0;
 
+  bool _isCheckingHardware = false;
+  bool _isMachineConnected = false;
+  String _connectionType = 'none';
+  Timer? _hardwareCheckTimer;
+
   @override
   void initState() {
     super.initState();
     _triggerBillGeneration();
+    _checkHardwareConnection();
+    _hardwareCheckTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      _checkHardwareConnection();
+    });
+  }
+
+  @override
+  void dispose() {
+    _hardwareCheckTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkHardwareConnection() async {
+    if (_isCheckingHardware) return;
+    if (!mounted) return;
+    setState(() => _isCheckingHardware = true);
+    try {
+      final usb = await HardwareService.isUsbConnected();
+      final bluetooth = await HardwareService.isBluetoothConnected();
+      final bool connected = await HardwareService.isPaymentMachineAvailable();
+      
+      String type = 'none';
+      if (usb && bluetooth) {
+        type = 'both';
+      } else if (usb) {
+        type = 'usb';
+      } else if (bluetooth) {
+        type = 'bluetooth';
+      } else if (connected) {
+        type = 'simulated';
+      }
+
+      if (mounted) {
+        setState(() {
+          _isMachineConnected = connected;
+          _connectionType = type;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to check hardware connection: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isCheckingHardware = false);
+      }
+    }
   }
 
   Future<void> _triggerBillGeneration() async {
@@ -1654,10 +1705,77 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
       ),
     );
 
+    final hardwareStatusBanner = Container(
+      margin: const EdgeInsets.only(bottom: 20.0),
+      decoration: BoxDecoration(
+        color: _isMachineConnected 
+            ? CafeCanvaColors.success.withOpacity(0.08)
+            : CafeCanvaColors.error.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _isMachineConnected 
+              ? CafeCanvaColors.success.withOpacity(0.3)
+              : CafeCanvaColors.error.withOpacity(0.3),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        children: [
+          Icon(
+            _isMachineConnected 
+                ? (_connectionType == 'usb' ? Icons.cable : Icons.bluetooth) 
+                : Icons.warning_amber_rounded,
+            color: _isMachineConnected ? CafeCanvaColors.success : CafeCanvaColors.error,
+            size: 24,
+          ),
+          const SizedBox(width: 12.0),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _isMachineConnected ? 'PAYMENT TERMINAL ACTIVE' : 'TERMINAL DISCONNECTED',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12.0,
+                    color: _isMachineConnected ? CafeCanvaColors.success : CafeCanvaColors.error,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 2.0),
+                Text(
+                  _isMachineConnected 
+                      ? 'Connected via ${_connectionType.toUpperCase() == 'BOTH' ? 'USB & Bluetooth' : _connectionType.toUpperCase()}'
+                      : 'Connect terminal via USB Cable (OTG) or Bluetooth.',
+                  style: GoogleFonts.inter(
+                    fontSize: 11.0,
+                    color: CafeCanvaColors.stone600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: _isCheckingHardware 
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: CafeCanvaColors.primary),
+                  )
+                : const Icon(Icons.refresh, size: 20),
+            color: CafeCanvaColors.stone500,
+            onPressed: _isCheckingHardware ? null : _checkHardwareConnection,
+          ),
+        ],
+      ),
+    );
+
     final paymentActions = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
+        hardwareStatusBanner,
         const Text('Cash settlement calculator:', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8.0),
         TextField(
@@ -1708,7 +1826,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
             backgroundColor: CafeCanvaColors.info,
             padding: const EdgeInsets.symmetric(vertical: 14.0),
           ),
-          onPressed: () => _settleBill('card'),
+          onPressed: _isMachineConnected ? () => _settleBill('card') : null,
           child: const Text('SETTLE BILL WITH CARD', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
         const SizedBox(height: 8.0),
@@ -1717,7 +1835,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
             backgroundColor: CafeCanvaColors.primary,
             padding: const EdgeInsets.symmetric(vertical: 14.0),
           ),
-          onPressed: () => _settleBill('upi'),
+          onPressed: _isMachineConnected ? () => _settleBill('upi') : null,
           child: const Text('SETTLE BILL VIA UPI', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],

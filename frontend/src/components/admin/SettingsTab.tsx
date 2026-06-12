@@ -520,38 +520,65 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
                 </div>
               </div>
 
-              <div style={{ borderTop: `1px solid ${T.bdr}`, paddingTop: "20px" }}>
-                <h5 style={{ fontSize: "14px", fontWeight: 800, color: T.tx, marginBottom: "4px" }}>Service Charges</h5>
-                <p style={{ fontSize: "11px", color: T.mu, fontWeight: 500, marginBottom: "16px" }}>
-                  Configure discretionary service charges applied to checkout bills.
-                </p>
+              <div style={{
+                background: "#fbfbf9",
+                border: `1px solid ${T.bdr}`,
+                borderRadius: "12px",
+                padding: "16px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+                cursor: "pointer",
+                marginTop: "12px"
+              }} onClick={() => {
+                if (serviceChargeType === 'none') {
+                  setServiceChargeType('percent');
+                  setServiceChargeValue(5.00); // default value
+                } else {
+                  setServiceChargeType('none');
+                  setServiceChargeValue(0.00);
+                }
+              }}>
+                <input
+                  type="checkbox"
+                  checked={serviceChargeType !== 'none'}
+                  onChange={() => {}} // toggled by container click
+                  style={{
+                    marginTop: "3px",
+                    width: "16px",
+                    height: "16px",
+                    cursor: "pointer",
+                    accentColor: T.ind
+                  }}
+                />
+                <div>
+                  <p style={{ fontSize: "12px", fontWeight: 700, color: T.tx, marginBottom: "2px" }}>Enable Service Charge</p>
+                  <p style={{ fontSize: "10px", color: T.mu, fontWeight: 500, lineHeight: "1.4" }}>
+                    When enabled, discretionary service charges are calculated and added to checkout bills. If disabled, service charges are omitted.
+                  </p>
+                </div>
+              </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+              {serviceChargeType !== 'none' && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "12px" }}>
                   <Sel
                     label="Charge Type"
                     value={serviceChargeType}
-                    onChange={(e) => {
-                      setServiceChargeType(e.target.value);
-                      if (e.target.value === 'none') {
-                        setServiceChargeValue(0);
-                      }
-                    }}
+                    onChange={(e) => setServiceChargeType(e.target.value)}
                   >
-                    <option value="none">None (Disabled)</option>
                     <option value="percent">Percentage (%)</option>
                     <option value="flat">Flat Amount (₹)</option>
                   </Sel>
                   
-                  <InputAny
+                  <Input
                     label={serviceChargeType === 'flat' ? "Charge Value (₹)" : "Charge Value (%)"}
                     type="number"
                     step="0.01"
-                    disabled={serviceChargeType === 'none'}
                     value={serviceChargeValue}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setServiceChargeValue(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setServiceChargeValue(parseFloat(e.target.value) || 0)}
                   />
                 </div>
-              </div>
+              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
