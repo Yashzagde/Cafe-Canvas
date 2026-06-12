@@ -153,6 +153,8 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
         setStorePincode(tenant.pincode || '');
         setSubscriptionTier(tenant.subscription_tier || 'Free');
         setLogoUrl(tenant.logo_url || '');
+        setTenantId(tenant.id || '');
+        setPublicId(tenant.public_id || '');
 
         // Populate store configurations (converting basis points back to percentages)
         if (settings) {
@@ -957,6 +959,145 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
               >
                 Trigger Master Password Reset
               </Btn>
+            </div>
+
+            {/* Tenant Identifiers Panel */}
+            <div style={{
+              background: "#fafaf9",
+              border: `1px solid ${T.bdr}`,
+              borderRadius: "16px",
+              padding: "24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px"
+            }}>
+              <div>
+                <h5 style={{ fontSize: "13px", fontWeight: 800, color: T.tx, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <ShieldCheck size={16} style={{ color: T.ind }} />
+                  Tenant Identifiers
+                </h5>
+                <p style={{ fontSize: "11px", color: T.mu, fontWeight: 500, marginTop: "2px" }}>
+                  Unique credentials used for database isolation, POS terminal provisioning, and custom domain routing.
+                </p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                {/* Private ID Block */}
+                <div style={{
+                  background: "#ffffff",
+                  border: `1px solid ${T.bdr}`,
+                  borderRadius: "12px",
+                  padding: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: T.mu }}>Private Tenant UUID</span>
+                    <span style={{ fontSize: "9px", fontWeight: 700, color: "#ef4444", background: "#fef2f2", padding: "2px 6px", borderRadius: "4px" }}>SYSTEM PRIVATE</span>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={tenantId}
+                      style={{ 
+                        flex: 1, 
+                        background: "#fafaf9", 
+                        border: `1px solid ${T.bdr}`, 
+                        borderRadius: "8px", 
+                        padding: "8px 12px", 
+                        fontSize: "11px", 
+                        fontFamily: "monospace", 
+                        color: T.tx,
+                        outline: "none"
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(tenantId, 'private')}
+                      style={{
+                        padding: "8px 12px",
+                        background: copiedPrivate ? "rgba(34, 197, 94, 0.1)" : "#fafaf9",
+                        border: `1px solid ${copiedPrivate ? "rgba(34, 197, 94, 0.3)" : T.bdr}`,
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: copiedPrivate ? "#22c55e" : T.tx,
+                        transition: "all 0.15s",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px"
+                      }}
+                    >
+                      {copiedPrivate ? <Check size={12} /> : <Copy size={12} />}
+                      <span>{copiedPrivate ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                  <span style={{ fontSize: "10px", color: T.mu2, fontWeight: 500 }}>
+                    Required for POS and Staff mobile app logins. Keep this confidential.
+                  </span>
+                </div>
+
+                {/* Public ID Block */}
+                <div style={{
+                  background: "#ffffff",
+                  border: `1px solid ${T.bdr}`,
+                  borderRadius: "12px",
+                  padding: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: T.mu }}>Public Tenant UUID</span>
+                    <span style={{ fontSize: "9px", fontWeight: 700, color: "#3b82f6", background: "#eff6ff", padding: "2px 6px", borderRadius: "4px" }}>PUBLIC ROUTING</span>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={publicId}
+                      style={{ 
+                        flex: 1, 
+                        background: "#fafaf9", 
+                        border: `1px solid ${T.bdr}`, 
+                        borderRadius: "8px", 
+                        padding: "8px 12px", 
+                        fontSize: "11px", 
+                        fontFamily: "monospace", 
+                        color: T.tx,
+                        outline: "none"
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(publicId, 'public')}
+                      style={{
+                        padding: "8px 12px",
+                        background: copiedPublic ? "rgba(34, 197, 94, 0.1)" : "#fafaf9",
+                        border: `1px solid ${copiedPublic ? "rgba(34, 197, 94, 0.3)" : T.bdr}`,
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: copiedPublic ? "#22c55e" : T.tx,
+                        transition: "all 0.15s",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px"
+                      }}
+                    >
+                      {copiedPublic ? <Check size={12} /> : <Copy size={12} />}
+                      <span>{copiedPublic ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                  <span style={{ fontSize: "10px", color: T.mu2, fontWeight: 500 }}>
+                    Used for domain mapping and public APIs. Safe to share publicly.
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Danger Zone */}
