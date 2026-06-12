@@ -168,7 +168,7 @@ export default function CafeCanvaAdmin() {
         return;
       }
 
-      setUserName(user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Operator');
+      setUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Operator');
 
       const { data: profile } = await supabase
         .from('users')
@@ -455,23 +455,6 @@ export default function CafeCanvaAdmin() {
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Storefront Link in Header */}
-            {tenantSlug && (
-              <a
-                href={
-                  typeof window !== 'undefined' && window.location.hostname.includes('localhost')
-                    ? `http://localhost:3000/${tenantSlug}`
-                    : `https://${tenantSlug}.cafecanvas.bar`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3.5 py-1.5 bg-[#d97706]/10 border border-[#d97706]/20 hover:bg-[#d97706]/20 text-[#d97706] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
-                title="Open storefront digital menu"
-              >
-                <span>View Storefront ↗</span>
-              </a>
             )}
           </div>
 

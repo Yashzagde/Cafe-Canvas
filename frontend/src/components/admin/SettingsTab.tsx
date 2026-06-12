@@ -23,7 +23,7 @@ import { createClient } from '@/utils/supabase/client';
 
 const InputAny = Input as any;
 
-type TabType = 'general' | 'hours' | 'tax' | 'payments' | 'subscription' | 'account';
+type TabType = 'general' | 'hours' | 'tax' | 'payments' | 'subscription';
 
 interface SettingsTabProps {
   toast: (msg: string, type?: "success" | "error" | "warning") => void;
@@ -53,7 +53,6 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
   // Tenant ID states
   const [tenantId, setTenantId] = useState('');
   const [publicId, setPublicId] = useState('');
-  const [tenantSlug, setTenantSlug] = useState('');
   const [copiedPrivate, setCopiedPrivate] = useState(false);
   const [copiedPublic, setCopiedPublic] = useState(false);
 
@@ -159,7 +158,6 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
         setLogoUrl(tenant.logo_url || '');
         setTenantId(tenant.id || '');
         setPublicId(tenant.public_id || '');
-        setTenantSlug((tenant as any).slug || '');
 
         // Populate store configurations (converting basis points back to percentages)
         if (settings) {
@@ -310,8 +308,7 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
     { id: 'hours' as TabType, label: 'Operating Hours', icon: Clock },
     { id: 'tax' as TabType, label: 'Taxation Rules', icon: Percent },
     { id: 'payments' as TabType, label: 'Payment Gateway', icon: CreditCard },
-    { id: 'subscription' as TabType, label: 'Merchant Plan', icon: Sparkles },
-    { id: 'account' as TabType, label: 'System Access', icon: ShieldCheck },
+    { id: 'subscription' as TabType, label: 'Merchant Plan', icon: Sparkles }
   ];
 
   if (loading) {
@@ -381,36 +378,42 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
             </button>
           );
         })}
-        {onLogout && (
-          <>
-            <hr style={{ border: "none", borderTop: `1px solid ${T.bdr}`, margin: "8px 0" }} />
-            <button
-              type="button"
-              onClick={onLogout}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "12px 14px",
-                borderRadius: "10px",
-                border: "none",
-                fontSize: "12px",
-                fontWeight: 700,
-                cursor: "pointer",
-                transition: "all 0.15s",
-                background: "transparent",
-                color: T.rose,
-                textAlign: "left"
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = `${T.rose}10`}
-              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-            >
-              <LogOut size={16} style={{ flexShrink: 0 }} />
-              <span>Logout Session</span>
-            </button>
-          </>
-        )}
+
+        <div style={{ margin: "8px 0", borderTop: `1px solid ${T.bdr}` }} />
+        
+        <button
+          type="button"
+          onClick={() => {
+            if (confirm('Are you sure you want to log out of your session?')) {
+              onLogout?.();
+            }
+          }}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "12px 14px",
+            borderRadius: "10px",
+            border: "none",
+            fontSize: "12px",
+            fontWeight: 700,
+            cursor: "pointer",
+            transition: "all 0.15s",
+            background: "transparent",
+            color: "#ef4444",
+            textAlign: "left"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+          }}
+        >
+          <LogOut size={16} style={{ flexShrink: 0 }} />
+          <span>Logout Session</span>
+        </button>
       </div>
 
       {/* Right Content Pane */}
@@ -431,93 +434,6 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
             </div>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {/* Storefront Link Widget */}
-              <div style={{
-                background: "#faf6f0",
-                border: `1px solid ${T.bdr}`,
-                borderRadius: "12px",
-                padding: "16px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-                marginBottom: "8px"
-              }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: T.tx }}>🏪 Storefront Link</span>
-                  <span style={{ fontSize: "10px", color: T.em, fontWeight: 700, background: `${T.em}15`, padding: "2px 8px", borderRadius: "20px" }}>Active</span>
-                </div>
-                <p style={{ fontSize: "10px", color: T.mu, fontWeight: 500, lineHeight: "1.4" }}>
-                  Your customers can view the digital menu, place table orders, and access support here.
-                </p>
-                <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                  <input
-                    type="text"
-                    readOnly
-                    value={
-                      typeof window !== 'undefined' && window.location.hostname.includes('localhost')
-                        ? `http://localhost:3000/${tenantSlug || publicId}`
-                        : `https://${tenantSlug || publicId || 'store'}.cafecanvas.bar`
-                    }
-                    className="select-all"
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      background: "#ffffff",
-                      border: `1px solid ${T.bdr}`,
-                      borderRadius: "8px",
-                      fontSize: "11px",
-                      fontFamily: "monospace",
-                      color: T.mu2
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const url = typeof window !== 'undefined' && window.location.hostname.includes('localhost')
-                        ? `http://localhost:3000/${tenantSlug || publicId}`
-                        : `https://${tenantSlug || publicId || 'store'}.cafecanvas.bar`;
-                      navigator.clipboard.writeText(url);
-                      toast('📋 Storefront URL copied!', 'success');
-                    }}
-                    style={{
-                      padding: "8px 16px",
-                      background: T.ind,
-                      color: "#ffffff",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      transition: "all 0.15s"
-                    }}
-                  >
-                    Copy
-                  </button>
-                  <a
-                    href={
-                      typeof window !== 'undefined' && window.location.hostname.includes('localhost')
-                        ? `http://localhost:3000/${tenantSlug || publicId}`
-                        : `https://${tenantSlug || publicId || 'store'}.cafecanvas.bar`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      padding: "8px 16px",
-                      background: "#1e293b",
-                      color: "#ffffff",
-                      textDecoration: "none",
-                      borderRadius: "8px",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center"
-                    }}
-                  >
-                    Open ↗
-                  </a>
-                </div>
-              </div>
               {/* Business Logo Upload */}
               <div style={{ display: "flex", alignItems: "center", gap: "20px", padding: "16px", background: "#fbfbf9", border: `1px solid ${T.bdr}`, borderRadius: "12px" }}>
                 <div style={{
@@ -1068,216 +984,7 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
           </div>
         )}
 
-        {/* TAB 6: ACCOUNT SECURITY */}
-        {activeTab === 'account' && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-            <div>
-              <h4 style={{ fontSize: "18px", fontWeight: 800, color: T.tx, letterSpacing: "-0.01em", marginBottom: "4px" }}>Access Control</h4>
-              <p style={{ fontSize: "11px", color: T.mu, fontWeight: 500 }}>Configure administrative security boundaries and password policies.</p>
-            </div>
 
-            {/* Password section */}
-            <div>
-              <Btn 
-                onClick={() => window.open('https://cafecanvas.bar/forgot-password', '_blank')}
-                variant="ghost"
-              >
-                Trigger Master Password Reset
-              </Btn>
-            </div>
-
-            {/* Tenant Identifiers Panel */}
-            <div style={{
-              background: "#fafaf9",
-              border: `1px solid ${T.bdr}`,
-              borderRadius: "16px",
-              padding: "24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px"
-            }}>
-              <div>
-                <h5 style={{ fontSize: "13px", fontWeight: 800, color: T.tx, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <ShieldCheck size={16} style={{ color: T.ind }} />
-                  Tenant Identifiers
-                </h5>
-                <p style={{ fontSize: "11px", color: T.mu, fontWeight: 500, marginTop: "2px" }}>
-                  Unique credentials used for database isolation, POS terminal provisioning, and custom domain routing.
-                </p>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                {/* Private ID Block */}
-                <div style={{
-                  background: "#ffffff",
-                  border: `1px solid ${T.bdr}`,
-                  borderRadius: "12px",
-                  padding: "16px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px"
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: T.mu }}>Private Tenant UUID</span>
-                    <span style={{ fontSize: "9px", fontWeight: 700, color: "#ef4444", background: "#fef2f2", padding: "2px 6px", borderRadius: "4px" }}>SYSTEM PRIVATE</span>
-                  </div>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                    <input 
-                      type="text" 
-                      readOnly 
-                      value={tenantId}
-                      style={{ 
-                        flex: 1, 
-                        background: "#fafaf9", 
-                        border: `1px solid ${T.bdr}`, 
-                        borderRadius: "8px", 
-                        padding: "8px 12px", 
-                        fontSize: "11px", 
-                        fontFamily: "monospace", 
-                        color: T.tx,
-                        outline: "none"
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(tenantId, 'private')}
-                      style={{
-                        padding: "8px 12px",
-                        background: copiedPrivate ? "rgba(34, 197, 94, 0.1)" : "#fafaf9",
-                        border: `1px solid ${copiedPrivate ? "rgba(34, 197, 94, 0.3)" : T.bdr}`,
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        color: copiedPrivate ? "#22c55e" : T.tx,
-                        transition: "all 0.15s",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px"
-                      }}
-                    >
-                      {copiedPrivate ? <Check size={12} /> : <Copy size={12} />}
-                      <span>{copiedPrivate ? "Copied" : "Copy"}</span>
-                    </button>
-                  </div>
-                  <span style={{ fontSize: "10px", color: T.mu2, fontWeight: 500 }}>
-                    Required for POS and Staff mobile app logins. Keep this confidential.
-                  </span>
-                </div>
-
-                {/* Public ID Block */}
-                <div style={{
-                  background: "#ffffff",
-                  border: `1px solid ${T.bdr}`,
-                  borderRadius: "12px",
-                  padding: "16px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px"
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: T.mu }}>Public Tenant UUID</span>
-                    <span style={{ fontSize: "9px", fontWeight: 700, color: "#3b82f6", background: "#eff6ff", padding: "2px 6px", borderRadius: "4px" }}>PUBLIC ROUTING</span>
-                  </div>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                    <input 
-                      type="text" 
-                      readOnly 
-                      value={publicId}
-                      style={{ 
-                        flex: 1, 
-                        background: "#fafaf9", 
-                        border: `1px solid ${T.bdr}`, 
-                        borderRadius: "8px", 
-                        padding: "8px 12px", 
-                        fontSize: "11px", 
-                        fontFamily: "monospace", 
-                        color: T.tx,
-                        outline: "none"
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(publicId, 'public')}
-                      style={{
-                        padding: "8px 12px",
-                        background: copiedPublic ? "rgba(34, 197, 94, 0.1)" : "#fafaf9",
-                        border: `1px solid ${copiedPublic ? "rgba(34, 197, 94, 0.3)" : T.bdr}`,
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        color: copiedPublic ? "#22c55e" : T.tx,
-                        transition: "all 0.15s",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px"
-                      }}
-                    >
-                      {copiedPublic ? <Check size={12} /> : <Copy size={12} />}
-                      <span>{copiedPublic ? "Copied" : "Copy"}</span>
-                    </button>
-                  </div>
-                  <span style={{ fontSize: "10px", color: T.mu2, fontWeight: 500 }}>
-                    Used for domain mapping and public APIs. Safe to share publicly.
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Danger Zone */}
-            <div style={{
-              border: `1px solid ${T.rose}25`,
-              background: `${T.rose}06`,
-              borderRadius: "16px",
-              padding: "24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px"
-            }}>
-              <h5 style={{
-                fontSize: "12px",
-                fontWeight: 800,
-                color: T.rose,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px"
-              }}>
-                <AlertTriangle size={16} />
-                Danger Zone
-              </h5>
-              <p style={{ fontSize: "11px", color: T.mu2, fontWeight: 500, lineHeight: "1.5" }}>
-                Deactivating this café stops restaurant operations permanently. It voids all menus, tables, locations, billing logs, and cancels all customer and POS terminal sessions. This operation is permanent and cannot be undone.
-              </p>
-              <button
-                onClick={() => {
-                  const val = prompt('Type DEACTIVATE to confirm café closure:');
-                  if (val === 'DEACTIVATE') {
-                    alert('Tenant deactivation queue initiated. Please contact CafeCanvas support to finalize.');
-                  }
-                }}
-                style={{
-                  background: T.rose,
-                  color: "#ffffff",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  padding: "8px 16px",
-                  borderRadius: "8px",
-                  border: "none",
-                  cursor: "pointer",
-                  width: "fit-content",
-                  transition: "background 0.15s"
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "#be123c"}
-                onMouseLeave={(e) => e.currentTarget.style.background = T.rose}
-              >
-                Deactivate Café
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
