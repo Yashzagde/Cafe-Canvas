@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 // Premium Dark Design tokens
 const T = {
@@ -46,6 +46,20 @@ export default function Sidebar({
   tenantName
 }: SidebarProps) {
   const ff = "var(--font-sans), sans-serif";
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <aside style={{
@@ -122,8 +136,115 @@ export default function Sidebar({
 
       {/* Footer */}
       {sidebarOpen && (
-        <div style={{ padding: "16px", borderTop: `1px solid ${T.bdr}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div ref={menuRef} style={{ padding: "12px 16px", borderTop: `1px solid ${T.bdr}`, position: "relative" }}>
+          {/* Profile Context Dropdown */}
+          {menuOpen && (
+            <div style={{
+              position: "absolute",
+              bottom: "calc(100% - 6px)",
+              left: "12px",
+              right: "12px",
+              background: "#ffffff",
+              border: `1px solid ${T.bdr}`,
+              borderRadius: "12px",
+              padding: "6px",
+              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.08)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+              zIndex: 50
+            }}>
+              <button
+                onClick={() => {
+                  setPage("settings");
+                  setMenuOpen(false);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 10px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: page === "settings" ? T.iA(0.12) : "transparent",
+                  color: page === "settings" ? T.ind : T.mu,
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  width: "100%",
+                  fontFamily: ff
+                }}
+              >
+                <span>🛠️</span>
+                <span>Store Settings</span>
+              </button>
+              <button
+                onClick={() => {
+                  setPage("staff");
+                  setMenuOpen(false);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 10px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: page === "staff" ? T.iA(0.12) : "transparent",
+                  color: page === "staff" ? T.ind : T.mu,
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  width: "100%",
+                  fontFamily: ff
+                }}
+              >
+                <span>👥</span>
+                <span>Staff Management</span>
+              </button>
+              <button
+                onClick={() => {
+                  setPage("analytics");
+                  setMenuOpen(false);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 10px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: page === "analytics" ? T.iA(0.12) : "transparent",
+                  color: page === "analytics" ? T.ind : T.mu,
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  width: "100%",
+                  fontFamily: ff
+                }}
+              >
+                <span>📈</span>
+                <span>Analytics Feed</span>
+              </button>
+            </div>
+          )}
+
+          <div 
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "10px",
+              cursor: "pointer",
+              padding: "8px",
+              borderRadius: "8px",
+              transition: "background 0.15s",
+              background: menuOpen ? "rgba(0, 0, 0, 0.04)" : "transparent"
+            }}
+          >
             <div style={{
               width: "32px",
               height: "32px",
@@ -138,9 +259,9 @@ export default function Sidebar({
             }}>
               <img src="/logo.png" alt="Logo" style={{ width: "22px", height: "22px", objectFit: "contain" }} />
             </div>
-            <div>
-              <div style={{ fontSize: "11px", fontWeight: 600, color: T.tx }}>Operations</div>
-              <div style={{ fontSize: "9px", color: T.mu }}>{tenantName}</div>
+            <div style={{ flex: 1, overflow: "hidden" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: T.tx, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Operations</div>
+              <div style={{ fontSize: "9px", color: T.mu, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tenantName}</div>
             </div>
           </div>
         </div>
