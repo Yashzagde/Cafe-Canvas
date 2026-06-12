@@ -26,4 +26,16 @@ class WebPaymentGateway implements PaymentGateway {
       throw Exception('Could not launch Razorpay Web Checkout URL');
     }
   }
+
+  @override
+  Future<void> payWithTerminal({
+    required String gateway,
+    required String merchantId,
+    required String terminalId,
+    required int amountInPaise,
+  }) async {
+    // Web mock connection to terminal
+    await Future.delayed(const Duration(seconds: 2));
+    print('Web payment machine mock: Settle INR ${amountInPaise / 100} on $gateway terminal (MID: $merchantId, TID: $terminalId)');
+  }
 }

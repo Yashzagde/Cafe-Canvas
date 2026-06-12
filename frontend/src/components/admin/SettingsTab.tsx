@@ -65,6 +65,51 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
   const [bharatpeMerchantId, setBharatpeMerchantId] = useState('');
   const [bharatpeTerminalId, setBharatpeTerminalId] = useState('');
 
+  // WebUSB terminal state
+  const [connectedUsbDevices, setConnectedUsbDevices] = useState<any[]>([]);
+
+  useEffect(() => {
+    const nav = navigator as any;
+    if (typeof navigator !== 'undefined' && nav.usb) {
+      nav.usb.getDevices().then((devices: any[]) => {
+        setConnectedUsbDevices(devices);
+      });
+      const handleConnect = (e: any) => {
+        setConnectedUsbDevices(prev => {
+          if (prev.some(d => d.serialNumber === e.device.serialNumber)) return prev;
+          return [...prev, e.device];
+        });
+      };
+      const handleDisconnect = (e: any) => {
+        setConnectedUsbDevices(prev => prev.filter(d => d.serialNumber !== e.device.serialNumber));
+      };
+      nav.usb.addEventListener('connect', handleConnect);
+      nav.usb.addEventListener('disconnect', handleDisconnect);
+      return () => {
+        nav.usb.removeEventListener('connect', handleConnect);
+        nav.usb.removeEventListener('disconnect', handleDisconnect);
+      };
+    }
+  }, []);
+
+  const requestUsbDevice = async () => {
+    const nav = navigator as any;
+    if (typeof navigator !== 'undefined' && nav.usb) {
+      try {
+        const device = await nav.usb.requestDevice({ filters: [] });
+        setConnectedUsbDevices(prev => {
+          if (prev.some(d => d.serialNumber === device.serialNumber)) return prev;
+          return [...prev, device];
+        });
+        toast(`🔌 Connected to ${device.productName || 'USB Terminal'}`, 'success');
+      } catch (err: any) {
+        console.error('WebUSB connection error:', err);
+      }
+    } else {
+      toast('WebUSB API is not supported by your browser.', 'error');
+    }
+  };
+
   // Hours tab states
   const [openTime, setOpenTime] = useState('09:00');
   const [closeTime, setCloseTime] = useState('22:00');
@@ -745,6 +790,68 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
                 onChange={(e) => setUpiId(e.target.value)}
                 placeholder="cafecanvas@okhdfcbank"
               />
+
+              {/* WebUSB Connected Terminal Status */}
+              <div style={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                gap: "12px", 
+                padding: "16px", 
+                background: connectedUsbDevices.length > 0 ? "rgba(34, 197, 94, 0.05)" : "#fafaf9", 
+                border: `1px solid ${connectedUsbDevices.length > 0 ? "rgba(34, 197, 94, 0.3)" : T.bdr}`, 
+                borderRadius: "16px", 
+                marginTop: "4px" 
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ 
+                      width: "8px", 
+                      height: "8px", 
+                      borderRadius: "50%", 
+                      background: connectedUsbDevices.length > 0 ? "#22c55e" : "#a8a29e",
+                      boxShadow: connectedUsbDevices.length > 0 ? "0 0 8px #22c55e" : "none"
+                    }} />
+                    <span style={{ fontSize: "12px", fontWeight: 800, color: T.tx, letterSpacing: "-0.01em" }}>
+                      {connectedUsbDevices.length > 0 ? "PAYMENT MACHINE CONNECTED" : "NO HARDWARE TERMINAL LINKED"}
+                    </span>
+                  </div>
+                  {connectedUsbDevices.length === 0 && (
+                    <button 
+                      type="button" 
+                      onClick={requestUsbDevice}
+                      style={{ 
+                        fontSize: "10px", 
+                        fontWeight: 700, 
+                        color: T.ind, 
+                        background: "none", 
+                        border: "none", 
+                        cursor: "pointer",
+                        textDecoration: "underline"
+                      }}
+                    >
+                      Connect USB Device
+                    </button>
+                  )}
+                </div>
+                
+                {connectedUsbDevices.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <div style={{ fontSize: "11px", color: T.tx, fontWeight: 600 }}>
+                      Device: {connectedUsbDevices[0].productName || "Generic USB Card Terminal"}
+                    </div>
+                    <div style={{ fontSize: "10px", color: T.mu, fontWeight: 500, fontFamily: "monospace" }}>
+                      Vendor ID: 0x{connectedUsbDevices[0].vendorId.toString(16)} | Product ID: 0x{connectedUsbDevices[0].productId.toString(16)}
+                    </div>
+                    <div style={{ fontSize: "10px", color: T.mu, fontWeight: 500 }}>
+                      Channel status: Connected & active for {activeGateway.toUpperCase()} transaction settlements.
+                    </div>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: "10px", color: T.mu, fontWeight: 500 }}>
+                    Please connect your Paytm/PhonePe/BharatPe card machine via USB cable or OTG to configure local settlement sync.
+                  </span>
+                )}
+              </div>
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>

@@ -53,6 +53,19 @@ class RazorpayPaymentGateway implements PaymentGateway {
   void dispose() {
     _razorpay.clear();
   }
+
+  @override
+  Future<void> payWithTerminal({
+    required String gateway,
+    required String merchantId,
+    required String terminalId,
+    required int amountInPaise,
+  }) async {
+    // Mobile terminal integration: trigger a simulated terminal settlement
+    debugPrint('Initiating mobile POS terminal payment: $gateway (MID: $merchantId, TID: $terminalId) for Amount: ${amountInPaise / 100}');
+    await Future.delayed(const Duration(seconds: 3));
+    debugPrint('Terminal payment success notification received from $gateway');
+  }
 }
 
 class BluetoothPrintService implements PrintService {

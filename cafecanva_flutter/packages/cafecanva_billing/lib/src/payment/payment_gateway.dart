@@ -8,4 +8,11 @@ abstract class PaymentGateway {
     required String customerPhone,
     required String themeColor,
   });
+
+  Future<void> payWithTerminal({
+    required String gateway,
+    required String merchantId,
+    required String terminalId,
+    required int amountInPaise,
+  });
 }

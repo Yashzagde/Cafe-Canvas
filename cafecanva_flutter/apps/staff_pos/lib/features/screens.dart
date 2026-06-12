@@ -1471,6 +1471,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
   bool _isMachineConnected = false;
   String _connectionType = 'none';
   Timer? _hardwareCheckTimer;
+  StoreSettings? _storeSettings;
 
   @override
   void initState() {
@@ -1526,18 +1527,23 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
   Future<void> _triggerBillGeneration() async {
     try {
       setState(() => _isLoading = true);
+      final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
+      final branchId = AuthService.branchId ?? 'demo-branch-7777';
+
+      // Load store settings
+      final settings = await SettingsRepository.getStoreSettings(tenantId, branchId);
+
       // Try to load existing open bill for this table first
       final existingBill = await BillingRepository.getOpenBillForTable(widget.tableId);
       if (existingBill != null) {
         setState(() {
           _bill = existingBill;
+          _storeSettings = settings;
           _isLoading = false;
         });
         return;
       }
 
-      final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
-      final branchId = AuthService.branchId ?? 'demo-branch-7777';
       final createdBy = AuthService.currentUser?.id ?? 'demo-user-1234-5678';
       final bill = await BillingRepository.generateBill(
         tableId: widget.tableId,
@@ -1549,6 +1555,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
       if (mounted) {
         setState(() {
           _bill = bill;
+          _storeSettings = settings;
           _isLoading = false;
         });
       }
@@ -1570,18 +1577,45 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
       // 1. Settle in the database
       await _billingRepo.settleBillDirect(billId: _bill!.id, paymentMethod: method);
       
-      // 2. Settle payment gateways natively on mobiles (or trigger mock successful Razorpay validations)
+      // 2. Settle payment gateways natively on mobiles (or trigger mock successful validations)
       if (method == 'upi' || method == 'card') {
         final gateway = BillingFactory.createPaymentGateway();
-        await gateway.payWithRazorpay(
-          razorpayOrderId: 'order_mock_pos',
-          keyId: 'rzp_test_1234',
-          amountInPaise: _bill!.total,
-          storeName: 'CafeCanva',
-          customerName: 'POS Settle',
-          customerPhone: '9999999999',
-          themeColor: '#D97706',
-        );
+        final activeGateway = _storeSettings?.activeGateway ?? 'razorpay';
+        
+        if (activeGateway == 'razorpay') {
+          await gateway.payWithRazorpay(
+            razorpayOrderId: 'order_mock_pos',
+            keyId: _storeSettings?.razorpayKeyId ?? 'rzp_test_1234',
+            amountInPaise: _bill!.total,
+            storeName: 'CafeCanva',
+            customerName: 'POS Settle',
+            customerPhone: '9999999999',
+            themeColor: '#D97706',
+          );
+        } else {
+          String mid = 'demo_mid';
+          String tid = 'demo_tid';
+          if (activeGateway == 'phonepe') {
+            mid = _storeSettings?.phonepeMerchantId ?? 'demo_phonepe_mid';
+            tid = _storeSettings?.phonepeTerminalId ?? 'demo_phonepe_tid';
+          } else if (activeGateway == 'googlepay') {
+            mid = _storeSettings?.googlepayMerchantId ?? 'demo_gpay_mid';
+            tid = _storeSettings?.googlepayTerminalId ?? 'demo_gpay_tid';
+          } else if (activeGateway == 'paytm') {
+            mid = _storeSettings?.paytmMerchantId ?? 'demo_paytm_mid';
+            tid = _storeSettings?.paytmTerminalId ?? 'demo_paytm_tid';
+          } else if (activeGateway == 'bharatpe') {
+            mid = _storeSettings?.bharatpeMerchantId ?? 'demo_bharatpe_mid';
+            tid = _storeSettings?.bharatpeTerminalId ?? 'demo_bharatpe_tid';
+          }
+
+          await gateway.payWithTerminal(
+            gateway: activeGateway,
+            merchantId: mid,
+            terminalId: tid,
+            amountInPaise: _bill!.total,
+          );
+        }
       }
 
       // 3. Print thermal receipt utilizing user printer width setting preference mm80/mm58
@@ -1705,6 +1739,30 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
       ),
     );
 
+    final String activeGateway = _storeSettings?.activeGateway ?? 'razorpay';
+    final String gatewayName = {
+      'razorpay': 'Razorpay',
+      'phonepe': 'PhonePe',
+      'googlepay': 'GooglePay',
+      'paytm': 'Paytm',
+      'bharatpe': 'BharatPe',
+    }[activeGateway] ?? 'Razorpay';
+
+    String detailsText = '';
+    if (_isMachineConnected && _storeSettings != null) {
+      if (activeGateway == 'phonepe' && _storeSettings!.phonepeMerchantId != null) {
+        detailsText = 'MID: ${_storeSettings!.phonepeMerchantId} | TID: ${_storeSettings!.phonepeTerminalId ?? "N/A"}';
+      } else if (activeGateway == 'googlepay' && _storeSettings!.googlepayMerchantId != null) {
+        detailsText = 'MID: ${_storeSettings!.googlepayMerchantId} | TID: ${_storeSettings!.googlepayTerminalId ?? "N/A"}';
+      } else if (activeGateway == 'paytm' && _storeSettings!.paytmMerchantId != null) {
+        detailsText = 'MID: ${_storeSettings!.paytmMerchantId} | TID: ${_storeSettings!.paytmTerminalId ?? "N/A"}';
+      } else if (activeGateway == 'bharatpe' && _storeSettings!.bharatpeMerchantId != null) {
+        detailsText = 'MID: ${_storeSettings!.bharatpeMerchantId} | TID: ${_storeSettings!.bharatpeTerminalId ?? "N/A"}';
+      } else if (activeGateway == 'razorpay' && _storeSettings!.razorpayKeyId != null) {
+        detailsText = 'Key: ${_storeSettings!.razorpayKeyId}';
+      }
+    }
+
     final hardwareStatusBanner = Container(
       margin: const EdgeInsets.only(bottom: 20.0),
       decoration: BoxDecoration(
@@ -1734,7 +1792,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _isMachineConnected ? 'PAYMENT TERMINAL ACTIVE' : 'TERMINAL DISCONNECTED',
+                  _isMachineConnected ? '${gatewayName.toUpperCase()} TERMINAL ACTIVE' : '${gatewayName.toUpperCase()} DISCONNECTED',
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w800,
                     fontSize: 12.0,
@@ -1745,8 +1803,8 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
                 const SizedBox(height: 2.0),
                 Text(
                   _isMachineConnected 
-                      ? 'Connected via ${_connectionType.toUpperCase() == 'BOTH' ? 'USB & Bluetooth' : _connectionType.toUpperCase()}'
-                      : 'Connect terminal via USB Cable (OTG) or Bluetooth.',
+                      ? 'Connected via ${_connectionType.toUpperCase()} (${detailsText.isNotEmpty ? detailsText : "Active"})'
+                      : 'Connect $gatewayName device via USB or Bluetooth.',
                   style: GoogleFonts.inter(
                     fontSize: 11.0,
                     color: CafeCanvaColors.stone600,
@@ -1827,7 +1885,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
             padding: const EdgeInsets.symmetric(vertical: 14.0),
           ),
           onPressed: _isMachineConnected ? () => _settleBill('card') : null,
-          child: const Text('SETTLE BILL WITH CARD', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: Text('SETTLE VIA ${gatewayName.toUpperCase()} CARD', style: const TextStyle(fontWeight: FontWeight.bold)),
         ),
         const SizedBox(height: 8.0),
         ElevatedButton(
@@ -1836,7 +1894,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
             padding: const EdgeInsets.symmetric(vertical: 14.0),
           ),
           onPressed: _isMachineConnected ? () => _settleBill('upi') : null,
-          child: const Text('SETTLE BILL VIA UPI', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: Text('SETTLE VIA ${gatewayName.toUpperCase()} UPI', style: const TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     );
