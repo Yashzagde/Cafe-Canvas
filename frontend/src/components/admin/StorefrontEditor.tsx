@@ -8,7 +8,7 @@ import {
   updateTenantNameAction
 } from '@/app/admin/actions/storefront.actions';
 import { useStorefrontEditorStore } from '@/store/storefront-editor';
-import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link, Upload, Loader2, Trash2, Crop, ImageIcon, MapPin, Clock, Mail, PhoneCall, FileText } from 'lucide-react';
+import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link, Upload, Loader2, Trash2, Crop, ImageIcon, MapPin, Clock, Mail, PhoneCall, FileText, Sliders, Eye } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { getThemeDesign } from '@/lib/theme-designs';
 import { loadTenantTheme } from '@/lib/theme-engine';
@@ -469,7 +469,7 @@ export default function StorefrontEditor({
   tenantLogoUrl?: string | null;
 }) {
   const { config, setConfig, updateField, isDirty, clearDirty } = useStorefrontEditorStore();
-  const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'social' | 'connection' | 'footer'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'hero' | 'layout' | 'social' | 'connection' | 'footer'>('branding');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('mobile');
   const [previewSlide, setPreviewSlide] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
@@ -800,6 +800,15 @@ export default function StorefrontEditor({
           >
             <Layout size={14} />
             <span>Hero Header</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('layout')}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === 'layout' ? 'bg-[#f1f5f9] text-[#d97706]' : 'text-[#1e293b]/50 hover:text-[#1e293b]'
+            }`}
+          >
+            <Sliders size={14} />
+            <span>Visibility & Features</span>
           </button>
           <button
             onClick={() => setActiveTab('social')}
@@ -1268,6 +1277,155 @@ export default function StorefrontEditor({
                 </div>
               </div>
             </>
+          )}
+
+          {activeTab === 'layout' && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[#d97706] text-xs leading-relaxed space-y-1 mb-2">
+                <p className="font-bold flex items-center gap-1.5"><Eye size={13} /> Feature Visibility & Storefront Layout</p>
+                <p className="opacity-90">Control which sections and features are active on your public diner storefront. Enable online ordering, hide prices, or toggle social media feeds instantly.</p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {/* 1. Show Prices */}
+                <div className="p-4 rounded-2xl bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-black uppercase tracking-wider text-[#1e293b]">Show Menu Prices</p>
+                    <p className="text-[11px] text-[#1e293b]/60 leading-normal">Display item prices on your digital menu storefront.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={config.show_prices}
+                    onClick={() => updateField('show_prices', !config.show_prices)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      config.show_prices ? 'bg-[#d97706]' : 'bg-[#cbd5e1]'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        config.show_prices ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 2. Allow Online Ordering */}
+                <div className="p-4 rounded-2xl bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-black uppercase tracking-wider text-[#1e293b]">Allow Online Ordering</p>
+                    <p className="text-[11px] text-[#1e293b]/60 leading-normal">Enable cart checkouts and instant digital order placement for diners.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={config.allow_orders}
+                    onClick={() => updateField('allow_orders', !config.allow_orders)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      config.allow_orders ? 'bg-[#d97706]' : 'bg-[#cbd5e1]'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        config.allow_orders ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 3. Show Brand Story */}
+                <div className="p-4 rounded-2xl bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-black uppercase tracking-wider text-[#1e293b]">Show Brand Story</p>
+                    <p className="text-[11px] text-[#1e293b]/60 leading-normal">Display the "Our Brand Story / About Us" section on the storefront.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={config.show_story}
+                    onClick={() => updateField('show_story', !config.show_story)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      config.show_story ? 'bg-[#d97706]' : 'bg-[#cbd5e1]'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        config.show_story ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 4. Show Google Reviews */}
+                <div className="p-4 rounded-2xl bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-black uppercase tracking-wider text-[#1e293b]">Show Google Reviews</p>
+                    <p className="text-[11px] text-[#1e293b]/60 leading-normal">Display Google Star Reviews block. Requires Google Place ID configured in Integrations.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={config.show_reviews}
+                    onClick={() => updateField('show_reviews', !config.show_reviews)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      config.show_reviews ? 'bg-[#d97706]' : 'bg-[#cbd5e1]'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        config.show_reviews ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 5. Show Instagram Feed */}
+                <div className="p-4 rounded-2xl bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-black uppercase tracking-wider text-[#1e293b]">Show Instagram Grid</p>
+                    <p className="text-[11px] text-[#1e293b]/60 leading-normal">Display Instagram photos block. Requires Instagram Handle configured in Integrations.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={config.show_instagram}
+                    onClick={() => updateField('show_instagram', !config.show_instagram)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      config.show_instagram ? 'bg-[#d97706]' : 'bg-[#cbd5e1]'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        config.show_instagram ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 6. Show Blog Feed */}
+                <div className="p-4 rounded-2xl bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-black uppercase tracking-wider text-[#1e293b]">Show Blog Feed</p>
+                    <p className="text-[11px] text-[#1e293b]/60 leading-normal">Display the "Food Stories" editorial blog posts feed section on the storefront.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={config.show_blog}
+                    onClick={() => updateField('show_blog', !config.show_blog)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      config.show_blog ? 'bg-[#d97706]' : 'bg-[#cbd5e1]'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        config.show_blog ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {activeTab === 'social' && (

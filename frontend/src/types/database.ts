@@ -583,6 +583,9 @@ export interface Database {
           show_prices: boolean;
           allow_orders: boolean;
           show_blog: boolean;
+          show_reviews: boolean;
+          show_instagram: boolean;
+          show_story: boolean;
           hero_image_url: string | null;
           hero_image_url_2: string | null;
           hero_image_url_3: string | null;
@@ -600,6 +603,9 @@ export interface Database {
           show_prices?: boolean;
           allow_orders?: boolean;
           show_blog?: boolean;
+          show_reviews?: boolean;
+          show_instagram?: boolean;
+          show_story?: boolean;
           hero_image_url?: string | null;
           hero_image_url_2?: string | null;
           hero_image_url_3?: string | null;

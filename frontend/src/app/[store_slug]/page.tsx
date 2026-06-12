@@ -184,6 +184,14 @@ export default function Storefront() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
   const [activeTablesCount, setActiveTablesCount] = useState<number>(0);
 
+  // Storefront config visibility toggles
+  const [showPrices, setShowPrices] = useState<boolean>(true);
+  const [allowOrders, setAllowOrders] = useState<boolean>(true);
+  const [showBlog, setShowBlog] = useState<boolean>(false);
+  const [showReviews, setShowReviews] = useState<boolean>(true);
+  const [showInstagram, setShowInstagram] = useState<boolean>(true);
+  const [showStory, setShowStory] = useState<boolean>(true);
+
 
   // Loyalty & OTP Login states
   const [customerPhone, setCustomerPhone] = useState<string | null>(null);
@@ -267,7 +275,13 @@ export default function Storefront() {
             footer_hours,
             footer_address,
             footer_phone,
-            footer_email
+            footer_email,
+            show_prices,
+            allow_orders,
+            show_blog,
+            show_reviews,
+            show_instagram,
+            show_story
           )
         `);
         const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(storeSlug);
@@ -330,6 +344,14 @@ export default function Storefront() {
           footer_phone: footerPhone || null,
           footer_email: footerEmail || null
         });
+
+        const rawConfig = Array.isArray(configData) ? configData[0] : configData;
+        setShowPrices(rawConfig?.show_prices ?? true);
+        setAllowOrders(rawConfig?.allow_orders ?? true);
+        setShowBlog(rawConfig?.show_blog ?? false);
+        setShowReviews(rawConfig?.show_reviews ?? true);
+        setShowInstagram(rawConfig?.show_instagram ?? true);
+        setShowStory(rawConfig?.show_story ?? true);
 
         // 2. Fetch categories
         const { data: catData, error: catError } = await supabase
@@ -1049,92 +1071,100 @@ export default function Storefront() {
               </div>
 
               {/* 4. Google Reviews Section */}
-              <div className="space-y-4">
-                <h3 className="font-black text-lg md:text-xl text-foreground text-center">Diner Google Reviews</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { name: 'Amit Sharma', text: 'Best coffee and filter tea in town. The ambiance is exceptional, and QR ordering is super fast!', rating: 5 },
-                    { name: 'Priya Patel', text: 'Loved the wood fired pizzas and desserts. Very cozy space, friendly waiters. Highly recommended!', rating: 5 },
-                    { name: 'Vikram Singh', text: 'A perfect workplace cafe. High speed internet, amazing cold brews, and healthy food bowls.', rating: 5 }
-                  ].map((rev, index) => (
-                    <div key={index} className={`${cardClass} p-5 space-y-3`}>
-                      <div className="flex items-center gap-0.5">
-                        {[...Array(rev.rating)].map((_, i) => (
-                          <Star key={i} size={14} className="fill-[#ca8a04] text-[#ca8a04]" />
-                        ))}
+              {showReviews && (
+                <div className="space-y-4">
+                  <h3 className="font-black text-lg md:text-xl text-foreground text-center">Diner Google Reviews</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { name: 'Amit Sharma', text: 'Best coffee and filter tea in town. The ambiance is exceptional, and QR ordering is super fast!', rating: 5 },
+                      { name: 'Priya Patel', text: 'Loved the wood fired pizzas and desserts. Very cozy space, friendly waiters. Highly recommended!', rating: 5 },
+                      { name: 'Vikram Singh', text: 'A perfect workplace cafe. High speed internet, amazing cold brews, and healthy food bowls.', rating: 5 }
+                    ].map((rev, index) => (
+                      <div key={index} className={`${cardClass} p-5 space-y-3`}>
+                        <div className="flex items-center gap-0.5">
+                          {[...Array(rev.rating)].map((_, i) => (
+                            <Star key={i} size={14} className="fill-[#ca8a04] text-[#ca8a04]" />
+                          ))}
+                        </div>
+                        <p className="text-xs text-foreground/75 leading-relaxed italic">"{rev.text}"</p>
+                        <div className="font-extrabold text-[11px] uppercase tracking-wider text-brand">{rev.name}</div>
                       </div>
-                      <p className="text-xs text-foreground/75 leading-relaxed italic">"{rev.text}"</p>
-                      <div className="font-extrabold text-[11px] uppercase tracking-wider text-brand">{rev.name}</div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 5. Brand Story Teaser */}
-              <div className={`${cardClass} p-6 flex flex-col md:flex-row gap-6 items-center`}>
-                <div className="flex-1 space-y-4 text-center md:text-left">
-                  <h3 className="font-black text-lg md:text-xl text-foreground">Our Culinary Canvas</h3>
-                  <p className="text-xs text-foreground/70 leading-relaxed">
-                    Founded with a passion for creative culinary expression, {tenant.name} blends artisanal baking, micro-roasted specialty coffees, and organic regional delicacies. Every plate is crafted as a canvas of flavor and heritage.
-                  </p>
-                  <button onClick={() => setActiveTab('about')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${buttonClass}`}>
-                    Read Our Story
-                  </button>
+              {showStory && (
+                <div className={`${cardClass} p-6 flex flex-col md:flex-row gap-6 items-center`}>
+                  <div className="flex-1 space-y-4 text-center md:text-left">
+                    <h3 className="font-black text-lg md:text-xl text-foreground">Our Culinary Canvas</h3>
+                    <p className="text-xs text-foreground/70 leading-relaxed">
+                      Founded with a passion for creative culinary expression, {tenant.name} blends artisanal baking, micro-roasted specialty coffees, and organic regional delicacies. Every plate is crafted as a canvas of flavor and heritage.
+                    </p>
+                    <button onClick={() => setActiveTab('about')} className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider ${buttonClass}`}>
+                      Read Our Story
+                    </button>
+                  </div>
+                  <div className="w-full md:w-56 h-40 rounded-2xl overflow-hidden shrink-0">
+                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80" alt="Cafe interior" className="w-full h-full object-cover" />
+                  </div>
                 </div>
-                <div className="w-full md:w-56 h-40 rounded-2xl overflow-hidden shrink-0">
-                  <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80" alt="Cafe interior" className="w-full h-full object-cover" />
-                </div>
-              </div>
+              )}
 
               {/* 6. Instagram Grid (6 Posts) */}
-              <div className="space-y-4">
-                <h3 className="font-black text-lg md:text-xl text-foreground text-center">Instagram Feed</h3>
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                  {[
-                    'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=300&q=80',
-                    'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=300&q=80',
-                    'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=300&q=80',
-                    'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=300&q=80',
-                    'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=300&q=80',
-                    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=300&q=80'
-                  ].map((url, i) => (
-                    <a key={i} href="https://instagram.com" target="_blank" rel="noreferrer" className="block relative aspect-square rounded-xl overflow-hidden border border-border-color group">
-                      <img src={url} alt={`Insta post ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[10px] font-bold">
-                        View Post
-                      </div>
-                    </a>
-                  ))}
+              {showInstagram && (
+                <div className="space-y-4">
+                  <h3 className="font-black text-lg md:text-xl text-foreground text-center">Instagram Feed</h3>
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                    {[
+                      'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=300&q=80',
+                      'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=300&q=80',
+                      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=300&q=80',
+                      'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=300&q=80',
+                      'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=300&q=80',
+                      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=300&q=80'
+                    ].map((url, i) => (
+                      <a key={i} href="https://instagram.com" target="_blank" rel="noreferrer" className="block relative aspect-square rounded-xl overflow-hidden border border-border-color group">
+                        <img src={url} alt={`Insta post ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[10px] font-bold">
+                          View Post
+                        </div>
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 7. Blog Preview Cards */}
-              <div className="space-y-4">
-                <h3 className="font-black text-lg md:text-xl text-foreground">Bite-sized Food Stories</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { title: 'The Science of Perfect Coffee Extraction', excerpt: 'Discover brew ratios, temperatures, and water quality secrets from our Head Barista.', date: '05 Jun', time: '4 min read', image: 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=400&q=80' },
-                    { title: 'Crafting Sourdough: Sourdough Bread Demystified', excerpt: 'Why long fermentation makes bread healthier, tastier, and easier to digest.', date: '28 May', time: '5 min read', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=400&q=80' }
-                  ].map((blog, i) => (
-                    <div key={i} className={`${cardClass} overflow-hidden flex flex-col`}>
-                      <div className="h-40 relative">
-                        <img src={blog.image} alt={blog.title} className="w-full h-full object-cover" />
-                        <span className="absolute top-3 left-3 bg-brand text-white text-[9px] font-extrabold uppercase px-2 py-1 rounded-md">{blog.date}</span>
-                      </div>
-                      <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
-                        <div className="space-y-1">
-                          <h4 className="font-extrabold text-sm text-foreground">{blog.title}</h4>
-                          <p className="text-foreground/60 text-[11px] leading-relaxed">{blog.excerpt}</p>
+              {showBlog && (
+                <div className="space-y-4">
+                  <h3 className="font-black text-lg md:text-xl text-foreground">Bite-sized Food Stories</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { title: 'The Science of Perfect Coffee Extraction', excerpt: 'Discover brew ratios, temperatures, and water quality secrets from our Head Barista.', date: '05 Jun', time: '4 min read', image: 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=400&q=80' },
+                      { title: 'Crafting Sourdough: Sourdough Bread Demystified', excerpt: 'Why long fermentation makes bread healthier, tastier, and easier to digest.', date: '28 May', time: '5 min read', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=400&q=80' }
+                    ].map((blog, i) => (
+                      <div key={i} className={`${cardClass} overflow-hidden flex flex-col`}>
+                        <div className="h-40 relative">
+                          <img src={blog.image} alt={blog.title} className="w-full h-full object-cover" />
+                          <span className="absolute top-3 left-3 bg-brand text-white text-[9px] font-extrabold uppercase px-2 py-1 rounded-md">{blog.date}</span>
                         </div>
-                        <div className="flex justify-between items-center border-t border-border-color/40 pt-3 mt-3">
-                          <span className="text-[10px] text-foreground/40 font-bold">{blog.time}</span>
-                          <button onClick={() => setActiveTab('blogs')} className="text-xs font-bold text-brand hover:underline">Read Story</button>
+                        <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                          <div className="space-y-1">
+                            <h4 className="font-extrabold text-sm text-foreground">{blog.title}</h4>
+                            <p className="text-foreground/60 text-[11px] leading-relaxed">{blog.excerpt}</p>
+                          </div>
+                          <div className="flex justify-between items-center border-t border-border-color/40 pt-3 mt-3">
+                            <span className="text-[10px] text-foreground/40 font-bold">{blog.time}</span>
+                            <button onClick={() => setActiveTab('blogs')} className="text-xs font-bold text-brand hover:underline">Read Story</button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           )}
 

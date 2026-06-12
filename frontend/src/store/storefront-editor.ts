@@ -36,6 +36,7 @@ export interface StorefrontConfig {
   button_radius?: number;
   show_reviews?: boolean;
   show_instagram?: boolean;
+  show_story?: boolean;
   instagram_handle?: string;
   google_place_id?: string;
   announcement_banner?: string;
