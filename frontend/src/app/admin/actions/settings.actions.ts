@@ -136,6 +136,15 @@ export async function updateStoreSettingsAction(updateData: {
   receipt_footer?: string | null;
   service_charge_type?: string | null;
   service_charge_value?: number | null;
+  active_gateway?: string | null;
+  phonepe_merchant_id?: string | null;
+  phonepe_terminal_id?: string | null;
+  googlepay_merchant_id?: string | null;
+  googlepay_terminal_id?: string | null;
+  paytm_merchant_id?: string | null;
+  paytm_terminal_id?: string | null;
+  bharatpe_merchant_id?: string | null;
+  bharatpe_terminal_id?: string | null;
 }) {
   const profile = await requirePermission('settings.edit');
   const supabase = await getSupabase();
@@ -166,6 +175,15 @@ export async function updateStoreSettingsAction(updateData: {
       receipt_footer: updateData.receipt_footer ?? null,
       service_charge_type: updateData.service_charge_type ?? 'none',
       service_charge_value: updateData.service_charge_value ?? 0.00,
+      active_gateway: updateData.active_gateway ?? 'razorpay',
+      phonepe_merchant_id: updateData.phonepe_merchant_id ?? null,
+      phonepe_terminal_id: updateData.phonepe_terminal_id ?? null,
+      googlepay_merchant_id: updateData.googlepay_merchant_id ?? null,
+      googlepay_terminal_id: updateData.googlepay_terminal_id ?? null,
+      paytm_merchant_id: updateData.paytm_merchant_id ?? null,
+      paytm_terminal_id: updateData.paytm_terminal_id ?? null,
+      bharatpe_merchant_id: updateData.bharatpe_merchant_id ?? null,
+      bharatpe_terminal_id: updateData.bharatpe_terminal_id ?? null,
     }, { onConflict: 'tenant_id' })
     .select()
     .single();

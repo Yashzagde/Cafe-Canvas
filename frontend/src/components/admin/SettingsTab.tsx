@@ -55,6 +55,15 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
   // Payments tab states
   const [razorpayKey, setRazorpayKey] = useState('');
   const [upiId, setUpiId] = useState('');
+  const [activeGateway, setActiveGateway] = useState('razorpay');
+  const [phonepeMerchantId, setPhonepeMerchantId] = useState('');
+  const [phonepeTerminalId, setPhonepeTerminalId] = useState('');
+  const [googlepayMerchantId, setGooglepayMerchantId] = useState('');
+  const [googlepayTerminalId, setGooglepayTerminalId] = useState('');
+  const [paytmMerchantId, setPaytmMerchantId] = useState('');
+  const [paytmTerminalId, setPaytmTerminalId] = useState('');
+  const [bharatpeMerchantId, setBharatpeMerchantId] = useState('');
+  const [bharatpeTerminalId, setBharatpeTerminalId] = useState('');
 
   // Hours tab states
   const [openTime, setOpenTime] = useState('09:00');
@@ -85,6 +94,15 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
           setTaxInclusive(settings.tax_inclusive || false);
           setRazorpayKey(settings.razorpay_key_id || '');
           setUpiId(settings.upi_id || '');
+          setActiveGateway((settings as any).active_gateway || 'razorpay');
+          setPhonepeMerchantId((settings as any).phonepe_merchant_id || '');
+          setPhonepeTerminalId((settings as any).phonepe_terminal_id || '');
+          setGooglepayMerchantId((settings as any).googlepay_merchant_id || '');
+          setGooglepayTerminalId((settings as any).googlepay_terminal_id || '');
+          setPaytmMerchantId((settings as any).paytm_merchant_id || '');
+          setPaytmTerminalId((settings as any).paytm_terminal_id || '');
+          setBharatpeMerchantId((settings as any).bharatpe_merchant_id || '');
+          setBharatpeTerminalId((settings as any).bharatpe_terminal_id || '');
           setOpenTime(settings.open_time?.slice(0, 5) || '09:00');
           setCloseTime(settings.close_time?.slice(0, 5) || '22:00');
           setServiceChargeType((settings as any).service_charge_type || 'none');
@@ -187,6 +205,15 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
         close_time: closeTime,
         service_charge_type: serviceChargeType,
         service_charge_value: serviceChargeValue,
+        active_gateway: activeGateway,
+        phonepe_merchant_id: phonepeMerchantId,
+        phonepe_terminal_id: phonepeTerminalId,
+        googlepay_merchant_id: googlepayMerchantId,
+        googlepay_terminal_id: googlepayTerminalId,
+        paytm_merchant_id: paytmMerchantId,
+        paytm_terminal_id: paytmTerminalId,
+        bharatpe_merchant_id: bharatpeMerchantId,
+        bharatpe_terminal_id: bharatpeTerminalId,
       });
 
       if (updated) {
@@ -607,15 +634,113 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
               <p style={{ fontSize: "11px", color: T.mu, fontWeight: 500 }}>Setup API keys for online orders and UPI payments routing.</p>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <Sel
+                label="Active Payment Gateway"
+                value={activeGateway}
+                onChange={(e) => setActiveGateway(e.target.value)}
+              >
+                <option value="razorpay">Razorpay Gateway (Standard)</option>
+                <option value="phonepe">PhonePe Merchant PG</option>
+                <option value="googlepay">GooglePay Business PG</option>
+                <option value="paytm">Paytm Merchant PG</option>
+                <option value="bharatpe">BharatPe QR Business</option>
+              </Sel>
+
+              {activeGateway === 'razorpay' && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "16px", background: "#fbfbf9", border: `1px solid ${T.bdr}`, borderRadius: "12px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: T.tx }}>Razorpay Configuration</span>
+                  <Input
+                    label="Razorpay Key ID"
+                    value={razorpayKey}
+                    onChange={(e) => setRazorpayKey(e.target.value)}
+                    placeholder="rzp_test_..."
+                  />
+                </div>
+              )}
+
+              {activeGateway === 'phonepe' && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "16px", background: "#fbfbf9", border: `1px solid ${T.bdr}`, borderRadius: "12px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: T.tx }}>PhonePe Integration</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    <Input
+                      label="Merchant ID"
+                      value={phonepeMerchantId}
+                      onChange={(e) => setPhonepeMerchantId(e.target.value)}
+                      placeholder="M22... or PG..."
+                    />
+                    <Input
+                      label="Terminal ID (Store ID)"
+                      value={phonepeTerminalId}
+                      onChange={(e) => setPhonepeTerminalId(e.target.value)}
+                      placeholder="T22..."
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeGateway === 'googlepay' && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "16px", background: "#fbfbf9", border: `1px solid ${T.bdr}`, borderRadius: "12px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: T.tx }}>GooglePay Integration</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    <Input
+                      label="GooglePay Merchant ID"
+                      value={googlepayMerchantId}
+                      onChange={(e) => setGooglepayMerchantId(e.target.value)}
+                      placeholder="gpay_merchant_..."
+                    />
+                    <Input
+                      label="Terminal ID"
+                      value={googlepayTerminalId}
+                      onChange={(e) => setGooglepayTerminalId(e.target.value)}
+                      placeholder="gpay_terminal_..."
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeGateway === 'paytm' && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "16px", background: "#fbfbf9", border: `1px solid ${T.bdr}`, borderRadius: "12px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: T.tx }}>Paytm Integration</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    <Input
+                      label="Paytm Merchant ID"
+                      value={paytmMerchantId}
+                      onChange={(e) => setPaytmMerchantId(e.target.value)}
+                      placeholder="paytm_mid_..."
+                    />
+                    <Input
+                      label="Terminal ID"
+                      value={paytmTerminalId}
+                      onChange={(e) => setPaytmTerminalId(e.target.value)}
+                      placeholder="paytm_tid_..."
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeGateway === 'bharatpe' && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "16px", background: "#fbfbf9", border: `1px solid ${T.bdr}`, borderRadius: "12px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: T.tx }}>BharatPe Integration</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    <Input
+                      label="BharatPe Merchant ID"
+                      value={bharatpeMerchantId}
+                      onChange={(e) => setBharatpeMerchantId(e.target.value)}
+                      placeholder="bharatpe_mid_..."
+                    />
+                    <Input
+                      label="Terminal ID"
+                      value={bharatpeTerminalId}
+                      onChange={(e) => setBharatpeTerminalId(e.target.value)}
+                      placeholder="bharatpe_tid_..."
+                    />
+                  </div>
+                </div>
+              )}
+
               <Input
-                label="Razorpay Key ID"
-                value={razorpayKey}
-                onChange={(e) => setRazorpayKey(e.target.value)}
-                placeholder="rzp_test_..."
-              />
-              <Input
-                label="Store UPI ID"
+                label="Fallback Store UPI ID"
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
                 placeholder="cafecanvas@okhdfcbank"

@@ -624,6 +624,15 @@ export interface Database {
           receipt_footer: string | null;
           service_charge_type: string;
           service_charge_value: number;
+          active_gateway: string | null;
+          phonepe_merchant_id: string | null;
+          phonepe_terminal_id: string | null;
+          googlepay_merchant_id: string | null;
+          googlepay_terminal_id: string | null;
+          paytm_merchant_id: string | null;
+          paytm_terminal_id: string | null;
+          bharatpe_merchant_id: string | null;
+          bharatpe_terminal_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -641,6 +650,15 @@ export interface Database {
           receipt_footer?: string | null;
           service_charge_type?: string;
           service_charge_value?: number;
+          active_gateway?: string | null;
+          phonepe_merchant_id?: string | null;
+          phonepe_terminal_id?: string | null;
+          googlepay_merchant_id?: string | null;
+          googlepay_terminal_id?: string | null;
+          paytm_merchant_id?: string | null;
+          paytm_terminal_id?: string | null;
+          bharatpe_merchant_id?: string | null;
+          bharatpe_terminal_id?: string | null;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['store_settings']['Insert']>;
