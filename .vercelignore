@@ -7,7 +7,6 @@
 # Ignore other sub-projects and environments
 cafecanva_flutter/
 desktop/
-cafe-canvas-store-admin/
 claude-docs-hub/
 scratch/
 **/*.exe

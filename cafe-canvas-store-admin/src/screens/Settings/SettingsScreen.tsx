@@ -8,12 +8,13 @@ import {
   ExternalLink, 
   AlertTriangle,
   Sparkles,
-  Save
+  Save,
+  Printer
 } from 'lucide-react'
 import { useTenantStore } from '../../store/tenant.store'
 import { supabase } from '../../lib/supabase'
 
-type TabType = 'general' | 'hours' | 'tax' | 'payments' | 'subscription' | 'account'
+type TabType = 'general' | 'hours' | 'tax' | 'payments' | 'subscription' | 'account' | 'receipt'
 
 export function SettingsScreen() {
   const { tenant, settings, updateSettings, fetchTenantData } = useTenantStore()
@@ -46,6 +47,12 @@ export function SettingsScreen() {
   const [openTime, setOpenTime] = useState('09:00')
   const [closeTime, setCloseTime] = useState('22:00')
 
+  // Receipt tab states
+  const [receiptHeader, setReceiptHeader] = useState('')
+  const [receiptFooter, setReceiptFooter] = useState('')
+  const [printerWidth, setPrinterWidth] = useState('80mm')
+  const [autoPrint, setAutoPrint] = useState(false)
+
   // Sync state values when store data is loaded
   useEffect(() => {
     if (tenant) {
@@ -64,9 +71,20 @@ export function SettingsScreen() {
       setUpiId(settings.upi_id || '')
       setOpenTime(settings.open_time?.slice(0, 5) || '09:00')
       setCloseTime(settings.close_time?.slice(0, 5) || '22:00')
-
+      setReceiptHeader(settings.receipt_header || '')
+      setReceiptFooter(settings.receipt_footer || 'Thank you! Visit again.')
     }
   }, [tenant, settings])
+
+  // Load local client settings from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedWidth = localStorage.getItem('pos_printer_width')
+      const storedAutoPrint = localStorage.getItem('pos_auto_print')
+      if (storedWidth) setPrinterWidth(storedWidth)
+      if (storedAutoPrint) setAutoPrint(storedAutoPrint === 'true')
+    }
+  }, [])
 
   const showFeedback = (success: boolean, msg: string) => {
     if (success) {
@@ -121,6 +139,12 @@ export function SettingsScreen() {
       updates = { razorpay_key_id: razorpayKey, upi_id: upiId }
     } else if (activeTab === 'hours') {
       updates = { open_time: openTime, close_time: closeTime }
+    } else if (activeTab === 'receipt') {
+      updates = { receipt_header: receiptHeader, receipt_footer: receiptFooter }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('pos_printer_width', printerWidth)
+        localStorage.setItem('pos_auto_print', String(autoPrint))
+      }
     }
 
 
@@ -142,9 +166,9 @@ export function SettingsScreen() {
     { id: 'hours' as TabType, label: 'Operating Hours', icon: Clock },
     { id: 'tax' as TabType, label: 'Taxation Rules', icon: Percent },
     { id: 'payments' as TabType, label: 'Payment Gateway', icon: CreditCard },
+    { id: 'receipt' as TabType, label: 'Receipt & Printer', icon: Printer },
     { id: 'subscription' as TabType, label: 'Merchant Plan', icon: Sparkles },
     { id: 'account' as TabType, label: 'System Access', icon: ShieldCheck },
-
   ]
 
   return (
@@ -409,6 +433,81 @@ export function SettingsScreen() {
               >
                 <Save className="w-3.5 h-3.5" />
                 {isSaving ? 'Updating...' : 'Save Payment Keys'}
+              </button>
+            </form>
+          )}
+
+          {/* TAB 4.5: RECEIPT & PRINTER SETTINGS */}
+          {activeTab === 'receipt' && (
+            <form onSubmit={handleSaveSettings} className="space-y-4">
+              <div>
+                <h4 className="font-display text-xl font-bold text-canvas-brown">Receipt & Printer Settings</h4>
+                <p className="text-xs text-canvas-brown_mid font-medium">Configure layout options for physical thermal receipts and POS hardware.</p>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-canvas-brown uppercase tracking-wider">Receipt Header Text</label>
+                  <textarea
+                    rows={3}
+                    value={receiptHeader}
+                    onChange={(e) => setReceiptHeader(e.target.value)}
+                    placeholder="e.g. Aether Café&#10;123 Coffee Lane, New Delhi"
+                    className="w-full px-3 py-2 rounded-lg border border-canvas-border bg-white text-xs font-semibold text-canvas-brown focus:border-canvas-terracotta focus:ring-1 focus:ring-canvas-terracotta/20 outline-none resize-none"
+                  />
+                  <p className="text-[9px] text-canvas-brown_light">Prints at the top of every invoice billing ticket.</p>
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-canvas-brown uppercase tracking-wider">Receipt Footer Text</label>
+                  <textarea
+                    rows={2}
+                    value={receiptFooter}
+                    onChange={(e) => setReceiptFooter(e.target.value)}
+                    placeholder="Thank you! Visit again."
+                    className="w-full px-3 py-2 rounded-lg border border-canvas-border bg-white text-xs font-semibold text-canvas-brown focus:border-canvas-terracotta focus:ring-1 focus:ring-canvas-terracotta/20 outline-none resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-canvas-brown uppercase tracking-wider">Thermal Printer Width</label>
+                    <select
+                      value={printerWidth}
+                      onChange={(e) => setPrinterWidth(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-canvas-border bg-white text-xs font-semibold text-canvas-brown focus:border-canvas-terracotta focus:ring-1 focus:ring-canvas-terracotta/20 outline-none cursor-pointer"
+                    >
+                      <option value="80mm">80mm (Standard Desktop Thermal)</option>
+                      <option value="58mm">58mm (Mobile/Handheld POS)</option>
+                    </select>
+                    <p className="text-[9px] text-canvas-brown_light">Local workstation setting stored on this client.</p>
+                  </div>
+
+                  <div className="bg-canvas-cream/50 p-4 rounded-xl border border-canvas-border/45 flex items-center h-fit self-end">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={autoPrint}
+                        onChange={(e) => setAutoPrint(e.target.checked)}
+                        className="rounded border-canvas-border text-canvas-terracotta focus:ring-canvas-terracotta/30 w-4 h-4"
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-canvas-brown">Auto-Print Order Bills</p>
+                        <p className="text-[9px] text-canvas-brown_light font-medium mt-0.5">
+                          Instantly prints orders to thermal printer on confirmation.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="flex items-center gap-1.5 py-2.5 px-4 rounded-lg bg-canvas-terracotta hover:bg-canvas-terra_light text-white font-bold text-xs transition-colors shadow-md shadow-canvas-terracotta/10 focus:outline-none disabled:opacity-50"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {isSaving ? 'Updating...' : 'Save Receipt Settings'}
               </button>
             </form>
           )}
