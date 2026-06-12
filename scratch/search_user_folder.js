@@ -3,6 +3,10 @@ const path = require('path');
 
 console.log("Searching user folder for java.exe...");
 
+/**
+ * @param {string} dir
+ * @param {number} [depth=0]
+ */
 function search(dir, depth = 0) {
   if (depth > 5) return; // limit depth
   try {

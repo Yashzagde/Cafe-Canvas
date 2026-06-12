@@ -41,7 +41,7 @@ async function main() {
         database: db,
         username: user.split('.')[0] || 'postgres',
         password: pass,
-        ssl: 'require',
+        ssl: /** @type {any} */ ('require'),
         max: 1,
         connect_timeout: 30
       };
@@ -207,7 +207,7 @@ async function main() {
 
   } catch (err) {
     console.error("\n❌ Initialization failed:");
-    console.error(err.message || err);
+    console.error(/** @type {any} */ (err).message || err);
   } finally {
     await sql.end();
   }
