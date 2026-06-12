@@ -15,8 +15,8 @@ const sql = postgres(dbUrl, { ssl: 'require' });
 
 async function query() {
   try {
-    console.log("Fetching store_settings columns...");
-    const columns = await sql`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'store_settings'`;
+    console.log("Fetching bills columns...");
+    const columns = await sql`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'bills'`;
     console.table(columns);
   } catch (err) {
     console.error("Query failed:", err);

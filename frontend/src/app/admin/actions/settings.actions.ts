@@ -53,7 +53,9 @@ export async function getSettingsAction() {
         tax_sgst: 250,
         tax_inclusive: false,
         open_time: '09:00',
-        close_time: '22:00'
+        close_time: '22:00',
+        service_charge_type: 'none',
+        service_charge_value: 0.00
       })
       .select()
       .single();
@@ -132,6 +134,8 @@ export async function updateStoreSettingsAction(updateData: {
   close_time?: string | null;
   receipt_header?: string | null;
   receipt_footer?: string | null;
+  service_charge_type?: string | null;
+  service_charge_value?: number | null;
 }) {
   const profile = await requirePermission('settings.edit');
   const supabase = await getSupabase();
@@ -160,6 +164,8 @@ export async function updateStoreSettingsAction(updateData: {
       close_time: updateData.close_time ?? null,
       receipt_header: updateData.receipt_header ?? null,
       receipt_footer: updateData.receipt_footer ?? null,
+      service_charge_type: updateData.service_charge_type ?? 'none',
+      service_charge_value: updateData.service_charge_value ?? 0.00,
     }, { onConflict: 'tenant_id' })
     .select()
     .single();

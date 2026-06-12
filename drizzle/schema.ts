@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, boolean, jsonb, doublePrecision } from "drizzle-orm/pg-core";
 
 // ---------- SaaS Tenants & Locations ----------
 
@@ -64,6 +64,8 @@ export const storeSettings = pgTable('store_settings', {
   closeTime: text('close_time'),
   receiptHeader: text('receipt_header'),
   receiptFooter: text('receipt_footer').default('Thank you! Visit again.').notNull(),
+  serviceChargeType: text('service_charge_type').default('none').notNull(),
+  serviceChargeValue: doublePrecision('service_charge_value').default(0.00).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 

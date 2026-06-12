@@ -13,7 +13,7 @@ import {
   Save,
   Loader2
 } from 'lucide-react';
-import { T, ff, Btn, Input } from '@/components/admin/UIPrimitives';
+import { T, ff, Btn, Input, Sel } from '@/components/admin/UIPrimitives';
 import { getSettingsAction, updateGeneralSettingsAction, updateStoreSettingsAction } from '@/app/admin/actions/settings.actions';
 import { createClient } from '@/utils/supabase/client';
 
@@ -47,6 +47,8 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
   const [cgst, setCgst] = useState(2.5);
   const [sgst, setSgst] = useState(2.5);
   const [taxInclusive, setTaxInclusive] = useState(false);
+  const [serviceChargeType, setServiceChargeType] = useState('none');
+  const [serviceChargeValue, setServiceChargeValue] = useState(0.00);
 
   // Payments tab states
   const [razorpayKey, setRazorpayKey] = useState('');
@@ -83,6 +85,8 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
           setUpiId(settings.upi_id || '');
           setOpenTime(settings.open_time?.slice(0, 5) || '09:00');
           setCloseTime(settings.close_time?.slice(0, 5) || '22:00');
+          setServiceChargeType((settings as any).service_charge_type || 'none');
+          setServiceChargeValue(parseFloat((settings as any).service_charge_value?.toString() || '0.00'));
         }
       }
     } catch (err: any) {
@@ -179,6 +183,8 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
         upi_id: upiId,
         open_time: openTime,
         close_time: closeTime,
+        service_charge_type: serviceChargeType,
+        service_charge_value: serviceChargeValue,
       });
 
       if (updated) {
@@ -509,6 +515,39 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
                   <p style={{ fontSize: "10px", color: T.mu, fontWeight: 500, lineHeight: "1.4" }}>
                     When enabled, menu catalog item prices include CGST and SGST calculations. If disabled, taxes are added on top of item totals.
                   </p>
+                </div>
+              </div>
+
+              <div style={{ borderTop: `1px solid ${T.bdr}`, paddingTop: "20px" }}>
+                <h5 style={{ fontSize: "14px", fontWeight: 800, color: T.tx, marginBottom: "4px" }}>Service Charges</h5>
+                <p style={{ fontSize: "11px", color: T.mu, fontWeight: 500, marginBottom: "16px" }}>
+                  Configure discretionary service charges applied to checkout bills.
+                </p>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                  <Sel
+                    label="Charge Type"
+                    value={serviceChargeType}
+                    onChange={(e) => {
+                      setServiceChargeType(e.target.value);
+                      if (e.target.value === 'none') {
+                        setServiceChargeValue(0);
+                      }
+                    }}
+                  >
+                    <option value="none">None (Disabled)</option>
+                    <option value="percent">Percentage (%)</option>
+                    <option value="flat">Flat Amount (₹)</option>
+                  </Sel>
+                  
+                  <Input
+                    label={serviceChargeType === 'flat' ? "Charge Value (₹)" : "Charge Value (%)"}
+                    type="number"
+                    step="0.01"
+                    disabled={serviceChargeType === 'none'}
+                    value={serviceChargeValue}
+                    onChange={(e) => setServiceChargeValue(parseFloat(e.target.value) || 0)}
+                  />
                 </div>
               </div>
             </div>

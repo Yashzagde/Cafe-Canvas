@@ -125,7 +125,7 @@ export default function BillingTab({
   const [billingSettings, setBillingSettings] = useState({
     cgstPercent: 2.5,
     sgstPercent: 2.5,
-    serviceChargeType: "percent" as "percent" | "flat",
+    serviceChargeType: "percent" as "percent" | "flat" | "none",
     serviceChargeValue: 5,
   });
   const [billingSettingsOpen, setBillingSettingsOpen] = useState(false);
@@ -147,7 +147,7 @@ export default function BillingTab({
 
         const { data: settings } = await supabase
           .from('store_settings')
-          .select('receipt_header, receipt_footer, tax_cgst, tax_sgst')
+          .select('receipt_header, receipt_footer, tax_cgst, tax_sgst, service_charge_type, service_charge_value')
           .eq('tenant_id', tenantId)
           .maybeSingle();
 
@@ -160,10 +160,13 @@ export default function BillingTab({
 
         let gstNumber = '27AABCU9603R1ZM';
         let fssaiNumber = '11521999000123';
-        let serviceChargeType: 'percent' | 'flat' = 'percent';
-        let serviceChargeValue = 5;
+        let serviceChargeType: 'percent' | 'flat' | 'none' = 'none';
+        let serviceChargeValue = 0;
 
-        if (settings?.receipt_header) {
+        if (settings?.service_charge_type) {
+          serviceChargeType = settings.service_charge_type as any;
+          serviceChargeValue = parseFloat(settings.service_charge_value?.toString() || '0');
+        } else if (settings?.receipt_header) {
           try {
             const parsed = JSON.parse(settings.receipt_header);
             if (parsed.gstNumber) gstNumber = parsed.gstNumber;
@@ -233,6 +236,8 @@ export default function BillingTab({
           tax_sgst: Math.round(billingSettings.sgstPercent * 100),
           receipt_footer: storeInfo.footerMessage,
           receipt_header: serializedHeader,
+          service_charge_type: billingSettings.serviceChargeType,
+          service_charge_value: billingSettings.serviceChargeValue,
         }, { onConflict: 'tenant_id' });
 
       if (settingsError) throw settingsError;
@@ -1218,6 +1223,14 @@ export default function BillingTab({
               <div style={{ display: "flex", gap: "6px" }}>
                 <Btn
                   size="sm"
+                  variant={billingSettings.serviceChargeType === 'none' ? 'primary' : 'ghost'}
+                  onClick={() => saveBillingSettings({ ...billingSettings, serviceChargeType: 'none', serviceChargeValue: 0 })}
+                  style={{ flex: 1 }}
+                >
+                  None (Disabled)
+                </Btn>
+                <Btn
+                  size="sm"
                   variant={billingSettings.serviceChargeType === 'percent' ? 'primary' : 'ghost'}
                   onClick={() => saveBillingSettings({ ...billingSettings, serviceChargeType: 'percent' })}
                   style={{ flex: 1 }}
@@ -1236,9 +1249,10 @@ export default function BillingTab({
             </div>
 
             <Input
-              label={billingSettings.serviceChargeType === 'percent' ? "Service Charge Rate (%)" : "Service Charge Flat Amount (₹)"}
+              label={billingSettings.serviceChargeType === 'none' ? "Service Charge (Disabled)" : billingSettings.serviceChargeType === 'flat' ? "Service Charge Flat Amount (₹)" : "Service Charge Rate (%)"}
               type="number"
               step="0.01"
+              disabled={billingSettings.serviceChargeType === 'none'}
               value={billingSettings.serviceChargeValue}
               onChange={e => saveBillingSettings({ ...billingSettings, serviceChargeValue: parseFloat(e.target.value) || 0 })}
             />
