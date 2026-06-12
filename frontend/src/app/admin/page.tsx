@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Coffee, AlertCircle, LogOut, ChevronDown, User, Layers, ShieldAlert, Award } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -110,6 +110,16 @@ interface RecentOrder {
 export default function CafeCanvaAdmin() {
   const router = useRouter();
   const supabase = createClient();
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerFetchDbData = () => {
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchDbData();
+    }, 300);
+  };
 
   const { activeBranch, branches, setActiveBranch, setBranches } = useBranchStore();
   const { setOnline, setOffline } = useStaffPresenceStore();
@@ -345,29 +355,29 @@ export default function CafeCanvaAdmin() {
 
   // Real-time Order Subscriptions
   useEffect(() => {
-    if (dbPending) return;
+    if (dbPending || !tenantId) return;
 
     const channel = supabase
       .channel('admin-pos-dashboard-sync')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
-        () => { fetchDbData(); }
+        () => { triggerFetchDbData(); }
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'order_items' },
-        () => { fetchDbData(); }
+        { event: '*', schema: 'public', table: 'order_items', filter: `tenant_id=eq.${tenantId}` },
+        () => { triggerFetchDbData(); }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'bills', filter: `tenant_id=eq.${tenantId}` },
-        () => { fetchDbData(); }
+        () => { triggerFetchDbData(); }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'customers', filter: `tenant_id=eq.${tenantId}` },
-        () => { fetchDbData(); }
+        () => { triggerFetchDbData(); }
       )
       .on(
         'postgres_changes',
@@ -376,12 +386,13 @@ export default function CafeCanvaAdmin() {
           if (payload.new && payload.new.body) {
             toast(payload.new.body, payload.new.type === 'customer_checkin' ? 'success' : 'warning');
           }
-          fetchDbData();
+          triggerFetchDbData();
         }
       )
       .subscribe();
 
     return () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
       supabase.removeChannel(channel);
     };
   }, [tenantId, dbPending]);

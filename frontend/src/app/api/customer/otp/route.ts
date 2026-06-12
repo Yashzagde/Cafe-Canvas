@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { createClient as createServerSupabaseClient } from '@/utils/supabase/server';
 import { sendCustomerOtpWhatsApp } from '@/lib/msg91';
 import { cookies } from 'next/headers';
 
@@ -11,9 +12,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Phone number is required' }, { status: 400 });
   }
 
+  let client;
+  let useRpc = false;
   const admin = createAdminClient();
-  if (!admin) {
-    return NextResponse.json({ success: false, error: 'Supabase admin client not available' }, { status: 500 });
+  if (admin) {
+    client = admin;
+  } else {
+    // Fall back to server client via RPC (SECURITY DEFINER)
+    client = await createServerSupabaseClient();
+    useRpc = true;
   }
 
   if (action === 'send') {
@@ -21,26 +28,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Tenant ID is required to send OTP' }, { status: 400 });
     }
 
-    // Generate 6-digit OTP
-    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
-
-    // Save in database
-    const { error: dbError } = await admin
-      .from('customer_otp_sessions')
-      .insert({
-        phone,
-        otp: generatedOtp,
-        expires_at: expiresAt,
-        verified: false
+    let generatedOtp: string;
+    if (useRpc) {
+      const { data, error: rpcError } = await client.rpc('request_customer_otp', {
+        p_phone: phone,
+        p_tenant_id: tenantId
       });
+      if (rpcError) {
+        return NextResponse.json({ success: false, error: rpcError.message }, { status: 500 });
+      }
+      generatedOtp = data;
+    } else {
+      // Generate 6-digit OTP
+      generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
 
-    if (dbError) {
-      return NextResponse.json({ success: false, error: dbError.message }, { status: 500 });
+      // Save in database
+      const { error: dbError } = await client
+        .from('customer_otp_sessions')
+        .insert({
+          phone,
+          otp: generatedOtp,
+          expires_at: expiresAt,
+          verified: false
+        });
+
+      if (dbError) {
+        return NextResponse.json({ success: false, error: dbError.message }, { status: 500 });
+      }
     }
 
     // Get tenant business name
-    const { data: tenant } = await admin
+    const { data: tenant } = await client
       .from('tenants')
       .select('name')
       .eq('id', tenantId)
@@ -80,73 +99,98 @@ export async function POST(req: NextRequest) {
       sameSite: 'strict'
     });
 
-    // Check if customer exists in the system under this tenant; if not, create them
-    const { data: existingCustomer, error: queryErr } = await admin
-      .from('customers')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .eq('phone', phone)
-      .maybeSingle();
-
-    if (queryErr) {
-      return NextResponse.json({ success: false, error: queryErr.message }, { status: 500 });
-    }
-
     let visits = 1;
-    let isNew = false;
+    let publicId: string | null = null;
 
-    if (!existingCustomer) {
-      isNew = true;
-      const { error: insErr } = await admin
+    if (useRpc) {
+      const { data, error: rpcError } = await client.rpc('verify_customer_otp_and_checkin', {
+        p_phone: phone,
+        p_otp: '',
+        p_tenant_id: tenantId,
+        p_is_quick: true
+      });
+      if (rpcError) {
+        return NextResponse.json({ success: false, error: rpcError.message }, { status: 500 });
+      }
+      if (!data || data.length === 0) {
+        return NextResponse.json({ success: false, error: 'Failed to check in' }, { status: 500 });
+      }
+      const res = data[0];
+      if (!res.success) {
+        return NextResponse.json({ success: false, error: res.error_msg }, { status: 400 });
+      }
+      visits = res.visits;
+      publicId = res.public_id;
+    } else {
+      // Check if customer exists in the system under this tenant; if not, create them
+      const { data: existingCustomer, error: queryErr } = await client
         .from('customers')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('phone', phone)
+        .maybeSingle();
+
+      if (queryErr) {
+        return NextResponse.json({ success: false, error: queryErr.message }, { status: 500 });
+      }
+
+      let isNew = false;
+
+      if (!existingCustomer) {
+        isNew = true;
+        const { error: insErr } = await client
+          .from('customers')
+          .insert({
+            tenant_id: tenantId,
+            phone,
+            name: 'Storefront Guest',
+            total_visits: 1,
+            total_spent: 0,
+            last_visit_at: new Date().toISOString()
+          });
+        if (insErr) {
+          return NextResponse.json({ success: false, error: insErr.message }, { status: 500 });
+        }
+      } else {
+        visits = (existingCustomer.total_visits || 0) + 1;
+        const { error: updErr } = await client
+          .from('customers')
+          .update({
+            total_visits: visits,
+            last_visit_at: new Date().toISOString()
+          })
+          .eq('id', existingCustomer.id);
+        if (updErr) {
+          return NextResponse.json({ success: false, error: updErr.message }, { status: 500 });
+        }
+      }
+
+      // Log notification for Store Admin and Staff POS
+      const { error: notifErr } = await client
+        .from('notification_log')
         .insert({
           tenant_id: tenantId,
-          phone,
-          name: 'Storefront Guest',
-          total_visits: 1,
-          total_spent: 0,
-          last_visit_at: new Date().toISOString()
+          type: 'customer_checkin',
+          title: isNew ? 'New Customer Registered' : 'Customer Checked In',
+          body: `Customer with phone number ${phone} checked in on the digital menu (Visit #${visits}).`,
+          read: false
         });
-      if (insErr) {
-        return NextResponse.json({ success: false, error: insErr.message }, { status: 500 });
+
+      if (notifErr) {
+        console.error('Failed to insert notification log:', notifErr.message);
       }
-    } else {
-      visits = (existingCustomer.total_visits || 0) + 1;
-      const { error: updErr } = await admin
-        .from('customers')
-        .update({
-          total_visits: visits,
-          last_visit_at: new Date().toISOString()
-        })
-        .eq('id', existingCustomer.id);
-      if (updErr) {
-        return NextResponse.json({ success: false, error: updErr.message }, { status: 500 });
-      }
+
+      // Fetch tenant's public_id
+      const { data: tenantObj } = await client
+        .from('tenants')
+        .select('public_id')
+        .eq('id', tenantId)
+        .maybeSingle();
+      
+      publicId = tenantObj?.public_id || null;
     }
 
-    // Log notification for Store Admin and Staff POS
-    const { error: notifErr } = await admin
-      .from('notification_log')
-      .insert({
-        tenant_id: tenantId,
-        type: 'customer_checkin',
-        title: isNew ? 'New Customer Registered' : 'Customer Checked In',
-        body: `Customer with phone number ${phone} checked in on the digital menu (Visit #${visits}).`,
-        read: false
-      });
-
-    if (notifErr) {
-      console.error('Failed to insert notification log:', notifErr.message);
-    }
-
-    // Fetch tenant's public_id
-    const { data: tenantObj } = await admin
-      .from('tenants')
-      .select('public_id')
-      .eq('id', tenantId)
-      .maybeSingle();
-
-    return NextResponse.json({ success: true, phone, visits, publicId: tenantObj?.public_id || null });
+    return NextResponse.json({ success: true, phone, visits, publicId });
   }
 
   if (action === 'verify') {
@@ -154,33 +198,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'OTP is required' }, { status: 400 });
     }
 
-    // Query active unverified matching OTP session
-    const { data: session, error: findError } = await admin
-      .from('customer_otp_sessions')
-      .select('*')
-      .eq('phone', phone)
-      .eq('otp', otp)
-      .eq('verified', false)
-      .gt('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (findError) {
-      return NextResponse.json({ success: false, error: findError.message }, { status: 500 });
-    }
-
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Invalid or expired OTP code' }, { status: 400 });
-    }
-
-    // Mark as verified
-    await admin
-      .from('customer_otp_sessions')
-      .update({ verified: true })
-      .eq('id', session.id);
-
-    // Set temporary 30-minute cookies
+    // Set temporary 24-hour cookies
     const cookieStore = await cookies();
     cookieStore.set('customer_phone', phone, {
       maxAge: 86400, // 24 hours in seconds
@@ -198,52 +216,99 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Check if customer exists in the system under this tenant; if not, create them
-    if (tenantId) {
-      const { data: existingCustomer } = await admin
-        .from('customers')
+    let visits = 1;
+
+    if (useRpc) {
+      const { data, error: rpcError } = await client.rpc('verify_customer_otp_and_checkin', {
+        p_phone: phone,
+        p_otp: otp,
+        p_tenant_id: tenantId || '',
+        p_is_quick: false
+      });
+      if (rpcError) {
+        return NextResponse.json({ success: false, error: rpcError.message }, { status: 500 });
+      }
+      if (!data || data.length === 0) {
+        return NextResponse.json({ success: false, error: 'Failed to verify' }, { status: 500 });
+      }
+      const res = data[0];
+      if (!res.success) {
+        return NextResponse.json({ success: false, error: res.error_msg }, { status: 400 });
+      }
+      visits = res.visits;
+    } else {
+      // Query active unverified matching OTP session
+      const { data: session, error: findError } = await client
+        .from('customer_otp_sessions')
         .select('*')
-        .eq('tenant_id', tenantId)
         .eq('phone', phone)
+        .eq('otp', otp)
+        .eq('verified', false)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
-      let isNew = false;
-      let visits = 1;
-      if (!existingCustomer) {
-        isNew = true;
-        // Create new customer profile
-        await admin
-          .from('customers')
-          .insert({
-            tenant_id: tenantId,
-            phone,
-            name: 'Storefront Guest',
-            total_visits: 1,
-            total_spent: 0,
-            last_visit_at: new Date().toISOString()
-          });
-      } else {
-        visits = (existingCustomer.total_visits || 0) + 1;
-        // Increment visit count
-        await admin
-          .from('customers')
-          .update({
-            total_visits: visits,
-            last_visit_at: new Date().toISOString()
-          })
-          .eq('id', existingCustomer.id);
+      if (findError) {
+        return NextResponse.json({ success: false, error: findError.message }, { status: 500 });
       }
 
-      // Log notification for Store Admin and Staff POS
-      await admin
-        .from('notification_log')
-        .insert({
-          tenant_id: tenantId,
-          type: 'customer_checkin',
-          title: isNew ? 'New Customer Registered' : 'Customer Checked In',
-          body: `Customer with phone number ${phone} checked in on the digital menu (Visit #${visits}).`,
-          read: false
-        });
+      if (!session) {
+        return NextResponse.json({ success: false, error: 'Invalid or expired OTP code' }, { status: 400 });
+      }
+
+      // Mark as verified
+      await client
+        .from('customer_otp_sessions')
+        .update({ verified: true })
+        .eq('id', session.id);
+
+      // Check if customer exists in the system under this tenant; if not, create them
+      if (tenantId) {
+        const { data: existingCustomer } = await client
+          .from('customers')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('phone', phone)
+          .maybeSingle();
+
+        let isNew = false;
+        if (!existingCustomer) {
+          isNew = true;
+          // Create new customer profile
+          await client
+            .from('customers')
+            .insert({
+              tenant_id: tenantId,
+              phone,
+              name: 'Storefront Guest',
+              total_visits: 1,
+              total_spent: 0,
+              last_visit_at: new Date().toISOString()
+            });
+        } else {
+          visits = (existingCustomer.total_visits || 0) + 1;
+          // Increment visit count
+          await client
+            .from('customers')
+            .update({
+              total_visits: visits,
+              last_visit_at: new Date().toISOString()
+            })
+            .eq('id', existingCustomer.id);
+        }
+
+        // Log notification for Store Admin and Staff POS
+        await client
+          .from('notification_log')
+          .insert({
+            tenant_id: tenantId,
+            type: 'customer_checkin',
+            title: isNew ? 'New Customer Registered' : 'Customer Checked In',
+            body: `Customer with phone number ${phone} checked in on the digital menu (Visit #${visits}).`,
+            read: false
+          });
+      }
     }
 
     return NextResponse.json({ success: true, phone });

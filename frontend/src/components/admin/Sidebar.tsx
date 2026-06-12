@@ -136,7 +136,7 @@ export default function Sidebar({
 
       {/* Footer */}
       {sidebarOpen && (
-        <div ref={menuRef} style={{ padding: "12px 16px", borderTop: `1px solid ${T.bdr}`, position: "relative" }}>
+        <div ref={menuRef} style={{ padding: "12px 16px", borderTop: `1px solid ${T.bdr}`, position: "relative", zIndex: 40 }}>
           {/* Profile Context Dropdown */}
           {menuOpen && (
             <div style={{
@@ -152,7 +152,7 @@ export default function Sidebar({
               display: "flex",
               flexDirection: "column",
               gap: "4px",
-              zIndex: 50
+              zIndex: 100
             }}>
               <button
                 onClick={() => {
@@ -233,7 +233,10 @@ export default function Sidebar({
           )}
 
           <div 
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => {
+              console.log("[sidebar] Profile clicked, toggling menuOpen from:", menuOpen, "to:", !menuOpen);
+              setMenuOpen(!menuOpen);
+            }}
             style={{ 
               display: "flex", 
               alignItems: "center", 

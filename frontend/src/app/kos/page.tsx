@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Clock, CheckCircle2, Coffee, AlertCircle, Play } from 'lucide-react';
 
@@ -58,6 +58,16 @@ const SEED_ORDERS: Order[] = [
 
 export default function KOSDashboard() {
   const supabase = createClient();
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerFetchOrders = () => {
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchOrders();
+    }, 300);
+  };
 
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -153,7 +163,7 @@ export default function KOSDashboard() {
 
   // Set up real-time subscription
   useEffect(() => {
-    if (dbPending) return;
+    if (dbPending || !tenantId) return;
 
     const channel = supabase
       .channel('kds-orders-changes')
@@ -161,19 +171,20 @@ export default function KOSDashboard() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
         () => {
-          fetchOrders();
+          triggerFetchOrders();
         }
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'order_items' },
+        { event: '*', schema: 'public', table: 'order_items', filter: `tenant_id=eq.${tenantId}` },
         () => {
-          fetchOrders();
+          triggerFetchOrders();
         }
       )
       .subscribe();
 
     return () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
       supabase.removeChannel(channel);
     };
   }, [tenantId, dbPending]);
