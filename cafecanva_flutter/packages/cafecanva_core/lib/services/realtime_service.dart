@@ -38,6 +38,7 @@ class RealtimeService {
   /// Subscribe KDS to new orders and kitchen-order-item status changes
   RealtimeChannel subscribeToKitchenOrders({
     required String branchId,
+    required String tenantId,
     required void Function(PostgresChangePayload payload) onOrderCreated,
     required void Function(PostgresChangePayload payload) onOrderItemUpdated,
   }) {
@@ -59,11 +60,16 @@ class RealtimeService {
       callback: onOrderCreated,
     );
 
-    // Apply branch isolation filter on Order Item modifications
+    // Apply tenant isolation filter on Order Item modifications
     channel = channel.onPostgresChanges(
       event: PostgresChangeEvent.update,
       schema: 'public',
       table: 'order_items',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'tenant_id',
+        value: tenantId,
+      ),
       callback: onOrderItemUpdated,
     );
 

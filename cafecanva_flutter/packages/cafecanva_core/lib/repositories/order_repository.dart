@@ -51,6 +51,7 @@ class OrderRepository {
     String? notes,
     int subtotal = 0,
     int total = 0,
+    bool isOfflineSync = false,
   }) async {
     try {
       // 1. Insert the order
@@ -89,34 +90,34 @@ class OrderRepository {
 
       return order;
     } catch (e) {
-      // If we are already running inside the sync routine (keys start with "offline_"), rethrow to let the sync queue retry later.
-      final isOfflineSync = createdBy != null && createdBy.startsWith('offline_');
-      if (!isOfflineSync) {
-        await OfflineSyncService.instance.queueOrder(
-          tenantId: tenantId,
-          branchId: branchId,
-          tableId: tableId,
-          createdBy: createdBy,
-          items: items,
-          notes: notes,
-          subtotal: subtotal,
-          total: total,
-        );
-
-        return Order(
-          id: 'offline_temp_${DateTime.now().millisecondsSinceEpoch}',
-          tenantId: tenantId,
-          branchId: branchId,
-          tableId: tableId,
-          status: 'pending',
-          subtotal: subtotal,
-          total: total,
-          notes: notes,
-          createdBy: createdBy,
-          createdAt: DateTime.now(),
-        );
+      // If we are already running inside the sync routine, rethrow to let the sync queue retry later.
+      if (isOfflineSync) {
+        rethrow;
       }
-      rethrow;
+
+      await OfflineSyncService.instance.queueOrder(
+        tenantId: tenantId,
+        branchId: branchId,
+        tableId: tableId,
+        createdBy: createdBy,
+        items: items,
+        notes: notes,
+        subtotal: subtotal,
+        total: total,
+      );
+
+      return Order(
+        id: 'offline_temp_${DateTime.now().millisecondsSinceEpoch}',
+        tenantId: tenantId,
+        branchId: branchId,
+        tableId: tableId,
+        status: 'pending',
+        subtotal: subtotal,
+        total: total,
+        notes: notes,
+        createdBy: createdBy,
+        createdAt: DateTime.now(),
+      );
     }
   }
 

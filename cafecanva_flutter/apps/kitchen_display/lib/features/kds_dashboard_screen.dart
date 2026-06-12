@@ -75,9 +75,11 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
   }
 
   void _setupRealtime() {
-    // Blocker 3: Realtime subscriptions strictly bounded inside Postgres branch filters
+    // Blocker 3: Realtime subscriptions strictly bounded inside Postgres branch/tenant filters
+    final tenantId = AuthService.tenantId ?? '';
     _realtimeService.subscribeToKitchenOrders(
       branchId: widget.branchId,
+      tenantId: tenantId,
       onOrderCreated: (payload) {
         final orderId = payload.newRecord['id'] as String;
         _audioController.chimeForOrder(orderId);

@@ -97,7 +97,7 @@ class OfflineSyncService {
               .map((item) => Map<String, dynamic>.from(item))
               .toList();
 
-          await OrderRepository.staticCreateOrder(
+           await OrderRepository.staticCreateOrder(
             tenantId: orderData['tenant_id'] as String,
             branchId: orderData['location_id'] as String,
             tableId: orderData['table_id'] as String?,
@@ -106,6 +106,7 @@ class OfflineSyncService {
             notes: orderData['notes'] as String?,
             subtotal: orderData['subtotal'] as int? ?? 0,
             total: orderData['total'] as int? ?? 0,
+            isOfflineSync: true,
           );
 
           // 2. Remove from local queue upon successful DB save
