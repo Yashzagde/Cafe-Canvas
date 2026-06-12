@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getTablesAction, createTableAction, updateTableAction, deleteTableAction, regenerateTableQRAction, rearrangeTablesAction } from '@/app/admin/actions/table.actions';
 import { useToast } from '@/components/admin/UIPrimitives';
-import { Layers, Plus, RefreshCw, Trash2, Printer, MapPin, Move, QrCode, X, Download } from 'lucide-react';
+import { Layers, Plus, RefreshCw, Trash2, Printer, MapPin, Move, QrCode, X, Download, Coffee } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import html2canvas from 'html2canvas';
 
@@ -326,8 +326,8 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
               className="w-14 h-14 rounded-full object-cover shadow-md border border-[#d97706]/20" 
             />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-[#d97706]/10 flex items-center justify-center font-black text-[#d97706] text-2xl border-2 border-[#d97706]/20 shadow-inner">
-              {branding?.name ? branding.name.charAt(0).toUpperCase() : 'C'}
+            <div className="w-14 h-14 rounded-full bg-amber-500/10 flex items-center justify-center text-[#d97706] border-2 border-[#d97706]/20 shadow-inner">
+              <Coffee className="w-7 h-7" />
             </div>
           )}
           <h3 className="font-extrabold text-[#1e293b] text-base tracking-wide mt-2 max-w-[280px] truncate">
@@ -362,7 +362,8 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
           </p>
         </div>
 
-        <div className="mb-2 text-[8px] font-bold text-[#1e293b]/30 uppercase tracking-[0.25em] flex items-center gap-1">
+        <div className="mb-2 text-[8px] font-bold text-[#1e293b]/30 uppercase tracking-[0.25em] flex items-center gap-1.5 justify-center">
+          <Coffee className="w-3 h-3 text-[#d97706]" />
           <span>Powered by</span>
           <span className="text-[#d97706]">CafeCanvas</span>
         </div>

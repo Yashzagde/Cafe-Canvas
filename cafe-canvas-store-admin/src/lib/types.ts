@@ -55,6 +55,8 @@ export interface StoreSettings {
   upi_id?:          string
   open_time?:       string
   close_time?:      string
+  receipt_header?:  string
+  receipt_footer?:  string
 }
 
 export interface StorefrontConfig {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Grid3X3, Users, QrCode, Download, Printer } from 'lucide-react'
+import { Plus, Grid3X3, Users, QrCode, Download, Printer, Coffee } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import html2canvas from 'html2canvas'
 import { useAuthStore } from '../../store/auth.store'
@@ -293,8 +293,8 @@ export function TablesScreen() {
               className="w-14 h-14 rounded-full object-cover shadow-md border border-canvas-brown/20" 
             />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-canvas-brown/10 flex items-center justify-center font-black text-canvas-brown text-2xl border-2 border-canvas-brown/20 shadow-inner">
-              {branding?.name ? branding.name.charAt(0).toUpperCase() : 'C'}
+            <div className="w-14 h-14 rounded-full bg-canvas-brown/10 flex items-center justify-center text-canvas-brown border-2 border-canvas-brown/20 shadow-inner">
+              <Coffee className="w-7 h-7" />
             </div>
           )}
           <h3 className="font-display font-extrabold text-canvas-brown text-base tracking-wide mt-2 max-w-[280px] truncate">
@@ -329,7 +329,8 @@ export function TablesScreen() {
           </p>
         </div>
 
-        <div className="mb-2 text-[8px] font-bold text-canvas-brown_mid/40 uppercase tracking-[0.25em] flex items-center gap-1">
+        <div className="mb-2 text-[8px] font-bold text-canvas-brown_mid/40 uppercase tracking-[0.25em] flex items-center gap-1.5 justify-center">
+          <Coffee className="w-3 h-3 text-canvas-brown" />
           <span>Powered by</span>
           <span className="text-canvas-brown">CafeCanvas</span>
         </div>
