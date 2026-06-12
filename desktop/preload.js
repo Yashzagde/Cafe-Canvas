@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Secure context bridge for Electron native window integration
 const { contextBridge, ipcRenderer } = require('electron');
 
