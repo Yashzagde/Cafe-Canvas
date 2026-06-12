@@ -58,7 +58,7 @@ export default function HeroCarousel({
   ];
 
   return (
-    <div className="w-full relative h-[65vh] min-h-[460px] md:h-[75vh] rounded-3xl overflow-hidden shadow-lg border border-[#DEC5A4]/40 select-none bg-[#F7EEE2]">
+    <div className="w-full relative h-[65vh] min-h-[530px] md:h-[75vh] md:min-h-[460px] rounded-3xl overflow-hidden shadow-lg border border-[#DEC5A4]/40 select-none bg-[#F7EEE2]">
       <Swiper
         modules={[Autoplay, Pagination, Navigation]}
         autoplay={{ delay: 6000, disableOnInteraction: false, pauseOnMouseEnter: true }}
@@ -70,46 +70,49 @@ export default function HeroCarousel({
           const resolvedHeadline = s.headline.replace('Cafe Canvas', cafeName);
           return (
             <SwiperSlide key={i} className="w-full h-full relative">
-              {/* Cover Image */}
-              <div
-                className="absolute inset-0 bg-cover bg-center transform scale-105 hover:scale-100 transition-transform duration-10000"
-                style={{ backgroundImage: `url(${s.bg})` }}
-              />
-              
-              {/* Glass Gradient Tint Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#4A3728]/85 via-[#4A3728]/50 to-transparent z-10" />
-
-              {/* Slide Content with Glassmorphic Floating Panel */}
-              <div className="relative z-20 flex flex-col justify-center h-full px-6 md:px-16 max-w-2xl text-[#FFF6EC] space-y-4">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 w-fit self-start animate-fade-in">
-                  {s.icon}
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#FFF6EC]">
-                    Boutique Experience
-                  </span>
-                </div>
-
-                <h1 className="text-3xl md:text-5xl font-display font-extrabold leading-tight text-[#FFF6EC]">
-                  {resolvedHeadline}
-                </h1>
+              <div className="w-full h-full flex flex-col md:block relative overflow-hidden">
+                {/* Cover Image */}
+                <div
+                  className="w-full h-[250px] md:h-full md:absolute md:inset-0 bg-cover bg-center transform scale-105 hover:scale-100 transition-transform duration-10000 shrink-0"
+                  style={{ backgroundImage: `url(${s.bg})` }}
+                />
                 
-                <p className="text-xs md:text-base text-[#F7EEE2]/85 font-medium max-w-lg leading-relaxed">
-                  {s.sub}
-                </p>
+                {/* Gradient Tint Overlays */}
+                <div className="absolute top-0 left-0 right-0 h-[250px] bg-gradient-to-t from-[#4A3728] via-transparent to-black/25 z-10 md:hidden" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#4A3728]/90 via-[#4A3728]/50 to-transparent z-10 hidden md:block" />
 
-                <div className="flex flex-wrap gap-3.5 pt-3">
-                  <a
-                    href={s.cta1.href}
-                    className="inline-flex items-center gap-1.5 px-6 py-3 rounded-2xl bg-[#FFC9CD] hover:bg-[#E8A5AA] text-[#4A3728] text-xs font-extrabold uppercase tracking-wider shadow-md hover:shadow-lg transition-all transform active:scale-95"
-                  >
-                    <span>{s.cta1.text}</span>
-                    <ArrowRight size={13} strokeWidth={2.5} />
-                  </a>
-                  <a
-                    href={s.cta2.href}
-                    className="inline-flex items-center px-6 py-3 rounded-2xl bg-[#FFF6EC]/10 backdrop-blur-md border border-[#FFF6EC]/25 text-[#FFF6EC] text-xs font-extrabold uppercase tracking-wider hover:bg-[#FFF6EC]/20 transition-all"
-                  >
-                    {s.cta2.text}
-                  </a>
+                {/* Slide Content with Layered Panel */}
+                <div className="relative z-20 flex-1 flex flex-col justify-center px-6 pb-10 pt-8 md:py-0 md:px-16 max-w-2xl text-[#FFF6EC] space-y-3.5 bg-[#4A3728] rounded-t-[28px] -mt-6 md:rounded-none md:mt-0 md:bg-transparent md:h-full">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 w-fit self-start animate-fade-in">
+                    {s.icon}
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#FFF6EC]">
+                      Boutique Experience
+                    </span>
+                  </div>
+
+                  <h1 className="text-2xl md:text-5xl font-display font-extrabold leading-tight text-[#FFF6EC]">
+                    {resolvedHeadline}
+                  </h1>
+                  
+                  <p className="text-xs md:text-base text-[#F7EEE2]/85 font-medium max-w-lg leading-relaxed">
+                    {s.sub}
+                  </p>
+
+                  <div className="flex flex-wrap gap-3.5 pt-3">
+                    <a
+                      href={s.cta1.href}
+                      className="inline-flex items-center gap-1.5 px-6 py-3 rounded-2xl bg-[#FFC9CD] hover:bg-[#E8A5AA] text-[#4A3728] text-xs font-extrabold uppercase tracking-wider shadow-md hover:shadow-lg transition-all transform active:scale-95"
+                    >
+                      <span>{s.cta1.text}</span>
+                      <ArrowRight size={13} strokeWidth={2.5} />
+                    </a>
+                    <a
+                      href={s.cta2.href}
+                      className="inline-flex items-center px-6 py-3 rounded-2xl bg-[#FFF6EC]/10 backdrop-blur-md border border-[#FFF6EC]/25 text-[#FFF6EC] text-xs font-extrabold uppercase tracking-wider hover:bg-[#FFF6EC]/20 transition-all"
+                    >
+                      {s.cta2.text}
+                    </a>
+                  </div>
                 </div>
               </div>
             </SwiperSlide>
