@@ -402,9 +402,31 @@ export default function Storefront() {
         if (typeof window !== 'undefined') {
           const searchParams = new URLSearchParams(window.location.search);
           const urlTableId = searchParams.get('table') || searchParams.get('table_id');
-          if (urlTableId && tableData?.some(t => t.id === urlTableId)) {
-            initialTableId = urlTableId;
-            setActiveTab('dine-in');
+          if (urlTableId) {
+            // First try matching UUID exactly
+            const matchById = tableData?.find(t => t.id === urlTableId);
+            if (matchById) {
+              initialTableId = matchById.id;
+              setActiveTab('dine-in');
+            } else {
+              // Otherwise, try matching slugified name
+              const matchBySlug = tableData?.find(t => {
+                const slug = t.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                return slug === urlTableId.toLowerCase();
+              });
+              if (matchBySlug) {
+                initialTableId = matchBySlug.id;
+                setActiveTab('dine-in');
+              }
+            }
+          }
+
+          const urlTab = searchParams.get('tab');
+          if (urlTab) {
+            const knownTabs = ['home', 'menu', 'dine-in', 'delivery', 'products', 'blogs', 'account', 'offers', 'about', 'contact', 'gallery', 'careers'];
+            if (knownTabs.includes(urlTab.toLowerCase())) {
+              setActiveTab(urlTab.toLowerCase() as any);
+            }
           }
         }
         

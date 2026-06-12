@@ -11,7 +11,9 @@ import {
   AlertTriangle,
   Sparkles,
   Save,
-  Loader2
+  Loader2,
+  Copy,
+  Check
 } from 'lucide-react';
 import { T, ff, Btn, Input, Sel } from '@/components/admin/UIPrimitives';
 import { getSettingsAction, updateGeneralSettingsAction, updateStoreSettingsAction } from '@/app/admin/actions/settings.actions';
@@ -44,6 +46,26 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
   const [subscriptionTier, setSubscriptionTier] = useState<'Free' | 'Pro' | 'Growth' | 'Enterprise'>('Free');
   const [logoUrl, setLogoUrl] = useState('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  // Tenant ID states
+  const [tenantId, setTenantId] = useState('');
+  const [publicId, setPublicId] = useState('');
+  const [copiedPrivate, setCopiedPrivate] = useState(false);
+  const [copiedPublic, setCopiedPublic] = useState(false);
+
+  const copyToClipboard = (text: string, type: 'private' | 'public') => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      if (type === 'private') {
+        setCopiedPrivate(true);
+        setTimeout(() => setCopiedPrivate(false), 2000);
+      } else {
+        setCopiedPublic(true);
+        setTimeout(() => setCopiedPublic(false), 2000);
+      }
+      toast('📋 Copied to clipboard!', 'success');
+    }
+  };
 
   // Tax tab states
   const [cgst, setCgst] = useState(2.5);
