@@ -14,7 +14,8 @@ import {
   Loader2,
   Copy,
   Check,
-  Coffee
+  Coffee,
+  LogOut
 } from 'lucide-react';
 import { T, ff, Btn, Input, Sel } from '@/components/admin/UIPrimitives';
 import { getSettingsAction, updateGeneralSettingsAction, updateStoreSettingsAction } from '@/app/admin/actions/settings.actions';
@@ -29,9 +30,10 @@ interface SettingsTabProps {
   tenantName: string;
   setTenantName: React.Dispatch<React.SetStateAction<string>>;
   setTenantLogoUrl?: React.Dispatch<React.SetStateAction<string | null>>;
+  onLogout?: () => void;
 }
 
-export default function SettingsTab({ toast, tenantName, setTenantName, setTenantLogoUrl }: SettingsTabProps) {
+export default function SettingsTab({ toast, tenantName, setTenantName, setTenantLogoUrl, onLogout }: SettingsTabProps) {
   const [activeTab, setActiveTab] = useState<TabType>('general');
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -51,6 +53,7 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
   // Tenant ID states
   const [tenantId, setTenantId] = useState('');
   const [publicId, setPublicId] = useState('');
+  const [tenantSlug, setTenantSlug] = useState('');
   const [copiedPrivate, setCopiedPrivate] = useState(false);
   const [copiedPublic, setCopiedPublic] = useState(false);
 
@@ -156,6 +159,7 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
         setLogoUrl(tenant.logo_url || '');
         setTenantId(tenant.id || '');
         setPublicId(tenant.public_id || '');
+        setTenantSlug((tenant as any).slug || '');
 
         // Populate store configurations (converting basis points back to percentages)
         if (settings) {
@@ -377,6 +381,36 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
             </button>
           );
         })}
+        {onLogout && (
+          <>
+            <hr style={{ border: "none", borderTop: `1px solid ${T.bdr}`, margin: "8px 0" }} />
+            <button
+              type="button"
+              onClick={onLogout}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "12px 14px",
+                borderRadius: "10px",
+                border: "none",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.15s",
+                background: "transparent",
+                color: T.rose,
+                textAlign: "left"
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = `${T.rose}10`}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            >
+              <LogOut size={16} style={{ flexShrink: 0 }} />
+              <span>Logout Session</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Right Content Pane */}
@@ -397,6 +431,93 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
             </div>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* Storefront Link Widget */}
+              <div style={{
+                background: "#faf6f0",
+                border: `1px solid ${T.bdr}`,
+                borderRadius: "12px",
+                padding: "16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                marginBottom: "8px"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: T.tx }}>🏪 Storefront Link</span>
+                  <span style={{ fontSize: "10px", color: T.em, fontWeight: 700, background: `${T.em}15`, padding: "2px 8px", borderRadius: "20px" }}>Active</span>
+                </div>
+                <p style={{ fontSize: "10px", color: T.mu, fontWeight: 500, lineHeight: "1.4" }}>
+                  Your customers can view the digital menu, place table orders, and access support here.
+                </p>
+                <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={
+                      typeof window !== 'undefined' && window.location.hostname.includes('localhost')
+                        ? `http://localhost:3000/${tenantSlug || publicId}`
+                        : `https://${tenantSlug || publicId || 'store'}.cafecanvas.bar`
+                    }
+                    className="select-all"
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      background: "#ffffff",
+                      border: `1px solid ${T.bdr}`,
+                      borderRadius: "8px",
+                      fontSize: "11px",
+                      fontFamily: "monospace",
+                      color: T.mu2
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = typeof window !== 'undefined' && window.location.hostname.includes('localhost')
+                        ? `http://localhost:3000/${tenantSlug || publicId}`
+                        : `https://${tenantSlug || publicId || 'store'}.cafecanvas.bar`;
+                      navigator.clipboard.writeText(url);
+                      toast('📋 Storefront URL copied!', 'success');
+                    }}
+                    style={{
+                      padding: "8px 16px",
+                      background: T.ind,
+                      color: "#ffffff",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: "all 0.15s"
+                    }}
+                  >
+                    Copy
+                  </button>
+                  <a
+                    href={
+                      typeof window !== 'undefined' && window.location.hostname.includes('localhost')
+                        ? `http://localhost:3000/${tenantSlug || publicId}`
+                        : `https://${tenantSlug || publicId || 'store'}.cafecanvas.bar`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: "8px 16px",
+                      background: "#1e293b",
+                      color: "#ffffff",
+                      textDecoration: "none",
+                      borderRadius: "8px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center"
+                    }}
+                  >
+                    Open ↗
+                  </a>
+                </div>
+              </div>
               {/* Business Logo Upload */}
               <div style={{ display: "flex", alignItems: "center", gap: "20px", padding: "16px", background: "#fbfbf9", border: `1px solid ${T.bdr}`, borderRadius: "12px" }}>
                 <div style={{

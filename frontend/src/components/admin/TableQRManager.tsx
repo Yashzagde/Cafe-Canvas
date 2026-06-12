@@ -22,6 +22,253 @@ interface TableQRManagerProps {
   branchId: string;
 }
 
+function getQRCardStyles(themeId: string = 'theme-02') {
+  const themeNum = parseInt(themeId.replace('theme-', '')) || 2;
+
+  // Defaults (Warm Cafe/Amber - theme-02 style)
+  let containerStyle: React.CSSProperties = {
+    background: 'linear-gradient(135deg, #FAF8F5 0%, #F4F1EA 100%)',
+    borderColor: 'rgba(217, 119, 6, 0.3)',
+    borderStyle: 'double',
+    borderWidth: '8px',
+    borderRadius: '32px',
+    color: '#1e293b',
+  };
+  let innerBorderStyle: React.CSSProperties = {
+    borderColor: 'rgba(217, 119, 6, 0.15)',
+    borderRadius: '22px',
+  };
+  let badgeStyle: React.CSSProperties = {
+    backgroundColor: 'rgba(217, 119, 6, 0.05)',
+    borderColor: 'rgba(217, 119, 6, 0.2)',
+    color: '#b45309',
+  };
+  let accentColor = '#d97706';
+  let textColor = '#1e293b';
+  let subtitleColor = 'rgba(30, 41, 59, 0.55)';
+  let qrContainerStyle: React.CSSProperties = {
+    backgroundColor: '#ffffff',
+    borderColor: 'rgba(226, 232, 240, 0.4)',
+    borderWidth: '1px',
+    borderRadius: '24px',
+    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+  };
+  let fontHeading = "'Outfit', 'Inter', sans-serif";
+  let brandingColor = '#1e293b';
+
+  // Group 1: Premium & Luxury (theme-01, theme-03, theme-06, theme-44)
+  if ([1, 3, 6, 44].includes(themeNum)) {
+    containerStyle = {
+      background: 'linear-gradient(135deg, #111111 0%, #1c1917 100%)',
+      borderColor: 'rgba(212, 175, 55, 0.4)',
+      borderStyle: 'double',
+      borderWidth: '8px',
+      borderRadius: '36px',
+      color: '#F3F4F6',
+    };
+    innerBorderStyle = {
+      borderColor: 'rgba(212, 175, 55, 0.2)',
+      borderRadius: '26px',
+    };
+    badgeStyle = {
+      backgroundColor: 'rgba(212, 175, 55, 0.15)',
+      borderColor: 'rgba(212, 175, 55, 0.3)',
+      color: '#D4AF37',
+    };
+    accentColor = '#D4AF37';
+    textColor = '#F3F4F6';
+    subtitleColor = 'rgba(243, 244, 246, 0.7)';
+    qrContainerStyle = {
+      backgroundColor: '#ffffff',
+      borderColor: 'rgba(212, 175, 55, 0.25)',
+      borderWidth: '2px',
+      borderRadius: '28px',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+    };
+    fontHeading = "'Outfit', 'Playfair Display', serif";
+    brandingColor = '#ffffff';
+  }
+  // Group 2: Cafe & Roastery / Rustic (theme-04, theme-05, theme-34, theme-36, theme-45)
+  else if ([4, 5, 34, 36, 45].includes(themeNum)) {
+    containerStyle = {
+      background: 'linear-gradient(135deg, #F4EBE1 0%, #E6D8C8 100%)',
+      borderColor: 'rgba(139, 94, 60, 0.4)',
+      borderStyle: 'solid',
+      borderWidth: '6px',
+      borderRadius: '24px',
+      color: '#3D1C02',
+    };
+    innerBorderStyle = {
+      borderColor: 'rgba(139, 94, 60, 0.2)',
+      borderRadius: '16px',
+    };
+    badgeStyle = {
+      backgroundColor: 'rgba(139, 94, 60, 0.1)',
+      borderColor: 'rgba(139, 94, 60, 0.3)',
+      color: '#8B5E3C',
+    };
+    accentColor = '#8B5E3C';
+    textColor = '#3D1C02';
+    subtitleColor = 'rgba(61, 28, 2, 0.75)';
+    qrContainerStyle = {
+      backgroundColor: '#FAF6F0',
+      borderColor: 'rgba(139, 94, 60, 0.25)',
+      borderWidth: '1px',
+      borderRadius: '20px',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    };
+    fontHeading = "'Outfit', 'Inter', sans-serif";
+    brandingColor = '#3D1C02';
+  }
+  // Group 3: Matcha Zen & Botanical (theme-07, theme-33)
+  else if ([7, 33].includes(themeNum)) {
+    containerStyle = {
+      background: 'linear-gradient(135deg, #FAF6F0 0%, #F0EAE1 100%)',
+      borderColor: 'rgba(74, 124, 36, 0.35)',
+      borderStyle: 'solid',
+      borderWidth: '6px',
+      borderRadius: '28px',
+      color: '#1E293B',
+    };
+    innerBorderStyle = {
+      borderColor: 'rgba(74, 124, 36, 0.18)',
+      borderRadius: '18px',
+    };
+    badgeStyle = {
+      backgroundColor: 'rgba(74, 124, 36, 0.1)',
+      borderColor: 'rgba(74, 124, 36, 0.3)',
+      color: '#4A7C24',
+    };
+    accentColor = '#4A7C24';
+    textColor = '#1E293B';
+    subtitleColor = 'rgba(30, 41, 59, 0.7)';
+    qrContainerStyle = {
+      backgroundColor: '#ffffff',
+      borderColor: 'rgba(74, 124, 36, 0.2)',
+      borderWidth: '1px',
+      borderRadius: '22px',
+      boxShadow: '0 4px 6px -1px rgba(74, 124, 36, 0.08)',
+    };
+    fontHeading = "'Outfit', 'Inter', sans-serif";
+    brandingColor = '#1e293b';
+  }
+  // Group 4: Rajasthani Royal & Indian Heritage (theme-08, theme-09, theme-10, theme-11, theme-12, theme-13, theme-26, theme-27, theme-29, theme-30, theme-37)
+  else if ([8, 9, 10, 11, 12, 13, 26, 27, 29, 30, 37].includes(themeNum)) {
+    containerStyle = {
+      background: 'linear-gradient(135deg, #FFFDF6 0%, #FCF8EA 100%)',
+      borderColor: '#D4AF37',
+      borderStyle: 'double',
+      borderWidth: '10px',
+      borderRadius: '30px',
+      color: '#1e293b',
+    };
+    innerBorderStyle = {
+      borderColor: 'rgba(139, 0, 0, 0.25)',
+      borderRadius: '18px',
+    };
+    badgeStyle = {
+      backgroundColor: 'rgba(139, 0, 0, 0.08)',
+      borderColor: '#8B0000',
+      color: '#8B0000',
+    };
+    accentColor = '#8B0000';
+    textColor = '#1e293b';
+    subtitleColor = 'rgba(30, 41, 59, 0.7)';
+    qrContainerStyle = {
+      backgroundColor: '#ffffff',
+      borderColor: '#D4AF37',
+      borderWidth: '2px',
+      borderRadius: '24px',
+      boxShadow: '0 6px 12px -2px rgba(139, 0, 0, 0.15)',
+    };
+    fontHeading = "'Outfit', 'Playfair Display', serif";
+    brandingColor = '#1e293b';
+  }
+  // Group 5: High Contrast Accessibility (theme-46)
+  else if (themeNum === 46) {
+    containerStyle = {
+      background: '#ffffff',
+      borderColor: '#000000',
+      borderStyle: 'solid',
+      borderWidth: '8px',
+      borderRadius: '0px',
+      color: '#000000',
+    };
+    innerBorderStyle = {
+      borderColor: '#000000',
+      borderWidth: '2px',
+      borderRadius: '0px',
+    };
+    badgeStyle = {
+      backgroundColor: '#000000',
+      borderColor: '#000000',
+      color: '#ffffff',
+    };
+    accentColor = '#000000';
+    textColor = '#000000';
+    subtitleColor = '#000000';
+    qrContainerStyle = {
+      backgroundColor: '#ffffff',
+      borderColor: '#000000',
+      borderWidth: '4px',
+      borderRadius: '0px',
+      boxShadow: 'none',
+    };
+    fontHeading = 'sans-serif';
+    brandingColor = '#000000';
+  }
+  // Group 6: Vibrant Retro & Holi/Monsoon (theme-18, theme-19, theme-20, theme-21, theme-28, theme-31, theme-32, theme-35, theme-38, theme-41, theme-42, theme-43)
+  else if ([18, 19, 20, 21, 28, 31, 32, 35, 38, 41, 42, 43].includes(themeNum)) {
+    let vibrantColor = '#FF0000'; // Default Retro
+    if ([18, 41].includes(themeNum)) vibrantColor = '#1E90FF'; // Mediterranean / Monsoon Blue
+    else if ([20, 27].includes(themeNum)) vibrantColor = '#006400'; // Tropical Green
+    else if ([31, 32, 35, 38, 43].includes(themeNum)) vibrantColor = '#EC4899'; // Pink Retro / Kawaii / Valentine
+    else if ([19, 42].includes(themeNum)) vibrantColor = '#F59E0B'; // Fiesta / Summer Orange-Amber
+
+    containerStyle = {
+      background: 'linear-gradient(135deg, #FFFFFF 0%, #F7FAFC 100%)',
+      borderColor: vibrantColor,
+      borderStyle: 'solid',
+      borderWidth: '6px',
+      borderRadius: '36px',
+      color: '#1A202C',
+    };
+    innerBorderStyle = {
+      borderColor: `${vibrantColor}25`,
+      borderRadius: '26px',
+    };
+    badgeStyle = {
+      backgroundColor: `${vibrantColor}15`,
+      borderColor: `${vibrantColor}35`,
+      color: vibrantColor,
+    };
+    accentColor = vibrantColor;
+    textColor = '#1A202C';
+    subtitleColor = 'rgba(26, 32, 44, 0.65)';
+    qrContainerStyle = {
+      backgroundColor: '#ffffff',
+      borderColor: `${vibrantColor}30`,
+      borderWidth: '1.5px',
+      borderRadius: '26px',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
+    };
+    fontHeading = "'Outfit', 'Inter', sans-serif";
+    brandingColor = '#1A202C';
+  }
+
+  return {
+    containerStyle,
+    innerBorderStyle,
+    badgeStyle,
+    accentColor,
+    textColor,
+    subtitleColor,
+    qrContainerStyle,
+    fontHeading,
+    brandingColor
+  };
+}
+
 export default function TableQRManager({ branchId }: TableQRManagerProps) {
   const supabase = createClient();
   const getTableUrl = (tableName: string) => {
@@ -46,7 +293,13 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
   const [section, setSection] = useState('Indoor');
 
   // Exporter & branding state
-  const [branding, setBranding] = useState<{ name: string; slug: string; logoUrl: string | null; logoBase64: string | null } | null>(null);
+  const [branding, setBranding] = useState<{
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+    logoBase64: string | null;
+    themeId?: string;
+  } | null>(null);
   const [qrBase64s, setQrBase64s] = useState<Record<string, string>>({});
   const [selectedTableForQR, setSelectedTableForQR] = useState<Table | null>(null);
   const [showBulkQRModal, setShowBulkQRModal] = useState(false);
@@ -96,6 +349,12 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
             .select('name, slug, logo_url')
             .eq('id', branch.tenant_id)
             .single();
+
+          const { data: config } = await supabase
+            .from('storefront_config')
+            .select('theme_id')
+            .eq('tenant_id', branch.tenant_id)
+            .maybeSingle();
             
           if (tenant) {
             let logoBase64: string | null = null;
@@ -106,7 +365,8 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
               name: tenant.name || 'CafeCanvas',
               slug: tenant.slug || '',
               logoUrl: tenant.logo_url,
-              logoBase64
+              logoBase64,
+              themeId: config?.theme_id || 'theme-02'
             });
           }
         }
@@ -162,7 +422,7 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
       const canvas = await html2canvas(element, {
         scale: 3, // High-DPI export
         useCORS: true,
-        backgroundColor: '#FCFAF6',
+        backgroundColor: null,
         logging: false
       });
       
@@ -315,47 +575,82 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
       tableUrl
     )}`;
 
+    const themeId = branding?.themeId || 'theme-02';
+    const styles = getQRCardStyles(themeId);
+
     return (
       <div
-        className="w-[340px] h-[520px] bg-[#FAF8F5] border-8 border-double border-[#d97706]/30 rounded-[32px] p-6 shadow-2xl flex flex-col justify-between items-center text-center relative overflow-hidden select-none"
-        style={{ fontFamily: "'Outfit', 'Inter', sans-serif" }}
+        className="w-[340px] h-[520px] shadow-2xl flex flex-col justify-between items-center text-center relative overflow-hidden select-none"
+        style={{
+          fontFamily: styles.fontHeading,
+          ...styles.containerStyle
+        }}
       >
-        <div className="absolute inset-2.5 border border-[#d97706]/15 rounded-[22px] pointer-events-none"></div>
+        <div 
+          className="absolute inset-2.5 border pointer-events-none"
+          style={styles.innerBorderStyle}
+        ></div>
         
-        <div className="flex flex-col items-center gap-1 mt-4">
+        <div className="flex flex-col items-center gap-1 mt-4 relative z-10">
           {branding?.logoBase64 ? (
             <img 
               src={branding.logoBase64} 
               alt={branding.name} 
-              className="w-14 h-14 rounded-full object-cover shadow-md border border-[#d97706]/20" 
+              className="w-14 h-14 rounded-full object-cover shadow-md border" 
+              style={{ borderColor: `${styles.accentColor}40` }}
             />
           ) : branding?.logoUrl ? (
             <img 
               src={branding.logoUrl} 
               alt={branding.name} 
-              className="w-14 h-14 rounded-full object-cover shadow-md border border-[#d97706]/20" 
+              className="w-14 h-14 rounded-full object-cover shadow-md border" 
+              style={{ borderColor: `${styles.accentColor}40` }}
             />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-amber-500/10 flex items-center justify-center text-[#d97706] border-2 border-[#d97706]/20 shadow-inner">
+            <div 
+              className="w-14 h-14 rounded-full flex items-center justify-center border-2 shadow-inner"
+              style={{
+                backgroundColor: `${styles.accentColor}15`,
+                borderColor: `${styles.accentColor}35`,
+                color: styles.accentColor
+              }}
+            >
               <Coffee className="w-7 h-7" />
             </div>
           )}
-          <h3 className="font-extrabold text-[#1e293b] text-base tracking-wide mt-2 max-w-[280px] truncate">
+          <h3 
+            className="font-extrabold text-base tracking-wide mt-2 max-w-[280px] truncate"
+            style={{ color: styles.brandingColor }}
+          >
             {branding?.name || 'CafeCanvas'}
           </h3>
-          <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-[#d97706]/40 to-transparent my-0.5"></div>
-          <p className="text-[9px] uppercase font-black text-[#d97706] tracking-[0.2em]">
+          <div 
+            className="h-[2px] w-12 my-0.5"
+            style={{
+              background: `linear-gradient(to right, transparent, ${styles.accentColor}60, transparent)`
+            }}
+          ></div>
+          <p 
+            className="text-[9px] uppercase font-black tracking-[0.2em]"
+            style={{ color: styles.accentColor }}
+          >
             Order & Pay Dine-In
           </p>
         </div>
 
-        <div className="my-1.5 bg-[#d97706]/5 border border-[#d97706]/20 rounded-2xl px-6 py-2 shadow-sm">
-          <h4 className="text-xl font-black text-[#b45309] tracking-tight uppercase">
+        <div 
+          className="my-1.5 border px-6 py-2 shadow-sm rounded-2xl relative z-10"
+          style={styles.badgeStyle}
+        >
+          <h4 className="text-xl font-black tracking-tight uppercase">
             {table.name}
           </h4>
         </div>
 
-        <div className="bg-[#ffffff] p-4 rounded-[24px] shadow-md border border-[#e2e8f0]/40 flex items-center justify-center w-[180px] h-[180px]">
+        <div 
+          className="p-4 flex items-center justify-center w-[180px] h-[180px] relative z-10"
+          style={styles.qrContainerStyle}
+        >
           <img
             src={qrSrc}
             alt={`QR Code for ${table.name}`}
@@ -363,19 +658,31 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
           />
         </div>
 
-        <div className="flex flex-col items-center gap-1.5 mb-4 max-w-[280px]">
-          <span className="text-[10px] uppercase font-black tracking-[0.15em] text-[#d97706] bg-amber-500/10 px-4 py-1.5 rounded-full">
+        <div className="flex flex-col items-center gap-1.5 mb-4 max-w-[280px] relative z-10">
+          <span 
+            className="text-[10px] uppercase font-black tracking-[0.15em] px-4 py-1.5 rounded-full"
+            style={{
+              backgroundColor: `${styles.accentColor}15`,
+              color: styles.accentColor
+            }}
+          >
             Scan QR Code
           </span>
-          <p className="text-[9px] text-[#1e293b]/55 leading-relaxed font-semibold mt-1">
+          <p 
+            className="text-[9px] leading-relaxed font-semibold mt-1"
+            style={{ color: styles.subtitleColor }}
+          >
             Browse our fresh digital menu, customize your order, and complete payment directly from your seat.
           </p>
         </div>
 
-        <div className="mb-2 text-[8px] font-bold text-[#1e293b]/30 uppercase tracking-[0.25em] flex items-center gap-1.5 justify-center">
-          <Coffee className="w-3 h-3 text-[#d97706]" />
+        <div 
+          className="mb-2 text-[8px] font-bold uppercase tracking-[0.25em] flex items-center gap-1.5 justify-center relative z-10"
+          style={{ color: styles.subtitleColor }}
+        >
+          <Coffee className="w-3 h-3" style={{ color: styles.accentColor }} />
           <span>Powered by</span>
-          <span className="text-[#d97706]">CafeCanvas</span>
+          <span style={{ color: styles.accentColor }}>CafeCanvas</span>
         </div>
       </div>
     );
