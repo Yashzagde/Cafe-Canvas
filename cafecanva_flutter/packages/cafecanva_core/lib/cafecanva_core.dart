@@ -32,6 +32,7 @@ export 'models/storefront_config.dart';
 export 'services/supabase_service.dart';
 export 'services/auth_service.dart';
 export 'services/realtime_service.dart';
+export 'services/offline_sync_service.dart';
 
 // Repositories
 export 'repositories/menu_repository.dart';

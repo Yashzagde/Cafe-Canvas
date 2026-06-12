@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, globalShortcut, session } = require('electron');
+const { app, BrowserWindow, Menu, globalShortcut, session, ipcMain } = require('electron');
 const path = require('path');
 
 /** @type {BrowserWindow | null} */
@@ -196,4 +196,26 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+// Silent thermal printing listener
+ipcMain.on('print-receipt-silent', (event, htmlContent) => {
+  console.log('[Electron] Received silent print request.');
+  let workerWindow = new BrowserWindow({ show: false });
+  workerWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+
+  workerWindow.webContents.on('did-finish-load', () => {
+    workerWindow.webContents.print({
+      silent: true,
+      printBackground: true,
+      margins: { marginType: 'none' }
+    }, (success, errorType) => {
+      if (!success) {
+        console.error('[Electron] Silent print failed:', errorType);
+      } else {
+        console.log('[Electron] Silent print completed successfully.');
+      }
+      workerWindow.close();
+    });
+  });
 });

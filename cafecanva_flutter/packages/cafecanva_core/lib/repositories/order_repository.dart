@@ -2,6 +2,7 @@ import '../models/order.dart';
 import '../models/order_item.dart';
 import '../services/supabase_service.dart';
 import '../services/auth_service.dart';
+import '../services/offline_sync_service.dart';
 
 /// Repository for creating/managing orders.
 class OrderRepository {
@@ -51,41 +52,72 @@ class OrderRepository {
     int subtotal = 0,
     int total = 0,
   }) async {
-    // 1. Insert the order
-    final orderData = await SupabaseService.from('orders')
-        .insert({
-          'tenant_id': tenantId,
-          'location_id': branchId,
-          'table_id': tableId,
-          'staff_id': createdBy,
-          'status': 'pending',
-          'subtotal': subtotal,
-          'discount_amount': 0,
-          'total': total,
-          'notes': notes,
-        })
-        .select()
-        .single();
+    try {
+      // 1. Insert the order
+      final orderData = await SupabaseService.from('orders')
+          .insert({
+            'tenant_id': tenantId,
+            'location_id': branchId,
+            'table_id': tableId,
+            'staff_id': createdBy,
+            'status': 'pending',
+            'subtotal': subtotal,
+            'discount_amount': 0,
+            'total': total,
+            'notes': notes,
+          })
+          .select()
+          .single();
 
-    final order = Order.fromJson(orderData);
+      final order = Order.fromJson(orderData);
 
-    // 2. Insert order items
-    final itemsPayload = items.map((item) => {
-          ...item,
-          'order_id': order.id,
-          'tenant_id': tenantId,
-        }).toList();
+      // 2. Insert order items
+      final itemsPayload = items.map((item) => {
+            ...item,
+            'order_id': order.id,
+            'tenant_id': tenantId,
+          }).toList();
 
-    await SupabaseService.from('order_items').insert(itemsPayload);
+      await SupabaseService.from('order_items').insert(itemsPayload);
 
-    // 3. Set table status to occupied
-    if (tableId != null) {
-      await SupabaseService.from('tables')
-          .update({'status': 'occupied'})
-          .eq('id', tableId);
+      // 3. Set table status to occupied
+      if (tableId != null) {
+        await SupabaseService.from('tables')
+            .update({'status': 'occupied'})
+            .eq('id', tableId);
+      }
+
+      return order;
+    } catch (e) {
+      // If we are already running inside the sync routine (keys start with "offline_"), rethrow to let the sync queue retry later.
+      final isOfflineSync = createdBy != null && createdBy.startsWith('offline_');
+      if (!isOfflineSync) {
+        await OfflineSyncService.instance.queueOrder(
+          tenantId: tenantId,
+          branchId: branchId,
+          tableId: tableId,
+          createdBy: createdBy,
+          items: items,
+          notes: notes,
+          subtotal: subtotal,
+          total: total,
+        );
+
+        return Order(
+          id: 'offline_temp_${DateTime.now().millisecondsSinceEpoch}',
+          tenantId: tenantId,
+          branchId: branchId,
+          tableId: tableId,
+          status: 'pending',
+          subtotal: subtotal,
+          total: total,
+          notes: notes,
+          createdBy: createdBy,
+          createdAt: DateTime.now(),
+        );
+      }
+      rethrow;
     }
-
-    return order;
   }
 
   /// Get active orders for a branch.

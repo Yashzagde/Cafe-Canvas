@@ -36,6 +36,34 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
     setPrinting(true);
 
     const printContent = receiptRef.current.innerHTML;
+
+    // Check if running in Electron environment with printReceipt API
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.printReceipt) {
+      try {
+        const styledContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { 
+                font-family: 'Courier New', 'Courier', monospace;
+                width: ${settings.paperWidth === 58 ? '219px' : '302px'};
+                padding: 10px;
+              }
+            </style>
+          </head>
+          <body>${printContent}</body>
+          </html>
+        `;
+        (window as any).electronAPI.printReceipt(styledContent);
+        setPrinting(false);
+        return;
+      } catch (err) {
+        console.error('Electron silent print failed, falling back to browser:', err);
+      }
+    }
+
     const printWindow = window.open('', '_blank', 'width=320,height=600');
     if (!printWindow) {
       setPrinting(false);

@@ -24,6 +24,9 @@ void main() async {
   // 2. Initialize Hive local persistent cache
   await Hive.initFlutter();
   await Hive.openBox('session');
+  
+  // Initialize offline sync service
+  await OfflineSyncService.instance.initialize();
 
   // 3. Initialize Supabase connection
   await Supabase.initialize(

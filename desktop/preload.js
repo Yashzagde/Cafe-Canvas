@@ -3,7 +3,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getPlatform: () => process.platform,
-  getAppVersion: () => '1.0.0'
+  getAppVersion: () => '1.0.0',
+  printReceipt: (htmlContent) => ipcRenderer.send('print-receipt-silent', htmlContent)
 });
 
 window.addEventListener('DOMContentLoaded', () => {
