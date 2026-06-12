@@ -84,36 +84,40 @@ class OfflineSyncService {
     debugPrint('[OfflineSyncService] Starting sync of ${_offlineBox!.length} pending orders...');
 
     final keys = List.from(_offlineBox!.keys);
+    final List<Future<void>> syncTasks = [];
+
     for (final key in keys) {
       final orderData = Map<String, dynamic>.from(_offlineBox!.get(key));
-      try {
-        debugPrint('[OfflineSyncService] Syncing order ${orderData['id']}...');
-        
-        // 1. Create order on Supabase using OrderRepository static method
-        final List<Map<String, dynamic>> items = (orderData['items'] as List)
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
+      syncTasks.add(() async {
+        try {
+          debugPrint('[OfflineSyncService] Syncing order ${orderData['id']}...');
+          
+          // 1. Create order on Supabase using OrderRepository static method
+          final List<Map<String, dynamic>> items = (orderData['items'] as List)
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
 
-        await OrderRepository.staticCreateOrder(
-          tenantId: orderData['tenant_id'] as String,
-          branchId: orderData['location_id'] as String,
-          tableId: orderData['table_id'] as String?,
-          createdBy: orderData['staff_id'] as String?,
-          items: items,
-          notes: orderData['notes'] as String?,
-          subtotal: orderData['subtotal'] as int? ?? 0,
-          total: orderData['total'] as int? ?? 0,
-        );
+          await OrderRepository.staticCreateOrder(
+            tenantId: orderData['tenant_id'] as String,
+            branchId: orderData['location_id'] as String,
+            tableId: orderData['table_id'] as String?,
+            createdBy: orderData['staff_id'] as String?,
+            items: items,
+            notes: orderData['notes'] as String?,
+            subtotal: orderData['subtotal'] as int? ?? 0,
+            total: orderData['total'] as int? ?? 0,
+          );
 
-        // 2. Remove from local queue upon successful DB save
-        await _offlineBox!.delete(key);
-        debugPrint('[OfflineSyncService] Order $key successfully synced and removed from queue.');
-      } catch (e) {
-        debugPrint('[OfflineSyncService] Failed to sync order $key: $e');
-        // Stop syncing rest of queue to avoid sequential connection errors
-        break;
-      }
+          // 2. Remove from local queue upon successful DB save
+          await _offlineBox!.delete(key);
+          debugPrint('[OfflineSyncService] Order $key successfully synced and removed from queue.');
+        } catch (e) {
+          debugPrint('[OfflineSyncService] Failed to sync order $key: $e');
+        }
+      }());
     }
+
+    await Future.wait(syncTasks);
 
     _isSyncing = false;
     debugPrint('[OfflineSyncService] Sync cycle complete. Remaining: ${_offlineBox!.length}');

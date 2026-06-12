@@ -28,6 +28,7 @@ import MenuEditor from '@/components/admin/MenuEditor';
 import ActivityFeedTab from '@/components/admin/ActivityFeedTab';
 import AttendanceTab from '@/components/admin/AttendanceTab';
 import FeedbackTab from '@/components/admin/FeedbackTab';
+import SettingsTab from '@/components/admin/SettingsTab';
 
 import ReceiptPreviewModal from '@/components/billing/ReceiptPreviewModal';
 import type { ReceiptData } from '@/components/billing/types';
@@ -176,48 +177,52 @@ export default function CafeCanvaAdmin() {
       }
 
       const activeTenantId = profile.tenant_id;
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
 
-      // Fetch branches list
-      const { data: branchList } = await supabase
-        .from('branches')
-        .select('*')
-        .eq('tenant_id', activeTenantId)
-        .eq('active', true);
+      // --- STAGE 1: Parallel Fetching of Branch List and Tenant/Menu/Billing/CRM Metadata ---
+      const [
+        branchResult,
+        tenantResult,
+        categoriesResult,
+        itemsResult,
+        billsResult,
+        customersResult
+      ] = await Promise.all([
+        supabase.from('branches').select('*').eq('tenant_id', activeTenantId).eq('active', true),
+        supabase.from('tenants').select('name, public_id').eq('id', activeTenantId).maybeSingle(),
+        supabase.from('menu_categories').select('id, name').eq('tenant_id', activeTenantId),
+        supabase.from('menu_items').select('*').eq('tenant_id', activeTenantId).order('sort_order', { ascending: true }),
+        supabase.from('bills').select('*').eq('tenant_id', activeTenantId).order('created_at', { ascending: false }).limit(10),
+        supabase.from('customers').select('*').eq('tenant_id', activeTenantId).is('deleted_at', null).limit(20)
+      ]);
 
-      if (branchList) {
-        setBranches(branchList as any[]);
-      }
+      if (branchResult.error) throw branchResult.error;
+      if (tenantResult.error) throw tenantResult.error;
+      if (categoriesResult.error) throw categoriesResult.error;
+      if (itemsResult.error) throw itemsResult.error;
+      if (billsResult.error) throw billsResult.error;
+      if (customersResult.error) throw customersResult.error;
 
+      // Extract Branch List
+      const branchList = branchResult.data || [];
+      setBranches(branchList as any[]);
       const currentBranchId = activeBranch?.id || branchList?.[0]?.id || '';
 
-      // Fetch tenant metadata
-      const { data: tenData } = await supabase
-        .from('tenants')
-        .select('name, public_id')
-        .eq('id', activeTenantId)
-        .maybeSingle();
-
+      // Extract Tenant Metadata
+      const tenData = tenantResult.data;
       if (tenData) {
         setTenantName(tenData.name);
         setPublicId(tenData.public_id || "");
       }
 
-      // Fetch menu categories
-      const { data: catData } = await supabase
-        .from('menu_categories')
-        .select('id, name')
-        .eq('tenant_id', activeTenantId);
+      // Extract Menu Categories
+      const catData = categoriesResult.data || [];
+      const catsMap = new Map(catData.map(c => [c.id, c.name]));
 
-      const catsMap = new Map((catData || []).map(c => [c.id, c.name]));
-
-      // Fetch items
-      const { data: itemsData } = await supabase
-        .from('menu_items')
-        .select('*')
-        .eq('tenant_id', activeTenantId)
-        .order('sort_order', { ascending: true });
-
-      const mappedMenu: MenuItem[] = (itemsData || []).map(i => ({
+      // Extract Menu Items
+      const itemsData = itemsResult.data || [];
+      const mappedMenu: MenuItem[] = itemsData.map(i => ({
         id: i.id,
         name: i.name,
         price: (i.price ?? i.price_paise ?? 0) / 100,
@@ -228,16 +233,18 @@ export default function CafeCanvaAdmin() {
       }));
       setMenu(mappedMenu);
 
-      // Fetch tables
-      const { data: tablesData } = await supabase
-        .from('tables')
-        .select('*')
-        .eq('tenant_id', activeTenantId)
-        .eq('branch_id', currentBranchId)
-        .is('deleted_at', null)
-        .order('name', { ascending: true });
+      // --- STAGE 2: Parallel Fetching of Branch-Specific Tables and Orders ---
+      const [tablesResult, ordersResult] = await Promise.all([
+        supabase.from('tables').select('*').eq('tenant_id', activeTenantId).eq('branch_id', currentBranchId).is('deleted_at', null).order('name', { ascending: true }),
+        supabase.from('orders').select('*, order_items(*)').eq('tenant_id', activeTenantId).eq('branch_id', currentBranchId).or(`status.in.(pending,confirmed,preparing,ready,served,billed),and(status.eq.paid,created_at.gte.${todayStart.toISOString()})`)
+      ]);
 
-      const mappedTables: Table[] = (tablesData || []).map(t => ({
+      if (tablesResult.error) throw tablesResult.error;
+      if (ordersResult.error) throw ordersResult.error;
+
+      // Extract Tables
+      const tablesData = tablesResult.data || [];
+      const mappedTables: Table[] = tablesData.map(t => ({
         id: t.id,
         name: t.name,
         capacity: t.capacity,
@@ -250,20 +257,12 @@ export default function CafeCanvaAdmin() {
       }));
       setTables(mappedTables);
 
-      // Fetch active orders & today's paid orders & order items
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const { data: activeOrders } = await supabase
-        .from('orders')
-        .select('*, order_items(*)')
-        .eq('tenant_id', activeTenantId)
-        .eq('branch_id', currentBranchId)
-        .or(`status.in.(pending,confirmed,preparing,ready,served,billed),and(status.eq.paid,created_at.gte.${todayStart.toISOString()})`);
-
+      // Extract and Parse Orders
+      const activeOrders = ordersResult.data || [];
       const ordersByTable: Record<string, BillItem[]> = {};
       const recentOrdersList: RecentOrder[] = [];
 
-      (activeOrders || []).forEach(o => {
+      activeOrders.forEach(o => {
         if (o.table_id && o.status !== 'paid') {
           if (!ordersByTable[o.table_id]) ordersByTable[o.table_id] = [];
           
@@ -296,15 +295,9 @@ export default function CafeCanvaAdmin() {
       setTableOrders(ordersByTable);
       setOrders(recentOrdersList);
 
-      // Fetch bills
-      const { data: billsData } = await supabase
-        .from('bills')
-        .select('*')
-        .eq('tenant_id', activeTenantId)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      const mappedHistory: BillHistoryEntry[] = (billsData || []).map(b => {
+      // Parse Bills (from Stage 1)
+      const billsData = billsResult.data || [];
+      const mappedHistory: BillHistoryEntry[] = billsData.map(b => {
         const matchingTable = mappedTables.find(t => t.table_number === b.table_number);
         return {
           id: b.id.substring(0, 8).toUpperCase(),
@@ -323,15 +316,9 @@ export default function CafeCanvaAdmin() {
       });
       setBillHistory(mappedHistory);
 
-      // Fetch customers
-      const { data: custData } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('tenant_id', activeTenantId)
-        .is('deleted_at', null)
-        .limit(20);
-
-      const mappedCustomers: Customer[] = (custData || []).map(c => ({
+      // Parse Customers (from Stage 1)
+      const custData = customersResult.data || [];
+      const mappedCustomers: Customer[] = custData.map(c => ({
         id: c.id,
         name: c.name,
         phone: c.phone || "—",
@@ -535,6 +522,7 @@ export default function CafeCanvaAdmin() {
               {page === "attendance" && <AttendanceTab branchId={activeBranch?.id || ''} />}
               {page === "feedback" && <FeedbackTab branchId={activeBranch?.id || ''} />}
               {page === "storefront" && <StorefrontEditor tenantPublicId={publicId} tenantPrivateId={tenantId} tenantName={tenantName} setTenantName={setTenantName} />}
+              {page === "settings" && <SettingsTab toast={toast} tenantName={tenantName} setTenantName={setTenantName} />}
               {page === "audit" && <AuditLogViewer />}
               {page === "activity" && <ActivityFeedTab />}
             </>
