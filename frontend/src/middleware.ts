@@ -116,7 +116,7 @@ export async function middleware(request: NextRequest) {
 
   // 4b. Table QR / Deep Link Path Resolution (/[store_slug]/[table_uuid] or /[store_slug]/table/[table_uuid])
   if (!isGlobalRoute) {
-    const subdirectoryMatch = pathname.match(/^\/([^\/]+)\/(?:table\/)?([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/)
+    const subdirectoryMatch = pathname.match(/^\/([^\/]+)\/(?:table\/)?([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:\/[^\/]+)?$/)
     if (subdirectoryMatch) {
       const storeSlug = subdirectoryMatch[1]
       const tableId = subdirectoryMatch[2]
@@ -149,7 +149,7 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     
     // Check if the path points to a table UUID: /[table_uuid] or /table/[table_uuid]
-    const match = pathname.match(/^\/(?:table\/)?([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/)
+    const match = pathname.match(/^\/(?:table\/)?([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:\/[^\/]+)?$/)
     
     if (match) {
       const tableId = match[1]
