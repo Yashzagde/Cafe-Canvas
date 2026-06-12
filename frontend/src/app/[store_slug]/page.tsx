@@ -191,7 +191,6 @@ export default function Storefront() {
   const [showReviews, setShowReviews] = useState<boolean>(true);
   const [showInstagram, setShowInstagram] = useState<boolean>(true);
   const [showStory, setShowStory] = useState<boolean>(true);
-  const [blogs, setBlogs] = useState<any[]>([]);
 
 
   // Loyalty & OTP Login states
@@ -447,17 +446,6 @@ export default function Storefront() {
 
         if (!activeError) {
           setActiveTablesCount(activeCount || 0);
-        }
-
-        // 6. Fetch storefront blog posts
-        const { data: blogData, error: blogError } = await supabase
-          .from('storefront_blogs')
-          .select('*')
-          .eq('tenant_id', tenantData.id)
-          .order('published_at', { ascending: false });
-
-        if (!blogError && blogData) {
-          setBlogs(blogData);
         }
 
       } catch (err: any) {
@@ -1574,20 +1562,32 @@ export default function Storefront() {
                     <div className="p-4 pt-0 flex justify-between items-center border-t border-border-color/30 mt-3">
                       <span className="font-black text-sm text-foreground">₹{(item.price / 100).toFixed(2)}</span>
                     </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {(blogs && blogs.length > 0 ? blogs.map(b => ({
-                  title: b.title,
-                  excerpt: b.excerpt,
-                  date: new Date(b.published_at || b.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-                  author: b.author,
-                  tags: b.tags || [],
-                  image: b.image_url || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80'
-                })) : [
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'blogs' && (
+            <motion.div 
+              key="blogs" 
+              initial={{ opacity: 0, y: 15 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="font-black text-xl text-foreground">Canvas Food Chronicles</h3>
+                <p className="text-xs text-foreground/60">Stories of farm sourcing, baking artisan techniques, and barista science.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
                   { title: 'The Science of Perfect Coffee Extraction', excerpt: 'Discover brew ratios, temperatures, and water quality secrets from our Head Barista.', date: '05 Jun 2026', author: 'Vikram Barista', tags: ['Coffee', 'Brewing'], image: 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=400&q=80' },
                   { title: 'Crafting Sourdough: Sourdough Bread Demystified', excerpt: 'Why long fermentation makes bread healthier, tastier, and easier to digest.', date: '28 May 2026', author: 'Chef Maria', tags: ['Baking', 'Sourdough'], image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=400&q=80' },
                   { title: 'Behind The Scenes: Sourcing Single Origin Tea Leaves', excerpt: 'A journey into high-altitude organic tea farms of Darjeeling and Assam.', date: '12 May 2026', author: 'Sourcing Team', tags: ['Tea', 'Sourcing'], image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=400&q=80' },
                   { title: 'Sweets & Celebrations: Regional Dessert Crafts', excerpt: 'The cultural stories behind Gulab Jamun, Puran Poli and Shahi Tukda.', date: '01 May 2026', author: 'Patissier Chef', tags: ['Dessert', 'Culture'], image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80' }
-                ]).map((blog, i) => (
+                ].map((blog, i) => (
                   <div key={i} className={`${cardClass} overflow-hidden flex flex-col justify-between`}>
                     <div className="h-44 relative bg-stone-100">
                       <img src={blog.image} alt={blog.title} className="w-full h-full object-cover" />
@@ -1598,19 +1598,6 @@ export default function Storefront() {
                           {blog.tags.map(t => (
                             <span key={t} className="text-[8px] font-black uppercase text-brand tracking-widest">{t}</span>
                           ))}
-                        </div>
-                        <h4 className="font-extrabold text-sm text-foreground leading-snug">{blog.title}</h4>
-                        <p className="text-foreground/60 text-[11px] leading-relaxed line-clamp-3">{blog.excerpt}</p>
-                      </div>
- 
-                      <div className="flex justify-between items-center border-t border-border-color/30 pt-3 text-[10px] text-stone-400 font-bold mt-4">
-                        <span>By {blog.author}</span>
-                        <span>{blog.date}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>                  ))}
                         </div>
                         <h4 className="font-extrabold text-sm text-foreground leading-snug">{blog.title}</h4>
                         <p className="text-foreground/60 text-[11px] leading-relaxed line-clamp-3">{blog.excerpt}</p>
