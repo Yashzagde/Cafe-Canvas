@@ -7,22 +7,85 @@ import {
   Card, T, ff, fm
 } from './UIPrimitives';
 
-const weeklyData = [
-  { t: "Mon", v: 42000 }, { t: "Tue", v: 38000 }, { t: "Wed", v: 51000 }, { t: "Thu", v: 44000 },
-  { t: "Fri", v: 62000 }, { t: "Sat", v: 78000 }, { t: "Sun", v: 71000 }
-];
+interface AnalyticsTabProps {
+  bills?: any[];
+}
 
-const monthlyData = Array.from({ length: 30 }, (_, i) => ({
-  t: `${i + 1}`, v: Math.floor(30000 + Math.random() * 40000)
-}));
+function aggregateRevenue(bills: any[], period: 'weekly' | 'monthly' | 'yearly') {
+  const now = new Date();
+  
+  if (period === 'weekly') {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weeklyData = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      weeklyData.push({ t: days[d.getDay()], dateStr: d.toDateString(), v: 0 });
+    }
+    
+    bills.forEach(b => {
+      const date = new Date(b.created_at || b.paid_at);
+      const match = weeklyData.find(d => d.dateStr === date.toDateString());
+      if (match) {
+        match.v += (b.total || b.total_paise || 0) / 100;
+      }
+    });
+    return weeklyData.map(({ t, v }) => ({ t, v }));
+  }
+  
+  if (period === 'monthly') {
+    const monthlyData = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      monthlyData.push({ t: `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`, dateStr: d.toDateString(), v: 0 });
+    }
+    
+    bills.forEach(b => {
+      const date = new Date(b.created_at || b.paid_at);
+      const match = monthlyData.find(d => d.dateStr === date.toDateString());
+      if (match) {
+        match.v += (b.total || b.total_paise || 0) / 100;
+      }
+    });
+    return monthlyData.map(({ t, v }) => ({ t, v }));
+  }
+  
+  return [];
+}
 
-const CATEGORY_CHART = [
-  { name: "Coffee", value: 65, color: "#d97706" },
-  { name: "Food", value: 25, color: "#16a34a" },
-  { name: "Bakery", value: 10, color: "#ca8a04" }
-];
+export default function AnalyticsTab({ bills = [] }: AnalyticsTabProps) {
+  const monthlyData = React.useMemo(() => aggregateRevenue(bills, 'monthly'), [bills]);
+  const weeklyData = React.useMemo(() => aggregateRevenue(bills, 'weekly'), [bills]);
 
-export default function AnalyticsTab() {
+  const categorySplit = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    let totalItems = 0;
+    
+    bills.forEach(b => {
+      (b.items || []).forEach((item: any) => {
+        const cat = item.cat || item.category || 'Other';
+        counts[cat] = (counts[cat] || 0) + (item.qty || 1);
+        totalItems += (item.qty || 1);
+      });
+    });
+    
+    if (totalItems === 0) {
+      return [
+        { name: "Coffee", value: 60, color: "#d97706" },
+        { name: "Food", value: 30, color: "#16a34a" },
+        { name: "Bakery", value: 10, color: "#ca8a04" }
+      ];
+    }
+    
+    const colors = ['#d97706', '#16a34a', '#ca8a04', '#2563eb', '#9333ea', '#ea580c'];
+    return Object.entries(counts).map(([name, qty], idx) => ({
+      name,
+      value: Math.round((qty / totalItems) * 100),
+      color: colors[idx % colors.length]
+    }));
+  }, [bills]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
       <div>
@@ -51,14 +114,14 @@ export default function AnalyticsTab() {
             <div style={{ width: "150px", height: "180px", margin: "0 auto" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={CATEGORY_CHART} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3}>
-                    {CATEGORY_CHART.map((c, i) => <Cell key={i} fill={c.color} />)}
+                  <Pie data={categorySplit} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3}>
+                    {categorySplit.map((c, i) => <Cell key={i} fill={c.color} />)}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, minWidth: "140px" }}>
-              {CATEGORY_CHART.map(c => (
+              {categorySplit.map(c => (
                 <div key={c.name} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <div style={{ width: "10px", height: "10px", borderRadius: "3px", background: c.color, flexShrink: 0 }} />
                   <span style={{ fontSize: "11px", color: T.mu2 }}>{c.name}</span>

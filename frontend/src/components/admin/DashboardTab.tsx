@@ -43,34 +43,119 @@ interface DashboardTabProps {
   setDiscounts: React.Dispatch<React.SetStateAction<Discount[]>>;
   tables: Table[];
   orders: RecentOrder[];
+  bills?: any[];
 }
 
-const dailyData = [
-  { t: "8AM", v: 2100 }, { t: "9AM", v: 4800 }, { t: "10AM", v: 7200 }, { t: "11AM", v: 6400 },
-  { t: "12PM", v: 14200 }, { t: "1PM", v: 12800 }, { t: "2PM", v: 9600 }, { t: "3PM", v: 7100 }
-];
-const weeklyData = [
-  { t: "Mon", v: 42000 }, { t: "Tue", v: 38000 }, { t: "Wed", v: 51000 }, { t: "Thu", v: 44000 },
-  { t: "Fri", v: 62000 }, { t: "Sat", v: 78000 }, { t: "Sun", v: 71000 }
-];
-const monthlyData = Array.from({ length: 30 }, (_, i) => ({
-  t: `${i + 1}`, v: Math.floor(30000 + Math.random() * 40000)
-}));
-const topItems = [
-  { name: "Classic Cappuccino", qty: 84, rev: 24360 },
-  { name: "Avocado Toast", qty: 56, rev: 21840 }
-];
+function aggregateRevenue(bills: any[], period: 'daily' | 'weekly' | 'monthly') {
+  const now = new Date();
+  
+  if (period === 'daily') {
+    const hours = ['8AM', '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM', '6PM', '7PM', '8PM', '9PM', '10PM'];
+    const hourlyData = hours.map(h => ({ t: h, v: 0 }));
+    
+    bills.forEach(b => {
+      const date = new Date(b.created_at || b.paid_at);
+      if (date.toDateString() === now.toDateString()) {
+        const hour = date.getHours();
+        let hourLabel = '';
+        if (hour === 12) hourLabel = '12PM';
+        else if (hour > 12) hourLabel = `${hour - 12}PM`;
+        else hourLabel = `${hour === 0 ? 12 : hour}AM`;
+        
+        const match = hourlyData.find(d => d.t === hourLabel);
+        if (match) {
+          match.v += (b.total || b.total_paise || 0) / 100;
+        }
+      }
+    });
+    return hourlyData;
+  }
+  
+  if (period === 'weekly') {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weeklyData = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      weeklyData.push({ t: days[d.getDay()], dateStr: d.toDateString(), v: 0 });
+    }
+    
+    bills.forEach(b => {
+      const date = new Date(b.created_at || b.paid_at);
+      const match = weeklyData.find(d => d.dateStr === date.toDateString());
+      if (match) {
+        match.v += (b.total || b.total_paise || 0) / 100;
+      }
+    });
+    return weeklyData.map(({ t, v }) => ({ t, v }));
+  }
+  
+  if (period === 'monthly') {
+    const monthlyData = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      monthlyData.push({ t: `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`, dateStr: d.toDateString(), v: 0 });
+    }
+    
+    bills.forEach(b => {
+      const date = new Date(b.created_at || b.paid_at);
+      const match = monthlyData.find(d => d.dateStr === date.toDateString());
+      if (match) {
+        match.v += (b.total || b.total_paise || 0) / 100;
+      }
+    });
+    return monthlyData.map(({ t, v }) => ({ t, v }));
+  }
+  
+  return [];
+}
 
 export default function DashboardTab({
   toast,
   discounts,
   setDiscounts,
   tables,
-  orders
+  orders,
+  bills = []
 }: DashboardTabProps) {
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [chartType, setChartType] = useState<"area" | "bar">("area");
-  const chartData = period === "daily" ? dailyData : period === "weekly" ? weeklyData : monthlyData;
+  
+  const chartData = React.useMemo(() => {
+    return aggregateRevenue(bills, period);
+  }, [bills, period]);
+
+  const computedTopItems = React.useMemo(() => {
+    const counts: Record<string, { qty: number, rev: number }> = {};
+    bills.forEach(b => {
+      (b.items || []).forEach((item: any) => {
+        if (!counts[item.name]) {
+          counts[item.name] = { qty: 0, rev: 0 };
+        }
+        counts[item.name].qty += item.qty || 1;
+        counts[item.name].rev += (item.qty || 1) * (item.price || 0);
+      });
+    });
+    
+    const sorted = Object.entries(counts)
+      .map(([name, data]) => ({ name, qty: data.qty, rev: data.rev }))
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5);
+      
+    if (sorted.length === 0) {
+      return [
+        { name: "Classic Cappuccino", qty: 24, rev: 4800 },
+        { name: "Avocado Toast", qty: 15, rev: 3750 }
+      ];
+    }
+    return sorted;
+  }, [bills]);
+
+  const maxTopQty = React.useMemo(() => {
+    return Math.max(1, ...computedTopItems.map(item => item.qty));
+  }, [computedTopItems]);
+
 
   const applyDiscount = (id: string, name: string, pct: number) => {
     setDiscounts(prev => prev.map(d => d.id === id ? { ...d, active: true } : d));
@@ -171,7 +256,7 @@ export default function DashboardTab({
           <div style={{ fontSize: "13px", fontWeight: 700, color: T.tx, marginBottom: "4px" }}>Top-Selling Items</div>
           <div style={{ fontSize: "11px", color: T.mu2, marginBottom: "14px" }}>By order count</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {topItems.map((item, i) => (
+            {computedTopItems.map((item, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <span style={{ fontSize: "12px", fontWeight: 800, color: i === 0 ? T.em : T.mu, minWidth: "22px", fontFamily: fm }}>
                   #{String(i + 1).padStart(2, "0")}
@@ -181,7 +266,7 @@ export default function DashboardTab({
                   <div style={{ fontSize: "10px", color: T.mu }}>{item.qty} sold · ₹{item.rev.toLocaleString()}</div>
                 </div>
                 <div style={{ width: "50px", height: "4px", borderRadius: "2px", background: T.bdr, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${(item.qty / 84 * 100).toFixed(0)}%`, background: i === 0 ? T.em : T.ind, borderRadius: "2px" }} />
+                  <div style={{ height: "100%", width: `${(item.qty / maxTopQty * 100).toFixed(0)}%`, background: i === 0 ? T.em : T.ind, borderRadius: "2px" }} />
                 </div>
               </div>
             ))}

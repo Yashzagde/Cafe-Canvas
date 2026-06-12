@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Coffee, AlertCircle, LogOut, ChevronDown, User, Layers, ShieldAlert, Award } from 'lucide-react';
+import { Coffee, AlertCircle, LogOut, ChevronDown, User, Layers, ShieldAlert, Award, Wifi, WifiOff } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { syncOfflineData, getCachedMenuItems, getCachedCategories, cacheMenuItems, cacheCategories, getOfflineBills, isOnline } from '@/lib/offline-queue';
 
 // Zustand stores
 import { useBranchStore } from '@/store/branch';
@@ -146,8 +147,10 @@ export default function CafeCanvaAdmin() {
   const [tableOrders, setTableOrders] = useState<Record<string, BillItem[]>>({});
   const [billHistory, setBillHistory] = useState<BillHistoryEntry[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [orders, setOrders] = useState<RecentOrder[]>([]);
   const [dbPending, setDbPending] = useState(false);
+  const [isOnlineState, setIsOnlineState] = useState(true);
+  const [offlineBillsCount, setOfflineBillsCount] = useState(0);
+  const [rawBillsList, setRawBillsList] = useState<any[]>([]);
 
   // Receipt Preview
   const [showReceipt, setShowReceipt] = useState(false);
@@ -161,68 +164,132 @@ export default function CafeCanvaAdmin() {
 
   const fetchDbData = async () => {
     try {
-      // 1. Resolve user profile session
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/admin/login');
-        return;
+      const isSystemOnline = typeof window !== 'undefined' ? window.navigator.onLine : true;
+      let user = null;
+      let profile = null;
+
+      if (isSystemOnline) {
+        try {
+          const authUserRes = await supabase.auth.getUser();
+          user = authUserRes.data?.user;
+          if (user) {
+            const { data: p } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', user.id)
+              .single();
+            profile = p;
+            
+            if (profile) {
+              localStorage.setItem('cc_cached_user', JSON.stringify({ user, profile }));
+            }
+          }
+        } catch (authErr) {
+          console.warn("Auth check failed, using cached credentials:", authErr);
+        }
       }
 
-      setUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Operator');
-
-      const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile || !profile.tenant_id) {
-        console.error("User profile or tenant_id not found.");
-        router.push('/admin/login');
-        return;
+      if (!user || !profile) {
+        const cached = localStorage.getItem('cc_cached_user');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          user = parsed.user;
+          profile = parsed.profile;
+        } else {
+          router.push('/admin/login');
+          return;
+        }
       }
 
+      setUserName(profile.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Operator');
       setUserRole(profile.role as any);
       setTenantId(profile.tenant_id);
-      if (profile.name) {
-        setUserName(profile.name);
-      }
 
       const activeTenantId = profile.tenant_id;
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
-      // --- STAGE 1: Parallel Fetching of Branch List and Tenant/Menu/Billing/CRM Metadata ---
-      const [
-        branchResult,
-        tenantResult,
-        categoriesResult,
-        itemsResult,
-        billsResult,
-        customersResult
-      ] = await Promise.all([
-        supabase.from('branches').select('*').eq('tenant_id', activeTenantId).eq('active', true),
-        supabase.from('tenants').select('name, public_id, slug, logo_url').eq('id', activeTenantId).maybeSingle(),
-        supabase.from('menu_categories').select('id, name').eq('tenant_id', activeTenantId),
-        supabase.from('menu_items').select('*').eq('tenant_id', activeTenantId).order('sort_order', { ascending: true }),
-        supabase.from('bills').select('*').eq('tenant_id', activeTenantId).order('created_at', { ascending: false }).limit(10),
-        supabase.from('customers').select('*').eq('tenant_id', activeTenantId).is('deleted_at', null).limit(20)
-      ]);
-
-      if (branchResult.error) throw branchResult.error;
-      if (tenantResult.error) throw tenantResult.error;
-      if (categoriesResult.error) throw categoriesResult.error;
-      if (itemsResult.error) throw itemsResult.error;
-      if (billsResult.error) throw billsResult.error;
-      if (customersResult.error) throw customersResult.error;
-
-      // Extract Branch List
-      const branchList = branchResult.data || [];
+      // --- STAGE 1: Parallel Fetching of Branch List ---
+      let branchList = [];
+      if (isSystemOnline) {
+        const branchResult = await supabase.from('branches').select('*').eq('tenant_id', activeTenantId).eq('active', true);
+        if (!branchResult.error) {
+          branchList = branchResult.data || [];
+          localStorage.setItem(`cc_branches_${activeTenantId}`, JSON.stringify(branchList));
+        }
+      } else {
+        const cachedBranches = localStorage.getItem(`cc_branches_${activeTenantId}`);
+        if (cachedBranches) branchList = JSON.parse(cachedBranches);
+      }
       setBranches(branchList as any[]);
       const currentBranchId = activeBranch?.id || branchList?.[0]?.id || '';
 
+      // --- STAGE 2: Fetch Data (Online or Offline cache) ---
+      let tenData = null;
+      let catData = [];
+      let itemsData = [];
+      let billsData = [];
+      let customersData = [];
+      let tablesData = [];
+      let ordersData = [];
+
+      if (isSystemOnline) {
+        const [
+          tenantResult,
+          categoriesResult,
+          itemsResult,
+          billsResult,
+          customersResult,
+          tablesResult,
+          ordersResult
+        ] = await Promise.all([
+          supabase.from('tenants').select('name, public_id, slug, logo_url').eq('id', activeTenantId).maybeSingle(),
+          supabase.from('menu_categories').select('id, name').eq('tenant_id', activeTenantId),
+          supabase.from('menu_items').select('*').eq('tenant_id', activeTenantId).order('sort_order', { ascending: true }),
+          supabase.from('bills').select('*').eq('tenant_id', activeTenantId).eq('location_id', currentBranchId).order('created_at', { ascending: false }).limit(200),
+          supabase.from('customers').select('*').eq('tenant_id', activeTenantId).is('deleted_at', null).limit(100),
+          supabase.from('tables').select('*').eq('tenant_id', activeTenantId).eq('location_id', currentBranchId).is('deleted_at', null).order('name', { ascending: true }),
+          supabase.from('orders').select('*, order_items(*)').eq('tenant_id', activeTenantId).eq('location_id', currentBranchId).or(`status.in.(pending,confirmed,preparing,ready,served,billed),and(status.eq.paid,created_at.gte.${todayStart.toISOString()})`)
+        ]);
+
+        if (!tenantResult.error) tenData = tenantResult.data;
+        if (!categoriesResult.error) catData = categoriesResult.data || [];
+        if (!itemsResult.error) itemsData = itemsResult.data || [];
+        if (!billsResult.error) billsData = billsResult.data || [];
+        if (!customersResult.error) customersData = customersResult.data || [];
+        if (!tablesResult.error) tablesData = tablesResult.data || [];
+        if (!ordersResult.error) ordersData = ordersResult.data || [];
+
+        // Save caches
+        if (tenData) localStorage.setItem(`cc_tenant_${activeTenantId}`, JSON.stringify(tenData));
+        await cacheCategories(catData);
+        await cacheMenuItems(itemsData);
+        localStorage.setItem(`cc_bills_${currentBranchId}`, JSON.stringify(billsData));
+        localStorage.setItem(`cc_customers_${activeTenantId}`, JSON.stringify(customersData));
+        localStorage.setItem(`cc_tables_${currentBranchId}`, JSON.stringify(tablesData));
+        localStorage.setItem(`cc_orders_${currentBranchId}`, JSON.stringify(ordersData));
+      } else {
+        const cachedTenant = localStorage.getItem(`cc_tenant_${activeTenantId}`);
+        if (cachedTenant) tenData = JSON.parse(cachedTenant);
+        catData = await getCachedCategories();
+        itemsData = await getCachedMenuItems();
+        const cachedBills = localStorage.getItem(`cc_bills_${currentBranchId}`);
+        if (cachedBills) billsData = JSON.parse(cachedBills);
+        const cachedCustomers = localStorage.getItem(`cc_customers_${activeTenantId}`);
+        if (cachedCustomers) customersData = JSON.parse(cachedCustomers);
+        const cachedTables = localStorage.getItem(`cc_tables_${currentBranchId}`);
+        if (cachedTables) tablesData = JSON.parse(cachedTables);
+        const cachedOrders = localStorage.getItem(`cc_orders_${currentBranchId}`);
+        if (cachedOrders) ordersData = JSON.parse(cachedOrders);
+      }
+
+      // Merge Offline Bills
+      const offlineBills = await getOfflineBills();
+      const branchOfflineBills = offlineBills.filter(b => b.location_id === currentBranchId);
+      const mergedBills = [...branchOfflineBills, ...billsData];
+      setRawBillsList(mergedBills);
+
       // Extract Tenant Metadata
-      const tenData = tenantResult.data;
       if (tenData) {
         setTenantName(tenData.name);
         setPublicId(tenData.public_id || "");
@@ -231,11 +298,9 @@ export default function CafeCanvaAdmin() {
       }
 
       // Extract Menu Categories
-      const catData = categoriesResult.data || [];
       const catsMap = new Map(catData.map(c => [c.id, c.name]));
 
       // Extract Menu Items
-      const itemsData = itemsResult.data || [];
       const mappedMenu: MenuItem[] = itemsData.map(i => ({
         id: i.id,
         name: i.name,
@@ -247,17 +312,7 @@ export default function CafeCanvaAdmin() {
       }));
       setMenu(mappedMenu);
 
-      // --- STAGE 2: Parallel Fetching of Branch-Specific Tables and Orders ---
-      const [tablesResult, ordersResult] = await Promise.all([
-        supabase.from('tables').select('*').eq('tenant_id', activeTenantId).eq('branch_id', currentBranchId).is('deleted_at', null).order('name', { ascending: true }),
-        supabase.from('orders').select('*, order_items(*)').eq('tenant_id', activeTenantId).eq('branch_id', currentBranchId).or(`status.in.(pending,confirmed,preparing,ready,served,billed),and(status.eq.paid,created_at.gte.${todayStart.toISOString()})`)
-      ]);
-
-      if (tablesResult.error) throw tablesResult.error;
-      if (ordersResult.error) throw ordersResult.error;
-
       // Extract Tables
-      const tablesData = tablesResult.data || [];
       const mappedTables: Table[] = tablesData.map(t => ({
         id: t.id,
         name: t.name,
@@ -267,16 +322,16 @@ export default function CafeCanvaAdmin() {
         floor_x: t.floor_x,
         floor_y: t.floor_y,
         qr_version: t.qr_version,
-        table_number: t.table_number
+        table_number: t.table_number,
+        location_id: t.location_id
       }));
       setTables(mappedTables);
 
       // Extract and Parse Orders
-      const activeOrders = ordersResult.data || [];
       const ordersByTable: Record<string, BillItem[]> = {};
       const recentOrdersList: RecentOrder[] = [];
 
-      activeOrders.forEach(o => {
+      ordersData.forEach(o => {
         if (o.table_id && o.status !== 'paid') {
           if (!ordersByTable[o.table_id]) ordersByTable[o.table_id] = [];
           
@@ -309,29 +364,37 @@ export default function CafeCanvaAdmin() {
       setTableOrders(ordersByTable);
       setOrders(recentOrdersList);
 
-      // Parse Bills (from Stage 1)
-      const billsData = billsResult.data || [];
-      const mappedHistory: BillHistoryEntry[] = billsData.map(b => {
-        const matchingTable = mappedTables.find(t => t.table_number === b.table_number);
+      // Parse Bills History
+      const mappedHistory: BillHistoryEntry[] = mergedBills.map(b => {
+        const matchingTable = mappedTables.find(t => t.table_number === b.table_number || t.table_number?.toString() === b.table_number?.toString());
+        const billItemsList: BillItem[] = (b.items || []).map((item: any) => ({
+          id: item.id || `item-${Date.now()}-${Math.random()}`,
+          _key: item.id || `item-${Date.now()}-${Math.random()}`,
+          itemId: item.itemId,
+          name: item.name,
+          price: item.price,
+          qty: item.qty
+        }));
+
         return {
           id: b.id.substring(0, 8).toUpperCase(),
           table: matchingTable?.name || (b.table_number ? `Table ${b.table_number}` : "Table"),
           section: matchingTable?.section || "Indoor",
-          time: new Date(b.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
-          method: b.payment_method || "CASH",
-          sub: (b.subtotal || 0) / 100,
-          gst: ((b.cgst || 0) + (b.sgst || 0)) / 100,
-          svc: ((b.total || 0) - (b.subtotal || 0) - (b.cgst || 0) - (b.sgst || 0) + (b.discount_amount || 0)) / 100,
+          time: new Date(b.created_at || b.paid_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+          method: (b.payment_method || "CASH").toUpperCase(),
+          sub: (b.subtotal || b.subtotal_paise || 0) / 100,
+          gst: ((b.cgst || b.cgst_paise || 0) + (b.sgst || b.sgst_paise || 0)) / 100,
+          svc: ((b.total || b.total_paise || 0) - (b.subtotal || b.subtotal_paise || 0) - (b.cgst || b.cgst_paise || 0) - (b.sgst || b.sgst_paise || 0) + (b.discount_amount || 0)) / 100,
           discount: (b.discount_amount || 0) / 100,
-          total: (b.total || 0) / 100,
-          itemsCount: 1,
-          billItems: []
+          total: (b.total || b.total_paise || 0) / 100,
+          itemsCount: billItemsList.length || 1,
+          billItems: billItemsList
         };
       });
       setBillHistory(mappedHistory);
 
-      // Parse Customers (from Stage 1)
-      const custData = customersResult.data || [];
+      // Parse Customers
+      const custData = customersData || [];
       const mappedCustomers: Customer[] = custData.map(c => ({
         id: c.id,
         name: c.name,
@@ -343,7 +406,7 @@ export default function CafeCanvaAdmin() {
       }));
       setCustomers(mappedCustomers);
 
-      setDbPending(false);
+      setDbPending(!isSystemOnline);
     } catch (err: any) {
       console.error("Supabase sync issue. Running client preview sandbox:", err.message);
       setDbPending(true);
@@ -354,7 +417,79 @@ export default function CafeCanvaAdmin() {
 
   useEffect(() => {
     setMounted(true);
-    fetchDbData();
+    
+    // Check initial online status
+    if (typeof window !== 'undefined') {
+      setIsOnlineState(window.navigator.onLine);
+      
+      const handleOnline = async () => {
+        setIsOnlineState(true);
+        toast("Back online! Syncing offline operations...", "success");
+        await syncOfflineData(supabase, (remaining) => {
+          setOfflineBillsCount(remaining);
+        });
+        fetchDbData();
+      };
+      
+      const handleOffline = () => {
+        setIsOnlineState(false);
+        toast("Connection lost. Working in offline mode.", "warning");
+      };
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      // Periodic background sync if online (every 30 seconds)
+      const interval = setInterval(async () => {
+        if (window.navigator.onLine) {
+          await syncOfflineData(supabase, (remaining) => {
+            setOfflineBillsCount(remaining);
+          });
+        }
+      }, 30000);
+
+      // Initial check and background sync
+      if (window.navigator.onLine) {
+        syncOfflineData(supabase, (remaining) => {
+          setOfflineBillsCount(remaining);
+        });
+      } else {
+        getOfflineBills().then(bills => {
+          setOfflineBillsCount(bills.length);
+        });
+      }
+
+      // Stale-while-revalidate: Load from local cache immediately so UI is instant
+      const loadFromOfflineCache = async () => {
+        try {
+          const cachedMenu = await getCachedMenuItems();
+          const cachedCats = await getCachedCategories();
+          if (cachedMenu.length > 0) {
+            // Map the cached items back to MenuItem format
+            const catsMap = new Map(cachedCats.map(c => [c.id, c.name]));
+            const mappedMenu: MenuItem[] = cachedMenu.map(i => ({
+              id: i.id,
+              name: i.name,
+              price: (i.price ?? i.price_paise ?? 0) / 100,
+              cat: catsMap.get(i.category_id || "") || "Uncategorized",
+              status: i.is_available ? 'available' : 'unavailable',
+              desc: i.description || "",
+              image_url: i.image_url || null
+            }));
+            setMenu(mappedMenu);
+          }
+        } catch (err) {
+          console.error("Failed to load from offline cache:", err);
+        }
+      };
+      loadFromOfflineCache();
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        clearInterval(interval);
+      };
+    }
   }, [activeBranch]);
 
   // Real-time Order Subscriptions

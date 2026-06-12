@@ -32,6 +32,7 @@ const NAV = [
   { id: "feedback", label: "Guest Feedbacks", icon: "💬" },
   { id: "storefront", label: "Storefront", icon: "🏪" },
   { id: "audit", label: "Audit Logs", icon: "📋" },
+  { id: "settings", label: "Settings", icon: "🛠️" },
 ];
 
 export default function Sidebar({

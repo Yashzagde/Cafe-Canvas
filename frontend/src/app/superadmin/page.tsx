@@ -5,7 +5,7 @@ import {
   Building2, Users, Activity, BarChart3, Settings, ShieldAlert, 
   Plus, Check, X, Shield, Globe, Key, AlertTriangle, Trash2, ArrowRight,
   TrendingUp, HelpCircle, FileText, Lock, PlusCircle, LogOut, CheckCircle2,
-  AlertOctagon, Laptop, RefreshCw
+  AlertOctagon, Laptop, RefreshCw, Copy
 } from 'lucide-react';
 import Link from 'next/link';
 import { 
@@ -422,8 +422,9 @@ export default function SuperadminDashboard() {
         name: result.tenant.name,
         subdomain: result.tenant.subdomain,
         plan: result.tenant.plan,
-        status: result.tenant.active ? 'ACTIVE' : 'SUSPENDED',
-        createdAt: result.tenant.createdAt || new Date().toISOString()
+        status: result.tenant.status,
+        createdAt: result.tenant.createdAt || new Date().toISOString(),
+        publicId: result.tenant.publicId
       };
 
       setTenantsList(prev => [newTenant, ...prev]);
@@ -851,6 +852,120 @@ export default function SuperadminDashboard() {
                       >
                         Impersonate Tenant Panel <ArrowRight size={14} className="text-amber-500" />
                       </button>
+                    </div>
+
+                    {/* Access Control & Tenant Identifiers & Danger Zone */}
+                    <div className="space-y-4 pt-4 border-t border-stone-150">
+                      <div>
+                        <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-wider">Access Control</h4>
+                        <p className="text-[9px] text-stone-500 font-semibold leading-normal mt-0.5">
+                          Configure administrative security boundaries and password policies.
+                        </p>
+                        <button
+                          onClick={() => {
+                            const owner = tenantDetails.staff.find(s => s.role === 'owner');
+                            if (owner && owner.email) {
+                              handleTriggerPasswordReset(owner.email);
+                            } else {
+                              const promptEmail = prompt('Owner email not found in staff register. Enter email for password reset:');
+                              if (promptEmail) handleTriggerPasswordReset(promptEmail);
+                            }
+                          }}
+                          className="mt-2 flex items-center gap-1.5 px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-200 rounded-xl text-stone-700 text-[10px] font-bold transition-all cursor-pointer"
+                        >
+                          <Key size={12} className="text-amber-600" /> Trigger Master Password Reset
+                        </button>
+                      </div>
+
+                      <div className="space-y-3 pt-2">
+                        <div className="flex items-center gap-1.5">
+                          <Shield size={14} className="text-stone-400" />
+                          <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-wider">Tenant Identifiers</h4>
+                        </div>
+                        <p className="text-[9px] text-stone-500 font-semibold leading-normal">
+                          Unique credentials used for database isolation, POS terminal provisioning, and custom domain routing.
+                        </p>
+                        
+                        {/* Private ID Block */}
+                        <div className="space-y-1 bg-[#fdfcf7] border border-stone-200 rounded-xl p-3 flex flex-col gap-1.5">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[9px] font-bold text-stone-500 uppercase">Private Tenant UUID</span>
+                            <span className="text-[8px] font-bold text-red-700 bg-red-50 border border-red-200/50 px-1.5 py-0.5 rounded">SYSTEM PRIVATE</span>
+                          </div>
+                          <div className="flex gap-2 items-center">
+                            <input 
+                              type="text" 
+                              readOnly 
+                              value={selectedTenant.id}
+                              className="flex-1 bg-white border border-stone-200 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-stone-700 focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleCopyId(selectedTenant.id, 'private')}
+                              className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-200 rounded-lg text-stone-700 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              {copiedPrivateId === selectedTenant.id ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                              <span>{copiedPrivateId === selectedTenant.id ? "Copied" : "Copy"}</span>
+                            </button>
+                          </div>
+                          <span className="text-[8px] text-stone-400 font-semibold">
+                            Required for POS and Staff mobile app logins. Keep this confidential.
+                          </span>
+                        </div>
+
+                        {/* Public ID Block */}
+                        <div className="space-y-1 bg-[#fdfcf7] border border-stone-200 rounded-xl p-3 flex flex-col gap-1.5">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[9px] font-bold text-stone-500 uppercase">Public Tenant UUID</span>
+                            <span className="text-[8px] font-bold text-blue-700 bg-blue-50 border border-blue-200/50 px-1.5 py-0.5 rounded">PUBLIC ROUTING</span>
+                          </div>
+                          <div className="flex gap-2 items-center">
+                            <input 
+                              type="text" 
+                              readOnly 
+                              value={selectedTenant.publicId || ''}
+                              className="flex-1 bg-white border border-stone-200 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-stone-700 focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleCopyId(selectedTenant.publicId || '', 'public')}
+                              className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-200 rounded-lg text-stone-700 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              {copiedPublicId === selectedTenant.publicId ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                              <span>{copiedPublicId === selectedTenant.publicId ? "Copied" : "Copy"}</span>
+                            </button>
+                          </div>
+                          <span className="text-[8px] text-stone-400 font-semibold">
+                            Used for domain mapping and public APIs. Safe to share publicly.
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Danger Zone */}
+                      <div className="border border-red-200 bg-red-50/30 rounded-2xl p-4 space-y-2.5">
+                        <h5 className="text-[10px] font-extrabold text-red-650 uppercase tracking-wider flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                          Danger Zone
+                        </h5>
+                        <p className="text-[9px] font-semibold text-stone-500 leading-relaxed">
+                          Deactivating this café stops restaurant operations permanently. It voids all menus, tables, locations, billing logs, and cancels all customer and POS terminal sessions.
+                        </p>
+                        <button
+                          onClick={() => {
+                            const actionText = selectedTenant.status === 'ACTIVE' ? 'deactivate' : 'activate';
+                            const confirmText = selectedTenant.status === 'ACTIVE' ? 'DEACTIVATE' : 'ACTIVATE';
+                            const confirmInput = prompt(`Type ${confirmText} to ${actionText} ${selectedTenant.name} permanently:`);
+                            if (confirmInput === confirmText) {
+                              handleToggleTenantStatus(selectedTenant);
+                            }
+                          }}
+                          className={`py-2 px-3 rounded-xl text-white font-bold text-[10px] cursor-pointer transition-colors shadow-sm focus:outline-none ${
+                            selectedTenant.status === 'ACTIVE' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-650 hover:bg-emerald-700'
+                          }`}
+                        >
+                          {selectedTenant.status === 'ACTIVE' ? 'Deactivate Café' : 'Activate Café'}
+                        </button>
+                      </div>
                     </div>
                   </>
                 ) : (

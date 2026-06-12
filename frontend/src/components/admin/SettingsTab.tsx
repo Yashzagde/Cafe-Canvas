@@ -15,7 +15,8 @@ import {
   Copy,
   Check,
   Coffee,
-  LogOut
+  LogOut,
+  HelpCircle
 } from 'lucide-react';
 import { T, ff, Btn, Input, Sel } from '@/components/admin/UIPrimitives';
 import { getSettingsAction, updateGeneralSettingsAction, updateStoreSettingsAction } from '@/app/admin/actions/settings.actions';
@@ -23,7 +24,7 @@ import { createClient } from '@/utils/supabase/client';
 
 const InputAny = Input as any;
 
-type TabType = 'general' | 'hours' | 'tax' | 'payments' | 'subscription';
+type TabType = 'general' | 'hours' | 'tax' | 'payments' | 'subscription' | 'legal' | 'guide';
 
 interface SettingsTabProps {
   toast: (msg: string, type?: "success" | "error" | "warning") => void;
@@ -308,7 +309,9 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
     { id: 'hours' as TabType, label: 'Operating Hours', icon: Clock },
     { id: 'tax' as TabType, label: 'Taxation Rules', icon: Percent },
     { id: 'payments' as TabType, label: 'Payment Gateway', icon: CreditCard },
-    { id: 'subscription' as TabType, label: 'Merchant Plan', icon: Sparkles }
+    { id: 'subscription' as TabType, label: 'Merchant Plan', icon: Sparkles },
+    { id: 'legal' as TabType, label: 'Legal Policies', icon: ShieldCheck },
+    { id: 'guide' as TabType, label: 'User Guide', icon: HelpCircle }
   ];
 
   if (loading) {
@@ -980,6 +983,166 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
               borderRadius: "12px"
             }}>
               🚀 Upgrade to the <strong style={{ color: T.ind }}>Growth</strong> or <strong style={{ color: T.ind }}>Enterprise</strong> tier to unlock multiple locations sync, daily automated SMS alerts via MSG91, advanced analytics reports exports, and detailed KDS performance metrics.
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: LEGAL POLICIES */}
+        {activeTab === 'legal' && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div>
+              <h4 style={{ fontSize: "18px", fontWeight: 800, color: T.tx, letterSpacing: "-0.01em", marginBottom: "4px" }}>Platform Legal Policies</h4>
+              <p style={{ fontSize: "11px", color: T.mu, fontWeight: 500 }}>Review the binding Terms of Service and Privacy Policy for the CafeCanvas SaaS Platform.</p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+              {/* Privacy Policy Box */}
+              <div style={{
+                background: "#fafaf9",
+                border: `1px solid ${T.bdr}`,
+                borderRadius: "16px",
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                height: "400px",
+                overflowY: "auto"
+              }}>
+                <h5 style={{ fontSize: "12px", fontWeight: 800, color: T.tx }}>Privacy Policy</h5>
+                <div style={{ fontSize: "10px", color: T.mu2, lineHeight: "1.6", whiteSpace: "pre-line" }}>
+                  {`Welcome to CafeCanvas. We value diner and tenant privacy. 
+
+                  1. DATA ISOLATION & RLS
+                  All data is logically partitioned in the database via tenant_id. Supabase Row-Level Security (RLS) policies prevent unauthorized cross-tenant read/write queries.
+                  
+                  2. INFORMATION COLLECTED
+                  - Diner name and mobile number (verified via SMS OTP).
+                  - Order details, check-in table sessions, and invoice totals.
+                  - Staff names, emails, roles, and access PIN hashes.
+                  
+                  3. INTEGRATIONS & HARDWARE
+                  - Razorpay credentials are encrypted at rest. We do not store credit card numbers.
+                  - Receipts are compiled locally and printed to thermal devices (WebUSB/BLE).
+                  
+                  4. COMPLIANCE & ACCURACY
+                  - Tax configuration maps SGST/CGST splits.
+                  - Financial transactions resolve as integer paise (₹1 = 100 paise) to prevent floating-point inaccuracies.`}
+                </div>
+              </div>
+
+              {/* Terms of Service Box */}
+              <div style={{
+                background: "#fafaf9",
+                border: `1px solid ${T.bdr}`,
+                borderRadius: "16px",
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                height: "400px",
+                overflowY: "auto"
+              }}>
+                <h5 style={{ fontSize: "12px", fontWeight: 800, color: T.tx }}>Terms of Service</h5>
+                <div style={{ fontSize: "10px", color: T.mu2, lineHeight: "1.6", whiteSpace: "pre-line" }}>
+                  {`These Terms govern the use of the CafeCanvas Platform.
+
+                  1. PLATFORM LICENSE
+                  CafeCanvas grants you a revocable, non-exclusive license to use the Store Admin, Staff POS, and customer storefronts.
+                  
+                  2. MULTI-TENANT BOUNDARIES
+                  You agree not to bypass, reverse engineer, or exploit database isolation policies. Unauthorized role-escalation attempts will result in account suspension.
+                  
+                  3. CUSTOMER DATA CONSENT
+                  You warrant that you have obtained proper Diner consent to collect names and phone numbers for checkout tax routing and GST compliance.
+                  
+                  4. INTEGRATIONS
+                  SaaS settlements route directly via Razorpay. We are not liable for transaction processing delays or gateway failures.
+                  
+                  5. GOVERNING LAW
+                  These Terms are governed by the laws of India. Disputes are subject to the exclusive jurisdiction of the courts of Mumbai, Maharashtra.`}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 7: USER GUIDE */}
+        {activeTab === 'guide' && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div>
+              <h4 style={{ fontSize: "18px", fontWeight: 800, color: T.tx, letterSpacing: "-0.01em", marginBottom: "4px" }}>Store Operations User Guide</h4>
+              <p style={{ fontSize: "11px", color: T.mu, fontWeight: 500 }}>Step-by-step documentation for Store Admin operations, Staff POS (APK), and Customer Storefront.</p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* Store Admin Section */}
+              <div style={{
+                background: "#fafaf9",
+                border: `1px solid ${T.bdr}`,
+                borderRadius: "16px",
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px"
+              }}>
+                <h5 style={{ fontSize: "13px", fontWeight: 800, color: T.tx, display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>🖥️</span> Store Admin Panel
+                </h5>
+                <div style={{ fontSize: "11px", color: T.mu2, lineHeight: "1.6" }}>
+                  <strong>Overview:</strong> Managed via standard Web browsers or the Electron app. Owners/Managers configure the menu catalog, tables, taxes, and payment gateways.
+                  <ul style={{ listStyleType: "disc", paddingLeft: "20px", marginTop: "6px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <li><strong>Paise Resolution:</strong> All items are priced in base decimal Rupees, but processed in integers as paise in the database (e.g. ₹10.00 = 1000 paise) to prevent floating-point calculation errors.</li>
+                    <li><strong>Table QRs:</strong> Generate and print dynamic vector QR table cards mapping to your storefront subdomain to trigger dine-in table ordering.</li>
+                    <li><strong>Local Printing:</strong> Pair receipt printer devices directly using the <strong>WebUSB API</strong> under Settings (compatible with standard 80mm/58mm thermal units).</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Staff POS Section */}
+              <div style={{
+                background: "#fafaf9",
+                border: `1px solid ${T.bdr}`,
+                borderRadius: "16px",
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px"
+              }}>
+                <h5 style={{ fontSize: "13px", fontWeight: 800, color: T.tx, display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>📱</span> Staff Mobile POS (APK) & Web POS
+                </h5>
+                <div style={{ fontSize: "11px", color: T.mu2, lineHeight: "1.6" }}>
+                  <strong>Overview:</strong> Dedicated mobile app built for Android tablets and smartphones to help waiter staff take orders, track table sessions, and print receipt bills.
+                  <ul style={{ listStyleType: "disc", paddingLeft: "20px", marginTop: "6px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <li><strong>Table Sessions:</strong> Cashiers/waiters can start, modify, and check out table sessions in real-time, moving tables from 🟢 Available to 🔴 Occupied.</li>
+                    <li><strong>KDS Workflow:</strong> Orders route to the Kitchen Display System (KDS) immediately, moving items through <code>pending</code> ➔ <code>confirmed</code> ➔ <code>preparing</code> ➔ <code>served</code>.</li>
+                    <li><strong>Printer Connectivity:</strong> Prints invoices wirelessly using <strong>Bluetooth Low Energy (BLE)</strong> or local network protocols without driver dependencies.</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Storefront Section */}
+              <div style={{
+                background: "#fafaf9",
+                border: `1px solid ${T.bdr}`,
+                borderRadius: "16px",
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px"
+              }}>
+                <h5 style={{ fontSize: "13px", fontWeight: 800, color: T.tx, display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>🏪</span> Customer Storefront (Dine-in Web)
+                </h5>
+                <div style={{ fontSize: "11px", color: T.mu2, lineHeight: "1.6" }}>
+                  <strong>Overview:</strong> Customer-facing Next.js digital menu. Allows diners to self-check-in, view catalog menus, select items, and process online settlements.
+                  <ul style={{ listStyleType: "disc", paddingLeft: "20px", marginTop: "6px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <li><strong>Dine-In OTP:</strong> Customer scans the table QR code, inputs their name/number, and verifies check-in via SMS OTP (routed via MSG91 SMS API).</li>
+                    <li><strong>Online Payments:</strong> Diners pay directly using UPI, NetBanking, or card payment settlements routed through your integrated <strong>Razorpay</strong> merchant account.</li>
+                    <li><strong>Brand Story & Blogs:</strong> Displays customized brand story narratives and promotional articles published from the Storefront Experience Editor.</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         )}

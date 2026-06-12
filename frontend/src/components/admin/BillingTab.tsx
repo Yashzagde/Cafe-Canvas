@@ -6,6 +6,7 @@ import {
 } from './UIPrimitives';
 import type { ReceiptData } from '@/components/billing/types';
 import { DEFAULT_STORE_INFO } from '@/components/billing/types';
+import { enqueueOperation, saveOfflineBill, isOnline } from '@/lib/offline-queue';
 
 const InputAny = Input as any;
 
@@ -351,7 +352,75 @@ export default function BillingTab({
   const saveDraft = async () => {
     if (!selectedTable) return;
     try {
-      if (!dbPending) {
+      if (dbPending || !isOnline()) {
+        const tempSessionId = `sess-temp-${Date.now()}`;
+        const tempOrderId = `ord-temp-${Date.now()}`;
+        const subtotalInPaise = Math.round(subtotal * 100);
+        const grandTotalInPaise = Math.round(grandTotal * 100);
+
+        // Queue session creation
+        await enqueueOperation({
+          table: 'table_sessions',
+          action: 'insert',
+          payload: {
+            id: tempSessionId,
+            tenant_id: tenantId,
+            table_id: selectedTable.id,
+            customer_name: 'Walk-in Guest',
+            status: 'active',
+            started_at: new Date().toISOString()
+          }
+        });
+
+        // Queue order creation
+        await enqueueOperation({
+          table: 'orders',
+          action: 'insert',
+          payload: {
+            id: tempOrderId,
+            tenant_id: tenantId,
+            location_id: selectedTable.location_id || selectedTable.branch_id,
+            table_id: selectedTable.id,
+            session_id: tempSessionId,
+            status: 'pending',
+            subtotal: subtotalInPaise,
+            discount_amount: 0,
+            total: grandTotalInPaise,
+            order_type: 'dine_in'
+          }
+        });
+
+        // Queue items insertion
+        if (billItems.length > 0) {
+          const itemsPayload = billItems.map(item => ({
+            order_id: tempOrderId,
+            tenant_id: tenantId,
+            menu_item_id: item.itemId && item.itemId.startsWith('new-') ? null : item.itemId,
+            item_name: item.name,
+            unit_price: Math.round(item.price * 100),
+            quantity: item.qty,
+            notes: item.notes || null
+          }));
+
+          await enqueueOperation({
+            table: 'order_items',
+            action: 'insert',
+            payload: itemsPayload
+          });
+        }
+
+        // Queue table status update
+        await enqueueOperation({
+          table: 'tables',
+          action: 'update',
+          payload: {
+            id: selectedTable.id,
+            status: 'occupied'
+          }
+        });
+
+        toast("Draft saved locally! It will sync when online.", "success");
+      } else {
         // A. Fetch active session or create one
         let activeSession = null;
         const { data: sData } = await supabase
@@ -459,6 +528,8 @@ export default function BillingTab({
           .from('tables')
           .update({ status: 'occupied' })
           .eq('id', selectedTable.id);
+
+        toast("Draft saved successfully to database!", "success");
       }
 
       // Sync local states
@@ -467,8 +538,6 @@ export default function BillingTab({
         [selectedTable.id]: billItems.map(i => ({ ...i }))
       }));
       setTables(p => p.map(t => t.id === selectedTable.id ? { ...t, status: "occupied" } : t));
-
-      toast("Draft saved successfully to database!", "success");
     } catch (err: any) {
       toast("Failed to save draft: " + err.message, "error");
     }
@@ -485,7 +554,63 @@ export default function BillingTab({
       setBillCounter(nextId);
       const billId = `B-00${nextId}`;
 
-      if (!dbPending) {
+      if (dbPending || !isOnline()) {
+        const tempBillId = `bill-temp-${Date.now()}`;
+        const tableNum = selectedTable.table_number || parseInt(selectedTable.name.replace(/\D/g, '')) || 0;
+
+        // Create offline bill object
+        const offlineBillObj = {
+          id: tempBillId,
+          tenant_id: tenantId,
+          location_id: selectedTable.location_id || selectedTable.branch_id || '',
+          table_number: tableNum.toString(),
+          customer_name: 'Walk-in Guest',
+          customer_phone: customerPhone || null,
+          subtotal: Math.round(subtotal * 100),
+          cgst: Math.round(cgstAmt * 100),
+          sgst: Math.round(sgstAmt * 100),
+          discount_amount: Math.round(discountAmt * 100),
+          total: Math.round(grandTotal * 100),
+          status: 'paid' as const,
+          payment_method: payMethod.toLowerCase(),
+          paid_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          items: billItems.map(i => ({
+            itemId: i.itemId,
+            name: i.name,
+            price: i.price,
+            qty: i.qty
+          }))
+        };
+
+        // 1. Save locally to IndexedDB so it's preserved offline immediately
+        await saveOfflineBill(offlineBillObj);
+
+        // 2. Queue updates to Supabase for when we get online
+        const { items, ...dbBillPayload } = offlineBillObj;
+        await enqueueOperation({
+          table: 'bills',
+          action: 'insert',
+          payload: {
+            ...dbBillPayload,
+            // Replicate exactly what online insert does
+            order_ids: [],
+            table_number: tableNum
+          }
+        });
+
+        // 3. Queue update to set table to available
+        await enqueueOperation({
+          table: 'tables',
+          action: 'update',
+          payload: {
+            id: selectedTable.id,
+            status: 'available'
+          }
+        });
+
+        toast("Bill created offline and saved locally! Syncing in background when online.", "success");
+      } else {
         // 1. Get active orders for this table
         const { data: activeOrders } = await supabase
           .from('orders')
@@ -552,6 +677,8 @@ export default function BillingTab({
           .from('tables')
           .update({ status: 'available' })
           .eq('id', selectedTable.id);
+          
+        toast("Payment complete! Bill settled.", "success");
       }
 
       const newBill: BillHistoryEntry = {
@@ -573,7 +700,6 @@ export default function BillingTab({
       setTables(p => p.map(t => t.id === selectedTable.id ? { ...t, status: "available" } : t));
       setTableOrders(p => ({ ...p, [selectedTable.id]: [] }));
       setPayStep("success");
-      toast("Payment complete! Bill settled.", "success");
     } catch (err: any) {
       toast(err.message, "error");
     }
