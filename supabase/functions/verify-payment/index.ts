@@ -15,17 +15,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, billId, tenantId } = await req.json()
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, billId } = await req.json()
 
-    // Get Razorpay secret keys for this tenant
-    const { data: gateway } = await supabase
-      .from('payment_integrations')
-      .select('encrypted_config')
-      .eq('tenant_id', tenantId)
-      .eq('provider', 'razorpay')
-      .maybeSingle()
-
-    const keySecret = gateway?.encrypted_config?.key_secret || Deno.env.get('RAZORPAY_KEY_SECRET')
+    const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET')
 
     if (!keySecret) {
       throw new Error('Razorpay configuration missing')

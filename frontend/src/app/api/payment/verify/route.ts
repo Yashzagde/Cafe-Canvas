@@ -13,16 +13,7 @@ export async function POST(req: NextRequest) {
     // 1. Get the supabase client
     const supabase = await createClient()
 
-    // 2. Fetch the gateway secret
-    const { data: gateway } = await supabase
-      .from('payment_integrations')
-      .select('encrypted_config')
-      .eq('tenant_id', tenantId)
-      .eq('provider', 'razorpay')
-      .maybeSingle()
-
-    // Configuration key_secret can be stored in the gateway config or fallback to system environment variable
-    const keySecret = gateway?.encrypted_config?.key_secret || process.env.RAZORPAY_KEY_SECRET
+    const keySecret = process.env.RAZORPAY_KEY_SECRET
 
     if (!keySecret) {
       return NextResponse.json({ error: 'Razorpay configuration missing' }, { status: 400 })
