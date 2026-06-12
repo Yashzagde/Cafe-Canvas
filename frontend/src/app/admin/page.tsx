@@ -594,6 +594,30 @@ export default function CafeCanvaAdmin() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Offline/Online Status Indicator */}
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase transition-all duration-300 ${
+              isOnlineState 
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50' 
+                : 'bg-rose-50 text-rose-700 border border-rose-200/50 animate-pulse'
+            }`}>
+              {isOnlineState ? (
+                <>
+                  <Wifi size={12} className="text-emerald-600" />
+                  <span>Online</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff size={12} className="text-rose-600" />
+                  <span>Offline Mode</span>
+                </>
+              )}
+              {offlineBillsCount > 0 && (
+                <span className="ml-1 bg-amber-500 text-white rounded-full px-1.5 py-0.5 flex items-center justify-center text-[8px] font-black scale-90">
+                  {offlineBillsCount} Pending Sync
+                </span>
+              )}
+            </div>
+
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[#d97706]/10 border border-[#d97706]/30 text-[#d97706] rounded-full flex items-center justify-center font-extrabold text-xs">
                 {userName.substring(0, 2).toUpperCase()}
@@ -619,6 +643,7 @@ export default function CafeCanvaAdmin() {
                   setDiscounts={setDiscounts}
                   tables={tables}
                   orders={orders}
+                  bills={rawBillsList}
                 />
               )}
               {page === "menu" && (
@@ -663,7 +688,7 @@ export default function CafeCanvaAdmin() {
                   setDiscounts={setDiscounts}
                 />
               )}
-              {page === "analytics" && <AnalyticsTab />}
+              {page === "analytics" && <AnalyticsTab bills={rawBillsList} />}
               {page === "staff" && <StaffManager branchId={activeBranch?.id || ''} />}
               {page === "attendance" && <AttendanceTab branchId={activeBranch?.id || ''} />}
               {page === "feedback" && <FeedbackTab branchId={activeBranch?.id || ''} />}

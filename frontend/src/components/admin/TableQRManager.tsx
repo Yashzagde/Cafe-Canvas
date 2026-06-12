@@ -279,10 +279,11 @@ export default function TableQRManager({ branchId }: TableQRManagerProps) {
     
     const parts = host.split('.');
     const isPlatformDomain = host.includes('run.app') || host.includes('vercel.app') || host.includes('supabase.co');
+    const branchParam = branchId ? `?branch=${branchId}` : '';
     if (parts.length > 2 && !isPlatformDomain && !host.includes('localhost') && !host.includes('127.0.0.1')) {
-      return `${protocol}//${host}/${tableSlug}`;
+      return `${protocol}//${host}/${tableSlug}${branchParam}`;
     }
-    return `${protocol}//${host}/${storefrontSlug}/${tableSlug}`;
+    return `${protocol}//${host}/${storefrontSlug}/${tableSlug}${branchParam}`;
   };
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);

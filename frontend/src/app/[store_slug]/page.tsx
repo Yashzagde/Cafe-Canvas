@@ -401,15 +401,32 @@ export default function Storefront() {
         setMenuItems(mappedItems);
 
         // 4. Fetch tables
-        const { data: tableData, error: tableError } = await supabase
+        let branchId = '';
+        if (typeof window !== 'undefined') {
+          const searchParams = new URLSearchParams(window.location.search);
+          branchId = searchParams.get('branch') || searchParams.get('location_id') || '';
+        }
+
+        let tableQuery = supabase
           .from('tables')
-          .select('id, name, capacity, section, status, location_id')
+          .select('id, name, capacity, section, status, branch_id')
           .eq('tenant_id', tenantData.id)
-          .is('deleted_at', null)
-          .order('name', { ascending: true });
+          .is('deleted_at', null);
+
+        if (branchId) {
+          tableQuery = tableQuery.eq('branch_id', branchId);
+        }
+
+        const { data: tableData, error: tableError } = await tableQuery.order('name', { ascending: true });
 
         if (tableError) throw tableError;
-        setTables(tableData || []);
+        
+        // Map branch_id to location_id for storefront compatibility
+        const mappedTables = (tableData || []).map(t => ({
+          ...t,
+          location_id: t.branch_id
+        }));
+        setTables(mappedTables);
         
         let initialTableId = '';
         if (typeof window !== 'undefined') {
