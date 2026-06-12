@@ -463,12 +463,14 @@ const PRESETS: StoreTheme[] = [
 
 export default function StorefrontEditor({ 
   tenantPublicId, 
+  tenantSlug,
   tenantPrivateId,
   tenantName,
   setTenantName,
   tenantLogoUrl
 }: { 
   tenantPublicId: string; 
+  tenantSlug: string;
   tenantPrivateId: string;
   tenantName: string;
   setTenantName: React.Dispatch<React.SetStateAction<string>>;
@@ -1880,12 +1882,13 @@ export default function StorefrontEditor({
                   <input
                     type="text"
                     readOnly
-                    value={`http://${tenantPublicId || 'store'}.cafecanvas.bar`}
+                    value={tenantSlug ? `https://${tenantSlug}.cafecanvas.bar` : (tenantPublicId ? `https://cafecanvas.bar/${tenantPublicId}` : 'https://cafecanvas.bar/store')}
                     className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
                   />
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(`http://${tenantPublicId || 'store'}.cafecanvas.bar`);
+                      const url = tenantSlug ? `https://${tenantSlug}.cafecanvas.bar` : (tenantPublicId ? `https://cafecanvas.bar/${tenantPublicId}` : 'https://cafecanvas.bar/store');
+                      navigator.clipboard.writeText(url);
                       alert('Storefront URL Link copied!');
                     }}
                     className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl cursor-pointer transition-all"
@@ -1895,9 +1898,46 @@ export default function StorefrontEditor({
                 </div>
               </div>
 
-              <div className="flex justify-end pr-1">
+              {/* Path-based alternative URL (works on localhost too) */}
+              {tenantPublicId && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Direct Path Link (For Testing)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={typeof window !== 'undefined' ? `${window.location.origin}/${tenantSlug || tenantPublicId}` : `https://cafecanvas.bar/${tenantSlug || tenantPublicId}`}
+                      className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-400"
+                    />
+                    <button
+                      onClick={() => {
+                        const url = typeof window !== 'undefined' ? `${window.location.origin}/${tenantSlug || tenantPublicId}` : `https://cafecanvas.bar/${tenantSlug || tenantPublicId}`;
+                        navigator.clipboard.writeText(url);
+                        alert('Direct path link copied!');
+                      }}
+                      className="px-4 py-2.5 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#1e293b]/80 text-xs font-bold rounded-xl cursor-pointer transition-all border border-[#e2e8f0]"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pr-1 gap-3">
+                {tenantPublicId && (
+                  <a
+                    href={typeof window !== 'undefined' ? `${window.location.origin}/${tenantSlug || tenantPublicId}` : `https://cafecanvas.bar/${tenantSlug || tenantPublicId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-extrabold text-[#64748b] hover:underline flex items-center gap-1"
+                  >
+                    Open Direct Path ↗
+                  </a>
+                )}
                 <a
-                  href={`http://${tenantPublicId || 'store'}.cafecanvas.bar`}
+                  href={tenantSlug ? `https://${tenantSlug}.cafecanvas.bar` : (tenantPublicId ? `https://cafecanvas.bar/${tenantPublicId}` : 'https://cafecanvas.bar')}
                   target="_blank"
                   rel="noreferrer"
                   className="text-xs font-extrabold text-[#d97706] hover:underline flex items-center gap-1"

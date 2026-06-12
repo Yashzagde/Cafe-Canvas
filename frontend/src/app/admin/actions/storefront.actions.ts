@@ -88,7 +88,10 @@ export async function updateStorefrontConfigAction(configId: string, updateData:
     'hero_title_2',
     'hero_subtitle_2',
     'hero_title_3',
-    'hero_subtitle_3'
+    'hero_subtitle_3',
+    'about_title',
+    'about_text',
+    'about_image_url'
   ];
   
   for (const key of allowedKeys) {

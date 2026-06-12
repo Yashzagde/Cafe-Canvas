@@ -24,24 +24,24 @@ export interface StorefrontConfig {
   updated_at: string;
 
   // Visual layout config fields
-  hero_title?: string;
-  hero_subtitle?: string;
-  hero_title_2?: string;
-  hero_subtitle_2?: string;
-  hero_title_3?: string;
-  hero_subtitle_3?: string;
-  about_title?: string;
-  about_text?: string;
-  about_image_url?: string;
+  hero_title?: string | null;
+  hero_subtitle?: string | null;
+  hero_title_2?: string | null;
+  hero_subtitle_2?: string | null;
+  hero_title_3?: string | null;
+  hero_subtitle_3?: string | null;
+  about_title?: string | null;
+  about_text?: string | null;
+  about_image_url?: string | null;
   button_radius?: number;
   show_reviews?: boolean;
   show_instagram?: boolean;
   show_story?: boolean;
-  instagram_handle?: string;
-  google_place_id?: string;
-  announcement_banner?: string;
+  instagram_handle?: string | null;
+  google_place_id?: string | null;
+  announcement_banner?: string | null;
   is_maintenance?: boolean;
-  theme_preset?: string;
+  theme_preset?: string | null;
 }
 
 interface StorefrontEditorState {

@@ -108,6 +108,9 @@ export const storefrontConfig = pgTable('storefront_config', {
   heroSubtitle2: text('hero_subtitle_2'),
   heroTitle3: text('hero_title_3'),
   heroSubtitle3: text('hero_subtitle_3'),
+  aboutTitle: text('about_title'),
+  aboutText: text('about_text'),
+  aboutImageUrl: text('about_image_url'),
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
