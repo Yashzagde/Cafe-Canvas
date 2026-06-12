@@ -651,7 +651,7 @@ export default function StorefrontEditor({
   const [naturalImgSize, setNaturalImgSize] = useState({ w: 0, h: 0 });
   const [displayImgSize, setDisplayImgSize] = useState({ w: 0, h: 0 });
 
-  const handleUploadImageForField = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'hero_image_url' | 'hero_image_url_2' | 'hero_image_url_3' | 'logo_url') => {
+  const handleUploadImageForField = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'hero_image_url' | 'hero_image_url_2' | 'hero_image_url_3' | 'logo_url' | 'about_image_url') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -684,7 +684,7 @@ export default function StorefrontEditor({
     }
   };
 
-  const handleRemoveImageForField = (fieldName: 'hero_image_url' | 'hero_image_url_2' | 'hero_image_url_3' | 'logo_url') => {
+  const handleRemoveImageForField = (fieldName: 'hero_image_url' | 'hero_image_url_2' | 'hero_image_url_3' | 'logo_url' | 'about_image_url') => {
     updateField(fieldName, '');
   };
 
@@ -818,7 +818,7 @@ export default function StorefrontEditor({
     try {
       const data = await getStorefrontConfigAction();
       if (data) {
-        setConfig(data);
+        setConfig(data as any);
       }
     } catch (err) {
       console.error('Failed to load storefront configuration:', err);
@@ -842,7 +842,7 @@ export default function StorefrontEditor({
       }
       const updated = await updateStorefrontConfigAction(config.id, config);
       if (updated) {
-        setConfig(updated);
+        setConfig(updated as any);
         clearDirty();
       }
     } catch (err: any) {
@@ -868,7 +868,7 @@ export default function StorefrontEditor({
         }
         const updated = await updateStorefrontConfigAction(config.id, config);
         if (updated) {
-          setConfig(updated);
+          setConfig(updated as any);
           clearDirty();
         }
       }
@@ -1510,6 +1510,93 @@ export default function StorefrontEditor({
                     />
                   </button>
                 </div>
+
+                {/* Brand Story Edit Controls (visible when toggle is on) */}
+                {config.show_story && (
+                  <div className="space-y-4 p-4 rounded-2xl bg-gradient-to-br from-amber-50/60 to-orange-50/40 border border-amber-200/40 animate-fade-in">
+                    <p className="text-[10px] font-black text-[#d97706] tracking-widest uppercase flex items-center gap-1.5">
+                      <BookOpen size={12} /> Customize Brand Story
+                    </p>
+
+                    {/* Brand Story Title */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                        Section Title
+                      </label>
+                      <input
+                        type="text"
+                        value={config.about_title || ''}
+                        onChange={(e) => updateField('about_title', e.target.value)}
+                        placeholder="e.g. Our Culinary Canvas"
+                        className="w-full px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706]"
+                      />
+                    </div>
+
+                    {/* Brand Story Description */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                        Story Narrative
+                      </label>
+                      <textarea
+                        value={config.about_text || ''}
+                        onChange={(e) => updateField('about_text', e.target.value)}
+                        rows={4}
+                        placeholder="e.g. Founded with a passion for creative culinary expression, we blend artisanal baking, micro-roasted specialty coffees, and organic regional delicacies..."
+                        className="w-full px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-[#d97706] leading-relaxed"
+                      />
+                    </div>
+
+                    {/* Brand Story Image */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                        Featured Image
+                      </label>
+                      {config.about_image_url ? (
+                        <div className="p-3 bg-white border border-[#e2e8f0] rounded-xl flex items-center gap-4">
+                          <div className="w-16 h-12 rounded-lg overflow-hidden border border-[#e2e8f0] shrink-0 bg-stone-100">
+                            <img src={config.about_image_url} alt="Brand story preview" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <p className="text-[10px] font-bold text-[#1e293b]/80 truncate max-w-[180px]">
+                              {config.about_image_url.split('/').pop()}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImageForField('about_image_url' as any)}
+                              className="text-[9px] font-extrabold text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              <Trash2 size={10} />
+                              Remove Image
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-white hover:bg-[#FAF6F0]">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleUploadImageForField(e, 'about_image_url' as any)}
+                            disabled={uploadingField !== null}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <div className="space-y-2 flex flex-col items-center justify-center">
+                            {uploadingField === 'about_image_url' ? (
+                              <>
+                                <Loader2 className="w-5 h-5 text-[#d97706] animate-spin" />
+                                <p className="text-[10px] font-bold text-[#1e293b]/70">Uploading...</p>
+                              </>
+                            ) : (
+                              <>
+                                <ImageIcon className="w-5 h-5 text-[#1e293b]/30" />
+                                <p className="text-[10px] font-bold text-[#1e293b]/60">Click to upload Brand Story image</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* 4. Show Google Reviews */}
                 <div className="p-4 rounded-2xl bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-between gap-4">

@@ -64,6 +64,9 @@ interface Tenant {
   footer_address?: string | null;
   footer_phone?: string | null;
   footer_email?: string | null;
+  about_title?: string | null;
+  about_text?: string | null;
+  about_image_url?: string | null;
 }
 
 interface MenuCategory {
@@ -282,7 +285,10 @@ export default function Storefront() {
             show_blog,
             show_reviews,
             show_instagram,
-            show_story
+            show_story,
+            about_title,
+            about_text,
+            about_image_url
           )
         `);
         const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(storeSlug);
@@ -322,6 +328,9 @@ export default function Storefront() {
         const footerAddress = Array.isArray(configData) ? configData[0]?.footer_address : configData?.footer_address;
         const footerPhone = Array.isArray(configData) ? configData[0]?.footer_phone : configData?.footer_phone;
         const footerEmail = Array.isArray(configData) ? configData[0]?.footer_email : configData?.footer_email;
+        const aboutTitle = Array.isArray(configData) ? configData[0]?.about_title : configData?.about_title;
+        const aboutText = Array.isArray(configData) ? configData[0]?.about_text : configData?.about_text;
+        const aboutImageUrl = Array.isArray(configData) ? configData[0]?.about_image_url : configData?.about_image_url;
 
         setTenant({
           id: tenantData.id,
@@ -343,7 +352,10 @@ export default function Storefront() {
           footer_hours: footerHours || null,
           footer_address: footerAddress || null,
           footer_phone: footerPhone || null,
-          footer_email: footerEmail || null
+          footer_email: footerEmail || null,
+          about_title: aboutTitle || null,
+          about_text: aboutText || null,
+          about_image_url: aboutImageUrl || null
         });
 
         const rawConfig = Array.isArray(configData) ? configData[0] : configData;
