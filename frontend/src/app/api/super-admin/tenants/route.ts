@@ -13,7 +13,7 @@ export async function GET() {
 
   const { data, error } = await admin
     .from('tenants')
-    .select('id, name, subdomain, plan, active, created_at')
+    .select('id, name, subdomain, plan, active, created_at, public_id')
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       plan: plan ?? 'free',
       active: true,
     })
-    .select('id, name, subdomain, plan, active, created_at')
+    .select('id, name, subdomain, plan, active, created_at, public_id')
     .single()
 
   if (tenantError || !tenant) {

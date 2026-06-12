@@ -5,6 +5,7 @@ export interface TenantDto {
   plan: string
   status: string
   createdAt: string
+  publicId?: string
 }
 
 export interface BranchDto {
@@ -32,6 +33,7 @@ export function mapTenant(row: {
   plan: string | null
   active: boolean | null
   created_at: string
+  public_id?: string
 }): TenantDto {
   return {
     id: row.id,
@@ -40,6 +42,7 @@ export function mapTenant(row: {
     plan: row.plan ?? 'free',
     status: row.active === false ? 'SUSPENDED' : 'ACTIVE',
     createdAt: row.created_at,
+    publicId: row.public_id ?? '',
   }
 }
 

@@ -12,6 +12,7 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid 
 } from 'recharts';
 import { getSuperAdminUser, logoutSuperAdmin, registerNewPasskey, revokeAdminSession } from '@/app/admin/actions/superadmin-auth.actions';
+import { createClient } from '@/utils/supabase/client';
 
 interface Tenant {
   id: string;
@@ -20,6 +21,7 @@ interface Tenant {
   plan: string;
   status: string;
   createdAt: string;
+  publicId?: string;
 }
 
 interface Branch {
@@ -67,6 +69,12 @@ const mockRevenueData = [
 ];
 
 export default function SuperadminDashboard() {
+  const supabase = createClient();
+
+  // Copy states for Tenant Identifiers
+  const [copiedPrivateId, setCopiedPrivateId] = useState<string | null>(null);
+  const [copiedPublicId, setCopiedPublicId] = useState<string | null>(null);
+
   // Auth State
   const [adminUser, setAdminUser] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -244,12 +252,30 @@ export default function SuperadminDashboard() {
     }
   };
 
-  const handleToggleTenantStatus = (tenant: Tenant) => {
+  const handleToggleTenantStatus = async (tenant: Tenant) => {
     const newStatus = tenant.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-    const updated = tenantsList.map(t => t.id === tenant.id ? { ...t, status: newStatus } : t);
-    setTenantsList(updated);
-    if (selectedTenant?.id === tenant.id) {
-      setSelectedTenant({ ...selectedTenant, status: newStatus });
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/super-admin/tenants/${tenant.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update tenant status in database.');
+      }
+      
+      const updated = tenantsList.map(t => t.id === tenant.id ? { ...t, status: newStatus } : t);
+      setTenantsList(updated);
+      if (selectedTenant?.id === tenant.id) {
+        setSelectedTenant({ ...selectedTenant, status: newStatus });
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'An error occurred during status update.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -300,8 +326,9 @@ export default function SuperadminDashboard() {
         name: result.tenant.name,
         subdomain: result.tenant.subdomain,
         plan: result.tenant.plan,
-        status: result.tenant.active ? 'ACTIVE' : 'SUSPENDED',
-        createdAt: result.tenant.createdAt || new Date().toISOString()
+        status: result.tenant.status,
+        createdAt: result.tenant.createdAt || new Date().toISOString(),
+        publicId: result.tenant.publicId
       };
       setTenantsList(prev => [newTenant, ...prev]);
       
@@ -481,6 +508,38 @@ export default function SuperadminDashboard() {
   const handleLogout = async () => {
     await logoutSuperAdmin();
     window.location.href = '/superadmin/login';
+  };
+
+  const handleCopyId = (text: string, type: 'private' | 'public') => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      if (type === 'private') {
+        setCopiedPrivateId(text);
+        setTimeout(() => setCopiedPrivateId(null), 2000);
+      } else {
+        setCopiedPublicId(text);
+        setTimeout(() => setCopiedPublicId(null), 2000);
+      }
+    }
+  };
+
+  const handleTriggerPasswordReset = async (email: string) => {
+    if (!email) {
+      alert('Owner email not found for this tenant.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/admin/reset-password`
+      });
+      if (error) throw error;
+      alert(`🔐 Password reset email successfully dispatched to ${email}!`);
+    } catch (err: any) {
+      alert('Failed to send reset email: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (checkingAuth) {

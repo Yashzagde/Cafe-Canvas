@@ -22,7 +22,7 @@ export async function PATCH(
     .from('tenants')
     .update({ active })
     .eq('id', id)
-    .select('id, name, subdomain, plan, active, created_at')
+    .select('id, name, subdomain, plan, active, created_at, public_id')
     .single()
 
   if (error) {
