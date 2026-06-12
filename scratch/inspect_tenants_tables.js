@@ -4,7 +4,7 @@ const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '../.env.local') });
 
-const dbUrl = process.env.DATABASE_URL;
+const dbUrl = process.env.DATABASE_URL || '';
 const sql = postgres(dbUrl, { ssl: 'require' });
 
 async function query() {
