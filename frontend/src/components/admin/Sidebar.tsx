@@ -92,12 +92,18 @@ export default function Sidebar({
         }}>
           <img src="/logo.png" alt="Logo" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
         </div>
-        {sidebarOpen && (
-          <div>
-            <div style={{ fontSize: "14px", fontWeight: 800, letterSpacing: "-0.02em", color: T.tx }}>CafeCanva</div>
-            <div style={{ fontSize: "9px", color: T.mu, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>Admin Panel</div>
-          </div>
-        )}
+        <div style={{
+          opacity: sidebarOpen ? 1 : 0,
+          transition: "opacity 0.2s ease, width 0.2s ease",
+          width: sidebarOpen ? "auto" : 0,
+          overflow: "hidden",
+          whiteSpace: "nowrap",
+          display: "flex",
+          flexDirection: "column"
+        }}>
+          <span style={{ fontSize: "14px", fontWeight: 800, letterSpacing: "-0.02em", color: T.tx }}>CafeCanva</span>
+          <span style={{ fontSize: "9px", color: T.mu, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>Admin Panel</span>
+        </div>
       </div>
 
       {/* Nav Items */}
@@ -125,7 +131,13 @@ export default function Sidebar({
                 justifyContent: sidebarOpen ? "flex-start" : "center"
               }}>
               <span style={{ fontSize: "16px", flexShrink: 0 }}>{n.icon}</span>
-              {sidebarOpen && <span>{n.label}</span>}
+              <span style={{
+                opacity: sidebarOpen ? 1 : 0,
+                transition: "opacity 0.15s ease, width 0.15s ease",
+                width: sidebarOpen ? "auto" : 0,
+                overflow: "hidden",
+                whiteSpace: "nowrap"
+              }}>{n.label}</span>
             </button>
           );
         })}

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CafeCanvas - Offline Mode</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #d97706;
+      --primary-hover: #b45309;
+      --bg: #0c0a09;
+      --card-bg: rgba(28, 25, 23, 0.7);
+      --border-color: rgba(217, 119, 6, 0.2);
+      --text-main: #f5f5f4;
+      --text-muted: #a8a29e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(217, 119, 6, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(234, 88, 12, 0.05) 0%, transparent 40%);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      padding: 24px;
+      z-index: 10;
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 40px 32px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 
+                  0 0 50px rgba(217, 119, 6, 0.05) inset;
+      transform: translateY(0);
+      animation: floatCard 6s ease-in-out infinite;
+    }
+
+    @keyframes floatCard {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .logo-container {
+      margin-bottom: 24px;
+      display: inline-block;
+      position: relative;
+    }
+
+    .radar-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid var(--primary);
+      opacity: 0;
+      animation: radar 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+    }
+
+    .radar-circle-delay {
+      animation-delay: 1s;
+    }
+
+    @keyframes radar {
+      0% {
+        width: 60px;
+        height: 60px;
+        opacity: 0.8;
+      }
+      100% {
+        width: 140px;
+        height: 140px;
+        opacity: 0;
+      }
+    }
+
+    .logo-icon {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(217, 119, 6, 0.3);
+      position: relative;
+      z-index: 2;
+    }
+
+    .logo-icon svg {
+      width: 32px;
+      height: 32px;
+      color: #ffffff;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ffffff 60%, #a8a29e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .diagnostics-box {
+      background: rgba(12, 10, 9, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+
+    .diagnostic-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .diagnostic-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .diagnostic-label {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .diagnostic-val {
+      font-family: monospace;
+      color: #fca5a5;
+    }
+
+    .diagnostic-val.online {
+      color: #86efac;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #ffffff;
+      background: linear-gradient(135deg, #ea580c, #d97706);
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(217, 119, 6, 0.2);
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: linear-gradient(135deg, #dd5209, #c26a05);
+      box-shadow: 0 6px 20px rgba(217, 119, 6, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-svg {
+      margin-right: 8px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .footer-text {
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .pulsing-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      margin-right: 6px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="glass-card">
+      <div class="logo-container">
+        <div class="radar-circle"></div>
+        <div class="radar-circle radar-circle-delay"></div>
+        <div class="logo-icon">
+          <!-- Coffee cup svg icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
+            <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+            <line x1="6" x2="6" y1="2" y2="4" />
+            <line x1="10" x2="10" y1="2" y2="4" />
+            <line x1="14" x2="14" y1="2" y2="4" />
+          </svg>
+        </div>
+      </div>
+
+      <h1>Connection Offline</h1>
+      <p>The desktop software is unable to reach the CafeCanvas servers. Offline drafting is active once the dashboard is loaded.</p>
+
+      <div class="diagnostics-box">
+        <div class="diagnostic-row">
+          <span class="diagnostic-label">Network Link:</span>
+          <span id="net-status" class="diagnostic-val">Checking...</span>
+        </div>
+        <div class="diagnostic-row">
+          <span class="diagnostic-label">Target Portal:</span>
+          <span id="target-portal" class="diagnostic-val">https://cafecanvas.bar/admin</span>
+        </div>
+      </div>
+
+      <button onclick="retry()" class="btn">
+        <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+          <path d="M16 16h5v5" />
+        </svg>
+        Retry Connection
+      </button>
+
+      <div class="footer-text">
+        <span class="pulsing-dot"></span>Auto-reloading when connection is restored
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetUrl = urlParams.get('target') || 'https://cafecanvas.bar/admin';
+    
+    // Display target portal host name in details
+    try {
+      const parsed = new URL(targetUrl);
+      document.getElementById('target-portal').innerText = parsed.origin + parsed.pathname;
+    } catch(e) {
+      document.getElementById('target-portal').innerText = targetUrl;
+    }
+
+    function updateNetworkStatus() {
+      const netStatus = document.getElementById('net-status');
+      if (navigator.onLine) {
+        netStatus.innerText = 'Connected';
+        netStatus.className = 'diagnostic-val online';
+      } else {
+        netStatus.innerText = 'Disconnected';
+        netStatus.className = 'diagnostic-val';
+      }
+    }
+
+    function retry() {
+      console.log('Retrying connection to:', targetUrl);
+      window.location.href = targetUrl;
+    }
+
+    // Auto-reload when network online
+    window.addEventListener('online', () => {
+      updateNetworkStatus();
+      setTimeout(retry, 1000); // short delay to let link settle
+    });
+
+    window.addEventListener('offline', updateNetworkStatus);
+    
+    // Initial status check
+    updateNetworkStatus();
+  </script>
+</body>
+</html>

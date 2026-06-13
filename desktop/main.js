@@ -30,6 +30,8 @@ function createWindow() {
     height: 800,
     minWidth: 1024,
     minHeight: 768,
+    frame: false,
+    titleBarStyle: 'hidden',
     title: 'CafeCanvas Store Admin',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -46,10 +48,31 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self' https: 'unsafe-inline' 'unsafe-eval' data: blob:;"
+          "default-src 'self' http: https: ws: wss: 'unsafe-inline' 'unsafe-eval' data: blob:;"
         ]
       }
     });
+  });
+
+  // Handle failed URL loading (like offline mode or unreachable server)
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.log(`[Electron] Page failed to load: ${errorDescription} (${errorCode}) at ${validatedURL}`);
+    
+    // Ignore internal page redirects or chrome extension URLs
+    if (validatedURL.startsWith('chrome-error://') || validatedURL.startsWith('devtools://')) {
+      return;
+    }
+    
+    // Avoid infinite redirect loop if offline.html itself fails to load
+    const offlinePagePath = path.join(__dirname, 'offline.html');
+    if (validatedURL === offlinePagePath || validatedURL.includes('offline.html')) {
+      return;
+    }
+
+    // Load offline fallback page and pass target URL
+    console.log(`[Electron] Redirecting to offline fallback: offline.html`);
+    const offlineUrl = `file://${offlinePagePath}?target=${encodeURIComponent(validatedURL)}`;
+    mainWindow?.loadURL(offlineUrl);
   });
 
   loadCurrentUrl();
@@ -218,4 +241,25 @@ ipcMain.on('print-receipt-silent', (event, htmlContent) => {
       workerWindow.close();
     });
   });
+});
+
+// Native window controls listeners
+ipcMain.on('window-minimize', () => {
+  mainWindow?.minimize();
+});
+ipcMain.on('window-maximize', () => {
+  if (mainWindow?.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow?.maximize();
+  }
+});
+ipcMain.on('window-fullscreen', () => {
+  if (mainWindow) {
+    const isFS = mainWindow.isFullScreen();
+    mainWindow.setFullScreen(!isFS);
+  }
+});
+ipcMain.on('window-close', () => {
+  mainWindow?.close();
 });

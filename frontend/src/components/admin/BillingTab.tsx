@@ -331,7 +331,6 @@ export default function BillingTab({
       const key = "new-" + Date.now();
       setBillItems(p => [...p, { id: key, _key: key, itemId: mi.id, name: mi.name, price: mi.price, qty: 1 }]);
     }
-    toast(`${mi.name} added to active bill`, "success");
   };
 
   const addMenuItemToBill = () => {
@@ -346,11 +345,13 @@ export default function BillingTab({
     }
     setMenuAddOpen(false);
     setAddItemQty(1);
-    toast(`${mi.name} added to active bill`, "success");
   };
 
   const saveDraft = async () => {
-    if (!selectedTable) return;
+    if (!selectedTable) {
+      toast("Please select a table to save this order draft", "warning");
+      return;
+    }
     try {
       if (dbPending || !isOnline()) {
         const tempSessionId = `sess-temp-${Date.now()}`;
@@ -547,22 +548,23 @@ export default function BillingTab({
     if (payMethod === "cash" && (!cashReceived || Number(cashReceived) < grandTotal)) {
       toast("Cash received must be ≥ grand total", "error"); return;
     }
-    if (!selectedTable) return;
 
     try {
       const nextId = billCounter + 1;
       setBillCounter(nextId);
       const billId = `B-00${nextId}`;
 
+      const locationId = selectedTable?.location_id || selectedTable?.branch_id || (tables[0]?.location_id || tables[0]?.branch_id || null);
+      const tableNum = selectedTable ? (selectedTable.table_number || parseInt(selectedTable.name.replace(/\D/g, '')) || 0) : 0;
+
       if (dbPending || !isOnline()) {
         const tempBillId = `bill-temp-${Date.now()}`;
-        const tableNum = selectedTable.table_number || parseInt(selectedTable.name.replace(/\D/g, '')) || 0;
 
         // Create offline bill object
         const offlineBillObj = {
           id: tempBillId,
           tenant_id: tenantId,
-          location_id: selectedTable.location_id || selectedTable.branch_id || '',
+          location_id: locationId || '',
           table_number: tableNum.toString(),
           customer_name: 'Walk-in Guest',
           customer_phone: customerPhone || null,
@@ -598,44 +600,52 @@ export default function BillingTab({
         });
 
         // 3. Queue update to set table to available
-        await enqueueOperation({
-          table: 'tables',
-          action: 'update',
-          payload: {
-            id: selectedTable.id,
-            status: 'available'
-          }
-        });
+        if (selectedTable) {
+          await enqueueOperation({
+            table: 'tables',
+            action: 'update',
+            payload: {
+              id: selectedTable.id,
+              status: 'available'
+            }
+          });
+        }
 
         toast("Bill created offline and saved locally! Syncing in background when online.", "success");
       } else {
-        // 1. Get active orders for this table
-        const { data: activeOrders } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('tenant_id', tenantId)
-          .eq('table_id', selectedTable.id)
-          .in('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed']);
+        let orderIds: string[] = [];
+        let activeSession = null;
 
-        const orderIds = (activeOrders || []).map(o => o.id);
+        if (selectedTable) {
+          // 1. Get active orders for this table
+          const { data: activeOrders } = await supabase
+            .from('orders')
+            .select('id')
+            .eq('tenant_id', tenantId)
+            .eq('table_id', selectedTable.id)
+            .in('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'billed']);
 
-        // 2a. Fetch active session details from table_sessions
-        const { data: activeSession } = await supabase
-          .from('table_sessions')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .eq('table_id', selectedTable.id)
-          .is('check_out_at', null)
-          .maybeSingle();
+          orderIds = (activeOrders || []).map(o => o.id);
+
+          // 2a. Fetch active session details from table_sessions
+          const { data: sData } = await supabase
+            .from('table_sessions')
+            .select('*')
+            .eq('tenant_id', tenantId)
+            .eq('table_id', selectedTable.id)
+            .is('check_out_at', null)
+            .maybeSingle();
+          activeSession = sData;
+        }
 
         // 2b. Insert bill
         const { error: billErr } = await supabase
           .from('bills')
           .insert({
             tenant_id: tenantId,
-            location_id: selectedTable.location_id || selectedTable.branch_id,
+            location_id: locationId,
             order_ids: orderIds,
-            table_number: selectedTable.table_number || parseInt(selectedTable.name.replace(/\D/g, '')) || 0,
+            table_number: tableNum,
             customer_name: activeSession?.customer_name || 'Walk-in Guest',
             customer_phone: activeSession?.customer_phone || customerPhone || null,
             subtotal: Math.round(subtotal * 100),
@@ -651,7 +661,7 @@ export default function BillingTab({
         if (billErr) throw billErr;
 
         // 3. Mark orders as paid
-        if (orderIds.length > 0) {
+        if (selectedTable && orderIds.length > 0) {
           const { error: ordErr } = await supabase
             .from('orders')
             .update({ status: 'paid' })
@@ -660,7 +670,7 @@ export default function BillingTab({
         }
 
         // 4. Checkout table session
-        if (activeSession) {
+        if (selectedTable && activeSession) {
           await supabase
             .from('table_sessions')
             .update({
@@ -671,18 +681,20 @@ export default function BillingTab({
         }
 
         // 5. Update table status to available
-        await supabase
-          .from('tables')
-          .update({ status: 'available' })
-          .eq('id', selectedTable.id);
+        if (selectedTable) {
+          await supabase
+            .from('tables')
+            .update({ status: 'available' })
+            .eq('id', selectedTable.id);
+        }
           
         toast("Payment complete! Bill settled.", "success");
       }
 
       const newBill: BillHistoryEntry = {
         id: billId,
-        table: selectedTable.name,
-        section: selectedTable.section || 'Indoor',
+        table: selectedTable ? selectedTable.name : 'Walk-in',
+        section: selectedTable ? (selectedTable.section || 'Indoor') : 'Takeaway',
         time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
         method: payMethod.toUpperCase(),
         sub: subtotal,
@@ -695,8 +707,12 @@ export default function BillingTab({
       };
 
       setBillHistory(p => [newBill, ...p]);
-      setTables(p => p.map(t => t.id === selectedTable.id ? { ...t, status: "available" } : t));
-      setTableOrders(p => ({ ...p, [selectedTable.id]: [] }));
+      if (selectedTable) {
+        setTables(p => p.map(t => t.id === selectedTable.id ? { ...t, status: "available" } : t));
+        setTableOrders(p => ({ ...p, [selectedTable.id]: [] }));
+      }
+      setBillItems([]);
+      setSelectedTable(null); // Reset back to Quick Bill
       setPayStep("success");
     } catch (err: any) {
       toast(err.message, "error");
@@ -704,7 +720,6 @@ export default function BillingTab({
   };
 
   const handlePrint = () => {
-    if (!selectedTable) return;
     const rData: ReceiptData = {
       billId: `B-00${billCounter}`,
       storeName: storeInfo.storeName,
@@ -713,8 +728,8 @@ export default function BillingTab({
       gstNumber: storeInfo.gstNumber,
       fssaiNumber: storeInfo.fssaiNumber,
       logoUrl: storeInfo.logoUrl,
-      tableName: selectedTable.name,
-      tableSection: selectedTable.section || 'Indoor',
+      tableName: selectedTable ? selectedTable.name : 'Walk-in',
+      tableSection: selectedTable ? (selectedTable.section || 'Indoor') : 'Takeaway',
       items: billItems.map(i => ({
         name: i.name,
         qty: i.qty,
@@ -878,46 +893,14 @@ export default function BillingTab({
       {/* BILL BUILDER */}
       {view === "session" && (
         <div>
-          {!selectedTable && payStep !== "success" ? (
-            <Card style={{ padding: "40px", textAlign: "center", maxWidth: "440px", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ fontSize: "16px", fontWeight: 800, color: T.tx, marginBottom: "8px" }}>No Table Selected</div>
-              <p style={{ fontSize: "12px", color: T.mu2, marginBottom: "20px" }}>Select a table below to start a manual billing session, or choose one from the Floor View.</p>
-              
-              <div style={{ width: "100%", marginBottom: "20px", textAlign: "left" }}>
-                <label style={{ display: "block", fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: T.mu, marginBottom: "6px" }}>
-                  Select Table for Bill Creation
-                </label>
-                <Sel 
-                  value="" 
-                  onChange={(e) => {
-                    const tbl = tables.find(t => t.id === e.target.value);
-                    if (tbl) selectTable(tbl);
-                  }}
-                  style={{ width: "100%" }}
-                >
-                  <option value="" disabled>-- Select a Table --</option>
-                  {tables.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.section || 'Indoor'}) — {t.status.toUpperCase()}
-                    </option>
-                  ))}
-                </Sel>
-              </div>
-
-              <div style={{ display: "flex", gap: "10px", width: "100%" }}>
-                <Btn onClick={() => setView("floor")} variant="outline" style={{ flex: 1 }}>
-                  Go to Floor View
-                </Btn>
-              </div>
-            </Card>
-          ) : payStep === "success" ? (
+          {payStep === "success" ? (
             <Card style={{ padding: "40px", textAlign: "center", maxWidth: "480px", margin: "0 auto" }}>
               <div style={{
                 width: "56px", height: "56px", borderRadius: "50%", background: T.eA(0.15), border: `2px solid ${T.eA(0.4)}`,
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", margin: "0 auto 16px"
               }}>✓</div>
               <div style={{ fontSize: "18px", fontWeight: 800, color: T.tx, marginBottom: "6px" }}>Payment Successful</div>
-              <p style={{ fontSize: "12px", color: T.mu2, marginBottom: "4px" }}>{selectedTable?.name} · {payMethod.toUpperCase()}</p>
+              <p style={{ fontSize: "12px", color: T.mu2, marginBottom: "4px" }}>{selectedTable ? selectedTable.name : 'Walk-in Guest'} · {payMethod.toUpperCase()}</p>
               <div style={{ fontSize: "28px", fontWeight: 800, color: T.em, fontFamily: fm, margin: "16px 0" }}>₹{grandTotal.toFixed(2)}</div>
               {payMethod === "cash" && change > 0 && (
                 <div style={{ padding: "12px", borderRadius: "8px", background: T.aA(0.1), border: `1px solid ${T.aA(0.25)}`, marginBottom: "16px" }}>
@@ -935,18 +918,18 @@ export default function BillingTab({
             <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.6fr 1.2fr", gap: "16px", alignItems: "start" }}>
               
               {/* Column 1: Menu Catalog */}
-              <Card style={{ padding: "18px", display: "flex", flexDirection: "column", gap: "12px", height: "600px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: T.tx }}>Menu Items</span>
+              <Card style={{ padding: "18px", display: "flex", flexDirection: "column", gap: "12px", height: "calc(100vh - 220px)", minHeight: "550px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <span style={{ fontSize: "14px", fontWeight: 800, color: T.tx, letterSpacing: "-0.01em" }}>Menu Items</span>
                   <input 
                     type="text" 
-                    placeholder="Search..." 
+                    placeholder="Search menu items..." 
                     value={menuSearch} 
                     onChange={e => setMenuSearch(e.target.value)}
                     style={{
                       background: "rgba(255,255,255,0.03)", border: `1px solid ${T.bdr}`,
-                      borderRadius: "6px", padding: "4px 8px", color: T.tx, fontSize: "11px",
-                      outline: "none", width: "100px"
+                      borderRadius: "8px", padding: "10px 14px", color: T.tx, fontSize: "12px",
+                      outline: "none", width: "100%", boxSizing: "border-box"
                     }}
                   />
                 </div>
@@ -993,7 +976,7 @@ export default function BillingTab({
                         style={{
                           display: "flex", flexDirection: "column", gap: "4px", padding: "10px",
                           borderRadius: "8px", border: `1px solid ${T.bdr}`, background: "rgba(255,255,255,0.03)",
-                          cursor: "pointer", textAlign: "left", transition: "all 0.15s",
+                          cursor: "pointer", textAlign: "left",
                           alignItems: "stretch"
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.borderColor = T.em}
@@ -1011,12 +994,42 @@ export default function BillingTab({
               </Card>
 
               {/* Column 2: Items Table */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <Card style={{ padding: "18px", height: "600px", display: "flex", flexDirection: "column" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-                    <div>
-                      <div style={{ fontSize: "13px", fontWeight: 700, color: T.tx }}>{selectedTable?.name} — Active Bill</div>
-                      <div style={{ fontSize: "11px", color: T.mu2 }}>{billItems.length} items · {selectedTable?.section}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px", height: "calc(100vh - 220px)", minHeight: "550px" }}>
+                <Card style={{ padding: "18px", display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ fontSize: "11.5px", fontWeight: 800, color: T.mu, textTransform: "uppercase", letterSpacing: "0.05em" }}>Session:</span>
+                        <select
+                          value={selectedTable ? selectedTable.id : "quick-bill"}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "quick-bill") {
+                              setSelectedTable(null);
+                              setBillItems([]);
+                              setCustomerPhone('');
+                            } else {
+                              const tbl = tables.find(t => t.id === val);
+                              if (tbl) selectTable(tbl);
+                            }
+                          }}
+                          style={{
+                            background: "rgba(255,255,255,0.03)", border: `1px solid ${T.bdr}`,
+                            borderRadius: "6px", padding: "4px 8px", color: T.tx, fontSize: "11px",
+                            fontWeight: 700, outline: "none"
+                          }}
+                        >
+                          <option value="quick-bill">Walk-in / Takeaway</option>
+                          {tables.map(t => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} ({t.section || 'Indoor'}) — {t.status.toUpperCase()}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{ fontSize: "10px", color: T.mu2, marginTop: "4px" }}>
+                        {selectedTable ? `${billItems.length} items · ${selectedTable.section || 'Indoor'}` : `${billItems.length} items · Quick Bill`}
+                      </div>
                     </div>
                     <Btn size="sm" variant="ghost" onClick={() => setMenuAddOpen(true)}>+ Add Custom</Btn>
                   </div>
@@ -1026,7 +1039,7 @@ export default function BillingTab({
                       No items on this table. Click items from the catalog on the left to add.
                     </div>
                   ) : (
-                    <div style={{ overflowX: "auto", flex: 1 }}>
+                    <div style={{ overflowY: "auto", flex: 1 }}>
                       <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <thead>
                           <tr style={{ borderBottom: `1px solid ${T.bdr}` }}>
@@ -1092,7 +1105,7 @@ export default function BillingTab({
               </div>
 
               {/* Column 3: Summary & Payment */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px", height: "calc(100vh - 220px)", minHeight: "550px", overflowY: "auto", paddingRight: "4px" }}>
                 <Card style={{ padding: "18px" }}>
                   <div style={{ fontSize: "13px", fontWeight: 700, color: T.tx, marginBottom: "14px" }}>Bill Summary</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "12px" }}>

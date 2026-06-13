@@ -58,6 +58,17 @@ body {
   overflow-x: hidden;
 }
 
+/* Electron Frameless Window Support */
+body.electron-padding {
+  padding-top: 32px;
+}
+
+body.electron-padding > div {
+  height: calc(100vh - 32px) !important;
+  min-height: calc(100vh - 32px) !important;
+}
+
+
 /* Base Design System Enhancements */
 .glass {
   background: rgba(255, 255, 255, 0.65);
@@ -159,7 +170,7 @@ body {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(224,94,53,0.12) 0%, rgba(202,138,4,0.04) 50%, rgba(255,255,255,0) 100%);
   filter: blur(80px);
-  animation: floatBlob1 25s ease-in-out infinite alternate;
+  animation: floatBlob1 12s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 0;
 }
@@ -170,7 +181,7 @@ body {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(95,122,104,0.12) 0%, rgba(22,163,74,0.03) 50%, rgba(255,255,255,0) 100%);
   filter: blur(90px);
-  animation: floatBlob2 30s ease-in-out infinite alternate;
+  animation: floatBlob2 15s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 0;
 }
@@ -181,25 +192,25 @@ body {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, rgba(16,185,129,0.02) 60%, rgba(255,255,255,0) 100%);
   filter: blur(80px);
-  animation: floatBlob3 20s ease-in-out infinite alternate;
+  animation: floatBlob3 10s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 0;
 }
 
 @keyframes floatBlob1 {
   0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(120px, 80px) scale(1.1); }
-  100% { transform: translate(-60px, 140px) scale(0.95); }
+  50% { transform: translate(30px, 20px) scale(1.04); }
+  100% { transform: translate(-15px, 35px) scale(0.98); }
 }
 @keyframes floatBlob2 {
-  0% { transform: translate(0, 0) scale(1.15); }
-  50% { transform: translate(-140px, -90px) scale(0.9); }
-  100% { transform: translate(80px, 120px) scale(1.05); }
+  0% { transform: translate(0, 0) scale(1.05); }
+  50% { transform: translate(-35px, -25px) scale(0.96); }
+  100% { transform: translate(20px, 30px) scale(1.02); }
 }
 @keyframes floatBlob3 {
-  0% { transform: translate(0, 0) scale(0.95); }
-  50% { transform: translate(90px, -120px) scale(1.15); }
-  100% { transform: translate(-80px, 60px) scale(1); }
+  0% { transform: translate(0, 0) scale(0.98); }
+  50% { transform: translate(25px, -30px) scale(1.05); }
+  100% { transform: translate(-20px, 15px) scale(1); }
 }
 
 /* Print-specific styles */

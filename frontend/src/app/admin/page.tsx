@@ -608,7 +608,7 @@ export default function CafeCanvaAdmin() {
         tenantName={tenantName}
       />
 
-      {/* Main content frame */}
+       {/* Main content frame */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Top Header Bar */}
         <header className="h-16 border-b border-[#e2e8f0] px-6 flex items-center justify-between bg-[#ffffff] relative z-20">
@@ -625,9 +625,9 @@ export default function CafeCanvaAdmin() {
                 <div className="absolute top-full left-0 mt-1.5 w-48 bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-1.5 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                   {branches.map((b) => (
                     <button
-                      key={b.id}
-                      onClick={() => setActiveBranch(b)}
-                      className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl hover:bg-[#fdfcf7] hover:text-[#d97706] transition-all"
+                       key={b.id}
+                       onClick={() => setActiveBranch(b)}
+                       className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl hover:bg-[#fdfcf7] hover:text-[#d97706] transition-all"
                     >
                       {b.name}
                     </button>
