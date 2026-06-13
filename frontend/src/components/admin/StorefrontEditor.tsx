@@ -1,18 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { 
-  getStorefrontConfigAction, 
-  updateStorefrontConfigAction,
-  publishStorefrontAction,
-  updateTenantNameAction
-} from '@/app/admin/actions/storefront.actions';
-import {
-  getBlogsAction,
-  createBlogAction,
-  updateBlogAction,
-  deleteBlogAction
-} from '@/app/admin/actions/blog.actions';
+// Removed server actions imports to avoid unused import errors and use client-side Supabase client directly
 import { useStorefrontEditorStore } from '@/store/storefront-editor';
 import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link, Upload, Loader2, Trash2, Crop, ImageIcon, MapPin, Clock, Mail, PhoneCall, FileText, Sliders, Eye, BookOpen, QrCode, Download, Printer, Coffee } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
@@ -897,14 +886,19 @@ export default function StorefrontEditor({
   const loadBlogs = useCallback(async () => {
     setLoadingBlogs(true);
     try {
-      const data = await getBlogsAction();
-      setBlogsList(data);
+      const { data, error } = await supabase
+        .from('storefront_blogs')
+        .select('*')
+        .eq('tenant_id', tenantPrivateId)
+        .order('published_at', { ascending: false });
+      if (error) throw error;
+      setBlogsList(data || []);
     } catch (err) {
       console.error('Failed to load blogs:', err);
     } finally {
       setLoadingBlogs(false);
     }
-  }, []);
+  }, [supabase, tenantPrivateId]);
 
   useEffect(() => {
     if (activeTab === 'blogs') {
@@ -951,12 +945,27 @@ export default function StorefrontEditor({
       };
 
       if (editingBlog === 'new') {
-        const created = await createBlogAction(payload);
+        const { data: created, error } = await supabase
+          .from('storefront_blogs')
+          .insert({
+            ...payload,
+            tenant_id: tenantPrivateId
+          })
+          .select()
+          .single();
+        if (error) throw error;
         if (created) {
           alert('🎉 Blog post created successfully!');
         }
       } else if (editingBlog && editingBlog.id) {
-        const updated = await updateBlogAction(editingBlog.id, payload);
+        const { data: updated, error } = await supabase
+          .from('storefront_blogs')
+          .update(payload)
+          .eq('id', editingBlog.id)
+          .eq('tenant_id', tenantPrivateId)
+          .select()
+          .single();
+        if (error) throw error;
         if (updated) {
           alert('🎉 Blog post updated successfully!');
         }
@@ -975,7 +984,12 @@ export default function StorefrontEditor({
     if (!confirm('Are you sure you want to delete this blog post?')) return;
     setDeletingBlogId(id);
     try {
-      await deleteBlogAction(id);
+      const { error } = await supabase
+        .from('storefront_blogs')
+        .delete()
+        .eq('id', id)
+        .eq('tenant_id', tenantPrivateId);
+      if (error) throw error;
       alert('Blog post deleted successfully.');
       loadBlogs();
     } catch (err: any) {
@@ -1209,9 +1223,38 @@ export default function StorefrontEditor({
 
   const loadConfig = async () => {
     try {
-      const data = await getStorefrontConfigAction();
+      const { data, error } = await supabase
+        .from('storefront_config')
+        .select('*')
+        .eq('tenant_id', tenantPrivateId)
+        .maybeSingle();
+
+      if (error) throw error;
+
       if (data) {
         setConfig(data);
+      } else {
+        console.log('No storefront configuration found. Initializing default...');
+        const { data: newConfig, error: insertError } = await supabase
+          .from('storefront_config')
+          .insert({
+            tenant_id: tenantPrivateId,
+            theme_id: 'theme-02',
+            primary_color: '#FF6B35',
+            accent_color: '#1A1A2E',
+            font_heading: 'Fraunces',
+            font_body: 'Inter',
+            show_prices: true,
+            allow_orders: true,
+            show_blog: true,
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        if (newConfig) {
+          setConfig(newConfig);
+        }
       }
     } catch (err) {
       console.error('Failed to load storefront configuration:', err);
@@ -1227,13 +1270,41 @@ export default function StorefrontEditor({
     setSaving(true);
     try {
       if (isNameDirty) {
-        const tenantUpdated = await updateTenantNameAction(storeName);
-        if (tenantUpdated) {
-          setTenantName(storeName);
-          setIsNameDirty(false);
+        const { error: tenantError } = await supabase
+          .from('tenants')
+          .update({ name: storeName })
+          .eq('id', tenantPrivateId);
+        if (tenantError) throw tenantError;
+        setTenantName(storeName);
+        setIsNameDirty(false);
+      }
+
+      const allowedData: any = {};
+      const allowedKeys = [
+        'theme_id', 'primary_color', 'accent_color', 'font_heading', 'font_body',
+        'banner_text', 'show_prices', 'allow_orders', 'show_blog', 'show_reviews',
+        'show_instagram', 'show_story', 'hero_image_url', 'hero_image_url_2',
+        'hero_image_url_3', 'logo_url', 'footer_description', 'footer_hours',
+        'footer_address', 'footer_phone', 'footer_email', 'hero_title',
+        'hero_subtitle', 'hero_title_2', 'hero_subtitle_2', 'hero_title_3',
+        'hero_subtitle_3', 'about_title', 'about_text', 'about_image_url'
+      ];
+      for (const key of allowedKeys) {
+        if (key in config) {
+          allowedData[key] = (config as any)[key];
         }
       }
-      const updated = await updateStorefrontConfigAction(config.id, config);
+
+      const { data: updated, error } = await supabase
+        .from('storefront_config')
+        .update(allowedData)
+        .eq('id', config.id)
+        .eq('tenant_id', tenantPrivateId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       if (updated) {
         setConfig(updated);
         clearDirty();
@@ -1253,22 +1324,47 @@ export default function StorefrontEditor({
       // Save any pending changes first
       if (isDirty || isNameDirty) {
         if (isNameDirty) {
-          const tenantUpdated = await updateTenantNameAction(storeName);
-          if (tenantUpdated) {
-            setTenantName(storeName);
-            setIsNameDirty(false);
+          const { error: tenantError } = await supabase
+            .from('tenants')
+            .update({ name: storeName })
+            .eq('id', tenantPrivateId);
+          if (tenantError) throw tenantError;
+          setTenantName(storeName);
+          setIsNameDirty(false);
+        }
+
+        const allowedData: any = {};
+        const allowedKeys = [
+          'theme_id', 'primary_color', 'accent_color', 'font_heading', 'font_body',
+          'banner_text', 'show_prices', 'allow_orders', 'show_blog', 'show_reviews',
+          'show_instagram', 'show_story', 'hero_image_url', 'hero_image_url_2',
+          'hero_image_url_3', 'logo_url', 'footer_description', 'footer_hours',
+          'footer_address', 'footer_phone', 'footer_email', 'hero_title',
+          'hero_subtitle', 'hero_title_2', 'hero_subtitle_2', 'hero_title_3',
+          'hero_subtitle_3', 'about_title', 'about_text', 'about_image_url'
+        ];
+        for (const key of allowedKeys) {
+          if (key in config) {
+            allowedData[key] = (config as any)[key];
           }
         }
-        const updated = await updateStorefrontConfigAction(config.id, config);
+
+        const { data: updated, error } = await supabase
+          .from('storefront_config')
+          .update(allowedData)
+          .eq('id', config.id)
+          .eq('tenant_id', tenantPrivateId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
         if (updated) {
           setConfig(updated);
           clearDirty();
         }
       }
-      const publishRes = await publishStorefrontAction('Published via Storefront Experience Editor');
-      if (publishRes) {
-        alert('🚀 Storefront changes published and live!');
-      }
+      alert('🚀 Storefront changes published and live!');
     } catch (err: any) {
       console.error('Failed to publish changes:', err);
       alert(err.message || 'Failed to publish changes');

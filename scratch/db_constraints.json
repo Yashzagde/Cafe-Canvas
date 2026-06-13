@@ -51,7 +51,7 @@
     "table_name": "audit_logs",
     "constraint_name": "audit_logs_actor_role_check",
     "constraint_type": "CHECK",
-    "check_clause": "(actor_role = ANY (ARRAY['owner'::text, 'manager'::text, 'cashier'::text, 'kitchen'::text, 'staff'::text, 'system'::text]))"
+    "check_clause": "(actor_role = ANY (ARRAY['owner'::text, 'manager'::text, 'cashier'::text, 'kitchen'::text, 'delivery'::text, 'staff'::text, 'system'::text]))"
   },
   {
     "table_name": "audit_logs",
@@ -109,12 +109,6 @@
   },
   {
     "table_name": "bills",
-    "constraint_name": "bills_order_id_fkey",
-    "constraint_type": "FOREIGN KEY",
-    "check_clause": null
-  },
-  {
-    "table_name": "bills",
     "constraint_name": "bills_payment_method_check",
     "constraint_type": "CHECK",
     "check_clause": "(payment_method = ANY (ARRAY['cash'::text, 'upi'::text, 'card'::text, 'other'::text]))"
@@ -123,6 +117,12 @@
     "table_name": "bills",
     "constraint_name": "bills_pkey",
     "constraint_type": "PRIMARY KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "bills",
+    "constraint_name": "bills_session_id_fkey",
+    "constraint_type": "FOREIGN KEY",
     "check_clause": null
   },
   {
@@ -144,50 +144,116 @@
     "check_clause": null
   },
   {
-    "table_name": "coupons",
-    "constraint_name": "24381_25796_1_not_null",
+    "table_name": "blog_posts",
+    "constraint_name": "24381_26434_10_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "created_at IS NOT NULL"
+  },
+  {
+    "table_name": "blog_posts",
+    "constraint_name": "24381_26434_11_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "updated_at IS NOT NULL"
+  },
+  {
+    "table_name": "blog_posts",
+    "constraint_name": "24381_26434_1_not_null",
     "constraint_type": "CHECK",
     "check_clause": "id IS NOT NULL"
   },
   {
-    "table_name": "coupons",
-    "constraint_name": "24381_25796_2_not_null",
+    "table_name": "blog_posts",
+    "constraint_name": "24381_26434_2_not_null",
     "constraint_type": "CHECK",
     "check_clause": "tenant_id IS NOT NULL"
   },
   {
-    "table_name": "coupons",
-    "constraint_name": "24381_25796_3_not_null",
+    "table_name": "blog_posts",
+    "constraint_name": "24381_26434_3_not_null",
     "constraint_type": "CHECK",
-    "check_clause": "code IS NOT NULL"
+    "check_clause": "title IS NOT NULL"
   },
   {
-    "table_name": "coupons",
-    "constraint_name": "24381_25796_4_not_null",
+    "table_name": "blog_posts",
+    "constraint_name": "24381_26434_4_not_null",
     "constraint_type": "CHECK",
-    "check_clause": "discount_id IS NOT NULL"
+    "check_clause": "excerpt IS NOT NULL"
   },
   {
-    "table_name": "coupons",
-    "constraint_name": "coupons_code_key",
+    "table_name": "blog_posts",
+    "constraint_name": "24381_26434_5_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "content IS NOT NULL"
+  },
+  {
+    "table_name": "blog_posts",
+    "constraint_name": "24381_26434_7_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "author IS NOT NULL"
+  },
+  {
+    "table_name": "blog_posts",
+    "constraint_name": "24381_26434_8_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "tags IS NOT NULL"
+  },
+  {
+    "table_name": "blog_posts",
+    "constraint_name": "24381_26434_9_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "published_at IS NOT NULL"
+  },
+  {
+    "table_name": "blog_posts",
+    "constraint_name": "blog_posts_tenant_slug_unique",
     "constraint_type": "UNIQUE",
     "check_clause": null
   },
   {
-    "table_name": "coupons",
-    "constraint_name": "coupons_discount_id_fkey",
-    "constraint_type": "FOREIGN KEY",
-    "check_clause": null
-  },
-  {
-    "table_name": "coupons",
-    "constraint_name": "coupons_pkey",
+    "table_name": "blog_posts",
+    "constraint_name": "storefront_blogs_pkey",
     "constraint_type": "PRIMARY KEY",
     "check_clause": null
   },
   {
-    "table_name": "coupons",
-    "constraint_name": "coupons_tenant_id_fkey",
+    "table_name": "blog_posts",
+    "constraint_name": "storefront_blogs_tenant_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "bug_reports",
+    "constraint_name": "24381_26807_1_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "table_name": "bug_reports",
+    "constraint_name": "24381_26807_6_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "description IS NOT NULL"
+  },
+  {
+    "table_name": "bug_reports",
+    "constraint_name": "bug_reports_issue_type_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(issue_type = ANY (ARRAY['login'::text, 'screen_not_loading'::text, 'data_not_saving'::text, 'performance'::text, 'incorrect_data'::text, 'other'::text]))"
+  },
+  {
+    "table_name": "bug_reports",
+    "constraint_name": "bug_reports_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "bug_reports",
+    "constraint_name": "bug_reports_status_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(status = ANY (ARRAY['open'::text, 'in_progress'::text, 'resolved'::text, 'wont_fix'::text]))"
+  },
+  {
+    "table_name": "bug_reports",
+    "constraint_name": "bug_reports_tenant_id_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
   },
@@ -283,12 +349,6 @@
   },
   {
     "table_name": "customer_otp_sessions",
-    "constraint_name": "24381_26415_3_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "otp IS NOT NULL"
-  },
-  {
-    "table_name": "customer_otp_sessions",
     "constraint_name": "24381_26415_4_not_null",
     "constraint_type": "CHECK",
     "check_clause": "expires_at IS NOT NULL"
@@ -309,6 +369,12 @@
     "table_name": "customer_otp_sessions",
     "constraint_name": "customer_otp_sessions_pkey",
     "constraint_type": "PRIMARY KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "customer_otp_sessions",
+    "constraint_name": "customer_otp_sessions_tenant_id_fkey",
+    "constraint_type": "FOREIGN KEY",
     "check_clause": null
   },
   {
@@ -348,46 +414,112 @@
     "check_clause": null
   },
   {
-    "table_name": "discounts",
-    "constraint_name": "24381_25779_1_not_null",
+    "table_name": "inventory_items",
+    "constraint_name": "24381_26738_1_not_null",
     "constraint_type": "CHECK",
     "check_clause": "id IS NOT NULL"
   },
   {
-    "table_name": "discounts",
-    "constraint_name": "24381_25779_2_not_null",
+    "table_name": "inventory_items",
+    "constraint_name": "24381_26738_2_not_null",
     "constraint_type": "CHECK",
     "check_clause": "tenant_id IS NOT NULL"
   },
   {
-    "table_name": "discounts",
-    "constraint_name": "24381_25779_3_not_null",
+    "table_name": "inventory_items",
+    "constraint_name": "24381_26738_4_not_null",
     "constraint_type": "CHECK",
     "check_clause": "name IS NOT NULL"
   },
   {
-    "table_name": "discounts",
-    "constraint_name": "24381_25779_5_not_null",
+    "table_name": "inventory_items",
+    "constraint_name": "24381_26738_5_not_null",
     "constraint_type": "CHECK",
-    "check_clause": "value IS NOT NULL"
+    "check_clause": "unit IS NOT NULL"
   },
   {
-    "table_name": "discounts",
-    "constraint_name": "discounts_pkey",
-    "constraint_type": "PRIMARY KEY",
-    "check_clause": null
-  },
-  {
-    "table_name": "discounts",
-    "constraint_name": "discounts_tenant_id_fkey",
+    "table_name": "inventory_items",
+    "constraint_name": "inventory_items_location_id_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
   },
   {
-    "table_name": "discounts",
-    "constraint_name": "discounts_type_check",
+    "table_name": "inventory_items",
+    "constraint_name": "inventory_items_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "inventory_items",
+    "constraint_name": "inventory_items_tenant_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "inventory_items",
+    "constraint_name": "inventory_items_unit_check",
     "constraint_type": "CHECK",
-    "check_clause": "(type = ANY (ARRAY['percentage'::text, 'percent'::text, 'flat'::text]))"
+    "check_clause": "(unit = ANY (ARRAY['pieces'::text, 'kg'::text, 'g'::text, 'l'::text, 'ml'::text, 'packets'::text, 'boxes'::text, 'other'::text]))"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "constraint_name": "24381_26764_1_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "constraint_name": "24381_26764_2_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "tenant_id IS NOT NULL"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "constraint_name": "24381_26764_3_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "inventory_item_id IS NOT NULL"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "constraint_name": "24381_26764_4_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "type IS NOT NULL"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "constraint_name": "24381_26764_5_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "quantity IS NOT NULL"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "constraint_name": "inventory_transactions_created_by_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "inventory_transactions",
+    "constraint_name": "inventory_transactions_inventory_item_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "inventory_transactions",
+    "constraint_name": "inventory_transactions_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "inventory_transactions",
+    "constraint_name": "inventory_transactions_tenant_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "inventory_transactions",
+    "constraint_name": "inventory_transactions_type_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(type = ANY (ARRAY['in'::text, 'out'::text, 'adjustment'::text, 'waste'::text, 'transfer'::text]))"
   },
   {
     "table_name": "locations",
@@ -493,6 +625,12 @@
   },
   {
     "table_name": "menu_items",
+    "constraint_name": "24381_25536_18_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "price_paise IS NOT NULL"
+  },
+  {
+    "table_name": "menu_items",
     "constraint_name": "24381_25536_1_not_null",
     "constraint_type": "CHECK",
     "check_clause": "id IS NOT NULL"
@@ -511,12 +649,6 @@
   },
   {
     "table_name": "menu_items",
-    "constraint_name": "24381_25536_7_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "price IS NOT NULL"
-  },
-  {
-    "table_name": "menu_items",
     "constraint_name": "menu_items_category_id_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
@@ -529,36 +661,48 @@
   },
   {
     "table_name": "menu_items",
+    "constraint_name": "menu_items_price_positive",
+    "constraint_type": "CHECK",
+    "check_clause": "(price_paise > 0)"
+  },
+  {
+    "table_name": "menu_items",
     "constraint_name": "menu_items_tenant_id_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "constraint_name": "24381_25561_1_not_null",
     "constraint_type": "CHECK",
     "check_clause": "id IS NOT NULL"
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "constraint_name": "24381_25561_2_not_null",
     "constraint_type": "CHECK",
     "check_clause": "tenant_id IS NOT NULL"
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "constraint_name": "24381_25561_3_not_null",
     "constraint_type": "CHECK",
     "check_clause": "name IS NOT NULL"
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "constraint_name": "modifier_groups_pkey",
     "constraint_type": "PRIMARY KEY",
     "check_clause": null
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
+    "constraint_name": "modifier_groups_selection_type_check",
+    "constraint_type": "CHECK",
+    "check_clause": "((selection_type = ANY (ARRAY['single'::text, 'multiple'::text, 'optional'::text])) OR (selection_type IS NULL))"
+  },
+  {
+    "table_name": "modifier_groups",
     "constraint_name": "modifier_groups_tenant_id_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
@@ -580,6 +724,12 @@
     "constraint_name": "24381_25578_3_not_null",
     "constraint_type": "CHECK",
     "check_clause": "name IS NOT NULL"
+  },
+  {
+    "table_name": "modifier_options",
+    "constraint_name": "24381_25578_8_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "price_delta_paise IS NOT NULL"
   },
   {
     "table_name": "modifier_options",
@@ -637,7 +787,127 @@
   },
   {
     "table_name": "notification_log",
+    "constraint_name": "notification_log_staff_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "notification_log",
     "constraint_name": "notification_log_tenant_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "offer_codes",
+    "constraint_name": "24381_26655_1_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "table_name": "offer_codes",
+    "constraint_name": "24381_26655_2_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "tenant_id IS NOT NULL"
+  },
+  {
+    "table_name": "offer_codes",
+    "constraint_name": "24381_26655_3_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "code IS NOT NULL"
+  },
+  {
+    "table_name": "offer_codes",
+    "constraint_name": "24381_26655_4_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "table_name": "offer_codes",
+    "constraint_name": "24381_26655_5_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "type IS NOT NULL"
+  },
+  {
+    "table_name": "offer_codes",
+    "constraint_name": "24381_26655_6_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "value IS NOT NULL"
+  },
+  {
+    "table_name": "offer_codes",
+    "constraint_name": "offer_codes_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "offer_codes",
+    "constraint_name": "offer_codes_tenant_id_code_key",
+    "constraint_type": "UNIQUE",
+    "check_clause": null
+  },
+  {
+    "table_name": "offer_codes",
+    "constraint_name": "offer_codes_tenant_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "offer_codes",
+    "constraint_name": "offer_codes_type_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(type = ANY (ARRAY['percentage'::text, 'flat'::text]))"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "constraint_name": "24381_26856_1_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "constraint_name": "24381_26856_2_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "tenant_id IS NOT NULL"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "constraint_name": "24381_26856_3_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "order_item_id IS NOT NULL"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "constraint_name": "24381_26856_6_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "name_snapshot IS NOT NULL"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "constraint_name": "order_item_modifiers_modifier_group_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "constraint_name": "order_item_modifiers_modifier_option_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "constraint_name": "order_item_modifiers_order_item_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "constraint_name": "order_item_modifiers_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "constraint_name": "order_item_modifiers_tenant_id_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
   },
@@ -751,6 +1021,18 @@
   },
   {
     "table_name": "orders",
+    "constraint_name": "orders_session_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "orders",
+    "constraint_name": "orders_source_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(source = ANY (ARRAY['storefront'::text, 'pos'::text, 'admin'::text]))"
+  },
+  {
+    "table_name": "orders",
     "constraint_name": "orders_staff_id_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
@@ -759,7 +1041,7 @@
     "table_name": "orders",
     "constraint_name": "orders_status_check",
     "constraint_type": "CHECK",
-    "check_clause": "(status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'preparing'::text, 'ready'::text, 'served'::text, 'completed'::text, 'billed'::text, 'paid'::text, 'cancelled'::text]))"
+    "check_clause": "(status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'preparing'::text, 'ready'::text, 'served'::text, 'paid'::text, 'cancelled'::text, 'void'::text]))"
   },
   {
     "table_name": "orders",
@@ -770,6 +1052,120 @@
   {
     "table_name": "orders",
     "constraint_name": "orders_tenant_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "orders",
+    "constraint_name": "orders_verified_by_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "24381_26824_1_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "24381_26824_2_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "tenant_id IS NOT NULL"
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "24381_26824_5_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "amount_paise IS NOT NULL"
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "24381_26824_6_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "method IS NOT NULL"
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "payment_transactions_bill_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "payment_transactions_method_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(method = ANY (ARRAY['cash'::text, 'upi'::text, 'card'::text, 'other'::text]))"
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "payment_transactions_order_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "payment_transactions_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "payment_transactions_received_by_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "payment_transactions_status_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(status = ANY (ARRAY['pending'::text, 'completed'::text, 'failed'::text, 'refunded'::text]))"
+  },
+  {
+    "table_name": "payment_transactions",
+    "constraint_name": "payment_transactions_tenant_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "platform_feedback",
+    "constraint_name": "24381_26789_1_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "table_name": "platform_feedback",
+    "constraint_name": "24381_26789_7_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "message IS NOT NULL"
+  },
+  {
+    "table_name": "platform_feedback",
+    "constraint_name": "platform_feedback_category_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(category = ANY (ARRAY['feature_request'::text, 'general'::text, 'pricing'::text, 'other'::text]))"
+  },
+  {
+    "table_name": "platform_feedback",
+    "constraint_name": "platform_feedback_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "platform_feedback",
+    "constraint_name": "platform_feedback_rating_check",
+    "constraint_type": "CHECK",
+    "check_clause": "((rating >= 1) AND (rating <= 5))"
+  },
+  {
+    "table_name": "platform_feedback",
+    "constraint_name": "platform_feedback_status_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(status = ANY (ARRAY['new'::text, 'reviewed'::text, 'actioned'::text, 'closed'::text]))"
+  },
+  {
+    "table_name": "platform_feedback",
+    "constraint_name": "platform_feedback_tenant_id_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
   },
@@ -799,6 +1195,12 @@
   },
   {
     "table_name": "staff_accounts",
+    "constraint_name": "staff_accounts_auth_email_key",
+    "constraint_type": "UNIQUE",
+    "check_clause": null
+  },
+  {
+    "table_name": "staff_accounts",
     "constraint_name": "staff_accounts_auth_user_id_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
@@ -823,9 +1225,21 @@
   },
   {
     "table_name": "staff_accounts",
+    "constraint_name": "staff_accounts_login_id_key",
+    "constraint_type": "UNIQUE",
+    "check_clause": null
+  },
+  {
+    "table_name": "staff_accounts",
     "constraint_name": "staff_accounts_pkey",
     "constraint_type": "PRIMARY KEY",
     "check_clause": null
+  },
+  {
+    "table_name": "staff_accounts",
+    "constraint_name": "staff_accounts_role_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(role = ANY (ARRAY['owner'::text, 'manager'::text, 'cashier'::text, 'kitchen'::text, 'delivery'::text, 'staff'::text]))"
   },
   {
     "table_name": "staff_accounts",
@@ -991,7 +1405,7 @@
   },
   {
     "table_name": "staff_calls",
-    "constraint_name": "staff_calls_attended_by_fkey",
+    "constraint_name": "staff_calls_acknowledged_by_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
   },
@@ -1006,6 +1420,18 @@
     "constraint_name": "staff_calls_pkey",
     "constraint_type": "PRIMARY KEY",
     "check_clause": null
+  },
+  {
+    "table_name": "staff_calls",
+    "constraint_name": "staff_calls_session_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "staff_calls",
+    "constraint_name": "staff_calls_status_check",
+    "constraint_type": "CHECK",
+    "check_clause": "(status = ANY (ARRAY['pending'::text, 'acknowledged'::text, 'resolved'::text]))"
   },
   {
     "table_name": "staff_calls",
@@ -1047,78 +1473,6 @@
     "table_name": "store_settings",
     "constraint_name": "store_settings_tenant_id_key",
     "constraint_type": "UNIQUE",
-    "check_clause": null
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "24381_26434_10_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "created_at IS NOT NULL"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "24381_26434_11_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "updated_at IS NOT NULL"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "24381_26434_1_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "24381_26434_2_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "tenant_id IS NOT NULL"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "24381_26434_3_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "title IS NOT NULL"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "24381_26434_4_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "excerpt IS NOT NULL"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "24381_26434_5_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "content IS NOT NULL"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "24381_26434_7_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "author IS NOT NULL"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "24381_26434_8_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "tags IS NOT NULL"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "24381_26434_9_not_null",
-    "constraint_type": "CHECK",
-    "check_clause": "published_at IS NOT NULL"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "storefront_blogs_pkey",
-    "constraint_type": "PRIMARY KEY",
-    "check_clause": null
-  },
-  {
-    "table_name": "storefront_blogs",
-    "constraint_name": "storefront_blogs_tenant_id_fkey",
-    "constraint_type": "FOREIGN KEY",
     "check_clause": null
   },
   {
@@ -1201,6 +1555,12 @@
   },
   {
     "table_name": "table_sessions",
+    "constraint_name": "table_sessions_session_token_key",
+    "constraint_type": "UNIQUE",
+    "check_clause": null
+  },
+  {
+    "table_name": "table_sessions",
     "constraint_name": "table_sessions_table_id_fkey",
     "constraint_type": "FOREIGN KEY",
     "check_clause": null
@@ -1228,12 +1588,6 @@
     "constraint_name": "24381_25595_3_not_null",
     "constraint_type": "CHECK",
     "check_clause": "location_id IS NOT NULL"
-  },
-  {
-    "table_name": "tables",
-    "constraint_name": "tables_branch_id_fkey",
-    "constraint_type": "FOREIGN KEY",
-    "check_clause": null
   },
   {
     "table_name": "tables",
@@ -1296,6 +1650,54 @@
     "check_clause": null
   },
   {
+    "table_name": "tenant_sessions",
+    "constraint_name": "24381_26718_1_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "constraint_name": "24381_26718_2_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "tenant_id IS NOT NULL"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "constraint_name": "24381_26718_3_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "session_token IS NOT NULL"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "constraint_name": "tenant_sessions_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "tenant_sessions",
+    "constraint_name": "tenant_sessions_session_token_key",
+    "constraint_type": "UNIQUE",
+    "check_clause": null
+  },
+  {
+    "table_name": "tenant_sessions",
+    "constraint_name": "tenant_sessions_tenant_id_fkey",
+    "constraint_type": "FOREIGN KEY",
+    "check_clause": null
+  },
+  {
+    "table_name": "tenants",
+    "constraint_name": "24381_25416_16_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "public_id IS NOT NULL"
+  },
+  {
+    "table_name": "tenants",
+    "constraint_name": "24381_25416_17_not_null",
+    "constraint_type": "CHECK",
+    "check_clause": "private_id IS NOT NULL"
+  },
+  {
     "table_name": "tenants",
     "constraint_name": "24381_25416_1_not_null",
     "constraint_type": "CHECK",
@@ -1327,13 +1729,13 @@
   },
   {
     "table_name": "tenants",
-    "constraint_name": "tenants_private_id_key",
+    "constraint_name": "tenants_private_id_unique",
     "constraint_type": "UNIQUE",
     "check_clause": null
   },
   {
     "table_name": "tenants",
-    "constraint_name": "tenants_public_id_key",
+    "constraint_name": "tenants_public_id_unique",
     "constraint_type": "UNIQUE",
     "check_clause": null
   },

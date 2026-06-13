@@ -120,13 +120,6 @@
   },
   {
     "table_name": "bills",
-    "column_name": "order_id",
-    "data_type": "uuid",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "bills",
     "column_name": "order_ids",
     "data_type": "ARRAY",
     "column_default": "'{}'::uuid[]",
@@ -231,6 +224,118 @@
     "is_nullable": "YES"
   },
   {
+    "table_name": "bills",
+    "column_name": "bill_number",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "bills",
+    "column_name": "session_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "bills",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "id",
+    "data_type": "uuid",
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "tenant_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "title",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "excerpt",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "content",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "image_url",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "author",
+    "data_type": "text",
+    "column_default": "'Chef Barista'::text",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "tags",
+    "data_type": "ARRAY",
+    "column_default": "'{}'::text[]",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "published_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "slug",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "blog_posts",
+    "column_name": "is_published",
+    "data_type": "boolean",
+    "column_default": "false",
+    "is_nullable": "YES"
+  },
+  {
     "table_name": "branches",
     "column_name": "id",
     "data_type": "uuid",
@@ -273,63 +378,98 @@
     "is_nullable": "YES"
   },
   {
-    "table_name": "coupons",
+    "table_name": "bug_reports",
     "column_name": "id",
     "data_type": "uuid",
     "column_default": "gen_random_uuid()",
     "is_nullable": "NO"
   },
   {
-    "table_name": "coupons",
+    "table_name": "bug_reports",
     "column_name": "tenant_id",
     "data_type": "uuid",
     "column_default": null,
-    "is_nullable": "NO"
+    "is_nullable": "YES"
   },
   {
-    "table_name": "coupons",
-    "column_name": "code",
+    "table_name": "bug_reports",
+    "column_name": "private_id",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "bug_reports",
+    "column_name": "tenant_name",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "bug_reports",
+    "column_name": "issue_type",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "bug_reports",
+    "column_name": "description",
     "data_type": "text",
     "column_default": null,
     "is_nullable": "NO"
   },
   {
-    "table_name": "coupons",
-    "column_name": "discount_id",
-    "data_type": "uuid",
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "table_name": "coupons",
-    "column_name": "max_uses",
-    "data_type": "integer",
+    "table_name": "bug_reports",
+    "column_name": "app_name",
+    "data_type": "text",
     "column_default": null,
     "is_nullable": "YES"
   },
   {
-    "table_name": "coupons",
-    "column_name": "current_uses",
-    "data_type": "integer",
-    "column_default": "0",
+    "table_name": "bug_reports",
+    "column_name": "app_version",
+    "data_type": "text",
+    "column_default": null,
     "is_nullable": "YES"
   },
   {
-    "table_name": "coupons",
-    "column_name": "is_active",
-    "data_type": "boolean",
-    "column_default": "true",
+    "table_name": "bug_reports",
+    "column_name": "os_info",
+    "data_type": "text",
+    "column_default": null,
     "is_nullable": "YES"
   },
   {
-    "table_name": "coupons",
-    "column_name": "expires_at",
+    "table_name": "bug_reports",
+    "column_name": "screenshot_url",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "bug_reports",
+    "column_name": "status",
+    "data_type": "text",
+    "column_default": "'open'::text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "bug_reports",
+    "column_name": "super_note",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "bug_reports",
+    "column_name": "resolved_at",
     "data_type": "timestamp with time zone",
     "column_default": null,
     "is_nullable": "YES"
   },
   {
-    "table_name": "coupons",
+    "table_name": "bug_reports",
     "column_name": "created_at",
     "data_type": "timestamp with time zone",
     "column_default": "now()",
@@ -435,13 +575,6 @@
   },
   {
     "table_name": "customer_otp_sessions",
-    "column_name": "otp",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "table_name": "customer_otp_sessions",
     "column_name": "expires_at",
     "data_type": "timestamp with time zone",
     "column_default": null,
@@ -460,6 +593,27 @@
     "data_type": "timestamp with time zone",
     "column_default": "now()",
     "is_nullable": "NO"
+  },
+  {
+    "table_name": "customer_otp_sessions",
+    "column_name": "tenant_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "customer_otp_sessions",
+    "column_name": "attempts",
+    "data_type": "integer",
+    "column_default": "0",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "customer_otp_sessions",
+    "column_name": "otp_hash",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
   },
   {
     "table_name": "customers",
@@ -546,77 +700,154 @@
     "is_nullable": "YES"
   },
   {
-    "table_name": "discounts",
+    "table_name": "customers",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "inventory_items",
     "column_name": "id",
     "data_type": "uuid",
     "column_default": "gen_random_uuid()",
     "is_nullable": "NO"
   },
   {
-    "table_name": "discounts",
+    "table_name": "inventory_items",
     "column_name": "tenant_id",
     "data_type": "uuid",
     "column_default": null,
     "is_nullable": "NO"
   },
   {
-    "table_name": "discounts",
+    "table_name": "inventory_items",
+    "column_name": "location_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "inventory_items",
     "column_name": "name",
     "data_type": "text",
     "column_default": null,
     "is_nullable": "NO"
   },
   {
-    "table_name": "discounts",
-    "column_name": "type",
+    "table_name": "inventory_items",
+    "column_name": "unit",
     "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "discounts",
-    "column_name": "value",
-    "data_type": "integer",
-    "column_default": null,
+    "column_default": "'pieces'::text",
     "is_nullable": "NO"
   },
   {
-    "table_name": "discounts",
-    "column_name": "min_order_amount",
+    "table_name": "inventory_items",
+    "column_name": "current_stock",
+    "data_type": "numeric",
+    "column_default": "0",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "inventory_items",
+    "column_name": "reorder_level",
+    "data_type": "numeric",
+    "column_default": "0",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "inventory_items",
+    "column_name": "cost_price_paise",
     "data_type": "integer",
     "column_default": "0",
     "is_nullable": "YES"
   },
   {
-    "table_name": "discounts",
-    "column_name": "max_discount",
-    "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "discounts",
+    "table_name": "inventory_items",
     "column_name": "is_active",
     "data_type": "boolean",
     "column_default": "true",
     "is_nullable": "YES"
   },
   {
-    "table_name": "discounts",
-    "column_name": "starts_at",
+    "table_name": "inventory_items",
+    "column_name": "created_at",
     "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "inventory_items",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "column_name": "id",
+    "data_type": "uuid",
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "column_name": "tenant_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "column_name": "inventory_item_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "column_name": "type",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "column_name": "quantity",
+    "data_type": "numeric",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "column_name": "reference_type",
+    "data_type": "text",
     "column_default": null,
     "is_nullable": "YES"
   },
   {
-    "table_name": "discounts",
-    "column_name": "ends_at",
-    "data_type": "timestamp with time zone",
+    "table_name": "inventory_transactions",
+    "column_name": "reference_id",
+    "data_type": "uuid",
     "column_default": null,
     "is_nullable": "YES"
   },
   {
-    "table_name": "discounts",
+    "table_name": "inventory_transactions",
+    "column_name": "notes",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "inventory_transactions",
+    "column_name": "created_by",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "inventory_transactions",
     "column_name": "created_at",
     "data_type": "timestamp with time zone",
     "column_default": "now()",
@@ -693,6 +924,13 @@
     "is_nullable": "YES"
   },
   {
+    "table_name": "locations",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
     "table_name": "menu_categories",
     "column_name": "id",
     "data_type": "uuid",
@@ -753,6 +991,20 @@
     "column_name": "deleted_at",
     "data_type": "timestamp with time zone",
     "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "menu_categories",
+    "column_name": "image_url",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "menu_categories",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
     "is_nullable": "YES"
   },
   {
@@ -827,20 +1079,6 @@
   },
   {
     "table_name": "menu_items",
-    "column_name": "price",
-    "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "table_name": "menu_items",
-    "column_name": "compare_price",
-    "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "menu_items",
     "column_name": "image_url",
     "data_type": "text",
     "column_default": null,
@@ -903,161 +1141,77 @@
     "is_nullable": "YES"
   },
   {
-    "table_name": "modifier_groups",
-    "column_name": "id",
-    "data_type": "uuid",
+    "table_name": "menu_items",
+    "column_name": "price_paise",
+    "data_type": "integer",
     "column_default": null,
-    "is_nullable": "YES"
+    "is_nullable": "NO"
   },
   {
-    "table_name": "modifier_groups",
-    "column_name": "tenant_id",
-    "data_type": "uuid",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups",
-    "column_name": "name",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups",
-    "column_name": "selection_type",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups",
-    "column_name": "min_selections",
+    "table_name": "menu_items",
+    "column_name": "compare_price_paise",
     "data_type": "integer",
     "column_default": null,
     "is_nullable": "YES"
   },
   {
     "table_name": "modifier_groups",
-    "column_name": "max_selections",
-    "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups",
-    "column_name": "sort_order",
-    "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups",
-    "column_name": "created_at",
-    "data_type": "timestamp with time zone",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups",
-    "column_name": "min_select",
-    "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups",
-    "column_name": "max_select",
-    "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups",
-    "column_name": "is_required",
-    "data_type": "boolean",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups",
-    "column_name": "item_id",
-    "data_type": "uuid",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups_table",
     "column_name": "id",
     "data_type": "uuid",
     "column_default": "gen_random_uuid()",
     "is_nullable": "NO"
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "column_name": "tenant_id",
     "data_type": "uuid",
     "column_default": null,
     "is_nullable": "NO"
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "column_name": "name",
     "data_type": "text",
     "column_default": null,
     "is_nullable": "NO"
   },
   {
-    "table_name": "modifier_groups_table",
-    "column_name": "min_select",
-    "data_type": "integer",
-    "column_default": "0",
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups_table",
-    "column_name": "max_select",
-    "data_type": "integer",
-    "column_default": "1",
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "column_name": "is_required",
     "data_type": "boolean",
     "column_default": "false",
     "is_nullable": "YES"
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "column_name": "created_at",
     "data_type": "timestamp with time zone",
     "column_default": "now()",
     "is_nullable": "YES"
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "column_name": "selection_type",
     "data_type": "text",
     "column_default": null,
     "is_nullable": "YES"
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "column_name": "min_selections",
     "data_type": "integer",
     "column_default": null,
     "is_nullable": "YES"
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "column_name": "max_selections",
     "data_type": "integer",
     "column_default": null,
     "is_nullable": "YES"
   },
   {
-    "table_name": "modifier_groups_table",
+    "table_name": "modifier_groups",
     "column_name": "sort_order",
     "data_type": "integer",
     "column_default": "0",
@@ -1086,13 +1240,6 @@
   },
   {
     "table_name": "modifier_options",
-    "column_name": "price",
-    "data_type": "integer",
-    "column_default": "0",
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_options",
     "column_name": "is_available",
     "data_type": "boolean",
     "column_default": "true",
@@ -1116,15 +1263,8 @@
     "table_name": "modifier_options",
     "column_name": "price_delta_paise",
     "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "modifier_options",
-    "column_name": "extra_price",
-    "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "YES"
+    "column_default": "0",
+    "is_nullable": "NO"
   },
   {
     "table_name": "modifier_options",
@@ -1177,14 +1317,203 @@
   },
   {
     "table_name": "notification_log",
-    "column_name": "read",
+    "column_name": "sent_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "notification_log",
+    "column_name": "staff_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "notification_log",
+    "column_name": "entity_type",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "notification_log",
+    "column_name": "entity_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "notification_log",
+    "column_name": "is_read",
     "data_type": "boolean",
     "column_default": "false",
     "is_nullable": "YES"
   },
   {
-    "table_name": "notification_log",
-    "column_name": "sent_at",
+    "table_name": "offer_codes",
+    "column_name": "id",
+    "data_type": "uuid",
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "tenant_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "code",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "name",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "type",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "value",
+    "data_type": "integer",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "min_order_paise",
+    "data_type": "integer",
+    "column_default": "0",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "max_discount_paise",
+    "data_type": "integer",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "max_uses",
+    "data_type": "integer",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "current_uses",
+    "data_type": "integer",
+    "column_default": "0",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "is_active",
+    "data_type": "boolean",
+    "column_default": "true",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "starts_at",
+    "data_type": "timestamp with time zone",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "ends_at",
+    "data_type": "timestamp with time zone",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "offer_codes",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "column_name": "id",
+    "data_type": "uuid",
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "column_name": "tenant_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "column_name": "order_item_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "column_name": "modifier_group_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "column_name": "modifier_option_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "column_name": "name_snapshot",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "column_name": "group_name_snapshot",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "column_name": "price_delta_paise",
+    "data_type": "integer",
+    "column_default": "0",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "order_item_modifiers",
+    "column_name": "created_at",
     "data_type": "timestamp with time zone",
     "column_default": "now()",
     "is_nullable": "YES"
@@ -1379,6 +1708,209 @@
     "is_nullable": "YES"
   },
   {
+    "table_name": "orders",
+    "column_name": "source",
+    "data_type": "text",
+    "column_default": "'pos'::text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "orders",
+    "column_name": "session_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "orders",
+    "column_name": "staff_verified",
+    "data_type": "boolean",
+    "column_default": "false",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "orders",
+    "column_name": "verified_by",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "orders",
+    "column_name": "verified_at",
+    "data_type": "timestamp with time zone",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "orders",
+    "column_name": "cgst_amount",
+    "data_type": "integer",
+    "column_default": "0",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "orders",
+    "column_name": "sgst_amount",
+    "data_type": "integer",
+    "column_default": "0",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "id",
+    "data_type": "uuid",
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "tenant_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "bill_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "order_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "amount_paise",
+    "data_type": "integer",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "method",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "status",
+    "data_type": "text",
+    "column_default": "'pending'::text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "reference_id",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "received_by",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "notes",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "payment_transactions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "id",
+    "data_type": "uuid",
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "tenant_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "private_id",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "tenant_name",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "rating",
+    "data_type": "smallint",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "category",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "message",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "app_context",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "status",
+    "data_type": "text",
+    "column_default": "'new'::text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "super_note",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "platform_feedback",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
     "table_name": "staff_accounts",
     "column_name": "id",
     "data_type": "uuid",
@@ -1471,9 +2003,30 @@
   },
   {
     "table_name": "staff_accounts",
-    "column_name": "name",
+    "column_name": "login_id",
     "data_type": "text",
     "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "staff_accounts",
+    "column_name": "auth_email",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "staff_accounts",
+    "column_name": "staff_number",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "staff_accounts",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
     "is_nullable": "YES"
   },
   {
@@ -1653,24 +2206,10 @@
   },
   {
     "table_name": "staff_attendance",
-    "column_name": "total_minutes",
-    "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "staff_attendance",
     "column_name": "created_at",
     "data_type": "timestamp with time zone",
     "column_default": "now()",
     "is_nullable": "NO"
-  },
-  {
-    "table_name": "staff_attendance",
-    "column_name": "shift_id",
-    "data_type": "uuid",
-    "column_default": null,
-    "is_nullable": "YES"
   },
   {
     "table_name": "staff_attendance",
@@ -1744,14 +2283,35 @@
   },
   {
     "table_name": "staff_calls",
-    "column_name": "attended_by",
+    "column_name": "session_id",
     "data_type": "uuid",
     "column_default": null,
     "is_nullable": "YES"
   },
   {
     "table_name": "staff_calls",
-    "column_name": "attended_at",
+    "column_name": "message",
+    "data_type": "text",
+    "column_default": "'Customer requesting assistance'::text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "staff_calls",
+    "column_name": "acknowledged_by",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "staff_calls",
+    "column_name": "acknowledged_at",
+    "data_type": "timestamp with time zone",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "staff_calls",
+    "column_name": "resolved_at",
     "data_type": "timestamp with time zone",
     "column_default": null,
     "is_nullable": "YES"
@@ -1796,13 +2356,6 @@
     "column_name": "tax_inclusive",
     "data_type": "boolean",
     "column_default": "false",
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "store_settings",
-    "column_name": "razorpay_key_id",
-    "data_type": "text",
-    "column_default": null,
     "is_nullable": "YES"
   },
   {
@@ -1856,150 +2409,38 @@
   },
   {
     "table_name": "store_settings",
-    "column_name": "service_charge_value",
-    "data_type": "numeric",
-    "column_default": "0.00",
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "store_settings",
-    "column_name": "active_gateway",
-    "data_type": "text",
-    "column_default": "'razorpay'::text",
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "store_settings",
-    "column_name": "phonepe_merchant_id",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "store_settings",
-    "column_name": "phonepe_terminal_id",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "store_settings",
-    "column_name": "googlepay_merchant_id",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "store_settings",
-    "column_name": "googlepay_terminal_id",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "store_settings",
-    "column_name": "paytm_merchant_id",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "store_settings",
-    "column_name": "paytm_terminal_id",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "store_settings",
-    "column_name": "bharatpe_merchant_id",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "store_settings",
-    "column_name": "bharatpe_terminal_id",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "column_name": "id",
-    "data_type": "uuid",
-    "column_default": "gen_random_uuid()",
-    "is_nullable": "NO"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "column_name": "tenant_id",
-    "data_type": "uuid",
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "column_name": "title",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "column_name": "excerpt",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "column_name": "content",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "column_name": "image_url",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "column_name": "author",
-    "data_type": "text",
-    "column_default": "'Chef Barista'::text",
-    "is_nullable": "NO"
-  },
-  {
-    "table_name": "storefront_blogs",
-    "column_name": "tags",
+    "column_name": "payment_methods",
     "data_type": "ARRAY",
-    "column_default": "'{}'::text[]",
-    "is_nullable": "NO"
+    "column_default": "ARRAY['cash'::text, 'upi'::text]",
+    "is_nullable": "YES"
   },
   {
-    "table_name": "storefront_blogs",
-    "column_name": "published_at",
-    "data_type": "timestamp with time zone",
-    "column_default": "now()",
-    "is_nullable": "NO"
+    "table_name": "store_settings",
+    "column_name": "upi_name",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
   },
   {
-    "table_name": "storefront_blogs",
-    "column_name": "created_at",
-    "data_type": "timestamp with time zone",
-    "column_default": "now()",
-    "is_nullable": "NO"
+    "table_name": "store_settings",
+    "column_name": "min_order_amount_paise",
+    "data_type": "integer",
+    "column_default": "0",
+    "is_nullable": "YES"
   },
   {
-    "table_name": "storefront_blogs",
+    "table_name": "store_settings",
     "column_name": "updated_at",
     "data_type": "timestamp with time zone",
     "column_default": "now()",
-    "is_nullable": "NO"
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "store_settings",
+    "column_name": "service_charge_value_paise",
+    "data_type": "integer",
+    "column_default": "0",
+    "is_nullable": "YES"
   },
   {
     "table_name": "storefront_config",
@@ -2080,30 +2521,9 @@
   },
   {
     "table_name": "storefront_config",
-    "column_name": "hero_image_url",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_config",
     "column_name": "created_at",
     "data_type": "timestamp with time zone",
     "column_default": "now()",
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_config",
-    "column_name": "hero_image_url_2",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_config",
-    "column_name": "hero_image_url_3",
-    "data_type": "text",
-    "column_default": null,
     "is_nullable": "YES"
   },
   {
@@ -2150,48 +2570,6 @@
   },
   {
     "table_name": "storefront_config",
-    "column_name": "hero_title",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_config",
-    "column_name": "hero_subtitle",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_config",
-    "column_name": "hero_title_2",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_config",
-    "column_name": "hero_subtitle_2",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_config",
-    "column_name": "hero_title_3",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_config",
-    "column_name": "hero_subtitle_3",
-    "data_type": "text",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "storefront_config",
     "column_name": "show_reviews",
     "data_type": "boolean",
     "column_default": "true",
@@ -2230,6 +2608,13 @@
     "column_name": "about_image_url",
     "data_type": "text",
     "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "storefront_config",
+    "column_name": "hero_slides",
+    "data_type": "jsonb",
+    "column_default": "'[]'::jsonb",
     "is_nullable": "YES"
   },
   {
@@ -2290,20 +2675,6 @@
   },
   {
     "table_name": "table_sessions",
-    "column_name": "order_ids",
-    "data_type": "ARRAY",
-    "column_default": "'{}'::uuid[]",
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "table_sessions",
-    "column_name": "check_in_at",
-    "data_type": "timestamp with time zone",
-    "column_default": "now()",
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "table_sessions",
     "column_name": "check_out_at",
     "data_type": "timestamp with time zone",
     "column_default": null,
@@ -2320,6 +2691,27 @@
     "table_name": "table_sessions",
     "column_name": "bill_id",
     "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "table_sessions",
+    "column_name": "session_token",
+    "data_type": "text",
+    "column_default": "encode(gen_random_bytes(16), 'hex'::text)",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "table_sessions",
+    "column_name": "is_active",
+    "data_type": "boolean",
+    "column_default": "true",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "table_sessions",
+    "column_name": "table_number",
+    "data_type": "text",
     "column_default": null,
     "is_nullable": "YES"
   },
@@ -2374,7 +2766,7 @@
   },
   {
     "table_name": "tables",
-    "column_name": "qr_token",
+    "column_name": "qr_code",
     "data_type": "text",
     "column_default": null,
     "is_nullable": "YES"
@@ -2419,27 +2811,6 @@
     "column_name": "created_at",
     "data_type": "timestamp with time zone",
     "column_default": "now()",
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "tables",
-    "column_name": "branch_id",
-    "data_type": "uuid",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "tables",
-    "column_name": "floor_x",
-    "data_type": "integer",
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "table_name": "tables",
-    "column_name": "floor_y",
-    "data_type": "integer",
-    "column_default": null,
     "is_nullable": "YES"
   },
   {
@@ -2590,6 +2961,69 @@
     "is_nullable": "YES"
   },
   {
+    "table_name": "tenant_sessions",
+    "column_name": "id",
+    "data_type": "uuid",
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "column_name": "tenant_id",
+    "data_type": "uuid",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "column_name": "session_token",
+    "data_type": "text",
+    "column_default": "encode(gen_random_bytes(32), 'hex'::text)",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "column_name": "device_info",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "column_name": "ip_address",
+    "data_type": "inet",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "column_name": "is_active",
+    "data_type": "boolean",
+    "column_default": "true",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "column_name": "last_seen_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "tenant_sessions",
+    "column_name": "revoked_at",
+    "data_type": "timestamp with time zone",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
     "table_name": "tenants",
     "column_name": "id",
     "data_type": "uuid",
@@ -2683,15 +3117,22 @@
   {
     "table_name": "tenants",
     "column_name": "public_id",
-    "data_type": "uuid",
-    "column_default": "gen_random_uuid()",
-    "is_nullable": "YES"
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
   },
   {
     "table_name": "tenants",
     "column_name": "private_id",
-    "data_type": "uuid",
-    "column_default": "gen_random_uuid()",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "tenants",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "column_default": "now()",
     "is_nullable": "YES"
   },
   {
