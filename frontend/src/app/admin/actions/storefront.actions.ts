@@ -24,20 +24,29 @@ async function getSupabase() {
  * @returns StorefrontConfig row or null
  */
 export async function getStorefrontConfigAction() {
-  const profile = await requirePermission('storefront.view');
-  const supabase = await getSupabase();
+  console.log('[Storefront Action] getStorefrontConfigAction called');
+  try {
+    const profile = await requirePermission('storefront.view');
+    console.log('[Storefront Action] Permission checked, profile:', profile);
 
-  const { data, error } = await supabase
-    .from('storefront_config')
-    .select('*')
-    .eq('tenant_id', profile.tenant_id)
-    .maybeSingle();
+    const supabase = await getSupabase();
+    const { data, error } = await supabase
+      .from('storefront_config')
+      .select('*')
+      .eq('tenant_id', profile.tenant_id)
+      .maybeSingle();
 
-  if (error) {
-    throw new Error(error.message);
+    if (error) {
+      console.error('[Storefront Action] Supabase error:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('[Storefront Action] Query success, data found:', !!data);
+    return data;
+  } catch (err: any) {
+    console.error('[Storefront Action] Caught error in action:', err);
+    throw err;
   }
-
-  return data;
 }
 
 /**

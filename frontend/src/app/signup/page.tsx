@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, Store, MapPin, Building, CreditCard,
   ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, RefreshCw,
-  Building2, Hash, FileText
+  Building2, Hash, FileText, Lock
 } from 'lucide-react';
 
 export default function SignupPage() {
@@ -16,6 +16,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [registeredSlug, setRegisteredSlug] = useState('');
 
   // Form State
   const [form, setForm] = useState({
@@ -23,6 +24,7 @@ export default function SignupPage() {
     ownerName: '',
     phone: '',
     email: '',
+    password: '',
     gstin: '',
     fssaiNumber: '',
     address: '',
@@ -62,6 +64,14 @@ export default function SignupPage() {
       const phoneRegex = /^[0-9+ ]{10,15}$/;
       if (!phoneRegex.test(form.phone)) {
         setError('Please enter a valid phone number (10-15 digits).');
+        return false;
+      }
+      if (!form.password) {
+        setError('Password is required.');
+        return false;
+      }
+      if (form.password.length < 8) {
+        setError('Password must be at least 8 characters long.');
         return false;
       }
     } else if (step === 2) {
@@ -109,6 +119,7 @@ export default function SignupPage() {
 
       const result = await response.json();
       if (result.success) {
+        setRegisteredSlug(result.slug);
         setSuccess(true);
       } else {
         throw new Error(result.error || 'Failed to submit onboarding request.');
@@ -208,16 +219,25 @@ export default function SignupPage() {
               <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto text-emerald-600">
                 <CheckCircle2 size={36} />
               </div>
-              <h2 className="text-xl font-black text-slate-800 font-display">Registration Submitted!</h2>
-              <p className="text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
-                Thank you for choosing CafeCanvas. Our super-administration team will review your parameters and dispatch your credentials via WhatsApp shortly.
+              <h2 className="text-xl font-black text-slate-800 font-display">Shop Registered Successfully!</h2>
+              <div className="bg-[#f8fafc] border border-[#eae5d8] p-5 rounded-2xl text-left space-y-2.5 max-w-sm mx-auto">
+                <h4 className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Your Shop Credentials</h4>
+                <div className="text-xs space-y-1">
+                  <div><span className="font-extrabold text-slate-650">Store Slug:</span> <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-amber-700 font-bold">{registeredSlug}</span></div>
+                  <div><span className="font-extrabold text-slate-650">Owner Email:</span> <span className="font-bold">{form.email}</span></div>
+                  <div><span className="font-extrabold text-slate-650">Password:</span> <span className="font-bold">Chosen Password</span></div>
+                  <div><span className="font-extrabold text-slate-650">Default Staff PIN:</span> <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-extrabold">1234</span></div>
+                </div>
+              </div>
+              <p className="text-xs text-slate-550 max-w-sm mx-auto leading-relaxed">
+                Your CafeCanvas shop environment has been automatically provisioned with 4 default tables, a default category, and default menu items. You can sign in immediately.
               </p>
-              <div className="pt-4">
+              <div className="pt-4 flex gap-4 justify-center">
                 <Link
-                  href="/"
+                  href="/login"
                   className="px-6 py-2.5 bg-gradient-to-r from-[#d97706] to-[#ca8a04] text-white font-extrabold rounded-2xl text-xs uppercase tracking-wider shadow-md hover:opacity-95 transition-all inline-block"
                 >
-                  Return to Homepage
+                  Sign In Now
                 </Link>
               </div>
             </motion.div>
@@ -282,6 +302,24 @@ export default function SignupPage() {
                         value={form.phone}
                         onChange={handleChange}
                         placeholder="e.g. 9876543210"
+                        className="w-full pl-11 pr-4 py-3.5 bg-[#fcfaf4] border border-[#eae5d8] rounded-2xl text-[#1e293b] text-xs font-medium focus:outline-none focus:border-[#d97706] focus:ring-1 focus:ring-[#d97706]/10 transition-all placeholder-slate-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                      Owner Password (Min 8 characters)
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="password"
+                        name="password"
+                        required
+                        value={form.password}
+                        onChange={handleChange}
+                        placeholder="••••••••"
                         className="w-full pl-11 pr-4 py-3.5 bg-[#fcfaf4] border border-[#eae5d8] rounded-2xl text-[#1e293b] text-xs font-medium focus:outline-none focus:border-[#d97706] focus:ring-1 focus:ring-[#d97706]/10 transition-all placeholder-slate-400"
                       />
                     </div>
