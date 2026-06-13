@@ -257,6 +257,13 @@ export default function Storefront() {
     }
   }, [tenant]);
 
+  // Scroll to top when tab changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     async function fetchData() {
       try {

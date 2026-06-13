@@ -2347,238 +2347,79 @@ export default function StorefrontEditor({
           {activeTab === 'connection' && (
             <div className="space-y-6 animate-fade-in">
               <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[#d97706] text-xs leading-relaxed space-y-1">
-                <p className="font-bold flex items-center gap-1.5">📲 Storefront Access & Brand QR Code</p>
-                <p className="opacity-90">Manage links to your customer-facing digital storefront, and download or print a beautifully themed branded QR card matching your active preset.</p>
+                <p className="font-bold flex items-center gap-1.5">📲 Storefront Access Links</p>
+                <p className="opacity-90">Manage links to your customer-facing digital storefront.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-                {/* Left Column: URLs */}
-                <div className="md:col-span-7 space-y-5">
-                  {/* 1. Live Production Subdomain */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                      Live Production Subdomain
-                    </label>
-                    <p className="text-[10px] text-slate-400">Primary custom subdomain for customer access.</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`}
-                        className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`);
-                          alert('Live URL copied!');
-                        }}
-                        className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer transition-all shrink-0"
-                      >
-                        Copy
-                      </button>
-                      <a
-                        href={`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all shrink-0"
-                      >
-                        Open ↗
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* 2. Direct Subdirectory Link */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                      Direct Subdirectory Link (Fallback)
-                    </label>
-                    <p className="text-[10px] text-slate-400">Robust path-based routing fallback for your store.</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`}
-                        className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`);
-                          alert('Subdirectory URL copied!');
-                        }}
-                        className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer transition-all shrink-0"
-                      >
-                        Copy
-                      </button>
-                      <a
-                        href={`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all shrink-0"
-                      >
-                        Open ↗
-                      </a>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Right Column: QR Card Preview & Downloads */}
-                <div className="md:col-span-5 flex flex-col items-center justify-center space-y-4">
-                  <span className="text-xs font-extrabold text-[#1e293b]/70 tracking-wider uppercase self-start md:self-center">
-                    Branded QR Card Preview
-                  </span>
-                  
-                  {/* Card wrapper for scaling down in preview */}
-                  <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[2rem] p-4 flex items-center justify-center w-full shadow-sm max-w-[360px] overflow-hidden">
-                    <div className="scale-75 md:scale-80 lg:scale-[0.70] xl:scale-[0.70] 2xl:scale-85 origin-center my-[-40px]">
-                      {/* Branded QR Card Content */}
-                      {(() => {
-                        const qrStyles = getQRCardStyles(config.theme_id || 'theme-02');
-                        return (
-                          <div
-                            id="storefront-qr-card"
-                            className="w-[340px] h-[520px] shadow-2xl flex flex-col justify-between items-center text-center relative overflow-hidden select-none shrink-0"
-                            style={{
-                              fontFamily: qrStyles.fontHeading,
-                              ...qrStyles.containerStyle
-                            }}
-                          >
-                            <div 
-                              className="absolute inset-2.5 border pointer-events-none"
-                              style={qrStyles.innerBorderStyle}
-                            ></div>
-                            
-                            <div className="flex flex-col items-center gap-1 mt-4 relative z-10">
-                              {logoBase64 ? (
-                                <img 
-                                  src={logoBase64} 
-                                  alt={storeName} 
-                                  className="w-14 h-14 rounded-full object-cover shadow-md border" 
-                                  style={{ borderColor: `${qrStyles.accentColor}40` }}
-                                />
-                              ) : tenantLogoUrl ? (
-                                <img 
-                                  src={tenantLogoUrl} 
-                                  alt={storeName} 
-                                  className="w-14 h-14 rounded-full object-cover shadow-md border" 
-                                  style={{ borderColor: `${qrStyles.accentColor}40` }}
-                                />
-                              ) : (
-                                <div 
-                                  className="w-14 h-14 rounded-full flex items-center justify-center border-2 shadow-inner"
-                                  style={{
-                                    backgroundColor: `${qrStyles.accentColor}15`,
-                                    borderColor: `${qrStyles.accentColor}35`,
-                                    color: qrStyles.accentColor
-                                  }}
-                                >
-                                  <Coffee className="w-7 h-7" />
-                                </div>
-                              )}
-                              <h3 
-                                className="font-extrabold text-base tracking-wide mt-2 max-w-[280px] truncate"
-                                style={{ color: qrStyles.brandingColor }}
-                              >
-                                {storeName || 'CafeCanvas'}
-                              </h3>
-                              <div 
-                                className="h-[2px] w-12 my-0.5"
-                                style={{
-                                  background: `linear-gradient(to right, transparent, ${qrStyles.accentColor}60, transparent)`
-                                }}
-                              ></div>
-                              <p 
-                                className="text-[9px] uppercase font-black tracking-[0.2em]"
-                                style={{ color: qrStyles.accentColor }}
-                              >
-                                Digital Storefront
-                              </p>
-                            </div>
-
-                            <div 
-                              className="my-1.5 border px-6 py-2 shadow-sm rounded-2xl relative z-10"
-                              style={qrStyles.badgeStyle}
-                            >
-                              <h4 className="text-base font-black tracking-tight uppercase flex items-center gap-1.5">
-                                <Sparkles size={14} className="animate-pulse" />
-                                <span>Scan & Order</span>
-                              </h4>
-                            </div>
-
-                            <div 
-                              className="p-4 flex items-center justify-center w-[180px] h-[180px] relative z-10"
-                              style={qrStyles.qrContainerStyle}
-                            >
-                              {storefrontQrBase64 ? (
-                                <img
-                                  src={storefrontQrBase64}
-                                  alt="Storefront QR Code"
-                                  className="w-full h-full object-contain"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#1e293b]/40">
-                                  <QrCode size={40} className="animate-pulse" />
-                                  <span className="text-[8px] font-bold">Generating...</span>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex flex-col items-center gap-1.5 mb-4 max-w-[280px] relative z-10">
-                              <span 
-                                className="text-[10px] uppercase font-black tracking-[0.15em] px-4 py-1.5 rounded-full"
-                                style={{
-                                  backgroundColor: `${qrStyles.accentColor}15`,
-                                  color: qrStyles.accentColor
-                                }}
-                              >
-                                Scan QR Code
-                              </span>
-                              <p 
-                                className="text-[9px] leading-relaxed font-semibold mt-1"
-                                style={{ color: qrStyles.subtitleColor }}
-                              >
-                                Browse our fresh digital menu, customize your order, and complete payment directly from your phone!
-                              </p>
-                            </div>
-
-                            <div 
-                              className="mb-2 text-[8px] font-bold uppercase tracking-[0.25em] flex items-center gap-1.5 justify-center relative z-10"
-                              style={{ color: qrStyles.subtitleColor }}
-                            >
-                              <Coffee className="w-3 h-3" style={{ color: qrStyles.accentColor }} />
-                              <span>Powered by</span>
-                              <span style={{ color: qrStyles.accentColor }}>CafeCanvas</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-
-                  {/* Actions buttons */}
-                  <div className="flex items-center gap-2.5 w-full max-w-[340px]">
+              <div className="max-w-3xl space-y-5">
+                {/* 1. Live Production Subdomain */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Live Production Subdomain
+                  </label>
+                  <p className="text-[10px] text-slate-400">Primary custom subdomain for customer access.</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`}
+                      className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
+                    />
                     <button
                       type="button"
-                      disabled={downloadingQr || !storefrontQrBase64}
-                      onClick={downloadStorefrontQR}
-                      className="flex-1 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-sm disabled:opacity-40 disabled:pointer-events-none"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`);
+                        alert('Live URL copied!');
+                      }}
+                      className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer transition-all shrink-0"
                     >
-                      {downloadingQr ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-                      <span>Download PNG</span>
+                      Copy
                     </button>
-                    <button
-                      type="button"
-                      disabled={!storefrontQrBase64}
-                      onClick={printStorefrontQR}
-                      className="py-2.5 px-4 bg-slate-800 hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-sm disabled:opacity-40 disabled:pointer-events-none"
+                    <a
+                      href={`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all shrink-0"
                     >
-                      <Printer size={13} />
-                      <span>Print</span>
-                    </button>
+                      Open ↗
+                    </a>
                   </div>
                 </div>
+
+                {/* 2. Direct Subdirectory Link */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                    Direct Subdirectory Link (Fallback)
+                  </label>
+                  <p className="text-[10px] text-slate-400">Robust path-based routing fallback for your store.</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`}
+                      className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`);
+                        alert('Subdirectory URL copied!');
+                      }}
+                      className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer transition-all shrink-0"
+                    >
+                      Copy
+                    </button>
+                    <a
+                      href={`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all shrink-0"
+                    >
+                      Open ↗
+                    </a>
+                  </div>
+                </div>
+
               </div>
             </div>
           )}
