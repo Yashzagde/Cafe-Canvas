@@ -99,6 +99,14 @@ export default function KOSDashboard() {
         return;
       }
       
+      const role = user.app_metadata.role;
+      const allowedRoles = ['owner', 'manager', 'admin', 'kitchen', 'chef'];
+      if (!allowedRoles.includes(role)) {
+        setUnauthorized(true);
+        setLoading(false);
+        return;
+      }
+      
       const activeTenantId = user.app_metadata.tenant_id;
       setTenantId(activeTenantId);
 

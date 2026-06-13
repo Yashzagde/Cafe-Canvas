@@ -1865,7 +1865,15 @@ export default function StaffPOS() {
           { tab: 'order' as const, label: 'Take Order', icon: <ShoppingBag size={18} /> },
           { tab: 'queue' as const, label: 'KDS Queue', icon: <Clock size={18} /> },
           { tab: 'performance' as const, label: 'Self Stats', icon: <User size={18} /> }
-        ].map((item) => (
+        ].filter(item => {
+          if (profile?.role === 'waiter') {
+            return item.tab === 'tables' || item.tab === 'order';
+          }
+          if (profile?.role === 'kitchen') {
+            return item.tab === 'queue';
+          }
+          return true;
+        }).map((item) => (
           <button
             key={item.tab}
             onClick={() => setActiveTab(item.tab)}
@@ -1886,7 +1894,15 @@ export default function StaffPOS() {
           { tab: 'order' as const, label: 'Take Order', icon: <ShoppingBag size={20} /> },
           { tab: 'queue' as const, label: 'KDS Queue', icon: <Clock size={20} /> },
           { tab: 'performance' as const, label: 'Self Stats', icon: <User size={20} /> }
-        ].map((item) => (
+        ].filter(item => {
+          if (profile?.role === 'waiter') {
+            return item.tab === 'tables' || item.tab === 'order';
+          }
+          if (profile?.role === 'kitchen') {
+            return item.tab === 'queue';
+          }
+          return true;
+        }).map((item) => (
           <button
             key={item.tab}
             onClick={() => setActiveTab(item.tab)}
