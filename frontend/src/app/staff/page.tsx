@@ -174,6 +174,9 @@ export default function StaffPOS() {
         }
 
         setProfile(userProfile);
+        if (userProfile.role === 'kitchen') {
+          setActiveTab('queue');
+        }
 
         // C. Fetch Live DB Tables
         const { data: dbTables } = await supabase
