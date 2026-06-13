@@ -37,10 +37,10 @@ Deno.serve(async (req) => {
 
     // 1. Fetch active staff FCM tokens for this tenant
     const { data: staff, error: staffError } = await supabase
-      .from('users')
+      .from('staff_accounts')
       .select('fcm_token, role')
       .eq('tenant_id', tenantId)
-      .eq('active', true)
+      .eq('is_active', true)
       .not('fcm_token', 'is', null)
 
     if (staffError) throw staffError

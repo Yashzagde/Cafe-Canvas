@@ -38,6 +38,17 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Look up table number if not provided
+    let tblNum = tableNumber;
+    if (!tblNum) {
+      const { data: tableRecord } = await supabase
+        .from('tables')
+        .select('table_number')
+        .eq('id', tableId)
+        .maybeSingle()
+      tblNum = tableRecord?.table_number
+    }
+
     // Insert new call record
     const { data: call, error: insertError } = await supabase
       .from('staff_calls')
@@ -47,12 +58,23 @@ Deno.serve(async (req) => {
 
     if (insertError) throw insertError
 
+    // Log to notification_log so store-admin and staff POS see it in real-time
+    await supabase
+      .from('notification_log')
+      .insert({
+        tenant_id: tenantId,
+        type: 'call_staff',
+        title: '🔔 Assistance Requested',
+        body: `Table ${tblNum || 'Guest'} requested assistance.`,
+        read: false
+      })
+
     // Get FCM tokens for active staff in this tenant
     const { data: staff } = await supabase
-      .from('users')
+      .from('staff_accounts')
       .select('fcm_token')
       .eq('tenant_id', tenantId)
-      .eq('active', true)
+      .eq('is_active', true)
       .in('role', ['owner', 'manager', 'staff', 'cashier'])
       .not('fcm_token', 'is', null)
 
@@ -70,7 +92,7 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             message: {
               notification: {
-                title: `🔔 Table ${tableNumber} needs assistance`,
+                title: `🔔 Table ${tblNum || 'Guest'} needs assistance`,
                 body: 'A customer is waiting for help',
               },
               data: { tableId, tenantId, callId: call.id, type: 'CALL_STAFF' },

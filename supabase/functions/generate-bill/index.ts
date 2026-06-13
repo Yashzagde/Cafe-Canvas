@@ -19,6 +19,18 @@ Deno.serve(async (req) => {
   try {
     const { tableId, tenantId, branchId, createdBy } = await req.json()
 
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+
+    if (!tableId || !uuidRegex.test(tableId)) {
+      return Response.json({ error: 'Invalid or missing tableId' }, { status: 400, headers: corsHeaders })
+    }
+    if (!tenantId || !uuidRegex.test(tenantId)) {
+      return Response.json({ error: 'Invalid or missing tenantId' }, { status: 400, headers: corsHeaders })
+    }
+
+    const cleanBranchId = (branchId && uuidRegex.test(branchId)) ? branchId : null
+    const cleanCreatedBy = (createdBy && uuidRegex.test(createdBy)) ? createdBy : null
+
     // Fetch active orders for table
     const { data: activeOrders } = await supabase
       .from('orders')
@@ -70,7 +82,7 @@ Deno.serve(async (req) => {
       .from('bills')
       .insert({
         tenant_id: tenantId,
-        location_id: branchId,
+        location_id: cleanBranchId,
         table_id: tableId,
         order_ids: activeOrders.map(o => o.id),
         table_number: tableRecord?.table_number || null,
@@ -82,7 +94,7 @@ Deno.serve(async (req) => {
         discount_amount: discountAmount,
         total,
         status: 'unpaid',
-        created_by: createdBy
+        created_by: cleanCreatedBy
       })
       .select()
       .single()
