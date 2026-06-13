@@ -187,7 +187,7 @@ CREATE TABLE orders (
   staff_id UUID REFERENCES staff_accounts(id) ON DELETE SET NULL,
   customer_name TEXT,
   customer_phone TEXT,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'preparing', 'ready', 'served', 'completed', 'cancelled')),
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'preparing', 'ready', 'served', 'completed', 'billed', 'paid', 'cancelled')),
   order_type TEXT DEFAULT 'dine_in' CHECK (order_type IN ('dine_in', 'takeaway', 'delivery')),
   subtotal INTEGER NOT NULL, -- Paise
   tax_amount INTEGER DEFAULT 0, -- Paise
