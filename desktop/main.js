@@ -41,6 +41,7 @@ function createWindow() {
       webSecurity: true
     }
   });
+  mainWindow.webContents.openDevTools();
 
   // Enable cookies and session storage persistence
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {

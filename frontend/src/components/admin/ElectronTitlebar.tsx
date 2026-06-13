@@ -19,7 +19,7 @@ export default function ElectronTitlebar() {
   if (!isElectron) return null;
 
   return (
-    <div
+    <header
       style={{
         position: 'fixed',
         top: 0,
@@ -80,6 +80,6 @@ export default function ElectronTitlebar() {
           <X size={14} className="text-slate-400 hover:text-white" />
         </button>
       </div>
-    </div>
+    </header>
   );
 }
