@@ -1591,47 +1591,6 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
     try {
       // 1. Settle in the database
       await _billingRepo.settleBillDirect(billId: _bill!.id, paymentMethod: method);
-      
-      // 2. Settle payment gateways natively on mobiles (or trigger mock successful validations)
-      if (method == 'upi' || method == 'card') {
-        final gateway = BillingFactory.createPaymentGateway();
-        final activeGateway = _storeSettings?.activeGateway ?? 'razorpay';
-        
-        if (activeGateway == 'razorpay') {
-          await gateway.payWithRazorpay(
-            razorpayOrderId: 'order_mock_pos',
-            keyId: _storeSettings?.razorpayKeyId ?? 'rzp_test_1234',
-            amountInPaise: _bill!.total,
-            storeName: 'CafeCanva',
-            customerName: 'POS Settle',
-            customerPhone: '9999999999',
-            themeColor: '#D97706',
-          );
-        } else {
-          String mid = 'demo_mid';
-          String tid = 'demo_tid';
-          if (activeGateway == 'phonepe') {
-            mid = _storeSettings?.phonepeMerchantId ?? 'demo_phonepe_mid';
-            tid = _storeSettings?.phonepeTerminalId ?? 'demo_phonepe_tid';
-          } else if (activeGateway == 'googlepay') {
-            mid = _storeSettings?.googlepayMerchantId ?? 'demo_gpay_mid';
-            tid = _storeSettings?.googlepayTerminalId ?? 'demo_gpay_tid';
-          } else if (activeGateway == 'paytm') {
-            mid = _storeSettings?.paytmMerchantId ?? 'demo_paytm_mid';
-            tid = _storeSettings?.paytmTerminalId ?? 'demo_paytm_tid';
-          } else if (activeGateway == 'bharatpe') {
-            mid = _storeSettings?.bharatpeMerchantId ?? 'demo_bharatpe_mid';
-            tid = _storeSettings?.bharatpeTerminalId ?? 'demo_bharatpe_tid';
-          }
-
-          await gateway.payWithTerminal(
-            gateway: activeGateway,
-            merchantId: mid,
-            terminalId: tid,
-            amountInPaise: _bill!.total,
-          );
-        }
-      }
 
       // 3. Print thermal receipt utilizing user printer width setting preference mm80/mm58
       final sessionBox = Hive.box('session');

@@ -741,18 +741,6 @@ class _CartScreenState extends State<CartScreen> {
           itemsData: itemsData,
         );
 
-        // Blocker 1 & 6: trigger payment flow cross-platform via BillingFactory
-        final paymentGateway = BillingFactory.createPaymentGateway();
-        await paymentGateway.payWithRazorpay(
-          razorpayOrderId: 'order_mock_123',
-          keyId: 'rzp_test_1234',
-          amountInPaise: total,
-          storeName: 'CafeCanva',
-          customerName: name,
-          customerPhone: phone,
-          themeColor: '#D97706',
-        );
-
         _saveCart(widget.slug, []);
 
         if (mounted) {

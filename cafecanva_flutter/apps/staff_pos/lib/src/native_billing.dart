@@ -1,22 +1,30 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:bluetooth_print/bluetooth_print.dart';
 import 'package:bluetooth_print/bluetooth_print_model.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_billing/cafecanva_billing.dart';
 
-class RazorpayPaymentGateway implements PaymentGateway {
-  late Razorpay _razorpay;
+class PaymentSuccessResponse {
+  final String? paymentId;
+  final String? orderId;
+  final String? signature;
+  PaymentSuccessResponse(this.paymentId, this.orderId, this.signature);
+}
 
+class PaymentFailureResponse {
+  final int? code;
+  final String? message;
+  PaymentFailureResponse(this.code, this.message);
+}
+
+class RazorpayPaymentGateway implements PaymentGateway {
   void initialize({
     required void Function(PaymentSuccessResponse) onSuccess,
     required void Function(PaymentFailureResponse) onFailure,
   }) {
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, onSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, onFailure);
+    // No-op - payment gateway disabled
   }
 
   @override
@@ -29,26 +37,11 @@ class RazorpayPaymentGateway implements PaymentGateway {
     required String customerPhone,
     required String themeColor,
   }) async {
-    final options = {
-      'key': keyId,
-      'amount': amountInPaise, // Paise
-      'currency': 'INR',
-      'order_id': razorpayOrderId,
-      'name': storeName,
-      'description': 'POS Settle Bill Receipt',
-      'prefill': {
-        'contact': customerPhone,
-        'name': customerName,
-      },
-      'theme': {
-        'color': themeColor,
-      }
-    };
-    _razorpay.open(options);
+    debugPrint('Online payment gateway checkout has been disabled.');
   }
 
   void dispose() {
-    _razorpay.clear();
+    // No-op
   }
 
   @override
@@ -58,10 +51,7 @@ class RazorpayPaymentGateway implements PaymentGateway {
     required String terminalId,
     required int amountInPaise,
   }) async {
-    // Mobile terminal integration: trigger a simulated terminal settlement
-    debugPrint('Initiating mobile POS terminal payment: $gateway (MID: $merchantId, TID: $terminalId) for Amount: ${amountInPaise / 100}');
-    await Future.delayed(const Duration(seconds: 3));
-    debugPrint('Terminal payment success notification received from $gateway');
+    debugPrint('Terminal payment settlements disabled.');
   }
 }
 
