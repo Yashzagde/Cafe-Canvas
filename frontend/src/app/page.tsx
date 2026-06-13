@@ -306,6 +306,11 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Selector States
   const [activeThemeIdx, setActiveThemeIdx] = useState(0);
