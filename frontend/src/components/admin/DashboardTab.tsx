@@ -185,7 +185,164 @@ export default function DashboardTab({
     );
   };
 
-  const totalTodayRupees = orders.reduce((sum, o) => sum + o.amount, 0);
+  const stats = React.useMemo(() => {
+    const now = new Date();
+    
+    // Setup local date boundaries
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    
+    const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
+    const endOfYesterday = new Date(startOfToday.getTime() - 1);
+    
+    const startOfWeek = new Date(startOfToday.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfPrevWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    const startOfMonth = new Date(startOfToday.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const startOfPrevMonth = new Date(startOfMonth.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    if (period === 'daily') {
+      const todayOrdersCount = orders.length;
+      const todayRevenue = orders.reduce((sum, o) => sum + o.amount, 0);
+      const todayAvg = todayOrdersCount > 0 ? Math.round(todayRevenue / todayOrdersCount) : 0;
+      
+      const yesterdayBills = bills.filter(b => {
+        const d = new Date(b.created_at || b.paid_at);
+        return d >= startOfYesterday && d <= endOfYesterday;
+      });
+      const yesterdayOrdersCount = yesterdayBills.length;
+      const yesterdayRevenue = yesterdayBills.reduce((sum, b) => sum + (b.total || b.total_paise || 0) / 100, 0);
+      const yesterdayAvg = yesterdayOrdersCount > 0 ? Math.round(yesterdayRevenue / yesterdayOrdersCount) : 0;
+      
+      const ordersDiff = todayOrdersCount - yesterdayOrdersCount;
+      const ordersTrendPct = yesterdayOrdersCount > 0 ? Math.round((ordersDiff / yesterdayOrdersCount) * 100) : 0;
+      
+      const revDiff = todayRevenue - yesterdayRevenue;
+      const revTrendPct = yesterdayRevenue > 0 ? Math.round((revDiff / yesterdayRevenue) * 100) : 0;
+      
+      const avgDiff = todayAvg - yesterdayAvg;
+      const avgTrendPct = yesterdayAvg > 0 ? Math.round((avgDiff / yesterdayAvg) * 100) : 0;
+
+      return {
+        ordersLabel: "Orders Today",
+        ordersValue: todayOrdersCount,
+        ordersTrend: yesterdayOrdersCount > 0
+          ? `${ordersTrendPct >= 0 ? '+' : ''}${ordersTrendPct}% vs yesterday`
+          : "no yesterday data",
+        ordersUp: ordersTrendPct >= 0,
+        
+        revenueLabel: "Revenue Today",
+        revenueValue: `₹${todayRevenue.toLocaleString()}`,
+        revenueTrend: yesterdayRevenue > 0
+          ? `${revTrendPct >= 0 ? '+' : ''}${revTrendPct}% vs yesterday`
+          : "no yesterday data",
+        revenueUp: revTrendPct >= 0,
+        
+        avgLabel: "Avg Order Value",
+        avgValue: `₹${todayAvg.toLocaleString()}`,
+        avgTrend: yesterdayAvg > 0
+          ? `${avgTrendPct >= 0 ? '+' : ''}${avgTrendPct}% vs yesterday`
+          : "no yesterday data",
+        avgUp: avgTrendPct >= 0,
+      };
+    } else if (period === 'weekly') {
+      const thisWeekBills = bills.filter(b => {
+        const d = new Date(b.created_at || b.paid_at);
+        return d >= startOfWeek;
+      });
+      const thisWeekOrdersCount = thisWeekBills.length;
+      const thisWeekRevenue = thisWeekBills.reduce((sum, b) => sum + (b.total || b.total_paise || 0) / 100, 0);
+      const thisWeekAvg = thisWeekOrdersCount > 0 ? Math.round(thisWeekRevenue / thisWeekOrdersCount) : 0;
+      
+      const prevWeekBills = bills.filter(b => {
+        const d = new Date(b.created_at || b.paid_at);
+        return d >= startOfPrevWeek && d < startOfWeek;
+      });
+      const prevWeekOrdersCount = prevWeekBills.length;
+      const prevWeekRevenue = prevWeekBills.reduce((sum, b) => sum + (b.total || b.total_paise || 0) / 100, 0);
+      const prevWeekAvg = prevWeekOrdersCount > 0 ? Math.round(prevWeekRevenue / prevWeekOrdersCount) : 0;
+      
+      const ordersDiff = thisWeekOrdersCount - prevWeekOrdersCount;
+      const ordersTrendPct = prevWeekOrdersCount > 0 ? Math.round((ordersDiff / prevWeekOrdersCount) * 100) : 0;
+      
+      const revDiff = thisWeekRevenue - prevWeekRevenue;
+      const revTrendPct = prevWeekRevenue > 0 ? Math.round((revDiff / prevWeekRevenue) * 100) : 0;
+      
+      const avgDiff = thisWeekAvg - prevWeekAvg;
+      const avgTrendPct = prevWeekAvg > 0 ? Math.round((avgDiff / prevWeekAvg) * 100) : 0;
+
+      return {
+        ordersLabel: "Orders This Week",
+        ordersValue: thisWeekOrdersCount,
+        ordersTrend: prevWeekOrdersCount > 0
+          ? `${ordersTrendPct >= 0 ? '+' : ''}${ordersTrendPct}% vs last week`
+          : "no last week data",
+        ordersUp: ordersTrendPct >= 0,
+        
+        revenueLabel: "Revenue This Week",
+        revenueValue: `₹${thisWeekRevenue.toLocaleString()}`,
+        revenueTrend: prevWeekRevenue > 0
+          ? `${revTrendPct >= 0 ? '+' : ''}${revTrendPct}% vs last week`
+          : "no last week data",
+        revenueUp: revTrendPct >= 0,
+        
+        avgLabel: "Avg Order Value",
+        avgValue: `₹${thisWeekAvg.toLocaleString()}`,
+        avgTrend: prevWeekAvg > 0
+          ? `${avgTrendPct >= 0 ? '+' : ''}${avgTrendPct}% vs last week`
+          : "no last week data",
+        avgUp: avgTrendPct >= 0,
+      };
+    } else {
+      const thisMonthBills = bills.filter(b => {
+        const d = new Date(b.created_at || b.paid_at);
+        return d >= startOfMonth;
+      });
+      const thisMonthOrdersCount = thisMonthBills.length;
+      const thisMonthRevenue = thisMonthBills.reduce((sum, b) => sum + (b.total || b.total_paise || 0) / 100, 0);
+      const thisMonthAvg = thisMonthOrdersCount > 0 ? Math.round(thisMonthRevenue / thisMonthOrdersCount) : 0;
+      
+      const prevMonthBills = bills.filter(b => {
+        const d = new Date(b.created_at || b.paid_at);
+        return d >= startOfPrevMonth && d < startOfMonth;
+      });
+      const prevMonthOrdersCount = prevMonthBills.length;
+      const prevMonthRevenue = prevMonthBills.reduce((sum, b) => sum + (b.total || b.total_paise || 0) / 100, 0);
+      const prevMonthAvg = prevMonthOrdersCount > 0 ? Math.round(prevMonthRevenue / prevMonthOrdersCount) : 0;
+      
+      const ordersDiff = thisMonthOrdersCount - prevMonthOrdersCount;
+      const ordersTrendPct = prevMonthOrdersCount > 0 ? Math.round((ordersDiff / prevMonthOrdersCount) * 100) : 0;
+      
+      const revDiff = thisMonthRevenue - prevMonthRevenue;
+      const revTrendPct = prevMonthRevenue > 0 ? Math.round((revDiff / prevMonthRevenue) * 100) : 0;
+      
+      const avgDiff = thisMonthAvg - prevMonthAvg;
+      const avgTrendPct = prevMonthAvg > 0 ? Math.round((avgDiff / prevMonthAvg) * 100) : 0;
+
+      return {
+        ordersLabel: "Orders This Month",
+        ordersValue: thisMonthOrdersCount,
+        ordersTrend: prevMonthOrdersCount > 0
+          ? `${ordersTrendPct >= 0 ? '+' : ''}${ordersTrendPct}% vs last month`
+          : "no last month data",
+        ordersUp: ordersTrendPct >= 0,
+        
+        revenueLabel: "Revenue This Month",
+        revenueValue: `₹${thisMonthRevenue.toLocaleString()}`,
+        revenueTrend: prevMonthRevenue > 0
+          ? `${revTrendPct >= 0 ? '+' : ''}${revTrendPct}% vs last month`
+          : "no last month data",
+        revenueUp: revTrendPct >= 0,
+        
+        avgLabel: "Avg Order Value",
+        avgValue: `₹${thisMonthAvg.toLocaleString()}`,
+        avgTrend: prevMonthAvg > 0
+          ? `${avgTrendPct >= 0 ? '+' : ''}${avgTrendPct}% vs last month`
+          : "no last month data",
+        avgUp: avgTrendPct >= 0,
+      };
+    }
+  }, [period, orders, bills]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -204,9 +361,9 @@ export default function DashboardTab({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
-        <Stat label="Orders Today" value={orders.length} trend="+14% vs yesterday" up icon="🛍" color={T.ind} />
-        <Stat label="Revenue Today" value={`₹${totalTodayRupees.toLocaleString()}`} trend="+8.2% vs yesterday" up icon="₹" color={T.em} />
-        <Stat label="Avg Order Value" value={`₹${orders.length > 0 ? Math.round(totalTodayRupees / orders.length) : 0}`} trend="-2.5% vs last week" icon="📊" color={T.amb} />
+        <Stat label={stats.ordersLabel} value={stats.ordersValue} trend={stats.ordersTrend} up={stats.ordersUp} icon="🛍" color={T.ind} />
+        <Stat label={stats.revenueLabel} value={stats.revenueValue} trend={stats.revenueTrend} up={stats.revenueUp} icon="₹" color={T.em} />
+        <Stat label={stats.avgLabel} value={stats.avgValue} trend={stats.avgTrend} up={stats.avgUp} icon="📊" color={T.amb} />
         <Stat label="Live Occupancy" value={`${tables.length > 0 ? Math.round((tables.filter(t => t.status === 'occupied').length / tables.length) * 100) : 0}%`} trend={`${tables.filter(t => t.status === 'occupied').length}/${tables.length} tables active`} up icon="👥" color={T.ind} />
       </div>
 
