@@ -18,6 +18,22 @@ final GoRouter staffPosRouter = GoRouter(
       Supabase.instance.client.auth.signOut();
       return '/unauthorized';
     }
+
+    final path = state.matchedLocation;
+    if (role == 'kitchen') {
+      if (path == '/' || path == '/floor' || path == '/unauthorized' || path.startsWith('/order/') || path.startsWith('/settlement/')) {
+        return '/active-orders';
+      }
+    } else if (role == 'waiter') {
+      if (path == '/' || path == '/active-orders' || path == '/unauthorized') {
+        return '/floor';
+      }
+    } else {
+      if (path == '/' || path == '/unauthorized') {
+        return '/floor';
+      }
+    }
+
     return null;
   },
   routes: [
@@ -25,25 +41,30 @@ final GoRouter staffPosRouter = GoRouter(
       path: '/',
       builder: (context, state) => const LoginScreen(),
     ),
-    GoRoute(
-      path: '/floor',
-      builder: (context, state) => const FloorPlanScreen(),
-    ),
-    GoRoute(
-      path: '/order/:tableId',
-      builder: (context, state) => OrderBuilderScreen(
-        tableId: state.pathParameters['tableId'] ?? '',
-      ),
-    ),
-    GoRoute(
-      path: '/active-orders',
-      builder: (context, state) => const ActiveOrdersQueue(),
-    ),
-    GoRoute(
-      path: '/settlement/:tableId',
-      builder: (context, state) => BillSettlementScreen(
-        tableId: state.pathParameters['tableId'] ?? '',
-      ),
+    ShellRoute(
+      builder: (context, state, child) => UserActivityWrapper(child: child),
+      routes: [
+        GoRoute(
+          path: '/floor',
+          builder: (context, state) => const FloorPlanScreen(),
+        ),
+        GoRoute(
+          path: '/order/:tableId',
+          builder: (context, state) => OrderBuilderScreen(
+            tableId: state.pathParameters['tableId'] ?? '',
+          ),
+        ),
+        GoRoute(
+          path: '/active-orders',
+          builder: (context, state) => const ActiveOrdersQueue(),
+        ),
+        GoRoute(
+          path: '/settlement/:tableId',
+          builder: (context, state) => BillSettlementScreen(
+            tableId: state.pathParameters['tableId'] ?? '',
+          ),
+        ),
+      ],
     ),
     GoRoute(
       path: '/unauthorized',

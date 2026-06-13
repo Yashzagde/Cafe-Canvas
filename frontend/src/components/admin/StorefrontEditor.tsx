@@ -940,7 +940,7 @@ export default function StorefrontEditor({
         </div>
 
         {/* Tab Selection */}
-        <div className="flex items-center gap-2 border-b border-[#e2e8f0]/30 pb-2">
+        <div className="flex items-center gap-2 border-b border-[#e2e8f0]/30 pb-2 flex-wrap">
           <button
             onClick={() => setActiveTab('branding')}
             className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 ${

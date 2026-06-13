@@ -130,7 +130,7 @@ export default function KOSDashboard() {
             kds_status
           )
         `)
-        .in('status', ['pending', 'confirmed', 'preparing'])
+        .in('status', ['pending', 'confirmed', 'preparing', 'ready'])
         .eq('tenant_id', activeTenantId)
         .order('created_at', { ascending: true });
 
@@ -197,20 +197,16 @@ export default function KOSDashboard() {
     };
   }, [tenantId, dbPending]);
 
-  const updateOrderStatus = async (orderId: string, nextStatus: 'preparing' | 'ready') => {
+  const updateOrderStatus = async (orderId: string, nextStatus: 'preparing' | 'ready' | 'served') => {
     try {
       if (dbPending) {
         // Simulated local update
         setOrders(prev => prev.map(o => {
           if (o.id === orderId) {
-            if (nextStatus === 'ready') {
-              // Remove ready orders from pending/preparing board
-              return { ...o, status: 'ready' as const };
-            }
             return { ...o, status: nextStatus as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'served' | 'billed' | 'paid' | 'cancelled' };
           }
           return o;
-        }).filter(o => o.status !== 'ready'));
+        }).filter(o => o.status !== 'served'));
         return;
       }
 
@@ -234,6 +230,7 @@ export default function KOSDashboard() {
 
   const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'confirmed');
   const preparingOrders = orders.filter(o => o.status === 'preparing');
+  const readyOrders = orders.filter(o => o.status === 'ready');
 
   if (loading) {
     return (
@@ -464,6 +461,90 @@ export default function KOSDashboard() {
                   >
                     <CheckCircle2 size={14} strokeWidth={3} />
                     Mark Ready
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* READY TO SERVE COLUMN */}
+        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+          <div className="flex items-center justify-between bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
+            <h2 className="text-sm font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Ready to Serve
+            </h2>
+            <span className="bg-emerald-500/20 text-emerald-400 px-3 py-0.5 rounded-full text-xs font-black">
+              {readyOrders.length}
+            </span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
+            {readyOrders.length === 0 ? (
+              <div className="h-48 border border-dashed border-zinc-800 rounded-2xl flex flex-col items-center justify-center text-zinc-600 gap-2">
+                <Coffee size={28} className="opacity-40" />
+                <span className="text-xs font-bold uppercase tracking-wider">No ready orders</span>
+              </div>
+            ) : (
+              readyOrders.map(order => (
+                <div 
+                  key={order.id} 
+                  className="bg-[#16161a] border border-zinc-800 border-l-4 border-l-emerald-500 p-5 rounded-2xl shadow-xl hover:border-zinc-700 transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="text-2xl font-black text-white">
+                          #{order.id.substring(0, 4).toUpperCase()}
+                        </div>
+                        <div className="text-zinc-400 text-xs font-bold mt-0.5 flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 font-black">
+                            {order.tables?.name || 'Table Guest'}
+                          </span>
+                          {order.customer_name && (
+                            <span className="opacity-80">· {order.customer_name}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-emerald-400 text-xs font-black bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                        <Clock size={12} strokeWidth={3} />
+                        <span>{getMinutesAgo(order.created_at)}</span>
+                      </div>
+                    </div>
+
+                    {order.notes && (
+                      <div className="mb-4 p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-extrabold flex gap-1.5 items-start">
+                        <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                        <span>Notes: {order.notes}</span>
+                      </div>
+                    )}
+
+                    <ul className="space-y-2.5 mb-5 border-t border-zinc-800/80 pt-3">
+                      {order.order_items.map(item => (
+                        <li key={item.id} className="flex justify-between text-base text-zinc-200 font-semibold">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded text-xs">
+                              {item.quantity}x
+                            </span>
+                            <span>{item.item_name}</span>
+                          </div>
+                          {item.notes && (
+                            <span className="text-xs text-amber-400 font-bold self-center bg-amber-500/15 px-2 py-0.5 rounded-full">
+                              {item.notes}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <button 
+                    onClick={() => updateOrderStatus(order.id, 'served')}
+                    className="w-full bg-emerald-500 text-stone-950 font-extrabold py-3 rounded-xl shadow-lg hover:bg-emerald-400 active:scale-95 transition-all text-xs tracking-wider uppercase flex items-center justify-center gap-2 border border-emerald-400/20"
+                  >
+                    <CheckCircle2 size={14} strokeWidth={3} />
+                    Mark Served
                   </button>
                 </div>
               ))

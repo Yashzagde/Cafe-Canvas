@@ -108,7 +108,13 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final match = await AuthService.instance.verifyOfflinePin(pin);
       if (match) {
-        context.go('/floor');
+        ActivityTracker.recordActivity();
+        final role = AuthService.userRole?.toLowerCase();
+        if (role == 'kitchen') {
+          context.go('/active-orders');
+        } else {
+          context.go('/floor');
+        }
       } else {
         setState(() {
           _errorMsg = 'Incorrect POS PIN. Access Denied.';
@@ -174,7 +180,13 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (mounted) {
-        context.go('/floor');
+        ActivityTracker.recordActivity();
+        final role = AuthService.userRole?.toLowerCase();
+        if (role == 'kitchen') {
+          context.go('/active-orders');
+        } else {
+          context.go('/floor');
+        }
       }
     } catch (e) {
       setState(() {
@@ -713,18 +725,20 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.table_bar), label: 'Tables'),
-          BottomNavigationBarItem(icon: Icon(Icons.kitchen), label: 'KDS served'),
-        ],
-        onTap: (index) {
-          if (index == 1) {
-            context.go('/active-orders');
-          }
-        },
-      ),
+      bottomNavigationBar: (AuthService.userRole?.toLowerCase() == 'waiter' || AuthService.userRole?.toLowerCase() == 'kitchen')
+          ? null
+          : BottomNavigationBar(
+              currentIndex: 0,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.table_bar), label: 'Tables'),
+                BottomNavigationBarItem(icon: Icon(Icons.kitchen), label: 'KDS served'),
+              ],
+              onTap: (index) {
+                if (index == 1) {
+                  context.go('/active-orders');
+                }
+              },
+            ),
       body: GridView.builder(
         padding: const EdgeInsets.all(CafeCanvaSpacing.lg),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -1398,18 +1412,20 @@ class _ActiveOrdersQueueState extends State<ActiveOrdersQueue> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('ACTIVE ORDERS QUEUE')),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.table_bar), label: 'Tables'),
-          BottomNavigationBarItem(icon: Icon(Icons.kitchen), label: 'KDS served'),
-        ],
-        onTap: (index) {
-          if (index == 0) {
-            context.go('/floor');
-          }
-        },
-      ),
+      bottomNavigationBar: (AuthService.userRole?.toLowerCase() == 'waiter' || AuthService.userRole?.toLowerCase() == 'kitchen')
+          ? null
+          : BottomNavigationBar(
+              currentIndex: 1,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.table_bar), label: 'Tables'),
+                BottomNavigationBarItem(icon: Icon(Icons.kitchen), label: 'KDS served'),
+              ],
+              onTap: (index) {
+                if (index == 0) {
+                  context.go('/floor');
+                }
+              },
+            ),
       body: activeOrders.isEmpty
           ? const CcEmptyState(icon: Icons.check_circle_outline, title: 'No active orders in preparation', description: 'All kitchen tickets are served.')
           : crossAxisCount == 1
@@ -1926,6 +1942,100 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
                 ],
               ),
       ),
+    );
+  }
+}
+
+// --- SECURE USER INACTIVITY TIMEOUT TRACKER ---
+class ActivityTracker {
+  static const String _boxName = 'session';
+  static const String _keyName = 'last_activity_millis';
+  static DateTime? _inMemoryLastActivity;
+
+  static void recordActivity() {
+    try {
+      final box = Hive.box(_boxName);
+      box.put(_keyName, DateTime.now().millisecondsSinceEpoch);
+    } catch (_) {
+      _inMemoryLastActivity = DateTime.now();
+    }
+  }
+
+  static DateTime get lastActivity {
+    try {
+      final box = Hive.box(_boxName);
+      final millis = box.get(_keyName) as int?;
+      if (millis != null) {
+        return DateTime.fromMillisecondsSinceEpoch(millis);
+      }
+    } catch (_) {}
+    return _inMemoryLastActivity ?? DateTime.now();
+  }
+
+  static bool hasExpired() {
+    final diff = DateTime.now().difference(lastActivity);
+    debugPrint('Inactivity check: last activity was ${diff.inSeconds} seconds ago (timeout limit: 6 hours).');
+    return diff.inHours >= 6;
+  }
+}
+
+// --- WIDGET LISTENER FOR USER INTERACTIONS AND AUTO-LOCK ---
+class UserActivityWrapper extends StatefulWidget {
+  final Widget child;
+  const UserActivityWrapper({Key? key, required this.child}) : super(key: key);
+
+  @override
+  State<UserActivityWrapper> createState() => _UserActivityWrapperState();
+}
+
+class _UserActivityWrapperState extends State<UserActivityWrapper> with WidgetsBindingObserver {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    ActivityTracker.recordActivity();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkInactivity();
+    }
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      _checkInactivity();
+    });
+  }
+
+  void _checkInactivity() {
+    if (ActivityTracker.hasExpired()) {
+      debugPrint('User session expired due to 6-hour inactivity limit. Locking POS screen.');
+      if (mounted) {
+        context.go('/');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => ActivityTracker.recordActivity(),
+      onPointerMove: (_) => ActivityTracker.recordActivity(),
+      child: widget.child,
     );
   }
 }
