@@ -40,24 +40,27 @@ class PdfPrintService implements PrintService {
                 // Items Table
                 pw.Table(
                   columnWidths: {
-                    0: const pw.FlexColumnWidth(6),
-                    1: const pw.FlexColumnWidth(2),
-                    2: const pw.FlexColumnWidth(4),
+                    0: const pw.FlexColumnWidth(5),
+                    1: const pw.FlexColumnWidth(1.5),
+                    2: const pw.FlexColumnWidth(2.5),
+                    3: const pw.FlexColumnWidth(3),
                   },
                   children: [
                     pw.TableRow(
                       children: [
                         pw.Text('ITEM', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.0)),
                         pw.Center(child: pw.Text('QTY', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.0))),
-                        pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text('PRICE', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.0))),
+                        pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text('RATE', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.0))),
+                        pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text('AMOUNT', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.0))),
                       ],
                     ),
                     ...items.map(
                       (item) => pw.TableRow(
                         children: [
                           pw.Text(item.itemName, style: const pw.TextStyle(fontSize: 7.0)),
-                          pw.Center(child: pw.Text('x${item.quantity}', style: const pw.TextStyle(fontSize: 7.0))),
-                          pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text('INR ${(item.unitPrice * item.quantity / 100).toStringAsFixed(0)}', style: const pw.TextStyle(fontSize: 7.0))),
+                          pw.Center(child: pw.Text('${item.quantity}', style: const pw.TextStyle(fontSize: 7.0))),
+                          pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text((item.unitPrice / 100).toStringAsFixed(2), style: const pw.TextStyle(fontSize: 7.0))),
+                          pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text((item.unitPrice * item.quantity / 100).toStringAsFixed(2), style: const pw.TextStyle(fontSize: 7.0))),
                         ],
                       ),
                     ),

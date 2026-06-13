@@ -13,7 +13,7 @@ async function main() {
   const supabase = createClient(url, anonKey);
   try {
     const email = `testuser-${Date.now()}@example.com`;
-    const password = "password123";
+    const password = "CompliantPassword123!";
 
     console.log(`Signing up new user: ${email}...`);
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({

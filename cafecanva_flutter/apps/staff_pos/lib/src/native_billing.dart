@@ -102,12 +102,18 @@ class BluetoothPrintService implements PrintService {
     for (final item in items) {
       list.add(LineText(
         type: LineText.TYPE_TEXT,
-        content: '${item.itemName} x${item.quantity}',
+        content: item.itemName,
+        align: LineText.ALIGN_LEFT,
+        linefeed: 1,
+      ));
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        content: '  ${item.quantity} x INR ${(item.unitPrice / 100).toStringAsFixed(2)}',
         align: LineText.ALIGN_LEFT,
       ));
       list.add(LineText(
         type: LineText.TYPE_TEXT,
-        content: 'INR ${(item.unitPrice * item.quantity / 100).toStringAsFixed(0)}',
+        content: 'INR ${(item.unitPrice * item.quantity / 100).toStringAsFixed(2)}',
         align: LineText.ALIGN_RIGHT,
         linefeed: 1,
       ));

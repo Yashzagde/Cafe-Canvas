@@ -204,16 +204,14 @@ export function buildReceiptESCPOS(data: {
 
   // Items Header
   p.bold(true);
-  p.row3('Item', 'Qty', 'Amount', w);
+  p.row('Item / Qty x Rate', 'Amount', w);
   p.bold(false);
   p.separator('-', w);
 
   // Items
   for (const item of data.items) {
-    const name = item.name.length > Math.floor(w * 0.45)
-      ? item.name.substring(0, Math.floor(w * 0.45) - 1) + '…'
-      : item.name;
-    p.row3(name, `x${item.qty}`, `₹${item.total}`, w);
+    p.text(item.name);
+    p.row(`  ${item.qty} x ₹${item.price.toFixed(2)}`, `₹${item.total.toFixed(2)}`, w);
   }
 
   p.separator('-', w);

@@ -121,7 +121,7 @@ class BillingRepository {
     final data = await SupabaseService.from('bills')
         .select()
         .eq('table_id', tableId)
-        .eq('status', 'open')
+        .eq('status', 'unpaid')
         .maybeSingle();
     if (data == null) return null;
     return Bill.fromJson(data);

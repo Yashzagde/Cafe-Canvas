@@ -14,10 +14,12 @@ import {
   deleteBlogAction
 } from '@/app/admin/actions/blog.actions';
 import { useStorefrontEditorStore } from '@/store/storefront-editor';
-import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link, Upload, Loader2, Trash2, Crop, ImageIcon, MapPin, Clock, Mail, PhoneCall, FileText, Sliders, Eye, BookOpen } from 'lucide-react';
+import { Layout, Palette, Phone, ShieldAlert, Monitor, Smartphone, Check, Sparkles, Link, Upload, Loader2, Trash2, Crop, ImageIcon, MapPin, Clock, Mail, PhoneCall, FileText, Sliders, Eye, BookOpen, QrCode, Download, Printer, Coffee } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { getThemeDesign } from '@/lib/theme-designs';
 import { loadTenantTheme } from '@/lib/theme-engine';
+import html2canvas from 'html2canvas';
+
 
 interface StoreTheme {
   id: string
@@ -461,6 +463,253 @@ const PRESETS: StoreTheme[] = [
   }
 ];
 
+function getQRCardStyles(themeId: string = 'theme-02') {
+  const themeNum = parseInt(themeId.replace('theme-', '')) || 2;
+
+  // Defaults (Warm Cafe/Amber - theme-02 style)
+  let containerStyle: React.CSSProperties = {
+    background: 'linear-gradient(135deg, #FAF8F5 0%, #F4F1EA 100%)',
+    borderColor: 'rgba(217, 119, 6, 0.3)',
+    borderStyle: 'double',
+    borderWidth: '8px',
+    borderRadius: '32px',
+    color: '#1e293b',
+  };
+  let innerBorderStyle: React.CSSProperties = {
+    borderColor: 'rgba(217, 119, 6, 0.15)',
+    borderRadius: '22px',
+  };
+  let badgeStyle: React.CSSProperties = {
+    backgroundColor: 'rgba(217, 119, 6, 0.05)',
+    borderColor: 'rgba(217, 119, 6, 0.2)',
+    color: '#b45309',
+  };
+  let accentColor = '#d97706';
+  let textColor = '#1e293b';
+  let subtitleColor = 'rgba(30, 41, 59, 0.55)';
+  let qrContainerStyle: React.CSSProperties = {
+    backgroundColor: '#ffffff',
+    borderColor: 'rgba(226, 232, 240, 0.4)',
+    borderWidth: '1px',
+    borderRadius: '24px',
+    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+  };
+  let fontHeading = "'Outfit', 'Inter', sans-serif";
+  let brandingColor = '#1e293b';
+
+  // Group 1: Premium & Luxury (theme-01, theme-03, theme-06, theme-44)
+  if ([1, 3, 6, 44].includes(themeNum)) {
+    containerStyle = {
+      background: 'linear-gradient(135deg, #111111 0%, #1c1917 100%)',
+      borderColor: 'rgba(212, 175, 55, 0.4)',
+      borderStyle: 'double',
+      borderWidth: '8px',
+      borderRadius: '36px',
+      color: '#F3F4F6',
+    };
+    innerBorderStyle = {
+      borderColor: 'rgba(212, 175, 55, 0.2)',
+      borderRadius: '26px',
+    };
+    badgeStyle = {
+      backgroundColor: 'rgba(212, 175, 55, 0.15)',
+      borderColor: 'rgba(212, 175, 55, 0.3)',
+      color: '#D4AF37',
+    };
+    accentColor = '#D4AF37';
+    textColor = '#F3F4F6';
+    subtitleColor = 'rgba(243, 244, 246, 0.7)';
+    qrContainerStyle = {
+      backgroundColor: '#ffffff',
+      borderColor: 'rgba(212, 175, 55, 0.25)',
+      borderWidth: '2px',
+      borderRadius: '28px',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+    };
+    fontHeading = "'Outfit', 'Playfair Display', serif";
+    brandingColor = '#ffffff';
+  }
+  // Group 2: Cafe & Roastery / Rustic (theme-04, theme-05, theme-34, theme-36, theme-45)
+  else if ([4, 5, 34, 36, 45].includes(themeNum)) {
+    containerStyle = {
+      background: 'linear-gradient(135deg, #F4EBE1 0%, #E6D8C8 100%)',
+      borderColor: 'rgba(139, 94, 60, 0.4)',
+      borderStyle: 'solid',
+      borderWidth: '6px',
+      borderRadius: '24px',
+      color: '#3D1C02',
+    };
+    innerBorderStyle = {
+      borderColor: 'rgba(139, 94, 60, 0.2)',
+      borderRadius: '16px',
+    };
+    badgeStyle = {
+      backgroundColor: 'rgba(139, 94, 60, 0.1)',
+      borderColor: 'rgba(139, 94, 60, 0.3)',
+      color: '#8B5E3C',
+    };
+    accentColor = '#8B5E3C';
+    textColor = '#3D1C02';
+    subtitleColor = 'rgba(61, 28, 2, 0.75)';
+    qrContainerStyle = {
+      backgroundColor: '#FAF6F0',
+      borderColor: 'rgba(139, 94, 60, 0.25)',
+      borderWidth: '1px',
+      borderRadius: '20px',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    };
+    fontHeading = "'Outfit', 'Inter', sans-serif";
+    brandingColor = '#3D1C02';
+  }
+  // Group 3: Matcha Zen & Botanical (theme-07, theme-33)
+  else if ([7, 33].includes(themeNum)) {
+    containerStyle = {
+      background: 'linear-gradient(135deg, #FAF6F0 0%, #F0EAE1 100%)',
+      borderColor: 'rgba(74, 124, 36, 0.35)',
+      borderStyle: 'solid',
+      borderWidth: '6px',
+      borderRadius: '28px',
+      color: '#1E293B',
+    };
+    innerBorderStyle = {
+      borderColor: 'rgba(74, 124, 36, 0.18)',
+      borderRadius: '18px',
+    };
+    badgeStyle = {
+      backgroundColor: 'rgba(74, 124, 36, 0.1)',
+      borderColor: 'rgba(74, 124, 36, 0.3)',
+      color: '#4A7C24',
+    };
+    accentColor = '#4A7C24';
+    textColor = '#1E293B';
+    subtitleColor = 'rgba(30, 41, 59, 0.7)';
+    qrContainerStyle = {
+      backgroundColor: '#ffffff',
+      borderColor: 'rgba(74, 124, 36, 0.2)',
+      borderWidth: '1px',
+      borderRadius: '22px',
+      boxShadow: '0 4px 6px -1px rgba(74, 124, 36, 0.08)',
+    };
+    fontHeading = "'Outfit', 'Inter', sans-serif";
+    brandingColor = '#1e293b';
+  }
+  // Group 4: Rajasthani Royal & Indian Heritage (theme-08, theme-09, theme-10, theme-11, theme-12, theme-13, theme-26, theme-27, theme-29, theme-30, theme-37)
+  else if ([8, 9, 10, 11, 12, 13, 26, 27, 29, 30, 37].includes(themeNum)) {
+    containerStyle = {
+      background: 'linear-gradient(135deg, #FFFDF6 0%, #FCF8EA 100%)',
+      borderColor: '#D4AF37',
+      borderStyle: 'double',
+      borderWidth: '10px',
+      borderRadius: '30px',
+      color: '#1e293b',
+    };
+    innerBorderStyle = {
+      borderColor: 'rgba(139, 0, 0, 0.25)',
+      borderRadius: '18px',
+    };
+    badgeStyle = {
+      backgroundColor: 'rgba(139, 0, 0, 0.08)',
+      borderColor: '#8B0000',
+      color: '#8B0000',
+    };
+    accentColor = '#8B0000';
+    textColor = '#1e293b';
+    subtitleColor = 'rgba(30, 41, 59, 0.7)';
+    qrContainerStyle = {
+      backgroundColor: '#ffffff',
+      borderColor: '#D4AF37',
+      borderWidth: '2px',
+      borderRadius: '24px',
+      boxShadow: '0 6px 12px -2px rgba(139, 0, 0, 0.15)',
+    };
+    fontHeading = "'Outfit', 'Playfair Display', serif";
+    brandingColor = '#1e293b';
+  }
+  // Group 5: High Contrast Accessibility (theme-46)
+  else if (themeNum === 46) {
+    containerStyle = {
+      background: '#ffffff',
+      borderColor: '#000000',
+      borderStyle: 'solid',
+      borderWidth: '8px',
+      borderRadius: '0px',
+      color: '#000000',
+    };
+    innerBorderStyle = {
+      borderColor: '#000000',
+      borderWidth: '2px',
+      borderRadius: '0px',
+    };
+    badgeStyle = {
+      backgroundColor: '#000000',
+      borderColor: '#000000',
+      color: '#ffffff',
+    };
+    accentColor = '#000000';
+    textColor = '#000000';
+    subtitleColor = '#000000';
+    qrContainerStyle = {
+      backgroundColor: '#ffffff',
+      borderColor: '#000000',
+      borderWidth: '4px',
+      borderRadius: '0px',
+      boxShadow: 'none',
+    };
+    fontHeading = 'sans-serif';
+    brandingColor = '#000000';
+  }
+  // Group 6: Vibrant Retro & Holi/Monsoon (theme-18, theme-19, theme-20, theme-21, theme-28, theme-31, theme-32, theme-35, theme-38, theme-41, theme-42, theme-43)
+  else if ([18, 19, 20, 21, 28, 31, 32, 35, 38, 41, 42, 43].includes(themeNum)) {
+    let vibrantColor = '#FF0000'; // Default Retro
+    if ([18, 41].includes(themeNum)) vibrantColor = '#1E90FF'; // Mediterranean / Monsoon Blue
+    else if ([20, 27].includes(themeNum)) vibrantColor = '#006400'; // Tropical Green
+    else if ([31, 32, 35, 38, 43].includes(themeNum)) vibrantColor = '#EC4899'; // Pink Retro / Kawaii / Valentine
+    else if ([19, 42].includes(themeNum)) vibrantColor = '#F59E0B'; // Fiesta / Summer Orange-Amber
+
+    containerStyle = {
+      background: 'linear-gradient(135deg, #FFFFFF 0%, #F7FAFC 100%)',
+      borderColor: vibrantColor,
+      borderStyle: 'solid',
+      borderWidth: '6px',
+      borderRadius: '36px',
+      color: '#1A202C',
+    };
+    innerBorderStyle = {
+      borderColor: `${vibrantColor}25`,
+      borderRadius: '26px',
+    };
+    badgeStyle = {
+      backgroundColor: `${vibrantColor}15`,
+      borderColor: `${vibrantColor}35`,
+      color: vibrantColor,
+    };
+    accentColor = vibrantColor;
+    textColor = '#1A202C';
+    subtitleColor = 'rgba(26, 32, 44, 0.65)';
+    qrContainerStyle = {
+      backgroundColor: '#ffffff',
+      borderColor: `${vibrantColor}30`,
+      borderWidth: '1.5px',
+      borderRadius: '26px',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
+    };
+    fontHeading = "'Outfit', 'Inter', sans-serif";
+    brandingColor = '#1A202C';
+  }
+
+  return {
+    containerStyle,
+    innerBorderStyle,
+    badgeStyle,
+    accentColor,
+    textColor,
+    subtitleColor,
+    qrContainerStyle,
+    fontHeading,
+    brandingColor
+  };
+}
+
 export default function StorefrontEditor({ 
   tenantPublicId, 
   tenantPrivateId,
@@ -496,6 +745,138 @@ export default function StorefrontEditor({
       })
       .catch(err => console.error('Error fetching local IP:', err));
   }, []);
+
+  const [storefrontQrBase64, setStorefrontQrBase64] = useState<string | null>(null);
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [downloadingQr, setDownloadingQr] = useState(false);
+
+  // Helper: fetch image and convert to base64 to avoid CORS in html2canvas
+  const fetchImageAsBase64 = useCallback(async (url: string): Promise<string | null> => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.error('Failed to fetch image as base64:', err);
+      return null;
+    }
+  }, []);
+
+  // Fetch logo base64 when tenantLogoUrl changes
+  useEffect(() => {
+    if (tenantLogoUrl) {
+      fetchImageAsBase64(tenantLogoUrl).then(setLogoBase64);
+    } else {
+      setLogoBase64(null);
+    }
+  }, [tenantLogoUrl, fetchImageAsBase64]);
+
+  // Fetch storefront QR code base64 when slug/domain changes
+  useEffect(() => {
+    const fetchQrCode = async () => {
+      const storefrontUrl = `https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`;
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(storefrontUrl)}`;
+      try {
+        const base64 = await fetchImageAsBase64(qrApiUrl);
+        setStorefrontQrBase64(base64);
+      } catch (err) {
+        console.error('Failed to fetch QR base64:', err);
+      }
+    };
+    fetchQrCode();
+  }, [tenantSlug, tenantPublicId, fetchImageAsBase64]);
+
+  // Download storefront QR code card as PNG
+  const downloadStorefrontQR = async () => {
+    setDownloadingQr(true);
+    try {
+      const element = document.getElementById('storefront-qr-card');
+      if (!element) return;
+      
+      const canvas = await html2canvas(element, {
+        scale: 3, // High-DPI export
+        useCORS: true,
+        backgroundColor: null,
+        logging: false
+      });
+      
+      const image = canvas.toDataURL('image/png', 1.0);
+      const link = document.createElement('a');
+      link.download = `${storeName.replace(/\s+/g, '_')}_Storefront_QR_Card.png`;
+      link.href = image;
+      link.click();
+    } catch (err) {
+      console.error('Download failed:', err);
+      alert('Failed to download QR card.');
+    } finally {
+      setDownloadingQr(false);
+    }
+  };
+
+  // Print storefront QR code card
+  const printStorefrontQR = () => {
+    const cardElement = document.getElementById('storefront-qr-card');
+    if (!cardElement) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    let styles = '';
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => {
+      styles += el.outerHTML;
+    });
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Storefront QR Card</title>
+          ${styles}
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              background-color: white;
+            }
+            @page {
+              size: 100mm 150mm;
+              margin: 0mm;
+            }
+            @media print {
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div style="transform: scale(1.0); transform-origin: center;">
+            ${cardElement.innerHTML}
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+                window.close();
+              }, 600);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
 
   const supabase = createClient();
   const [uploadingField, setUploadingField] = useState<string | null>(null);
@@ -1966,40 +2347,237 @@ export default function StorefrontEditor({
           {activeTab === 'connection' && (
             <div className="space-y-6 animate-fade-in">
               <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[#d97706] text-xs leading-relaxed space-y-1">
-                <p className="font-bold flex items-center gap-1.5">📲 Your Digital Storefront Links</p>
-                <p className="opacity-90">These links are used by your customers to access your storefront menu, place table orders, view visit history, and contact your staff.</p>
+                <p className="font-bold flex items-center gap-1.5">📲 Storefront Access & Brand QR Code</p>
+                <p className="opacity-90">Manage links to your customer-facing digital storefront, and download or print a beautifully themed branded QR card matching your active preset.</p>
               </div>
 
-              {/* Live Production URL */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
-                  Live Production URL
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`}
-                    className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`);
-                      alert('Live URL copied!');
-                    }}
-                    className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer transition-all"
-                  >
-                    Copy
-                  </button>
-                  <a
-                    href={`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all"
-                  >
-                    Open ↗
-                  </a>
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+                {/* Left Column: URLs */}
+                <div className="md:col-span-7 space-y-5">
+                  {/* 1. Live Production Subdomain */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                      Live Production Subdomain
+                    </label>
+                    <p className="text-[10px] text-slate-400">Primary custom subdomain for customer access.</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`}
+                        className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`);
+                          alert('Live URL copied!');
+                        }}
+                        className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer transition-all shrink-0"
+                      >
+                        Copy
+                      </button>
+                      <a
+                        href={`https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all shrink-0"
+                      >
+                        Open ↗
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* 2. Direct Subdirectory Link */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#1e293b]/70 tracking-wider uppercase block">
+                      Direct Subdirectory Link (Fallback)
+                    </label>
+                    <p className="text-[10px] text-slate-400">Robust path-based routing fallback for your store.</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`}
+                        className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`);
+                          alert('Subdirectory URL copied!');
+                        }}
+                        className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer transition-all shrink-0"
+                      >
+                        Copy
+                      </button>
+                      <a
+                        href={`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all shrink-0"
+                      >
+                        Open ↗
+                      </a>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Right Column: QR Card Preview & Downloads */}
+                <div className="md:col-span-5 flex flex-col items-center justify-center space-y-4">
+                  <span className="text-xs font-extrabold text-[#1e293b]/70 tracking-wider uppercase self-start md:self-center">
+                    Branded QR Card Preview
+                  </span>
+                  
+                  {/* Card wrapper for scaling down in preview */}
+                  <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[2rem] p-4 flex items-center justify-center w-full shadow-sm max-w-[360px] overflow-hidden">
+                    <div className="scale-75 md:scale-80 lg:scale-[0.70] xl:scale-[0.70] 2xl:scale-85 origin-center my-[-40px]">
+                      {/* Branded QR Card Content */}
+                      {(() => {
+                        const qrStyles = getQRCardStyles(config.theme_id || 'theme-02');
+                        return (
+                          <div
+                            id="storefront-qr-card"
+                            className="w-[340px] h-[520px] shadow-2xl flex flex-col justify-between items-center text-center relative overflow-hidden select-none shrink-0"
+                            style={{
+                              fontFamily: qrStyles.fontHeading,
+                              ...qrStyles.containerStyle
+                            }}
+                          >
+                            <div 
+                              className="absolute inset-2.5 border pointer-events-none"
+                              style={qrStyles.innerBorderStyle}
+                            ></div>
+                            
+                            <div className="flex flex-col items-center gap-1 mt-4 relative z-10">
+                              {logoBase64 ? (
+                                <img 
+                                  src={logoBase64} 
+                                  alt={storeName} 
+                                  className="w-14 h-14 rounded-full object-cover shadow-md border" 
+                                  style={{ borderColor: `${qrStyles.accentColor}40` }}
+                                />
+                              ) : tenantLogoUrl ? (
+                                <img 
+                                  src={tenantLogoUrl} 
+                                  alt={storeName} 
+                                  className="w-14 h-14 rounded-full object-cover shadow-md border" 
+                                  style={{ borderColor: `${qrStyles.accentColor}40` }}
+                                />
+                              ) : (
+                                <div 
+                                  className="w-14 h-14 rounded-full flex items-center justify-center border-2 shadow-inner"
+                                  style={{
+                                    backgroundColor: `${qrStyles.accentColor}15`,
+                                    borderColor: `${qrStyles.accentColor}35`,
+                                    color: qrStyles.accentColor
+                                  }}
+                                >
+                                  <Coffee className="w-7 h-7" />
+                                </div>
+                              )}
+                              <h3 
+                                className="font-extrabold text-base tracking-wide mt-2 max-w-[280px] truncate"
+                                style={{ color: qrStyles.brandingColor }}
+                              >
+                                {storeName || 'CafeCanvas'}
+                              </h3>
+                              <div 
+                                className="h-[2px] w-12 my-0.5"
+                                style={{
+                                  background: `linear-gradient(to right, transparent, ${qrStyles.accentColor}60, transparent)`
+                                }}
+                              ></div>
+                              <p 
+                                className="text-[9px] uppercase font-black tracking-[0.2em]"
+                                style={{ color: qrStyles.accentColor }}
+                              >
+                                Digital Storefront
+                              </p>
+                            </div>
+
+                            <div 
+                              className="my-1.5 border px-6 py-2 shadow-sm rounded-2xl relative z-10"
+                              style={qrStyles.badgeStyle}
+                            >
+                              <h4 className="text-base font-black tracking-tight uppercase flex items-center gap-1.5">
+                                <Sparkles size={14} className="animate-pulse" />
+                                <span>Scan & Order</span>
+                              </h4>
+                            </div>
+
+                            <div 
+                              className="p-4 flex items-center justify-center w-[180px] h-[180px] relative z-10"
+                              style={qrStyles.qrContainerStyle}
+                            >
+                              {storefrontQrBase64 ? (
+                                <img
+                                  src={storefrontQrBase64}
+                                  alt="Storefront QR Code"
+                                  className="w-full h-full object-contain"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#1e293b]/40">
+                                  <QrCode size={40} className="animate-pulse" />
+                                  <span className="text-[8px] font-bold">Generating...</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex flex-col items-center gap-1.5 mb-4 max-w-[280px] relative z-10">
+                              <span 
+                                className="text-[10px] uppercase font-black tracking-[0.15em] px-4 py-1.5 rounded-full"
+                                style={{
+                                  backgroundColor: `${qrStyles.accentColor}15`,
+                                  color: qrStyles.accentColor
+                                }}
+                              >
+                                Scan QR Code
+                              </span>
+                              <p 
+                                className="text-[9px] leading-relaxed font-semibold mt-1"
+                                style={{ color: qrStyles.subtitleColor }}
+                              >
+                                Browse our fresh digital menu, customize your order, and complete payment directly from your phone!
+                              </p>
+                            </div>
+
+                            <div 
+                              className="mb-2 text-[8px] font-bold uppercase tracking-[0.25em] flex items-center gap-1.5 justify-center relative z-10"
+                              style={{ color: qrStyles.subtitleColor }}
+                            >
+                              <Coffee className="w-3 h-3" style={{ color: qrStyles.accentColor }} />
+                              <span>Powered by</span>
+                              <span style={{ color: qrStyles.accentColor }}>CafeCanvas</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Actions buttons */}
+                  <div className="flex items-center gap-2.5 w-full max-w-[340px]">
+                    <button
+                      type="button"
+                      disabled={downloadingQr || !storefrontQrBase64}
+                      onClick={downloadStorefrontQR}
+                      className="flex-1 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-sm disabled:opacity-40 disabled:pointer-events-none"
+                    >
+                      {downloadingQr ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                      <span>Download PNG</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!storefrontQrBase64}
+                      onClick={printStorefrontQR}
+                      className="py-2.5 px-4 bg-slate-800 hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-sm disabled:opacity-40 disabled:pointer-events-none"
+                    >
+                      <Printer size={13} />
+                      <span>Print</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
