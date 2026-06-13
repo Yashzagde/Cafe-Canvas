@@ -1473,7 +1473,6 @@ class BillSettlementScreen extends StatefulWidget {
 
 class _BillSettlementScreenState extends State<BillSettlementScreen> {
   final BillingRepository _billingRepo = BillingRepository();
-  final TableRepository _tableRepo = TableRepository();
 
   bool _isLoading = true;
   String? _errorMessage;
