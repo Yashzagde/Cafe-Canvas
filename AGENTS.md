@@ -617,6 +617,8 @@ pending → confirmed → preparing → served → (triggers BillingAgent)
 2. Validate role against the surface (Store Admin vs Staff).
 3. Block and sign out if role is wrong for the surface.
 4. Recreate auth users safely (both `auth.users` AND `auth.identities`).
+5. Provide alternate staff login (Quick Staff Login) by fetching roster via store slug, choosing name, and entering password/PIN.
+6. Post-authentication portal selection: display a unified gateway presenting all authorized working portals based on user role (Store Admin, Staff POS, Kitchen Display, storefront).
 
 #### Workflow: `sign_in(email, password_or_pin, surface)`
 ```
