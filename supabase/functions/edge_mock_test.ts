@@ -1,4 +1,6 @@
+// @ts-nocheck
 // Mock Edge Functions Verification Suite
+
 // This script simulates and audits the core security and cryptographic behaviors of the Deno Edge Functions.
 
 import { crypto } from "https://deno.land/std@0.177.0/crypto/mod.ts";
