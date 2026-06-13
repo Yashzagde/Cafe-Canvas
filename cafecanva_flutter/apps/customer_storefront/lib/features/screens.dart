@@ -7,7 +7,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
-import 'package:cafecanva_billing/cafecanva_billing.dart';
 
 // Persistent Cart Local Boxes
 final _cartBox = Hive.box('cart');
