@@ -1486,6 +1486,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
   String _connectionType = 'none';
   Timer? _hardwareCheckTimer;
   StoreSettings? _storeSettings;
+  List<OrderItemModel> _billItems = [];
 
   @override
   void initState() {
@@ -1550,8 +1551,10 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
       // Try to load existing open bill for this table first
       final existingBill = await BillingRepository.getOpenBillForTable(widget.tableId);
       if (existingBill != null) {
+        final items = await OrderRepository.getOrderItemsBatch(existingBill.orderIds);
         setState(() {
           _bill = existingBill;
+          _billItems = items;
           _storeSettings = settings;
           _isLoading = false;
         });
@@ -1566,9 +1569,12 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
         createdBy: createdBy,
       );
 
+      final items = await OrderRepository.getOrderItemsBatch(bill.orderIds);
+
       if (mounted) {
         setState(() {
           _bill = bill;
+          _billItems = items;
           _storeSettings = settings;
           _isLoading = false;
         });
@@ -1604,10 +1610,12 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
           id: 'demo-sett',
           tenantId: tenantId,
           branchId: branchId,
-          storeName: 'CafeCanva',
+          storeName: _storeSettings?.storeName ?? 'CafeCanva',
+          address: _storeSettings?.address,
+          gstin: _storeSettings?.gstin,
           printerWidth: cachedWidth,
         ),
-        items: [],
+        items: _billItems,
       );
 
       context.go('/floor');

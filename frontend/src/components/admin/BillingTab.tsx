@@ -711,8 +711,6 @@ export default function BillingTab({
         setTables(p => p.map(t => t.id === selectedTable.id ? { ...t, status: "available" } : t));
         setTableOrders(p => ({ ...p, [selectedTable.id]: [] }));
       }
-      setBillItems([]);
-      setSelectedTable(null); // Reset back to Quick Bill
       setPayStep("success");
     } catch (err: any) {
       toast(err.message, "error");
@@ -802,6 +800,15 @@ export default function BillingTab({
     triggerReceipt(rData);
   };
 
+  const handleTabChange = (newView: "floor" | "session" | "history") => {
+    setView(newView);
+    if (payStep === "success") {
+      setPayStep("review");
+      setBillItems([]);
+      setSelectedTable(null);
+    }
+  };
+
   const tableStatusColor = {
     available: T.em, occupied: T.rose, reserved: T.amb, cleaning: T.ind
   };
@@ -822,7 +829,7 @@ export default function BillingTab({
             ⚙️ Billing settings
           </Btn>
           {[{ v: "floor", l: "Floor View" }, { v: "session", l: "Bill Creator" }, { v: "history", l: "Bill History" }].map(tab => (
-            <Btn key={tab.v} onClick={() => setView(tab.v as any)} variant={view === tab.v ? "primary" : "ghost"} size="sm">
+            <Btn key={tab.v} onClick={() => handleTabChange(tab.v as any)} variant={view === tab.v ? "primary" : "ghost"} size="sm">
               {tab.l}
             </Btn>
           ))}
