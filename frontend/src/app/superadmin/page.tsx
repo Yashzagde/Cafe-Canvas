@@ -545,7 +545,7 @@ export default function SuperadminDashboard() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-[#fdfcf7] flex flex-col items-center justify-center p-8 font-sans">
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-8 font-sans">
         <RefreshCw className="animate-spin text-amber-600 mb-4" />
         <span className="text-xs font-bold text-stone-500 uppercase tracking-widest">Verifying biometric authorization...</span>
       </div>
@@ -553,7 +553,7 @@ export default function SuperadminDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#fdfcf7] text-stone-800 font-sans antialiased">
+    <div className="min-h-screen flex bg-[#f8fafc] text-stone-800 font-sans antialiased">
       
       {/* Sidebar Command Center */}
       <aside className="w-72 bg-white border-r border-stone-200 p-6 flex flex-col justify-between shrink-0 shadow-sm">
@@ -815,7 +815,7 @@ export default function SuperadminDashboard() {
                       <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-wider">Connected Branches</h4>
                       <div className="space-y-2">
                         {tenantDetails.branches.map(b => (
-                          <div key={b.id} className="p-3 bg-[#fdfcf7] border border-stone-200 rounded-xl flex items-center justify-between text-xs font-bold text-stone-700">
+                          <div key={b.id} className="p-3 bg-[#f8fafc] border border-stone-200 rounded-xl flex items-center justify-between text-xs font-bold text-stone-700">
                             <span>{b.name}</span>
                             <span className="text-[9px] text-stone-400">ACTIVE</span>
                           </div>
@@ -831,7 +831,7 @@ export default function SuperadminDashboard() {
                       </div>
                       <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                         {tenantDetails.staff.map(s => (
-                          <div key={s.id} className="p-3 bg-[#fdfcf7] border border-stone-200 rounded-xl flex items-center justify-between text-xs">
+                          <div key={s.id} className="p-3 bg-[#f8fafc] border border-stone-200 rounded-xl flex items-center justify-between text-xs">
                             <div className="min-w-0">
                               <div className="font-bold text-stone-850 truncate">{s.fullName}</div>
                               <div className="text-[9px] text-stone-400 truncate mt-0.5">{s.email}</div>
@@ -887,7 +887,7 @@ export default function SuperadminDashboard() {
                         </p>
                         
                         {/* Private ID Block */}
-                        <div className="space-y-1 bg-[#fdfcf7] border border-stone-200 rounded-xl p-3 flex flex-col gap-1.5">
+                        <div className="space-y-1 bg-[#f8fafc] border border-stone-200 rounded-xl p-3 flex flex-col gap-1.5">
                           <div className="flex justify-between items-center">
                             <span className="text-[9px] font-bold text-stone-500 uppercase">Private Tenant UUID</span>
                             <span className="text-[8px] font-bold text-red-700 bg-red-50 border border-red-200/50 px-1.5 py-0.5 rounded">SYSTEM PRIVATE</span>
@@ -914,7 +914,7 @@ export default function SuperadminDashboard() {
                         </div>
 
                         {/* Public ID Block */}
-                        <div className="space-y-1 bg-[#fdfcf7] border border-stone-200 rounded-xl p-3 flex flex-col gap-1.5">
+                        <div className="space-y-1 bg-[#f8fafc] border border-stone-200 rounded-xl p-3 flex flex-col gap-1.5">
                           <div className="flex justify-between items-center">
                             <span className="text-[9px] font-bold text-stone-500 uppercase">Public Tenant UUID</span>
                             <span className="text-[8px] font-bold text-blue-700 bg-blue-50 border border-blue-200/50 px-1.5 py-0.5 rounded">PUBLIC ROUTING</span>
@@ -1435,7 +1435,7 @@ export default function SuperadminDashboard() {
               </p>
             </div>
 
-            <div className="p-4 bg-[#fdfcf7] border border-stone-200 rounded-2xl text-left space-y-2">
+            <div className="p-4 bg-[#f8fafc] border border-stone-200 rounded-2xl text-left space-y-2">
               <div className="text-[9px] uppercase font-black tracking-wider text-stone-400">Storefront URL node</div>
               <Link 
                 href={`https://${generatedTenantUrl}`}

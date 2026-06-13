@@ -135,13 +135,13 @@ export default function AuditLogViewer() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
                               <div className="space-y-2">
                                 <span className="text-[#1e293b]/40 font-bold block uppercase tracking-wider">Before Change</span>
-                                <pre className="p-4 bg-[#fdfcf7] border border-[#e2e8f0] rounded-2xl overflow-auto max-h-60 text-red-300">
+                                <pre className="p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-2xl overflow-auto max-h-60 text-red-300">
                                   {log.old_data ? JSON.stringify(log.old_data, null, 2) : 'No old data available'}
                                 </pre>
                               </div>
                               <div className="space-y-2">
                                 <span className="text-[#1e293b]/40 font-bold block uppercase tracking-wider">After Change</span>
-                                <pre className="p-4 bg-[#fdfcf7] border border-[#e2e8f0] rounded-2xl overflow-auto max-h-60 text-green-300">
+                                <pre className="p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-2xl overflow-auto max-h-60 text-green-300">
                                   {log.new_data ? JSON.stringify(log.new_data, null, 2) : 'No new data available'}
                                 </pre>
                               </div>

@@ -1244,7 +1244,7 @@ export default function StorefrontEditor({
                       </div>
                     </div>
                   ) : (
-                    <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                    <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#f8fafc] hover:bg-slate-100">
                       <input
                         type="file"
                         accept="image/*"
@@ -1330,7 +1330,7 @@ export default function StorefrontEditor({
                       </div>
                     </div>
                   ) : (
-                    <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                    <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#f8fafc] hover:bg-slate-100">
                       <input
                         type="file"
                         accept="image/*"
@@ -1416,7 +1416,7 @@ export default function StorefrontEditor({
                       </div>
                     </div>
                   ) : (
-                    <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                    <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#f8fafc] hover:bg-slate-100">
                       <input
                         type="file"
                         accept="image/*"
@@ -1800,7 +1800,7 @@ export default function StorefrontEditor({
                         </div>
                       </div>
                     ) : (
-                      <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#fdfcf7] hover:bg-[#FAF6F0]">
+                      <div className="relative border-2 border-dashed border-[#e2e8f0] hover:border-[#d97706]/40 rounded-xl p-4 text-center transition-all bg-[#f8fafc] hover:bg-slate-100">
                         <input
                           type="file"
                           accept="image/*"
@@ -1870,7 +1870,7 @@ export default function StorefrontEditor({
                       <span className="inline-block w-6 h-6 border-2 border-[#d97706] border-t-transparent rounded-full animate-spin"></span>
                     </div>
                   ) : blogsList.length === 0 ? (
-                    <div className="p-8 border-2 border-dashed border-[#e2e8f0] rounded-2xl text-center space-y-2 bg-[#fdfcf7]">
+                    <div className="p-8 border-2 border-dashed border-[#e2e8f0] rounded-2xl text-center space-y-2 bg-[#f8fafc]">
                       <BookOpen className="w-8 h-8 text-[#1e293b]/30 mx-auto" />
                       <div className="space-y-0.5">
                         <p className="text-xs font-bold text-[#1e293b]/70">No blog posts found</p>
@@ -2093,7 +2093,7 @@ export default function StorefrontEditor({
       </div>
 
       {/* Visual Live Preview Frame */}
-      <div className="flex flex-col gap-4 bg-[#fdfcf7] border border-[#e2e8f0]/50 rounded-3xl p-6 shadow-2xl relative min-h-[500px] justify-center items-center">
+      <div className="flex flex-col gap-4 bg-[#f8fafc] border border-[#e2e8f0]/50 rounded-3xl p-6 shadow-2xl relative min-h-[500px] justify-center items-center">
         {/* Mockup Top Header */}
         <div className="w-full flex items-center justify-between border-b border-[#e2e8f0]/30 pb-3">
           <div className="flex items-center gap-2">

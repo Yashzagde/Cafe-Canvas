@@ -76,7 +76,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fdfcf7] text-[#1e293b] flex flex-col justify-center items-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[#f8fafc] text-[#1e293b] flex flex-col justify-center items-center p-6 relative overflow-hidden">
       {/* Animated Liquid Background Blobs */}
       <div className="liquid-blob-1 top-[-10%] left-[-10%]" />
       <div className="liquid-blob-2 bottom-[-10%] right-[-10%]" />
@@ -95,11 +95,8 @@ export default function AdminLogin() {
 
         {/* Branding header */}
         <div className="flex flex-col items-center gap-3.5 mb-8">
-          <div className="w-14 h-14 bg-[#fef3c7] border border-[#e2e8f0] rounded-2xl flex items-center justify-center shadow-md shadow-[#d97706]/10 overflow-hidden">
-            <img src="/logo.png" alt="Cafe Canvas Logo" className="w-10 h-10 object-contain" />
-          </div>
           <div className="text-center">
-            <h1 className="text-2xl font-black tracking-tight text-[#1e293b] font-display">
+            <h1 className="text-3xl font-black tracking-tight text-[#1e293b] font-display">
               Cafe<span className="text-[#d97706]">Canvas</span> OS
             </h1>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-extrabold mt-1">

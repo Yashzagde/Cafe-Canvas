@@ -587,7 +587,7 @@ export default function CafeCanvaAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fdfcf7] text-[#1e293b] flex flex-col justify-center items-center gap-5">
+      <div className="min-h-screen bg-[#f8fafc] text-[#1e293b] flex flex-col justify-center items-center gap-5">
         <div className="relative flex items-center justify-center w-12 h-12">
           <div className="w-12 h-12 rounded-full border-4 border-stone-200 border-t-[#d97706] animate-spin absolute" />
           <Coffee className="w-5 h-5 text-[#d97706]" />
@@ -598,7 +598,7 @@ export default function CafeCanvaAdmin() {
   }
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#fdfcf7", fontFamily: ff, color: "#1e293b", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: "#f8fafc", fontFamily: ff, color: "#1e293b", overflow: "hidden" }}>
       {/* Sidebar Navigation */}
       <Sidebar
         page={page}
@@ -627,7 +627,7 @@ export default function CafeCanvaAdmin() {
                     <button
                        key={b.id}
                        onClick={() => setActiveBranch(b)}
-                       className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl hover:bg-[#fdfcf7] hover:text-[#d97706] transition-all"
+                       className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl hover:bg-[#f8fafc] hover:text-[#d97706] transition-all"
                     >
                       {b.name}
                     </button>

@@ -221,7 +221,7 @@ export default function LoginPage() {
   if (authenticatedUser) {
     const portals = getAvailablePortals(authenticatedUser.role, authenticatedUser.tenantSlug);
     return (
-      <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-[#fdfcf7] text-[#1e293b]">
+      <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-[#f8fafc] text-[#1e293b]">
         {/* Dynamic Animated Liquid Background Blobs */}
         <div className="liquid-blob-1 top-[5%] left-[5%]" />
         <div className="liquid-blob-2 bottom-[10%] right-[5%]" />
@@ -303,7 +303,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-[#fdfcf7] text-[#1e293b]">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-[#f8fafc] text-[#1e293b]">
       {/* Dynamic Animated Liquid Background Blobs */}
       <div className="liquid-blob-1 top-[5%] left-[5%]" />
       <div className="liquid-blob-2 bottom-[10%] right-[5%]" />

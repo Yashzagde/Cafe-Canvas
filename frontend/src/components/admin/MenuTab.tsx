@@ -507,7 +507,7 @@ export default function MenuTab({
                     </button>
                   </div>
                 ) : (
-                  <div style={{ position: "relative", border: `1px dashed ${T.bdr}`, borderRadius: "8px", padding: "8px", textAlign: "center", background: "#fdfcf7" }}>
+                  <div style={{ position: "relative", border: `1px dashed ${T.bdr}`, borderRadius: "8px", padding: "8px", textAlign: "center", background: "#f8fafc" }}>
                     <input
                       type="file"
                       accept="image/*"
@@ -562,7 +562,7 @@ export default function MenuTab({
                 </button>
               </div>
             ) : (
-              <div style={{ position: "relative", border: `1px dashed ${T.bdr}`, borderRadius: "8px", padding: "8px", textAlign: "center", background: "#fdfcf7" }}>
+              <div style={{ position: "relative", border: `1px dashed ${T.bdr}`, borderRadius: "8px", padding: "8px", textAlign: "center", background: "#f8fafc" }}>
                 <input
                   type="file"
                   accept="image/*"

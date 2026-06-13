@@ -40,7 +40,6 @@ export default function ElectronTitlebar() {
     >
       {/* Title & Branding */}
       <div className="flex items-center gap-2">
-        <img src="/logo.png" alt="Cafe Canvas" className="w-4 h-4 object-contain opacity-80" />
         <span className="text-[11px] font-black tracking-wider uppercase text-slate-300">
           Cafe<span className="text-[#d97706]">Canvas</span> OS
         </span>
@@ -53,6 +52,7 @@ export default function ElectronTitlebar() {
       >
         <button
           onClick={() => (window as any).electronAPI?.minimizeWindow()}
+          style={{ WebkitAppRegion: 'no-drag' } as any}
           className="w-11 h-8 flex items-center justify-center hover:bg-slate-800 transition-colors cursor-pointer"
           title="Minimize"
         >
@@ -60,6 +60,7 @@ export default function ElectronTitlebar() {
         </button>
         <button
           onClick={() => (window as any).electronAPI?.maximizeWindow()}
+          style={{ WebkitAppRegion: 'no-drag' } as any}
           className="w-11 h-8 flex items-center justify-center hover:bg-slate-800 transition-colors cursor-pointer"
           title="Maximize"
         >
@@ -67,6 +68,7 @@ export default function ElectronTitlebar() {
         </button>
         <button
           onClick={() => (window as any).electronAPI?.toggleFullScreen()}
+          style={{ WebkitAppRegion: 'no-drag' } as any}
           className="w-11 h-8 flex items-center justify-center hover:bg-slate-800 transition-colors cursor-pointer"
           title="Toggle Full Screen"
         >
@@ -74,6 +76,7 @@ export default function ElectronTitlebar() {
         </button>
         <button
           onClick={() => (window as any).electronAPI?.closeWindow()}
+          style={{ WebkitAppRegion: 'no-drag' } as any}
           className="w-11 h-8 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
           title="Close"
         >

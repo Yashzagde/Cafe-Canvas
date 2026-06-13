@@ -7,19 +7,39 @@ import 'features/screens.dart';
 
 final GoRouter staffPosRouter = GoRouter(
   initialLocation: '/',
-  redirect: (context, state) {
+  redirect: (context, state) async {
     final session = Supabase.instance.client.auth.currentSession;
+    final path = state.matchedLocation;
+
     if (session == null) {
+      if (path != '/' && path != '/unauthorized') {
+        return '/';
+      }
       return null; // Let user access login Pad
+    }
+
+    // Try loading the profile if it's not cached in memory
+    if (AuthService.currentUserProfile == null) {
+      try {
+        await AuthService.fetchUserProfile(session.user.id);
+      } catch (e) {
+        debugPrint('Error fetching user profile during redirect: $e');
+        // If profile fetch fails (e.g. network/offline) and no profile is loaded,
+        // stay on the current route if it's the login/PIN pad or unauthorized screen.
+        // Otherwise redirect to login Pad so they can log in offline/online.
+        if (path != '/' && path != '/unauthorized') {
+          return '/';
+        }
+        return null;
+      }
     }
 
     final role = AuthService.userRole?.toLowerCase();
     if (role == null) {
-      Supabase.instance.client.auth.signOut();
+      await Supabase.instance.client.auth.signOut();
       return '/unauthorized';
     }
 
-    final path = state.matchedLocation;
     if (role == 'kitchen') {
       if (path == '/' || path == '/floor' || path == '/unauthorized' || path.startsWith('/order/') || path.startsWith('/settlement/')) {
         return '/active-orders';

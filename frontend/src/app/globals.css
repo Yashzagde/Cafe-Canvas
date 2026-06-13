@@ -6,7 +6,7 @@
 
 :root {
   /* Professional Light Canvas Palette (Zero Black/Near-Black Colors) */
-  --background: #fdfcf7;      /* Clean textured cream background */
+  --background: #f8fafc;      /* Clean light slate background */
   --foreground: #1e293b;      /* Elegant deep slate for readability */
   --brand: #d97706;           /* Corporate amber/gold primary brand accent */
   --brand-light: #fef3c7;     /* Light gold cream background */
@@ -31,7 +31,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Enforce the same professional light theme even in dark mode */
 .dark, [data-theme="dark"] {
-  --background: #fdfcf7;
+  --background: #f8fafc;
   --foreground: #1e293b;
   --brand: #d97706;
   --brand-light: #fef3c7;

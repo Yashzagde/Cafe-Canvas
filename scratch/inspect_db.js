@@ -12,12 +12,13 @@ const sql = postgres(dbUrl, { ssl: 'require' });
 
 async function check() {
   try {
-    const tenants = await sql`
-      SELECT id, name, slug, public_id
-      FROM tenants
+    const columns = await sql`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'staff_accounts'
     `;
-    console.log("TENANTS WITH PUBLIC_ID:");
-    console.log(tenants);
+    console.log("STAFF_ACCOUNTS COLUMNS:");
+    console.log(columns);
   } catch (err) {
     console.error(err);
   } finally {

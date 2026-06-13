@@ -81,15 +81,18 @@ export default function Sidebar({
           width: "32px",
           height: "32px",
           borderRadius: "8px",
-          background: "#faf6f0",
-          border: `1px solid ${T.bdr}`,
+          background: "linear-gradient(135deg, #d97706 0%, #ca8a04 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
-          flexShrink: 0
+          flexShrink: 0,
+          color: "#ffffff",
+          fontSize: "13px",
+          fontWeight: 900,
+          boxShadow: "0 2px 8px rgba(217,119,6,0.15)"
         }}>
-          <img src="/logo.png" alt="Logo" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
+          CC
         </div>
         <div style={{
           opacity: sidebarOpen ? 1 : 0,
@@ -260,15 +263,18 @@ export default function Sidebar({
               width: "32px",
               height: "32px",
               borderRadius: "50%",
-              background: "#faf6f0",
-              border: `1px solid ${T.bdr}`,
+              background: "rgba(217,119,6,0.12)",
+              border: `1px solid rgba(217,119,6,0.25)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               overflow: "hidden",
-              flexShrink: 0
+              flexShrink: 0,
+              color: T.ind,
+              fontSize: "11px",
+              fontWeight: 800
             }}>
-              <img src="/logo.png" alt="Logo" style={{ width: "22px", height: "22px", objectFit: "contain" }} />
+              {tenantName ? tenantName.substring(0, 2).toUpperCase() : "CC"}
             </div>
             <div style={{ flex: 1, overflow: "hidden" }}>
               <div style={{ fontSize: "11px", fontWeight: 700, color: T.tx, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Operations</div>

@@ -43,6 +43,61 @@ function createWindow() {
   });
   mainWindow.webContents.openDevTools();
 
+  // Register keyboard shortcuts locally for borderless window (since menu bar is hidden on Windows)
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown') {
+      const isControlOrMeta = input.control || input.meta;
+      const key = input.key.toLowerCase();
+
+      // Navigation Shortcuts (Ctrl + 1, Ctrl + 2, etc.)
+      if (isControlOrMeta && key === '1') {
+        navigateToRoute('/admin');
+        event.preventDefault();
+      } else if (isControlOrMeta && key === '2') {
+        navigateToRoute('/staff');
+        event.preventDefault();
+      } else if (isControlOrMeta && key === '3') {
+        navigateToRoute('/kos');
+        event.preventDefault();
+      } else if (isControlOrMeta && key === '4') {
+        navigateToRoute('/demo');
+        event.preventDefault();
+      } else if (isControlOrMeta && key === 's') {
+        navigateToRoute('/superadmin');
+        event.preventDefault();
+      }
+
+      // App Control Shortcuts
+      else if (isControlOrMeta && key === 'r') {
+        if (input.shift) {
+          mainWindow?.webContents.reloadIgnoringCache();
+        } else {
+          mainWindow?.webContents.reload();
+        }
+        event.preventDefault();
+      } else if (isControlOrMeta && input.shift && key === 'i') {
+        mainWindow?.webContents.toggleDevTools();
+        event.preventDefault();
+      } else if (isControlOrMeta && key === '0') {
+        mainWindow?.webContents.setZoomLevel(0);
+        event.preventDefault();
+      } else if (isControlOrMeta && (key === '=' || key === '+')) {
+        const currentZoom = mainWindow?.webContents.getZoomLevel() || 0;
+        mainWindow?.webContents.setZoomLevel(currentZoom + 0.5);
+        event.preventDefault();
+      } else if (isControlOrMeta && key === '-') {
+        const currentZoom = mainWindow?.webContents.getZoomLevel() || 0;
+        mainWindow?.webContents.setZoomLevel(currentZoom - 0.5);
+        event.preventDefault();
+      } else if (key === 'f11') {
+        if (mainWindow) {
+          mainWindow.setFullScreen(!mainWindow.isFullScreen());
+        }
+        event.preventDefault();
+      }
+    }
+  });
+
   // Pipe renderer logs to terminal stdout for debugging
   mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
     const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR'];

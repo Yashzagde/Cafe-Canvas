@@ -53,7 +53,7 @@ export default function SuperAdminLoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#fdfcf7] text-stone-850 flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+    <main className="min-h-screen bg-[#f8fafc] text-stone-850 flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
       
       {/* Background blobs */}
       <div className="absolute top-20 -left-20 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -67,7 +67,9 @@ export default function SuperAdminLoginPage() {
         {/* Header Branding */}
         <header className="text-center flex flex-col items-center gap-2.5">
           <div className="logo flex items-center gap-2 font-bold text-2xl tracking-tighter text-stone-900">
-            <img src="/logo.png" alt="Cafe Canvas Logo" className="w-8 h-8 object-contain" />
+            <div className="w-8 h-8 bg-gradient-to-r from-[#d97706] to-[#ca8a04] rounded-lg flex items-center justify-center text-white text-xs font-black">
+              CC
+            </div>
             <span>Cafe<span className="text-amber-600">Canva</span></span>
           </div>
           <div>
@@ -101,7 +103,7 @@ export default function SuperAdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="operator@cafecanvas.bar"
-                className="w-full bg-[#fdfcf7] border border-stone-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-600/50 text-stone-900 placeholder-stone-400 font-medium"
+                className="w-full bg-[#f8fafc] border border-stone-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-600/50 text-stone-900 placeholder-stone-400 font-medium"
               />
             </div>
 
@@ -115,7 +117,7 @@ export default function SuperAdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[#fdfcf7] border border-stone-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-600/50 text-stone-900 placeholder-stone-400 font-medium"
+                className="w-full bg-[#f8fafc] border border-stone-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-600/50 text-stone-900 placeholder-stone-400 font-medium"
               />
             </div>
 
