@@ -8,7 +8,7 @@ delete process.env.PGUSER;
 delete process.env.PGDATABASE;
 delete process.env.PGSSLMODE;
 
-const dbUrl = process.env.DATABASE_URL;
+const dbUrl = process.env.DATABASE_URL || '';
 const sql = postgres(dbUrl, { ssl: 'require', max: 1 });
 
 async function main() {
@@ -29,7 +29,7 @@ async function main() {
     const otpSessions = await sql`SELECT id, phone, otp_hash, attempts FROM customer_otp_sessions LIMIT 5;`;
     console.log(otpSessions);
   } catch (err) {
-    console.error('❌ Error querying migrated data:', err.message);
+    console.error('❌ Error querying migrated data:', err instanceof Error ? err.message : String(err));
   } finally {
     await sql.end();
   }

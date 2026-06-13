@@ -8,7 +8,7 @@ delete process.env.PGUSER;
 delete process.env.PGDATABASE;
 delete process.env.PGSSLMODE;
 
-const dbUrl = process.env.DATABASE_URL;
+const dbUrl = process.env.DATABASE_URL || '';
 const sql = postgres(dbUrl, { ssl: 'require', max: 1 });
 
 async function main() {
@@ -46,7 +46,7 @@ async function main() {
     const finalConfigs = await sql`SELECT id, tenant_id, hero_slides FROM storefront_config;`;
     console.log(JSON.stringify(finalConfigs, null, 2));
   } catch (err) {
-    console.error('Error cleaning up hero_slides:', err.message);
+    console.error('Error cleaning up hero_slides:', err instanceof Error ? err.message : String(err));
   } finally {
     await sql.end();
   }
