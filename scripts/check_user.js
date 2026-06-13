@@ -35,7 +35,7 @@ async function main() {
         database: db,
         username: user.split('.')[0] || 'postgres',
         password: pass,
-        ssl: 'require',
+        ssl: /** @type {any} */ ('require'),
         max: 1,
         connect_timeout: 30
       };
@@ -46,7 +46,7 @@ async function main() {
     connectionConfig = dbUrl;
   }
 
-  const sql = typeof connectionConfig === 'object' ? postgres(connectionConfig) : postgres(connectionConfig, { ssl: 'require' });
+  const sql = typeof connectionConfig === 'object' ? postgres(connectionConfig) : postgres(connectionConfig, { ssl: /** @type {any} */ ('require') });
 
   try {
     const emailToCheck = 'waiter01@cafecanvas.bar';
@@ -102,7 +102,7 @@ async function main() {
     }
 
   } catch (err) {
-    console.error("❌ SQL Query failed:", err.message);
+    console.error("❌ SQL Query failed:", err instanceof Error ? err.message : String(err));
   } finally {
     await sql.end();
   }

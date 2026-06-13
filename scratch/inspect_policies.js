@@ -9,7 +9,11 @@ delete process.env.PGDATABASE;
 delete process.env.PGSSLMODE;
 
 const dbUrl = process.env.DATABASE_URL;
-const sql = postgres(dbUrl, { ssl: 'require', max: 1 });
+if (!dbUrl) {
+  console.error("DATABASE_URL is not defined in the environment variables.");
+  process.exit(1);
+}
+const sql = postgres(dbUrl, { ssl: /** @type {any} */ ('require'), max: 1 });
 
 async function main() {
   try {

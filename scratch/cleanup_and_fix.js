@@ -53,5 +53,5 @@ try {
   }
   
 } catch (err) {
-  console.error('Error during cleanup:', err.message);
+  console.error('Error during cleanup:', err instanceof Error ? err.message : String(err));
 }

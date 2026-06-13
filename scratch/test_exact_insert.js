@@ -9,7 +9,11 @@ delete process.env.PGDATABASE;
 delete process.env.PGSSLMODE;
 
 const dbUrl = process.env.DATABASE_URL;
-const sql = postgres(dbUrl, { ssl: 'require', max: 1 });
+if (!dbUrl) {
+  console.error("DATABASE_URL is not defined in the environment variables.");
+  process.exit(1);
+}
+const sql = postgres(dbUrl, { ssl: /** @type {any} */ ('require'), max: 1 });
 
 async function main() {
   try {
@@ -49,11 +53,11 @@ async function main() {
       await sql`DELETE FROM public.staff_accounts WHERE email = 'yzagde605@gmail.com';`;
       console.log("Cleaned up test row");
     } catch (insertErr) {
-      console.error("Insert FAILED:", insertErr.message);
+      console.error("Insert FAILED:", insertErr instanceof Error ? insertErr.message : String(insertErr));
     }
 
   } catch (err) {
-    console.error("❌ Error:", err.message);
+    console.error("❌ Error:", err instanceof Error ? err.message : String(err));
   } finally {
     await sql.end();
   }
