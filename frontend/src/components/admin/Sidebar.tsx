@@ -22,6 +22,7 @@ interface SidebarProps {
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "📊" },
+  { id: "notifications", label: "Notifications", icon: "🔔" },
   { id: "menu", label: "Menu Catalog", icon: "🍽" },
   { id: "modifiers", label: "Modifiers", icon: "⚙️" },
   { id: "tables", label: "Tables & QRs", icon: "🪑" },
@@ -32,6 +33,7 @@ const NAV = [
   { id: "feedback", label: "Guest Feedbacks", icon: "💬" },
   { id: "storefront", label: "Storefront", icon: "🏪" },
   { id: "audit", label: "Audit Logs", icon: "📋" },
+  { id: "activity", label: "Activity Feed", icon: "⚡" },
 ];
 
 export default function Sidebar({

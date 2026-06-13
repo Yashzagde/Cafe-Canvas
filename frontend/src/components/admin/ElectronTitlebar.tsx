@@ -32,7 +32,6 @@ export default function ElectronTitlebar() {
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingLeft: '12px',
-        borderBottom: '1px solid #1e293b', // Slate 800 border
         WebkitAppRegion: 'drag',
         zIndex: 99999,
         userSelect: 'none',

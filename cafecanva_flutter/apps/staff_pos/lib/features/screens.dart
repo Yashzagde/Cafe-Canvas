@@ -1481,10 +1481,6 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
   double _cashTendered = 0.0;
   double _changeDue = 0.0;
 
-  bool _isCheckingHardware = false;
-  bool _isMachineConnected = false;
-  String _connectionType = 'none';
-  Timer? _hardwareCheckTimer;
   StoreSettings? _storeSettings;
   List<OrderItemModel> _billItems = [];
 
@@ -1492,51 +1488,11 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
   void initState() {
     super.initState();
     _triggerBillGeneration();
-    _checkHardwareConnection();
-    _hardwareCheckTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      _checkHardwareConnection();
-    });
   }
 
   @override
   void dispose() {
-    _hardwareCheckTimer?.cancel();
     super.dispose();
-  }
-
-  Future<void> _checkHardwareConnection() async {
-    if (_isCheckingHardware) return;
-    if (!mounted) return;
-    setState(() => _isCheckingHardware = true);
-    try {
-      final usb = await HardwareService.isUsbConnected();
-      final bluetooth = await HardwareService.isBluetoothConnected();
-      final bool connected = await HardwareService.isPaymentMachineAvailable();
-      
-      String type = 'none';
-      if (usb && bluetooth) {
-        type = 'both';
-      } else if (usb) {
-        type = 'usb';
-      } else if (bluetooth) {
-        type = 'bluetooth';
-      } else if (connected) {
-        type = 'simulated';
-      }
-
-      if (mounted) {
-        setState(() {
-          _isMachineConnected = connected;
-          _connectionType = type;
-        });
-      }
-    } catch (e) {
-      debugPrint('Failed to check hardware connection: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isCheckingHardware = false);
-      }
-    }
   }
 
   Future<void> _triggerBillGeneration() async {
@@ -1720,101 +1676,10 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
       ),
     );
 
-    final String activeGateway = _storeSettings?.activeGateway ?? 'razorpay';
-    final String gatewayName = {
-      'razorpay': 'Razorpay',
-      'phonepe': 'PhonePe',
-      'googlepay': 'GooglePay',
-      'paytm': 'Paytm',
-      'bharatpe': 'BharatPe',
-    }[activeGateway] ?? 'Razorpay';
-
-    String detailsText = '';
-    if (_isMachineConnected && _storeSettings != null) {
-      if (activeGateway == 'phonepe' && _storeSettings!.phonepeMerchantId != null) {
-        detailsText = 'MID: ${_storeSettings!.phonepeMerchantId} | TID: ${_storeSettings!.phonepeTerminalId ?? "N/A"}';
-      } else if (activeGateway == 'googlepay' && _storeSettings!.googlepayMerchantId != null) {
-        detailsText = 'MID: ${_storeSettings!.googlepayMerchantId} | TID: ${_storeSettings!.googlepayTerminalId ?? "N/A"}';
-      } else if (activeGateway == 'paytm' && _storeSettings!.paytmMerchantId != null) {
-        detailsText = 'MID: ${_storeSettings!.paytmMerchantId} | TID: ${_storeSettings!.paytmTerminalId ?? "N/A"}';
-      } else if (activeGateway == 'bharatpe' && _storeSettings!.bharatpeMerchantId != null) {
-        detailsText = 'MID: ${_storeSettings!.bharatpeMerchantId} | TID: ${_storeSettings!.bharatpeTerminalId ?? "N/A"}';
-      } else if (activeGateway == 'razorpay' && _storeSettings!.razorpayKeyId != null) {
-        detailsText = 'Key: ${_storeSettings!.razorpayKeyId}';
-      }
-    }
-
-    final hardwareStatusBanner = Container(
-      margin: const EdgeInsets.only(bottom: 20.0),
-      decoration: BoxDecoration(
-        color: _isMachineConnected 
-            ? CafeCanvaColors.success.withOpacity(0.08)
-            : CafeCanvaColors.error.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _isMachineConnected 
-              ? CafeCanvaColors.success.withOpacity(0.3)
-              : CafeCanvaColors.error.withOpacity(0.3),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: Row(
-        children: [
-          Icon(
-            _isMachineConnected 
-                ? (_connectionType == 'usb' ? Icons.cable : Icons.bluetooth) 
-                : Icons.warning_amber_rounded,
-            color: _isMachineConnected ? CafeCanvaColors.success : CafeCanvaColors.error,
-            size: 24,
-          ),
-          const SizedBox(width: 12.0),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _isMachineConnected ? '${gatewayName.toUpperCase()} TERMINAL ACTIVE' : '${gatewayName.toUpperCase()} DISCONNECTED',
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12.0,
-                    color: _isMachineConnected ? CafeCanvaColors.success : CafeCanvaColors.error,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 2.0),
-                Text(
-                  _isMachineConnected 
-                      ? 'Connected via ${_connectionType.toUpperCase()} (${detailsText.isNotEmpty ? detailsText : "Active"})'
-                      : 'Connect $gatewayName device via USB or Bluetooth.',
-                  style: GoogleFonts.inter(
-                    fontSize: 11.0,
-                    color: CafeCanvaColors.stone600,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: _isCheckingHardware 
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: CafeCanvaColors.primary),
-                  )
-                : const Icon(Icons.refresh, size: 20),
-            color: CafeCanvaColors.stone500,
-            onPressed: _isCheckingHardware ? null : _checkHardwareConnection,
-          ),
-        ],
-      ),
-    );
-
     final paymentActions = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        hardwareStatusBanner,
         const Text('Cash settlement calculator:', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8.0),
         TextField(
@@ -1858,24 +1723,6 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
           ),
           onPressed: () => _settleBill('cash'),
           child: const Text('SETTLE BILL WITH CASH', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        const SizedBox(height: 8.0),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: CafeCanvaColors.info,
-            padding: const EdgeInsets.symmetric(vertical: 14.0),
-          ),
-          onPressed: _isMachineConnected ? () => _settleBill('card') : null,
-          child: Text('SETTLE VIA ${gatewayName.toUpperCase()} CARD', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        const SizedBox(height: 8.0),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: CafeCanvaColors.primary,
-            padding: const EdgeInsets.symmetric(vertical: 14.0),
-          ),
-          onPressed: _isMachineConnected ? () => _settleBill('upi') : null,
-          child: Text('SETTLE VIA ${gatewayName.toUpperCase()} UPI', style: const TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     );

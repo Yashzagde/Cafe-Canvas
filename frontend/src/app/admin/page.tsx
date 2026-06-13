@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Coffee, AlertCircle, LogOut, ChevronDown, User, Layers, ShieldAlert, Award, Wifi, WifiOff } from 'lucide-react';
+import { Coffee, AlertCircle, LogOut, ChevronDown, User, Layers, ShieldAlert, Award, Wifi, WifiOff, Bell } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { syncOfflineData, getCachedMenuItems, getCachedCategories, cacheMenuItems, cacheCategories, getOfflineBills, isOnline } from '@/lib/offline-queue';
@@ -30,6 +30,7 @@ import ActivityFeedTab from '@/components/admin/ActivityFeedTab';
 import AttendanceTab from '@/components/admin/AttendanceTab';
 import FeedbackTab from '@/components/admin/FeedbackTab';
 import SettingsTab from '@/components/admin/SettingsTab';
+import NotificationsTab from '@/components/admin/NotificationsTab';
 
 import ReceiptPreviewModal from '@/components/billing/ReceiptPreviewModal';
 import type { ReceiptData } from '@/components/billing/types';
@@ -157,6 +158,37 @@ export default function CafeCanvaAdmin() {
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
+  // Notifications
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setShowNotificationsDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleMarkAllRead = async () => {
+    try {
+      const { error } = await supabase
+        .from('notification_log')
+        .update({ read: true })
+        .eq('tenant_id', tenantId)
+        .eq('read', false);
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/admin/login');
@@ -233,6 +265,7 @@ export default function CafeCanvaAdmin() {
       let customersData: any[] = [];
       let tablesData: any[] = [];
       let ordersData: any[] = [];
+      let notificationsData: any[] = [];
 
       if (isSystemOnline) {
         const [
@@ -242,7 +275,8 @@ export default function CafeCanvaAdmin() {
           billsResult,
           customersResult,
           tablesResult,
-          ordersResult
+          ordersResult,
+          notificationsResult
         ] = await Promise.all([
           supabase.from('tenants').select('name, public_id, slug, logo_url').eq('id', activeTenantId).maybeSingle(),
           supabase.from('menu_categories').select('id, name').eq('tenant_id', activeTenantId),
@@ -250,7 +284,8 @@ export default function CafeCanvaAdmin() {
           supabase.from('bills').select('*').eq('tenant_id', activeTenantId).eq('location_id', currentBranchId).order('created_at', { ascending: false }).limit(200),
           supabase.from('customers').select('*').eq('tenant_id', activeTenantId).is('deleted_at', null).limit(100),
           supabase.from('tables').select('*').eq('tenant_id', activeTenantId).eq('location_id', currentBranchId).is('deleted_at', null).order('name', { ascending: true }),
-          supabase.from('orders').select('*, order_items(*)').eq('tenant_id', activeTenantId).eq('location_id', currentBranchId).or(`status.in.(pending,confirmed,preparing,ready,served,billed),and(status.eq.paid,created_at.gte.${todayStart.toISOString()})`)
+          supabase.from('orders').select('*, order_items(*)').eq('tenant_id', activeTenantId).eq('location_id', currentBranchId).or(`status.in.(pending,confirmed,preparing,ready,served,billed),and(status.eq.paid,created_at.gte.${todayStart.toISOString()})`),
+          supabase.from('notification_log').select('*').eq('tenant_id', activeTenantId).order('sent_at', { ascending: false }).limit(100)
         ]);
 
         if (!tenantResult.error) tenData = tenantResult.data;
@@ -260,6 +295,7 @@ export default function CafeCanvaAdmin() {
         if (!customersResult.error) customersData = customersResult.data || [];
         if (!tablesResult.error) tablesData = tablesResult.data || [];
         if (!ordersResult.error) ordersData = ordersResult.data || [];
+        if (!notificationsResult.error) notificationsData = notificationsResult.data || [];
 
         // Save caches
         if (tenData) localStorage.setItem(`cc_tenant_${activeTenantId}`, JSON.stringify(tenData));
@@ -269,6 +305,7 @@ export default function CafeCanvaAdmin() {
         localStorage.setItem(`cc_customers_${activeTenantId}`, JSON.stringify(customersData));
         localStorage.setItem(`cc_tables_${currentBranchId}`, JSON.stringify(tablesData));
         localStorage.setItem(`cc_orders_${currentBranchId}`, JSON.stringify(ordersData));
+        localStorage.setItem(`cc_notifications_${activeTenantId}`, JSON.stringify(notificationsData));
       } else {
         const cachedTenant = localStorage.getItem(`cc_tenant_${activeTenantId}`);
         if (cachedTenant) tenData = JSON.parse(cachedTenant);
@@ -282,6 +319,8 @@ export default function CafeCanvaAdmin() {
         if (cachedTables) tablesData = JSON.parse(cachedTables);
         const cachedOrders = localStorage.getItem(`cc_orders_${currentBranchId}`);
         if (cachedOrders) ordersData = JSON.parse(cachedOrders);
+        const cachedNotifications = localStorage.getItem(`cc_notifications_${activeTenantId}`);
+        if (cachedNotifications) notificationsData = JSON.parse(cachedNotifications);
       }
 
       // Merge Offline Bills
@@ -327,6 +366,7 @@ export default function CafeCanvaAdmin() {
         location_id: t.location_id
       }));
       setTables(mappedTables);
+      setNotifications(notificationsData);
 
       // Extract and Parse Orders
       const ordersByTable: Record<string, BillItem[]> = {};
@@ -662,6 +702,70 @@ export default function CafeCanvaAdmin() {
               )}
             </div>
 
+            {/* Notifications Bell Button & Dropdown */}
+            <div ref={notificationsRef} className="relative">
+              <button 
+                onClick={() => setShowNotificationsDropdown(!showNotificationsDropdown)}
+                className="relative p-2 bg-[#f8fafc] hover:bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl text-[#64748b] hover:text-[#1e293b] transition-all flex items-center justify-center"
+              >
+                <Bell size={16} />
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#ef4444] border-2 border-[#ffffff] text-[#ffffff] rounded-full text-[9px] font-extrabold flex items-center justify-center">
+                    {notifications.filter(n => !n.read).length}
+                  </span>
+                )}
+              </button>
+
+              {showNotificationsDropdown && (
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-[#e2e8f0] rounded-2xl shadow-2xl z-50 p-1 flex flex-col max-h-96">
+                  <div className="px-4 py-3 border-b border-[#f1f5f9] flex justify-between items-center">
+                    <span className="font-extrabold text-xs text-[#1e293b] uppercase tracking-wide">Notifications</span>
+                    {notifications.filter(n => !n.read).length > 0 && (
+                      <button 
+                        onClick={handleMarkAllRead}
+                        className="text-[10px] font-extrabold text-[#d97706] hover:underline"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-y-auto min-h-[100px]">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-xs text-[#64748b] font-medium">
+                        No notifications yet
+                      </div>
+                    ) : (
+                      notifications.map(n => (
+                        <div 
+                          key={n.id} 
+                          className={`p-3.5 hover:bg-[#f8fafc] border-b border-[#f1f5f9] last:border-0 text-left transition-all ${!n.read ? 'bg-[#d97706]/5' : ''}`}
+                        >
+                          <div className="flex justify-between items-start mb-1 gap-2">
+                            <span className="font-bold text-xs text-[#1e293b] leading-tight">{n.title}</span>
+                            <span className="text-[9px] text-[#64748b] font-semibold whitespace-nowrap">
+                              {new Date(n.sent_at || n.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#475569] leading-normal font-medium">{n.body}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="p-2 border-t border-[#f1f5f9] bg-[#f8fafc] rounded-b-2xl">
+                    <button 
+                      onClick={() => {
+                        setPage("notifications");
+                        setShowNotificationsDropdown(false);
+                      }}
+                      className="w-full py-2 text-center text-xs font-bold text-[#d97706] hover:bg-[#d97706]/5 rounded-xl transition-all"
+                    >
+                      View All Notifications
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[#d97706]/10 border border-[#d97706]/30 text-[#d97706] rounded-full flex items-center justify-center font-extrabold text-xs">
                 {userName.substring(0, 2).toUpperCase()}
@@ -740,6 +844,14 @@ export default function CafeCanvaAdmin() {
               {page === "settings" && <SettingsTab toast={toast} tenantName={tenantName} setTenantName={setTenantName} setTenantLogoUrl={setTenantLogoUrl} onLogout={handleLogout} />}
               {page === "audit" && <AuditLogViewer />}
               {page === "activity" && <ActivityFeedTab />}
+              {page === "notifications" && (
+                <NotificationsTab
+                  notifications={notifications}
+                  setNotifications={setNotifications}
+                  tenantId={tenantId}
+                  toast={toast}
+                />
+              )}
             </>
           )}
         </main>

@@ -115,6 +115,16 @@ export default function BillingTab({
   const [discountType, setDiscountType] = useState<'percent' | 'flat'>('percent');
   const [discountValue, setDiscountValue] = useState(0);
 
+  // --- Settled Bill States for Success Screen ---
+  const [settledBillId, setSettledBillId] = useState("");
+  const [settledAmount, setSettledAmount] = useState(0);
+  const [settledTableName, setSettledTableName] = useState("");
+  const [settledTableSection, setSettledTableSection] = useState("");
+  const [settledItems, setSettledItems] = useState<BillItem[]>([]);
+  const [settledPayMethod, setSettledPayMethod] = useState("");
+  const [settledChange, setSettledChange] = useState(0);
+
+
   const [storeInfo, setStoreInfo] = useState({
     storeName: 'CAFE CANVA',
     storeAddress: '123 Main Street, Mumbai 400001',
@@ -707,10 +717,21 @@ export default function BillingTab({
       };
 
       setBillHistory(p => [newBill, ...p]);
+      // Save all billing details for success screen & printing
+      setSettledBillId(billId);
+      setSettledAmount(grandTotal);
+      setSettledTableName(selectedTable ? selectedTable.name : 'Walk-in');
+      setSettledTableSection(selectedTable ? (selectedTable.section || 'Indoor') : 'Takeaway');
+      setSettledItems([...billItems]);
+      setSettledPayMethod(payMethod.toUpperCase());
+      setSettledChange(change);
+
       if (selectedTable) {
         setTables(p => p.map(t => t.id === selectedTable.id ? { ...t, status: "available" } : t));
         setTableOrders(p => ({ ...p, [selectedTable.id]: [] }));
       }
+      setBillItems([]);
+      setSelectedTable(null); // Reset back to Quick Bill
       setPayStep("success");
     } catch (err: any) {
       toast(err.message, "error");
@@ -718,42 +739,58 @@ export default function BillingTab({
   };
 
   const handlePrint = () => {
+    const settledSubtotal = settledItems.reduce((s, i) => s + (i.qty * i.price), 0);
+    const cgstAmountVal = gstOn ? Math.round(settledSubtotal * (billingSettings.cgstPercent / 100)) : 0;
+    const sgstAmountVal = gstOn ? Math.round(settledSubtotal * (billingSettings.sgstPercent / 100)) : 0;
+    const gstAmountVal = cgstAmountVal + sgstAmountVal;
+    const svcAmountVal = svcOn
+      ? (billingSettings.serviceChargeType === "flat"
+          ? billingSettings.serviceChargeValue
+          : Math.round(settledSubtotal * (billingSettings.serviceChargeValue / 100)))
+      : 0;
+    const totalAfterChargesVal = settledSubtotal + gstAmountVal + svcAmountVal;
+    const discountAmountVal = discountValue > 0
+      ? (discountType === "percent"
+          ? Math.round(totalAfterChargesVal * (discountValue / 100))
+          : discountValue)
+      : 0;
+
     const rData: ReceiptData = {
-      billId: `B-00${billCounter}`,
+      billId: settledBillId || `B-00${billCounter}`,
       storeName: storeInfo.storeName,
       storeAddress: storeInfo.storeAddress,
       storePhone: storeInfo.storePhone,
       gstNumber: storeInfo.gstNumber,
       fssaiNumber: storeInfo.fssaiNumber,
       logoUrl: storeInfo.logoUrl,
-      tableName: selectedTable ? selectedTable.name : 'Walk-in',
-      tableSection: selectedTable ? (selectedTable.section || 'Indoor') : 'Takeaway',
-      items: billItems.map(i => ({
+      tableName: settledTableName,
+      tableSection: settledTableSection,
+      items: settledItems.map(i => ({
         name: i.name,
         qty: i.qty,
         price: i.price,
         total: i.qty * i.price,
       })),
       customCharges: [],
-      subtotal: subtotal,
-      gstAmount: gstAmt,
+      subtotal: settledSubtotal,
+      gstAmount: gstAmountVal,
       gstPercent: billingSettings.cgstPercent + billingSettings.sgstPercent,
       cgstPercent: billingSettings.cgstPercent,
-      cgstAmount: cgstAmt,
+      cgstAmount: cgstAmountVal,
       sgstPercent: billingSettings.sgstPercent,
-      sgstAmount: sgstAmt,
-      serviceCharge: svcAmt,
+      sgstAmount: sgstAmountVal,
+      serviceCharge: svcAmountVal,
       servicePercent: billingSettings.serviceChargeType === 'percent' ? billingSettings.serviceChargeValue : 0,
       serviceChargeType: billingSettings.serviceChargeType === 'none' ? undefined : (billingSettings.serviceChargeType as 'flat' | 'percent'),
       discountPercent: discountType === 'percent' ? discountValue : 0,
-      discountAmount: discountAmt,
+      discountAmount: discountAmountVal,
       couponCode: couponCode,
       extraChargesAmount: extraChargesAmount,
       extraChargesLabel: extraChargesLabel,
-      grandTotal: grandTotal,
-      paymentMethod: payMethod.toUpperCase(),
-      cashReceived: payMethod === 'cash' ? Number(cashReceived) : undefined,
-      changeDue: payMethod === 'cash' ? change : undefined,
+      grandTotal: settledAmount,
+      paymentMethod: settledPayMethod,
+      cashReceived: settledPayMethod === 'CASH' ? (settledAmount + settledChange) : undefined,
+      changeDue: settledPayMethod === 'CASH' ? settledChange : undefined,
       dateTime: new Date().toLocaleString('en-IN'),
       footerMessage: storeInfo.footerMessage,
       customerPhone: customerPhone || undefined,
@@ -907,11 +944,11 @@ export default function BillingTab({
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", margin: "0 auto 16px"
               }}>✓</div>
               <div style={{ fontSize: "18px", fontWeight: 800, color: T.tx, marginBottom: "6px" }}>Payment Successful</div>
-              <p style={{ fontSize: "12px", color: T.mu2, marginBottom: "4px" }}>{selectedTable ? selectedTable.name : 'Walk-in Guest'} · {payMethod.toUpperCase()}</p>
-              <div style={{ fontSize: "28px", fontWeight: 800, color: T.em, fontFamily: fm, margin: "16px 0" }}>₹{grandTotal.toFixed(2)}</div>
-              {payMethod === "cash" && change > 0 && (
+              <p style={{ fontSize: "12px", color: T.mu2, marginBottom: "4px" }}>{settledTableName} · {settledPayMethod}</p>
+              <div style={{ fontSize: "28px", fontWeight: 800, color: T.em, fontFamily: fm, margin: "16px 0" }}>₹{settledAmount.toFixed(2)}</div>
+              {settledPayMethod === "CASH" && settledChange > 0 && (
                 <div style={{ padding: "12px", borderRadius: "8px", background: T.aA(0.1), border: `1px solid ${T.aA(0.25)}`, marginBottom: "16px" }}>
-                  <span style={{ fontSize: "12px", color: T.amb, fontWeight: 700 }}>Change Due: ₹{change.toFixed(2)}</span>
+                  <span style={{ fontSize: "12px", color: T.amb, fontWeight: 700 }}>Change Due: ₹{settledChange.toFixed(2)}</span>
                 </div>
               )}
               <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>

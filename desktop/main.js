@@ -89,7 +89,10 @@ function createWindow() {
         const currentZoom = mainWindow?.webContents.getZoomLevel() || 0;
         mainWindow?.webContents.setZoomLevel(currentZoom - 0.5);
         event.preventDefault();
-      } else if (key === 'f11') {
+      } else if (isControlOrMeta && key === 'm') {
+        mainWindow?.minimize();
+        event.preventDefault();
+      } else if (key === 'f11' || (isControlOrMeta && key === 'f')) {
         if (mainWindow) {
           mainWindow.setFullScreen(!mainWindow.isFullScreen());
         }
