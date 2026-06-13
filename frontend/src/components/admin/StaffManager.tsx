@@ -15,7 +15,7 @@ import { UserCheck, Calendar, Plus, X, AlertTriangle, Eye, EyeOff, Edit3, Lock }
 interface StaffProfile {
   id: string;
   full_name: string;
-  role: 'owner' | 'manager' | 'cashier' | 'kitchen' | 'staff';
+  role: 'owner' | 'manager' | 'cashier' | 'kitchen' | 'waiter' | 'staff';
   phone: string | null;
   is_active: boolean;
   pin_hash?: string | null;
@@ -102,7 +102,7 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    role: 'staff' as 'manager' | 'cashier' | 'kitchen' | 'staff',
+    role: 'waiter' as 'manager' | 'cashier' | 'kitchen' | 'waiter' | 'staff',
     pin: '',
     branchId: branchId || '',
   });
@@ -321,7 +321,8 @@ export default function StaffManager({ branchId }: StaffManagerProps) {
                     <option value="manager">Manager</option>
                     <option value="cashier">Cashier</option>
                     <option value="kitchen">Kitchen Staff</option>
-                    <option value="staff">Waiter/Server</option>
+                    <option value="waiter">Waiter Staff</option>
+                    <option value="staff">General Staff</option>
                   </select>
                 </div>
                 <div>

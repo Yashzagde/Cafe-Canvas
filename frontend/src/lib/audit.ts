@@ -45,7 +45,7 @@ export interface AuditEventParams {
   tenantId:   string
   branchId?:  string
   actorId:    string
-  actorRole:  'owner' | 'manager' | 'cashier' | 'kitchen' | 'staff' | 'system'
+  actorRole:  'owner' | 'manager' | 'cashier' | 'kitchen' | 'waiter' | 'staff' | 'system'
   action:     AuditAction
   entityType: AuditEntityType
   entityId?:  string
@@ -93,7 +93,7 @@ export async function logAuditEvent(
       tenant_id:   params.tenantId,
       branch_id:   params.branchId   ?? null,
       actor_id:    params.actorId,
-      actor_role:  params.actorRole,
+      actor_role:  params.actorRole as any,
       action:      params.action,
       entity_type: params.entityType,
       entity_id:   params.entityId   ?? null,
