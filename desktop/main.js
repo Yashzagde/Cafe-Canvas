@@ -43,6 +43,12 @@ function createWindow() {
   });
   mainWindow.webContents.openDevTools();
 
+  // Pipe renderer logs to terminal stdout for debugging
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR'];
+    console.log(`[Renderer Console - ${levels[level] || 'LOG'}] ${message} (at ${sourceId}:${line})`);
+  });
+
   // Enable cookies and session storage persistence
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
