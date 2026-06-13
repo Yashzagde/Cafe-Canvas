@@ -534,7 +534,7 @@ export default function CafeCanvaAdmin() {
         clearInterval(interval);
       };
     }
-  }, [activeBranch]);
+  }, [activeBranch?.id]);
 
   // Real-time Order Subscriptions
   useEffect(() => {

@@ -22,5 +22,11 @@ export const useBranchStore = create<BranchState>((set) => ({
   activeBranch: null,
   branches: [],
   setActiveBranch: (branch) => set({ activeBranch: branch }),
-  setBranches: (branches) => set({ branches, activeBranch: branches.length > 0 ? branches[0] : null }),
+  setBranches: (branches) => set((state) => {
+    const hasActive = state.activeBranch && branches.some(b => b.id === state.activeBranch!.id);
+    return {
+      branches,
+      activeBranch: hasActive ? state.activeBranch : (branches.length > 0 ? branches[0] : null)
+    };
+  }),
 }))
