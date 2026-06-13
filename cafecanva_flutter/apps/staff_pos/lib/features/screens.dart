@@ -1982,7 +1982,7 @@ class ActivityTracker {
 // --- WIDGET LISTENER FOR USER INTERACTIONS AND AUTO-LOCK ---
 class UserActivityWrapper extends StatefulWidget {
   final Widget child;
-  const UserActivityWrapper({Key? key, required this.child}) : super(key: key);
+  const UserActivityWrapper({super.key, required this.child});
 
   @override
   State<UserActivityWrapper> createState() => _UserActivityWrapperState();
