@@ -561,49 +561,44 @@ export default function Home() {
       <section className="relative w-full min-h-[90vh] flex items-center justify-center overflow-hidden z-10 px-6 py-12">
         <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-b from-[#FAF7F2]/10 via-[#FAF7F2]/75 to-[#FAF7F2] z-10" />
-          <video 
-            autoPlay 
-            loop 
-            muted 
-            playsInline 
-            className="w-full h-full object-cover opacity-25 filter sepia-[20%] brightness-[95%]"
-          >
-            <source src="/assets/hero-bg.mp4" type="video/mp4" />
-          </video>
+          {mounted && (
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              playsInline 
+              className="w-full h-full object-cover opacity-25 filter sepia-[20%] brightness-[95%]"
+            >
+              <source src="/assets/hero-bg.mp4" type="video/mp4" />
+            </video>
+          )}
         </div>
 
         {/* Hero Copy (Luxury Glass Panel) */}
         <div className="relative z-20 max-w-5xl text-center mx-auto space-y-8">
-          <motion.div 
-            initial={{ opacity: 0, y: -15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-[#E5D2C0] backdrop-blur-md text-[10px] font-black tracking-widest text-[#C6783A] uppercase shadow-sm"
+          <div 
+            className="animate-fade-in inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-[#E5D2C0] backdrop-blur-md text-[10px] font-black tracking-widest text-[#C6783A] uppercase shadow-sm"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[#C6783A] animate-pulse"></span>
             {t('heroBadge')}
-          </motion.div>
+          </div>
 
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.15 }}
-            className="text-4xl md:text-7xl font-extrabold tracking-tight leading-[1.1] text-[#2D211A]"
+          <h1 
+            className="animate-fade-in text-4xl md:text-7xl font-extrabold tracking-tight leading-[1.1] text-[#2D211A]"
+            style={{ animationDelay: '0.15s' }}
           >
             {t('heroTitle1')} <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C6783A] via-[#B39034] to-[#E29A8A]">
               {t('heroTitle2')}
             </span>
-          </motion.h1>
+          </h1>
 
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-sm md:text-base text-[#5D4B41] max-w-3xl mx-auto leading-relaxed font-medium"
+          <p 
+            className="animate-fade-in text-sm md:text-base text-[#5D4B41] max-w-3xl mx-auto leading-relaxed font-medium"
+            style={{ animationDelay: '0.3s' }}
           >
             {t('heroSub')}
-          </motion.p>
+          </p>
 
           {/* Action Buttons */}
           <motion.div 
