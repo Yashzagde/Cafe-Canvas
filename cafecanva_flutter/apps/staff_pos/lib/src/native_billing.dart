@@ -4,14 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:bluetooth_print/bluetooth_print.dart';
 import 'package:bluetooth_print/bluetooth_print_model.dart';
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'package:cafecanva_billing/cafecanva_billing.dart';
 
 class RazorpayPaymentGateway implements PaymentGateway {
   late Razorpay _razorpay;
-  void Function(PaymentSuccessResponse)? _onSuccess;
-  void Function(PaymentFailureResponse)? _onFailure;
 
   void initialize({
     required void Function(PaymentSuccessResponse) onSuccess,
