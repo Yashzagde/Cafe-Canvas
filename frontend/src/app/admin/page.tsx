@@ -131,7 +131,7 @@ export default function CafeCanvaAdmin() {
   const [mounted, setMounted] = useState(false);
 
   // Auth profile states
-  const [userRole, setUserRole] = useState<'owner' | 'manager' | 'cashier' | 'kitchen' | 'staff'>('staff');
+  const [userRole, setUserRole] = useState<'owner' | 'manager' | 'cashier' | 'kitchen' | 'waiter' | 'staff'>('staff');
   const [userName, setUserName] = useState('Staff Operator');
 
   // Dynamic states

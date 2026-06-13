@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-export type StaffRole = 'owner' | 'manager' | 'cashier' | 'kitchen' | 'staff'
+export type StaffRole = 'owner' | 'manager' | 'cashier' | 'kitchen' | 'waiter' | 'staff'
 
 export type Permission =
   // Dashboard
@@ -97,6 +97,15 @@ const PERMISSIONS: Record<StaffRole, ReadonlySet<Permission>> = {
   kitchen: new Set<Permission>([
     'menu.view',
     'order.view', 'order.update',
+    'attendance.view_own',
+    'leave.apply',
+  ]),
+
+  waiter: new Set<Permission>([
+    'menu.view',
+    'table.view',
+    'order.view', 'order.create', 'order.update',
+    'bill.view', 'bill.create',
     'attendance.view_own',
     'leave.apply',
   ]),

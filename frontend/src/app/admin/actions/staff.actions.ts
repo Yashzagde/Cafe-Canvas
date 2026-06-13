@@ -346,7 +346,7 @@ export async function closeShiftAction(shiftId: string, closingCash: number, not
 export async function createStaffAction(params: {
   name: string;
   phone: string;
-  role: 'owner' | 'manager' | 'cashier' | 'kitchen' | 'staff';
+  role: 'owner' | 'manager' | 'cashier' | 'kitchen' | 'waiter' | 'staff';
   pin: string;
   branchId: string;
 }) {
