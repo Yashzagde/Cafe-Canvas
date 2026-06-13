@@ -22,10 +22,11 @@ export interface OfflineBill {
   table_number: string | number;
   customer_name: string;
   customer_phone: string | null;
-  subtotal_paise: number;
-  cgst_paise: number;
-  sgst_paise: number;
-  total_paise: number;
+  subtotal: number;
+  cgst: number;
+  sgst: number;
+  discount_amount?: number;
+  total: number;
   payment_method: string;
   status: 'paid' | 'unpaid';
   created_at: string;
@@ -134,7 +135,26 @@ export async function saveOfflineBill(bill: OfflineBill): Promise<void> {
 }
 
 export async function getOfflineBills(): Promise<OfflineBill[]> {
-  return getAllFromStore('offline_bills');
+  const bills = await getAllFromStore<any>('offline_bills');
+  return bills.map(b => {
+    const normalized = { ...b };
+    if ('subtotal_paise' in normalized && !('subtotal' in normalized)) {
+      normalized.subtotal = normalized.subtotal_paise;
+    }
+    if ('cgst_paise' in normalized && !('cgst' in normalized)) {
+      normalized.cgst = normalized.cgst_paise;
+    }
+    if ('sgst_paise' in normalized && !('sgst' in normalized)) {
+      normalized.sgst = normalized.sgst_paise;
+    }
+    if ('total_paise' in normalized && !('total' in normalized)) {
+      normalized.total = normalized.total_paise;
+    }
+    if (!('discount_amount' in normalized)) {
+      normalized.discount_amount = 0;
+    }
+    return normalized as OfflineBill;
+  });
 }
 
 export async function deleteOfflineBill(id: string): Promise<void> {
@@ -192,12 +212,61 @@ export async function syncOfflineData(supabase: any, onProgress?: (remaining: nu
       try {
         let error = null;
         if (op.action === 'insert') {
-          const { error: err } = await supabase.from(op.table).insert(op.payload);
+          let payload = { ...op.payload };
+          if (op.table === 'bills') {
+            if ('subtotal_paise' in payload) {
+              payload.subtotal = payload.subtotal_paise;
+              delete payload.subtotal_paise;
+            }
+            if ('cgst_paise' in payload) {
+              payload.cgst = payload.cgst_paise;
+              delete payload.cgst_paise;
+            }
+            if ('sgst_paise' in payload) {
+              payload.sgst = payload.sgst_paise;
+              delete payload.sgst_paise;
+            }
+            if ('total_paise' in payload) {
+              payload.total = payload.total_paise;
+              delete payload.total_paise;
+            }
+            if (!('discount_amount' in payload)) {
+              payload.discount_amount = 0;
+            }
+            if (typeof payload.table_number === 'string') {
+              const parsedVal = parseInt(payload.table_number, 10);
+              if (!isNaN(parsedVal)) payload.table_number = parsedVal;
+            }
+          }
+          const { error: err } = await supabase.from(op.table).insert(payload);
           error = err;
         } else if (op.action === 'update') {
           // If table has ID, update by ID
           if (op.payload.id) {
-            const { error: err } = await supabase.from(op.table).update(op.payload).eq('id', op.payload.id);
+            let payload = { ...op.payload };
+            if (op.table === 'bills') {
+              if ('subtotal_paise' in payload) {
+                payload.subtotal = payload.subtotal_paise;
+                delete payload.subtotal_paise;
+              }
+              if ('cgst_paise' in payload) {
+                payload.cgst = payload.cgst_paise;
+                delete payload.cgst_paise;
+              }
+              if ('sgst_paise' in payload) {
+                payload.sgst = payload.sgst_paise;
+                delete payload.sgst_paise;
+              }
+              if ('total_paise' in payload) {
+                payload.total = payload.total_paise;
+                delete payload.total_paise;
+              }
+              if (typeof payload.table_number === 'string') {
+                const parsedVal = parseInt(payload.table_number, 10);
+                if (!isNaN(parsedVal)) payload.table_number = parsedVal;
+              }
+            }
+            const { error: err } = await supabase.from(op.table).update(payload).eq('id', payload.id);
             error = err;
           }
         }
@@ -219,7 +288,32 @@ export async function syncOfflineData(supabase: any, onProgress?: (remaining: nu
       try {
         // Strip nested items for DB insertion if bills table does not store it as items
         const { items, ...dbBill } = bill;
-        const { error } = await supabase.from('bills').insert(dbBill);
+        let payload: any = { ...dbBill };
+        if ('subtotal_paise' in payload) {
+          payload.subtotal = payload.subtotal_paise;
+          delete payload.subtotal_paise;
+        }
+        if ('cgst_paise' in payload) {
+          payload.cgst = payload.cgst_paise;
+          delete payload.cgst_paise;
+        }
+        if ('sgst_paise' in payload) {
+          payload.sgst = payload.sgst_paise;
+          delete payload.sgst_paise;
+        }
+        if ('total_paise' in payload) {
+          payload.total = payload.total_paise;
+          delete payload.total_paise;
+        }
+        if (!('discount_amount' in payload)) {
+          payload.discount_amount = 0;
+        }
+        if (typeof payload.table_number === 'string') {
+          const parsedVal = parseInt(payload.table_number, 10);
+          if (!isNaN(parsedVal)) payload.table_number = parsedVal;
+        }
+
+        const { error } = await supabase.from('bills').insert(payload);
         if (!error) {
           await deleteOfflineBill(bill.id);
         } else {

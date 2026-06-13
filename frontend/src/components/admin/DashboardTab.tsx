@@ -44,6 +44,7 @@ interface DashboardTabProps {
   tables: Table[];
   orders: RecentOrder[];
   bills?: any[];
+  rawOrders?: any[];
 }
 
 function aggregateRevenue(bills: any[], period: 'daily' | 'weekly' | 'monthly'): Array<{ t: string; v: number }> {
@@ -64,7 +65,7 @@ function aggregateRevenue(bills: any[], period: 'daily' | 'weekly' | 'monthly'):
         
         const match = hourlyData.find(d => d.t === hourLabel);
         if (match) {
-          match.v += (b.total || b.total_paise || 0) / 100;
+          match.v += (b.total ?? 0) / 100;
         }
       }
     });
@@ -84,7 +85,7 @@ function aggregateRevenue(bills: any[], period: 'daily' | 'weekly' | 'monthly'):
       const date = new Date(b.created_at || b.paid_at);
       const match = weeklyData.find(d => d.dateStr === date.toDateString());
       if (match) {
-        match.v += (b.total || b.total_paise || 0) / 100;
+        match.v += (b.total ?? 0) / 100;
       }
     });
     return weeklyData.map(({ t, v }) => ({ t, v }));
@@ -102,7 +103,7 @@ function aggregateRevenue(bills: any[], period: 'daily' | 'weekly' | 'monthly'):
       const date = new Date(b.created_at || b.paid_at);
       const match = monthlyData.find(d => d.dateStr === date.toDateString());
       if (match) {
-        match.v += (b.total || b.total_paise || 0) / 100;
+        match.v += (b.total ?? 0) / 100;
       }
     });
     return monthlyData.map(({ t, v }) => ({ t, v }));
@@ -117,7 +118,8 @@ export default function DashboardTab({
   setDiscounts,
   tables,
   orders,
-  bills = []
+  bills = [],
+  rawOrders = []
 }: DashboardTabProps) {
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [chartType, setChartType] = useState<"area" | "bar">("area");
@@ -128,13 +130,18 @@ export default function DashboardTab({
 
   const computedTopItems = React.useMemo(() => {
     const counts: Record<string, { qty: number, rev: number }> = {};
-    bills.forEach(b => {
-      (b.items || []).forEach((item: any) => {
-        if (!counts[item.name]) {
-          counts[item.name] = { qty: 0, rev: 0 };
+    // Derive top items from rawOrders which have order_items
+    rawOrders.forEach((o: any) => {
+      (o.order_items || []).forEach((item: any) => {
+        const name = item.item_name || item.name;
+        if (!name) return;
+        if (!counts[name]) {
+          counts[name] = { qty: 0, rev: 0 };
         }
-        counts[item.name].qty += item.qty || 1;
-        counts[item.name].rev += (item.qty || 1) * (item.price || 0);
+        const qty = item.quantity || item.qty || 1;
+        const unitPrice = (item.unit_price ?? 0) / 100; // paise to rupees
+        counts[name].qty += qty;
+        counts[name].rev += qty * unitPrice;
       });
     });
     
@@ -145,12 +152,11 @@ export default function DashboardTab({
       
     if (sorted.length === 0) {
       return [
-        { name: "Classic Cappuccino", qty: 24, rev: 4800 },
-        { name: "Avocado Toast", qty: 15, rev: 3750 }
+        { name: "No order data yet", qty: 0, rev: 0 }
       ];
     }
     return sorted;
-  }, [bills]);
+  }, [rawOrders]);
 
   const maxTopQty = React.useMemo(() => {
     return Math.max(1, ...computedTopItems.map(item => item.qty));
@@ -202,16 +208,20 @@ export default function DashboardTab({
     const startOfPrevMonth = new Date(startOfMonth.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     if (period === 'daily') {
-      const todayOrdersCount = orders.length;
-      const todayRevenue = orders.reduce((sum, o) => sum + o.amount, 0);
+      const todayBills = bills.filter(b => {
+        const d = new Date(b.created_at || b.paid_at);
+        return d.toDateString() === now.toDateString();
+      });
+      const todayOrdersCount = todayBills.length;
+      const todayRevenue = todayBills.reduce((sum, b) => sum + (b.total ?? 0) / 100, 0);
       const todayAvg = todayOrdersCount > 0 ? Math.round(todayRevenue / todayOrdersCount) : 0;
       
       const yesterdayBills = bills.filter(b => {
         const d = new Date(b.created_at || b.paid_at);
-        return d >= startOfYesterday && d <= endOfYesterday;
+        return d.toDateString() === startOfYesterday.toDateString();
       });
       const yesterdayOrdersCount = yesterdayBills.length;
-      const yesterdayRevenue = yesterdayBills.reduce((sum, b) => sum + (b.total || b.total_paise || 0) / 100, 0);
+      const yesterdayRevenue = yesterdayBills.reduce((sum, b) => sum + (b.total ?? 0) / 100, 0);
       const yesterdayAvg = yesterdayOrdersCount > 0 ? Math.round(yesterdayRevenue / yesterdayOrdersCount) : 0;
       
       const ordersDiff = todayOrdersCount - yesterdayOrdersCount;
@@ -251,7 +261,7 @@ export default function DashboardTab({
         return d >= startOfWeek;
       });
       const thisWeekOrdersCount = thisWeekBills.length;
-      const thisWeekRevenue = thisWeekBills.reduce((sum, b) => sum + (b.total || b.total_paise || 0) / 100, 0);
+      const thisWeekRevenue = thisWeekBills.reduce((sum, b) => sum + (b.total ?? 0) / 100, 0);
       const thisWeekAvg = thisWeekOrdersCount > 0 ? Math.round(thisWeekRevenue / thisWeekOrdersCount) : 0;
       
       const prevWeekBills = bills.filter(b => {
@@ -259,7 +269,7 @@ export default function DashboardTab({
         return d >= startOfPrevWeek && d < startOfWeek;
       });
       const prevWeekOrdersCount = prevWeekBills.length;
-      const prevWeekRevenue = prevWeekBills.reduce((sum, b) => sum + (b.total || b.total_paise || 0) / 100, 0);
+      const prevWeekRevenue = prevWeekBills.reduce((sum, b) => sum + (b.total ?? 0) / 100, 0);
       const prevWeekAvg = prevWeekOrdersCount > 0 ? Math.round(prevWeekRevenue / prevWeekOrdersCount) : 0;
       
       const ordersDiff = thisWeekOrdersCount - prevWeekOrdersCount;
@@ -299,7 +309,7 @@ export default function DashboardTab({
         return d >= startOfMonth;
       });
       const thisMonthOrdersCount = thisMonthBills.length;
-      const thisMonthRevenue = thisMonthBills.reduce((sum, b) => sum + (b.total || b.total_paise || 0) / 100, 0);
+      const thisMonthRevenue = thisMonthBills.reduce((sum, b) => sum + (b.total ?? 0) / 100, 0);
       const thisMonthAvg = thisMonthOrdersCount > 0 ? Math.round(thisMonthRevenue / thisMonthOrdersCount) : 0;
       
       const prevMonthBills = bills.filter(b => {
@@ -307,7 +317,7 @@ export default function DashboardTab({
         return d >= startOfPrevMonth && d < startOfMonth;
       });
       const prevMonthOrdersCount = prevMonthBills.length;
-      const prevMonthRevenue = prevMonthBills.reduce((sum, b) => sum + (b.total || b.total_paise || 0) / 100, 0);
+      const prevMonthRevenue = prevMonthBills.reduce((sum, b) => sum + (b.total ?? 0) / 100, 0);
       const prevMonthAvg = prevMonthOrdersCount > 0 ? Math.round(prevMonthRevenue / prevMonthOrdersCount) : 0;
       
       const ordersDiff = thisMonthOrdersCount - prevMonthOrdersCount;
@@ -342,7 +352,7 @@ export default function DashboardTab({
         avgUp: avgTrendPct >= 0,
       };
     }
-  }, [period, orders, bills]);
+  }, [period, bills]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>

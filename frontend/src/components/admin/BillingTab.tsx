@@ -48,6 +48,7 @@ interface BillHistoryEntry {
   table: string;
   section: string;
   time: string;
+  date: string; // ISO date string for filtering/sorting
   method: string;
   sub: number; // rupees
   gst: number; // rupees
@@ -101,6 +102,10 @@ export default function BillingTab({
   const [cashReceived, setCashReceived] = useState("");
   const [payStep, setPayStep] = useState<"review" | "success">("review");
   const [histSearch, setHistSearch] = useState("");
+  const [histDateFrom, setHistDateFrom] = useState("");
+  const [histDateTo, setHistDateTo] = useState("");
+  const [histTimeFrom, setHistTimeFrom] = useState("");
+  const [histTimeTo, setHistTimeTo] = useState("");
   const [menuAddOpen, setMenuAddOpen] = useState(false);
   const [addItemId, setAddItemId] = useState(menu[0]?.id || "");
   const [addItemQty, setAddItemQty] = useState(1);
@@ -578,10 +583,11 @@ export default function BillingTab({
           table_number: tableNum.toString(),
           customer_name: 'Walk-in Guest',
           customer_phone: customerPhone || null,
-          subtotal_paise: Math.round(subtotal * 100),
-          cgst_paise: Math.round(cgstAmt * 100),
-          sgst_paise: Math.round(sgstAmt * 100),
-          total_paise: Math.round(grandTotal * 100),
+          subtotal: Math.round(subtotal * 100),
+          cgst: Math.round(cgstAmt * 100),
+          sgst: Math.round(sgstAmt * 100),
+          discount_amount: Math.round(discountAmt * 100),
+          total: Math.round(grandTotal * 100),
           payment_method: payMethod.toLowerCase(),
           status: 'paid' as const,
           paid_at: new Date().toISOString(),
@@ -706,6 +712,7 @@ export default function BillingTab({
         table: selectedTable ? selectedTable.name : 'Walk-in',
         section: selectedTable ? (selectedTable.section || 'Indoor') : 'Takeaway',
         time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+        date: new Date().toISOString(),
         method: payMethod.toUpperCase(),
         sub: subtotal,
         gst: gstAmt,
@@ -850,9 +857,58 @@ export default function BillingTab({
     available: T.em, occupied: T.rose, reserved: T.amb, cleaning: T.ind
   };
 
-  const filteredHistory = billHistory.filter(b =>
-    !histSearch || b.table.toLowerCase().includes(histSearch.toLowerCase()) || b.id.toLowerCase().includes(histSearch.toLowerCase())
-  );
+  const filteredHistory = React.useMemo(() => {
+    return billHistory.filter(b => {
+      // Text search filter
+      if (histSearch && !b.table.toLowerCase().includes(histSearch.toLowerCase()) && !b.id.toLowerCase().includes(histSearch.toLowerCase())) {
+        return false;
+      }
+      // Date range filter
+      if (b.date) {
+        const billDate = new Date(b.date);
+        const billDateStr = `${billDate.getFullYear()}-${String(billDate.getMonth() + 1).padStart(2, '0')}-${String(billDate.getDate()).padStart(2, '0')}`;
+        if (histDateFrom && billDateStr < histDateFrom) return false;
+        if (histDateTo && billDateStr > histDateTo) return false;
+        // Time range filter
+        const billTimeStr = `${String(billDate.getHours()).padStart(2, '0')}:${String(billDate.getMinutes()).padStart(2, '0')}`;
+        if (histTimeFrom && billTimeStr < histTimeFrom) return false;
+        if (histTimeTo && billTimeStr > histTimeTo) return false;
+      }
+      return true;
+    });
+  }, [billHistory, histSearch, histDateFrom, histDateTo, histTimeFrom, histTimeTo]);
+
+  // Group filtered history by date
+  const groupedHistory = React.useMemo(() => {
+    const groups: { label: string; dateKey: string; bills: typeof filteredHistory; dayTotal: number }[] = [];
+    const map = new Map<string, typeof filteredHistory>();
+    filteredHistory.forEach(b => {
+      const d = b.date ? new Date(b.date) : null;
+      const key = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : 'unknown';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(b);
+    });
+    // Sort date keys descending
+    const sortedKeys = Array.from(map.keys()).sort((a, b) => b.localeCompare(a));
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+    sortedKeys.forEach(key => {
+      const bills = map.get(key)!;
+      let label = key;
+      if (key === todayStr) label = 'Today';
+      else if (key === yesterdayStr) label = 'Yesterday';
+      else if (key !== 'unknown') {
+        const d = new Date(key + 'T00:00:00');
+        label = d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      }
+      const dayTotal = bills.reduce((s, b) => s + b.total, 0);
+      groups.push({ label, dateKey: key, bills, dayTotal });
+    });
+    return groups;
+  }, [filteredHistory]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
@@ -1275,42 +1331,101 @@ export default function BillingTab({
       {/* BILL HISTORY */}
       {view === "history" && (
         <div>
-          <div style={{ marginBottom: "14px" }}>
-            <Input placeholder="Search bills by ID or table…" value={histSearch} onChange={e => setHistSearch(e.target.value)} />
-          </div>
-          <Card style={{ overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: `1px solid ${T.bdr}`, background: "rgba(255,255,255,0.03)" }}>
-                    {["Bill ID", "Table", "Time", "Method", "Subtotal", "GST", "SVC", "Total", "Items", "Action"].map(h => (
-                      <th key={h} style={{ textAlign: "left", padding: "12px 14px", fontSize: "10px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.map(b => (
-                    <tr key={b.id} style={{ borderBottom: `1px solid ${T.bdr}` }}>
-                      <td style={{ padding: "12px 14px", fontSize: "12px", fontWeight: 700, color: T.tx, fontFamily: fm }}>{b.id}</td>
-                      <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{b.table}</td>
-                      <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{b.time}</td>
-                      <td style={{ padding: "12px 14px" }}><Badge color={b.method === "UPI" ? "indigo" : b.method === "CARD" ? "blue" : "gray"}>{b.method}</Badge></td>
-                      <td style={{ padding: "12px 14px", fontSize: "12px", color: T.tx, fontFamily: fm }}>₹{b.sub.toFixed(2)}</td>
-                      <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2, fontFamily: fm }}>₹{b.gst.toFixed(2)}</td>
-                      <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2, fontFamily: fm }}>₹{b.svc.toFixed(2)}</td>
-                      <td style={{ padding: "12px 14px", fontSize: "13px", fontWeight: 800, color: T.em, fontFamily: fm }}>₹{b.total.toFixed(2)}</td>
-                      <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{b.itemsCount}</td>
-                      <td style={{ padding: "12px 14px" }}>
-                        <Btn size="sm" variant="ghost" onClick={() => handleHistoryPrint(b)}>
-                          <Printer size={12} style={{ marginRight: '4px' }} /> Print
-                        </Btn>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Filter Bar */}
+          <Card style={{ padding: "16px", marginBottom: "14px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "flex-end" }}>
+              <div style={{ flex: "1 1 200px", minWidth: "160px" }}>
+                <Input placeholder="Search bills by ID or table…" value={histSearch} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHistSearch(e.target.value)} />
+              </div>
+              <div style={{ display: "flex", gap: "8px", alignItems: "flex-end", flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>From Date</div>
+                  <input type="date" value={histDateFrom} onChange={e => setHistDateFrom(e.target.value)} style={{ padding: "7px 10px", borderRadius: "8px", border: `1px solid ${T.bdr}`, background: "transparent", color: T.tx, fontSize: "12px", fontFamily: fm, outline: "none" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>To Date</div>
+                  <input type="date" value={histDateTo} onChange={e => setHistDateTo(e.target.value)} style={{ padding: "7px 10px", borderRadius: "8px", border: `1px solid ${T.bdr}`, background: "transparent", color: T.tx, fontSize: "12px", fontFamily: fm, outline: "none" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>From Time</div>
+                  <input type="time" value={histTimeFrom} onChange={e => setHistTimeFrom(e.target.value)} style={{ padding: "7px 10px", borderRadius: "8px", border: `1px solid ${T.bdr}`, background: "transparent", color: T.tx, fontSize: "12px", fontFamily: fm, outline: "none" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>To Time</div>
+                  <input type="time" value={histTimeTo} onChange={e => setHistTimeTo(e.target.value)} style={{ padding: "7px 10px", borderRadius: "8px", border: `1px solid ${T.bdr}`, background: "transparent", color: T.tx, fontSize: "12px", fontFamily: fm, outline: "none" }} />
+                </div>
+                {(histDateFrom || histDateTo || histTimeFrom || histTimeTo) && (
+                  <Btn size="sm" variant="ghost" onClick={() => { setHistDateFrom(''); setHistDateTo(''); setHistTimeFrom(''); setHistTimeTo(''); }} style={{ border: `1px solid ${T.bdr}` }}>
+                    ✕ Clear
+                  </Btn>
+                )}
+              </div>
+            </div>
+            {/* Summary strip */}
+            <div style={{ display: "flex", gap: "16px", marginTop: "12px", paddingTop: "10px", borderTop: `1px solid ${T.bdr}` }}>
+              <div style={{ fontSize: "11px", color: T.mu2 }}>Showing <span style={{ fontWeight: 700, color: T.tx }}>{filteredHistory.length}</span> bills</div>
+              <div style={{ fontSize: "11px", color: T.mu2 }}>Total: <span style={{ fontWeight: 700, color: T.em, fontFamily: fm }}>₹{filteredHistory.reduce((s, b) => s + b.total, 0).toFixed(2)}</span></div>
             </div>
           </Card>
+
+          {/* Grouped Bill History */}
+          {groupedHistory.length === 0 && (
+            <Card style={{ padding: "40px", textAlign: "center" }}>
+              <div style={{ fontSize: "13px", color: T.mu2 }}>No bills found for the selected filters.</div>
+            </Card>
+          )}
+          {groupedHistory.map(group => (
+            <div key={group.dateKey} style={{ marginBottom: "18px" }}>
+              {/* Date Group Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", padding: "0 4px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: group.label === 'Today' ? T.em : T.ind }} />
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: T.tx }}>{group.label}</div>
+                  <div style={{ fontSize: "11px", color: T.mu2 }}>({group.bills.length} bill{group.bills.length !== 1 ? 's' : ''})</div>
+                </div>
+                <div style={{ fontSize: "12px", fontWeight: 700, color: T.em, fontFamily: fm }}>₹{group.dayTotal.toFixed(2)}</div>
+              </div>
+              <Card style={{ overflow: "hidden" }}>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${T.bdr}`, background: "rgba(255,255,255,0.03)" }}>
+                        {["Bill ID", "Table", "Date & Time", "Method", "Subtotal", "GST", "SVC", "Total", "Items", "Action"].map(h => (
+                          <th key={h} style={{ textAlign: "left", padding: "12px 14px", fontSize: "10px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.bills.map(b => {
+                        const dateObj = b.date ? new Date(b.date) : null;
+                        const dateTimeStr = dateObj
+                          ? `${dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} · ${dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`
+                          : b.time;
+                        return (
+                          <tr key={b.id} style={{ borderBottom: `1px solid ${T.bdr}` }}>
+                            <td style={{ padding: "12px 14px", fontSize: "12px", fontWeight: 700, color: T.tx, fontFamily: fm }}>{b.id}</td>
+                            <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{b.table}</td>
+                            <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{dateTimeStr}</td>
+                            <td style={{ padding: "12px 14px" }}><Badge color={b.method === "UPI" ? "indigo" : b.method === "CARD" ? "blue" : "gray"}>{b.method}</Badge></td>
+                            <td style={{ padding: "12px 14px", fontSize: "12px", color: T.tx, fontFamily: fm }}>₹{b.sub.toFixed(2)}</td>
+                            <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2, fontFamily: fm }}>₹{b.gst.toFixed(2)}</td>
+                            <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2, fontFamily: fm }}>₹{b.svc.toFixed(2)}</td>
+                            <td style={{ padding: "12px 14px", fontSize: "13px", fontWeight: 800, color: T.em, fontFamily: fm }}>₹{b.total.toFixed(2)}</td>
+                            <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{b.itemsCount}</td>
+                            <td style={{ padding: "12px 14px" }}>
+                              <Btn size="sm" variant="ghost" onClick={() => handleHistoryPrint(b)}>
+                                <Printer size={12} style={{ marginRight: '4px' }} /> Print
+                              </Btn>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          ))}
         </div>
       )}
 

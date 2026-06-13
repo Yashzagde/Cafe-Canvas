@@ -71,6 +71,7 @@ interface BillHistoryEntry {
   table: string;
   section: string;
   time: string;
+  date: string;
   method: string;
   sub: number;
   gst: number;
@@ -153,6 +154,7 @@ export default function CafeCanvaAdmin() {
   const [isOnlineState, setIsOnlineState] = useState(true);
   const [offlineBillsCount, setOfflineBillsCount] = useState(0);
   const [rawBillsList, setRawBillsList] = useState<any[]>([]);
+  const [rawOrdersList, setRawOrdersList] = useState<any[]>([]);
 
   // Receipt Preview
   const [showReceipt, setShowReceipt] = useState(false);
@@ -382,7 +384,7 @@ export default function CafeCanvaAdmin() {
               _key: i.id,
               itemId: i.menu_item_id || "",
               name: i.item_name,
-              price: (i.unit_price || i.unit_price_paise || 0) / 100,
+              price: (i.unit_price ?? 0) / 100,
               qty: i.quantity
             });
           });
@@ -396,7 +398,7 @@ export default function CafeCanvaAdmin() {
           id: `#${o.id.substring(0, 4).toUpperCase()}`,
           tableId: mappedTables.find((t: any) => t.id === o.table_id)?.name || "Table Guest",
           desc: orderSummary.length > 30 ? orderSummary.substring(0, 27) + "..." : orderSummary,
-          amount: (o.total || o.total_amount_paise || 0) / 100,
+          amount: ((o.total ?? 0)) / 100,
           status: o.status,
           age: `${mins}m ago`
         });
@@ -404,6 +406,7 @@ export default function CafeCanvaAdmin() {
 
       setTableOrders(ordersByTable);
       setOrders(recentOrdersList);
+      setRawOrdersList(ordersData);
 
       // Parse Bills History
       const mappedHistory: BillHistoryEntry[] = mergedBills.map((b: any) => {
@@ -422,12 +425,13 @@ export default function CafeCanvaAdmin() {
           table: matchingTable?.name || (b.table_number ? `Table ${b.table_number}` : "Table"),
           section: matchingTable?.section || "Indoor",
           time: new Date(b.created_at || b.paid_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+          date: b.created_at || b.paid_at || new Date().toISOString(),
           method: (b.payment_method || "CASH").toUpperCase(),
-          sub: (b.subtotal || b.subtotal_paise || 0) / 100,
-          gst: ((b.cgst || b.cgst_paise || 0) + (b.sgst || b.sgst_paise || 0)) / 100,
-          svc: ((b.total || b.total_paise || 0) - (b.subtotal || b.subtotal_paise || 0) - (b.cgst || b.cgst_paise || 0) - (b.sgst || b.sgst_paise || 0) + (b.discount_amount || 0)) / 100,
-          discount: (b.discount_amount || 0) / 100,
-          total: (b.total || b.total_paise || 0) / 100,
+          sub: (b.subtotal ?? 0) / 100,
+          gst: ((b.cgst ?? 0) + (b.sgst ?? 0)) / 100,
+          svc: ((b.total ?? 0) - (b.subtotal ?? 0) - (b.cgst ?? 0) - (b.sgst ?? 0) + (b.discount_amount ?? 0)) / 100,
+          discount: (b.discount_amount ?? 0) / 100,
+          total: (b.total ?? 0) / 100,
           itemsCount: billItemsList.length || 1,
           billItems: billItemsList
         };
@@ -792,6 +796,7 @@ export default function CafeCanvaAdmin() {
                   tables={tables}
                   orders={orders}
                   bills={rawBillsList}
+                  rawOrders={rawOrdersList}
                 />
               )}
               {page === "menu" && (
