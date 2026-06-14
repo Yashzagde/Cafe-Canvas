@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cafecanva_ui/cafecanva_ui.dart';
 import 'package:cafecanva_core/cafecanva_core.dart';
 import 'features/screens.dart';
+import 'package:hive/hive.dart';
 
 final GoRouter staffPosRouter = GoRouter(
   initialLocation: '/',

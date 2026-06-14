@@ -111,12 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final match = await AuthService.instance.verifyOfflinePin(pin);
       if (match) {
         ActivityTracker.recordActivity();
-        final role = AuthService.userRole?.toLowerCase();
-        if (role == 'kitchen') {
-          context.go('/active-orders');
-        } else {
-          context.go('/floor');
-        }
+        context.go('/portal-choice');
       } else {
         setState(() {
           _errorMsg = 'Incorrect POS PIN. Access Denied.';
@@ -183,12 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         ActivityTracker.recordActivity();
-        final role = AuthService.userRole?.toLowerCase();
-        if (role == 'kitchen') {
-          context.go('/active-orders');
-        } else {
-          context.go('/floor');
-        }
+        context.go('/portal-choice');
       }
     } catch (e) {
       setState(() {
@@ -453,11 +443,19 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<TableModel> _tables = [];
+  
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  final FlutterTts _flutterTts = FlutterTts();
+  String? _selectedStaffName;
 
   @override
   void initState() {
     super.initState();
     _loadTables();
+    
+    final sessionBox = Hive.box('session');
+    _selectedStaffName = sessionBox.get('selected_staff_name') as String?;
     
     final locationId = AuthService.locationId ?? 'demo-branch-7777';
     // Blocker 3: Postgres real-time channels strictly bounded inside branch isolation filters
@@ -504,6 +502,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
     final callId = record['id'] as String? ?? '';
     final tableName = record['tableName'] as String? ?? 'Table ${record['table_number'] ?? ''}';
     final isForwarded = record['is_forwarded'] as bool? ?? false;
+
+    // Small vibration alert
+    HapticFeedback.lightImpact();
+    // Voice alert TTS
+    _flutterTts.speak('$tableName is calling for assistance');
 
     showDialog(
       context: context,
@@ -562,6 +565,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
+                HapticFeedback.vibrate(); // One-time vibration
                 try {
                   final userId = AuthService.currentUser?.id ?? 'unknown';
                   await StaffRepository.attendCall(callId, userId);
@@ -636,71 +640,134 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
     }
   }
 
-  void _showTableOptions(TableModel table) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: CafeCanvaRadius.lg)),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(CafeCanvaSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                table.name,
-                style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+  void _handleTableTap(TableModel table) {
+    if (table.status == 'occupied') {
+      showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: CafeCanvaRadius.lg)),
+        builder: (context) {
+          return Container(
+            padding: const EdgeInsets.all(CafeCanvaSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  table.name,
+                  style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4.0),
+                Text(
+                  'Capacity: ${table.capacity}  •  Status: Occupied',
+                  style: const TextStyle(color: CafeCanvaColors.stone500, fontSize: 13.0),
+                ),
+                const Divider(height: 24.0),
+                ListTile(
+                  leading: const Icon(Icons.add_shopping_cart, color: CafeCanvaColors.primary),
+                  title: const Text('Continue Ordering', style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: const Text('Search menu & add items to KDS'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/order/${table.id}');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.receipt_long_outlined, color: CafeCanvaColors.success),
+                  title: const Text('Complete Order / Settle Bill', style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: const Text('Generate invoice & close session'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/settlement/${table.id}');
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } else {
+      // Available table: Create new bill (table session)
+      final nameCtrl = TextEditingController(text: 'Walk-in Guest');
+      final phoneCtrl = TextEditingController();
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text('Start Session: ${table.name}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Customer Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Customer Phone (Optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
               ),
-              const SizedBox(height: 4.0),
-              Text(
-                'Section: ${table.section}  •  Capacity: ${table.capacity}',
-                style: const TextStyle(color: CafeCanvaColors.stone500, fontSize: 13.0),
-              ),
-              const Divider(height: 24.0),
-              
-              ListTile(
-                leading: const Icon(Icons.add_shopping_cart, color: CafeCanvaColors.primary),
-                title: const Text('Start New Order', style: TextStyle(fontWeight: FontWeight.bold)),
-                onTap: () {
+              ElevatedButton(
+                onPressed: () async {
                   Navigator.pop(context);
-                  context.go('/order/${table.id}');
+                  setState(() => _isLoading = true);
+                  try {
+                    final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
+                    // Start table session in DB
+                    await SupabaseService.client.from('table_sessions').insert({
+                      'tenant_id': tenantId,
+                      'table_id': table.id,
+                      'customer_name': nameCtrl.text.trim().isEmpty ? 'Walk-in Guest' : nameCtrl.text.trim(),
+                      'customer_phone': phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim(),
+                      'status': 'active',
+                      'started_at': DateTime.now().toUtc().toIso8601String(),
+                    });
+                    
+                    // Mark table status as occupied
+                    await TableRepository.updateTableStatus(table.id, 'occupied');
+                    
+                    if (mounted) {
+                      context.go('/order/${table.id}');
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      setState(() => _isLoading = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to start session: $e'), backgroundColor: Colors.red),
+                      );
+                    }
+                  }
                 },
-              ),
-              ListTile(
-                leading: const Icon(Icons.receipt_long_outlined, color: CafeCanvaColors.success),
-                title: const Text('View Bill / Settlement', style: TextStyle(fontWeight: FontWeight.bold)),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.go('/settlement/${table.id}');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.cleaning_services_outlined, color: CafeCanvaColors.info),
-                title: const Text('Mark Table Cleaning'),
-                onTap: () async {
-                  await TableRepository.updateTableStatus(table.id, 'cleaning');
-                  Navigator.pop(context);
-                  _loadTables();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.check_circle_outline, color: CafeCanvaColors.tableAvailable),
-                title: const Text('Mark Table Available'),
-                onTap: () async {
-                  await TableRepository.updateTableStatus(table.id, 'available');
-                  Navigator.pop(context);
-                  _loadTables();
-                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: CafeCanvaColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Start & Order'),
               ),
             ],
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    }
   }
 
   @override
   void dispose() {
+    _searchController.dispose();
     RealtimeService.instance.unsubscribeAll();
     super.dispose();
   }
@@ -709,6 +776,11 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_errorMessage != null) return Scaffold(body: CcErrorState(error: _errorMessage!, onRetry: _loadTables));
+
+    final filteredTables = _tables.where((t) {
+      final query = _searchQuery.toLowerCase();
+      return t.name.toLowerCase().contains(query);
+    }).toList();
 
     final double width = MediaQuery.of(context).size.width;
     int crossAxisCount = 2;
@@ -722,8 +794,34 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FLOOR PLAN GRID'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('FLOOR PLAN GRID', style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+            if (_selectedStaffName != null)
+              Text(
+                'Staff: $_selectedStaffName',
+                style: const TextStyle(fontSize: 11.0, color: CafeCanvaColors.stone400),
+              ),
+          ],
+        ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.people_outline),
+            tooltip: 'Switch Staff',
+            onPressed: () async {
+              await Hive.box('session').delete('selected_staff_id');
+              await Hive.box('session').delete('selected_staff_name');
+              if (context.mounted) {
+                context.go('/waiter-staff-select');
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.home_outlined),
+            tooltip: 'Portal Choice',
+            onPressed: () => context.go('/portal-choice'),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadTables,
@@ -744,22 +842,59 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
                 }
               },
             ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(CafeCanvaSpacing.lg),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          childAspectRatio: childAspectRatio,
-          crossAxisSpacing: CafeCanvaSpacing.md,
-          mainAxisSpacing: CafeCanvaSpacing.md,
-        ),
-        itemCount: _tables.length,
-        itemBuilder: (context, index) {
-          final t = _tables[index];
-          return CcTableCard(
-            table: t,
-            onTap: () => _showTableOptions(t),
-          );
-        },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(CafeCanvaSpacing.md),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (val) {
+                setState(() {
+                  _searchQuery = val;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search tables...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+            ),
+          ),
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(CafeCanvaSpacing.lg),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: childAspectRatio,
+                crossAxisSpacing: CafeCanvaSpacing.md,
+                mainAxisSpacing: CafeCanvaSpacing.md,
+              ),
+              itemCount: filteredTables.length,
+              itemBuilder: (context, index) {
+                final t = filteredTables[index];
+                return CcTableCard(
+                  table: t,
+                  onTap: () => _handleTableTap(t),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1855,3 +1990,558 @@ class _UserActivityWrapperState extends State<UserActivityWrapper> with WidgetsB
     );
   }
 }
+
+// ==========================================
+// NEW SCREENS FOR CAFE CANVA STAFF
+// ==========================================
+
+class PortalChoiceScreen extends StatelessWidget {
+  const PortalChoiceScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: CafeCanvaColors.stone50,
+      appBar: AppBar(
+        title: const Text('PORTAL SELECTOR'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService.signOut();
+              if (context.mounted) {
+                context.go('/');
+              }
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(CafeCanvaSpacing.xl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(Icons.storefront, size: 72.0, color: CafeCanvaColors.primary),
+              const SizedBox(height: 16.0),
+              const Text(
+                'Cafe Canva Staff Portal',
+                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 8.0),
+              const Text(
+                'Select your operational workspace',
+                style: TextStyle(color: CafeCanvaColors.stone500, fontSize: 14.0),
+              ),
+              const SizedBox(height: 40.0),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildPortalCard(
+                        context,
+                        title: 'Waiter POS',
+                        subtitle: 'Table service & ordering',
+                        icon: Icons.restaurant,
+                        color: CafeCanvaColors.primary,
+                        onTap: () => context.go('/waiter-staff-select'),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: _buildPortalCard(
+                        context,
+                        title: 'KDS',
+                        subtitle: 'Kitchen Order Display',
+                        icon: Icons.kitchen,
+                        color: CafeCanvaColors.secondary,
+                        onTap: () => context.go('/kds'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40.0),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await AuthService.signOut();
+                  if (context.mounted) {
+                    context.go('/');
+                  }
+                },
+                icon: const Icon(Icons.logout),
+                label: const Text('Log Out Session'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: CafeCanvaColors.error,
+                  side: const BorderSide(color: CafeCanvaColors.error),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPortalCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: color.withOpacity(0.3), width: 1.5),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(CafeCanvaSpacing.lg),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.05), color.withOpacity(0.12)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(CafeCanvaSpacing.md),
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: Colors.white, size: 36),
+              ),
+              const SizedBox(height: 16.0),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: CafeCanvaColors.stone800,
+                ),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: CafeCanvaColors.stone500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class WaiterStaffSelectScreen extends StatefulWidget {
+  const WaiterStaffSelectScreen({Key? key}) : super(key: key);
+
+  @override
+  State<WaiterStaffSelectScreen> createState() => _WaiterStaffSelectScreenState();
+}
+
+class _WaiterStaffSelectScreenState extends State<WaiterStaffSelectScreen> {
+  bool _isLoading = true;
+  String? _errorMsg;
+  List<UserProfile> _staff = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStaff();
+  }
+
+  Future<void> _loadStaff() async {
+    setState(() {
+      _isLoading = true;
+      _errorMsg = null;
+    });
+
+    try {
+      final tenantId = AuthService.tenantId;
+      if (tenantId == null) {
+        throw Exception("Session invalid: Tenant ID not found.");
+      }
+      final list = await StaffRepository.getStaff(tenantId, locationId: AuthService.locationId);
+      setState(() {
+        _staff = list;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMsg = CcError.friendly(e);
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: CafeCanvaColors.stone50,
+      appBar: AppBar(
+        title: const Text('SELECT WAITER STAFF'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/portal-choice'),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMsg != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(_errorMsg!, style: const TextStyle(color: CafeCanvaColors.error)),
+                      const SizedBox(height: 16),
+                      ElevatedButton(onPressed: _loadStaff, child: const Text('Retry')),
+                    ],
+                  ),
+                )
+              : _staff.isEmpty
+                  ? const CcEmptyState(
+                      icon: Icons.people_outline,
+                      title: 'No staff roster found',
+                      description: 'Configure staff accounts in the store admin panel first.',
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(CafeCanvaSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16.0),
+                            child: Text(
+                              'Please identify yourself to proceed:',
+                              style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _staff.length,
+                            itemBuilder: (context, index) {
+                              final profile = _staff[index];
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 6.0),
+                                elevation: 1,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: CafeCanvaColors.primary.withOpacity(0.2),
+                                    foregroundColor: CafeCanvaColors.primary,
+                                    child: Text(
+                                      profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'S',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    profile.name,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  subtitle: Text(
+                                    profile.role.toUpperCase(),
+                                    style: const TextStyle(fontSize: 12.0, color: CafeCanvaColors.stone500),
+                                  ),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () async {
+                                    final sessionBox = Hive.box('session');
+                                    await sessionBox.put('selected_staff_id', profile.id);
+                                    await sessionBox.put('selected_staff_name', profile.name);
+                                    if (context.mounted) {
+                                      context.go('/floor');
+                                    }
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+    );
+  }
+}
+
+class KdsTableWiseScreen extends StatefulWidget {
+  const KdsTableWiseScreen({Key? key}) : super(key: key);
+
+  @override
+  State<KdsTableWiseScreen> createState() => _KdsTableWiseScreenState();
+}
+
+class _KdsTableWiseScreenState extends State<KdsTableWiseScreen> {
+  final OrderRepository _orderRepo = OrderRepository();
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<OrderModel> _orders = [];
+  List<OrderItemModel> _allItems = [];
+  Map<String, String> _tableNames = {};
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadKdsData();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _loadKdsData(silent: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadKdsData({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
+    try {
+      final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
+      final locationId = AuthService.locationId ?? 'demo-branch-7777';
+
+      final tables = await TableRepository.getTables(tenantId, locationId);
+      final Map<String, String> tNames = { for (var t in tables) t.id: t.name };
+
+      final activeOrders = await OrderRepository.getActiveOrders(tenantId, locationId);
+      
+      final orderIds = activeOrders.map((o) => o.id).toList();
+      final items = await OrderRepository.getOrderItemsBatch(orderIds);
+
+      if (mounted) {
+        setState(() {
+          _orders = activeOrders;
+          _allItems = items;
+          _tableNames = tNames;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted && !silent) {
+        setState(() {
+          _errorMessage = CcError.friendly(e);
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _updateItemKdsStatus(String itemId, String status) async {
+    try {
+      await OrderRepository.updateItemKdsStatus(itemId, status);
+      HapticFeedback.lightImpact();
+      _loadKdsData(silent: true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update KDS: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_errorMessage != null) return Scaffold(body: CcErrorState(error: _errorMessage!, onRetry: () => _loadKdsData()));
+
+    final orderTableMap = { for (var o in _orders) o.id: o.tableId };
+
+    final kdsItems = _allItems.where((i) => i.kdsStatus == 'pending' || i.kdsStatus == 'preparing').toList();
+
+    final Map<String, List<OrderItemModel>> groupedByTable = {};
+    for (final item in kdsItems) {
+      final tId = orderTableMap[item.orderId] ?? 'unknown';
+      final tName = _tableNames[tId] ?? 'Table (${tId.length > 5 ? tId.substring(0, 5) : tId})';
+      groupedByTable.putIfAbsent(tName, () => []).add(item);
+    }
+
+    final double width = MediaQuery.of(context).size.width;
+    final int crossAxisCount = width >= 1024 ? 3 : (width >= 720 ? 2 : 1);
+
+    return Scaffold(
+      backgroundColor: CafeCanvaColors.stone100,
+      appBar: AppBar(
+        title: const Text('KITCHEN DISPLAY SYSTEM (KDS)'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/portal-choice'),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _loadKdsData(),
+          ),
+        ],
+      ),
+      body: groupedByTable.isEmpty
+          ? const CcEmptyState(
+              icon: Icons.done_all,
+              title: 'No pending kitchen tickets',
+              description: 'All table orders are fully prepared.',
+            )
+          : crossAxisCount == 1
+              ? ListView(
+                  padding: const EdgeInsets.all(CafeCanvaSpacing.md),
+                  children: groupedByTable.entries.map((entry) => _buildTableKdsCard(entry.key, entry.value)).toList(),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(CafeCanvaSpacing.md),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    childAspectRatio: 1.3,
+                    crossAxisSpacing: CafeCanvaSpacing.md,
+                    mainAxisSpacing: CafeCanvaSpacing.md,
+                  ),
+                  itemCount: groupedByTable.length,
+                  itemBuilder: (context, index) {
+                    final entry = groupedByTable.entries.elementAt(index);
+                    return _buildTableKdsCard(entry.key, entry.value);
+                  },
+                ),
+    );
+  }
+
+  Widget _buildTableKdsCard(String tableName, List<OrderItemModel> items) {
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: CafeCanvaColors.stone200),
+      ),
+      margin: const EdgeInsets.only(bottom: CafeCanvaSpacing.md),
+      child: Padding(
+        padding: const EdgeInsets.all(CafeCanvaSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  tableName,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: CafeCanvaColors.primary),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: CafeCanvaColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${items.length} Items',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: CafeCanvaColors.primary),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 20, thickness: 1),
+            Expanded(
+              child: ListView.separated(
+                itemCount: items.length,
+                separatorBuilder: (context, index) => const Divider(height: 12, color: CafeCanvaColors.stone200),
+                itemBuilder: (context, index) {
+                  final i = items[index];
+                  final List<String> modNames = i.modifiers.map((m) => (m['name'] ?? m['itemName'] ?? '') as String).where((name) => name.isNotEmpty).toList();
+                  
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${i.quantity}x',
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: CafeCanvaColors.stone800),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              i.itemName,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: CafeCanvaColors.stone800),
+                            ),
+                            if (modNames.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                'Mods: ${modNames.join(", ")}',
+                                style: const TextStyle(fontSize: 11, color: CafeCanvaColors.secondary, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                            if (i.notes != null && i.notes!.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                'Note: ${i.notes}',
+                                style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Colors.blueGrey),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (i.kdsStatus == 'pending')
+                        ElevatedButton(
+                          onPressed: () => _updateItemKdsStatus(i.id, 'preparing'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: CafeCanvaColors.secondary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            minimumSize: Size.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('PREPARE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        )
+                      else if (i.kdsStatus == 'preparing')
+                        ElevatedButton(
+                          onPressed: () => _updateItemKdsStatus(i.id, 'ready'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            minimumSize: Size.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('DONE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
