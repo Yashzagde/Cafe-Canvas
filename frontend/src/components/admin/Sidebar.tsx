@@ -24,7 +24,6 @@ const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "📊" },
   { id: "notifications", label: "Notifications", icon: "🔔" },
   { id: "menu", label: "Menu Catalog", icon: "🍽" },
-  { id: "modifiers", label: "Modifiers", icon: "⚙️" },
   { id: "tables", label: "Tables & QRs", icon: "🪑" },
   { id: "billing", label: "Billing OS", icon: "🧾" },
   { id: "customers", label: "Customers", icon: "👥" },
@@ -192,31 +191,7 @@ export default function Sidebar({
                 <span>🛠️</span>
                 <span>Settings</span>
               </button>
-              <button
-                onClick={() => {
-                  setPage("staff");
-                  setMenuOpen(false);
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "8px 10px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: page === "staff" ? T.iA(0.12) : "transparent",
-                  color: page === "staff" ? T.ind : T.mu,
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  textAlign: "left",
-                  width: "100%",
-                  fontFamily: ff
-                }}
-              >
-                <span>👥</span>
-                <span>Staffing & Attendance</span>
-              </button>
+
               <button
                 onClick={() => {
                   setPage("activity");

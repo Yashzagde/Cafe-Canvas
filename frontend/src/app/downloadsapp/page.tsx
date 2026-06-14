@@ -32,32 +32,7 @@ export default function DownloadsAppPage() {
       downloadUrl: 'https://store3.gofile.io/download/web/1a5d5118-1ead-491a-83ab-58d1542a9799/CafeCanvas%20Store%20Admin%20Setup%201.0.0.exe',
       badge: 'Owner / Manager'
     },
-    {
-      id: 'staff-pos-mobile',
-      name: 'Staff POS Mobile App',
-      version: 'v1.0.0',
-      size: '59.1 KB',
-      type: 'Android Package (.apk)',
-      description: 'Handheld fast billing and tables order dispatcher designed for cashiers, waitstaff, and floor operators. Features offline support and automatic sync.',
-      icon: Smartphone,
-      color: 'from-amber-500 to-amber-600',
-      glowColor: 'rgba(217, 119, 6, 0.3)',
-      downloadUrl: 'https://cafecanvas.bar/download/staff_pos.apk',
-      badge: 'Waiters / Cashiers'
-    },
-    {
-      id: 'kitchen-display-system',
-      name: 'Kitchen Display System (KDS)',
-      version: 'v1.0.0',
-      size: '12.4 MB',
-      type: 'Android Package (.apk)',
-      description: 'Smart order status screen for chef counters and cooking staff. Replaces paper receipts with real-time status alerts and cooking duration tracking.',
-      icon: Tv,
-      color: 'from-yellow-400 to-amber-500',
-      glowColor: 'rgba(234, 179, 8, 0.3)',
-      downloadUrl: 'https://cafecanvas.bar/download/kitchen_display.apk',
-      badge: 'Kitchen Staff'
-    },
+
     {
       id: 'customer-storefront',
       name: 'Customer Storefront App',

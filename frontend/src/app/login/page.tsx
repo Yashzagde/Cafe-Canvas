@@ -183,25 +183,7 @@ export default function LoginPage() {
       });
     }
 
-    // 2. Staff POS Terminal
-    list.push({
-      id: 'pos',
-      title: 'Staff POS Terminal',
-      description: 'Quick-billing interface, tables visualizer, and order taking.',
-      icon: <ClipboardList className="w-8 h-8 text-emerald-600" />,
-      path: '/staff',
-    });
 
-    // 3. Kitchen Display System (KDS)
-    if (isOwnerOrManager || ['kitchen', 'chef'].includes(role)) {
-      list.push({
-        id: 'kds',
-        title: 'Kitchen Display (KDS)',
-        description: 'Real-time order ticket tracker and preparation pipeline.',
-        icon: <Utensils className="w-8 h-8 text-indigo-600" />,
-        path: '/kos',
-      });
-    }
 
     // 4. Customer Storefront Menu
     if (slug) {
