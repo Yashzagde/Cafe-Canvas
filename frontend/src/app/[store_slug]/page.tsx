@@ -414,22 +414,23 @@ export default function Storefront() {
 
         let tableQuery = supabase
           .from('tables')
-          .select('id, name, capacity, section, status, branch_id')
+          .select('id, name, capacity, section, status, location_id')
           .eq('tenant_id', tenantData.id)
           .is('deleted_at', null);
 
         if (branchId) {
-          tableQuery = tableQuery.eq('branch_id', branchId);
+          tableQuery = tableQuery.eq('location_id', branchId);
         }
 
         const { data: tableData, error: tableError } = await tableQuery.order('name', { ascending: true });
 
         if (tableError) throw tableError;
         
-        // Map branch_id to location_id for storefront compatibility
+        // Map location_id to branch_id and location_id for storefront compatibility
         const mappedTables = (tableData || []).map(t => ({
           ...t,
-          location_id: t.branch_id
+          branch_id: t.location_id,
+          location_id: t.location_id
         }));
         setTables(mappedTables);
         

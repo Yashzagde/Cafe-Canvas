@@ -25,7 +25,7 @@ export async function getTablesAction(branchId: string) {
     .from('tables')
     .select('*')
     .eq('tenant_id', profile.tenant_id)
-    .eq('branch_id', branchId)
+    .eq('location_id', branchId)
     .is('deleted_at', null)
     .order('name', { ascending: true });
 
@@ -33,7 +33,13 @@ export async function getTablesAction(branchId: string) {
     throw new Error(error.message);
   }
 
-  return data;
+  // Map database columns to the branch_id/floor_x/floor_y types expected by the frontend
+  return (data || []).map(t => ({
+    ...t,
+    branch_id: t.location_id,
+    floor_x: t.position_x ?? 0,
+    floor_y: t.position_y ?? 0,
+  })) as unknown as Database['public']['Tables']['tables']['Row'][];
 }
 
 /**
@@ -49,20 +55,37 @@ export async function createTableAction(insertData: Omit<Database['public']['Tab
     { cookies: { get(n) { return cookieStore.get(n)?.value } } }
   );
 
+  const rawInsert = insertData as any;
+  const dbPayload = {
+    name: rawInsert.name,
+    capacity: rawInsert.capacity,
+    section: rawInsert.section,
+    shape: rawInsert.shape || 'square',
+    status: rawInsert.status || 'available',
+    tenant_id: profile.tenant_id,
+    location_id: rawInsert.branch_id || rawInsert.location_id,
+    position_x: rawInsert.floor_x ?? rawInsert.position_x ?? 0,
+    position_y: rawInsert.floor_y ?? rawInsert.position_y ?? 0,
+    qr_version: 1,
+    qr_generated_at: new Date().toISOString()
+  };
+
   const { data, error } = await supabase
     .from('tables')
-    .insert({
-      ...insertData,
-      tenant_id: profile.tenant_id,
-      qr_version: 1,
-      qr_generated_at: new Date().toISOString()
-    })
+    .insert(dbPayload)
     .select()
     .single();
 
   if (error) {
     throw new Error(error.message);
   }
+
+  const mappedRow = {
+    ...data,
+    branch_id: data.location_id,
+    floor_x: data.position_x ?? 0,
+    floor_y: data.position_y ?? 0
+  } as unknown as Database['public']['Tables']['tables']['Row'];
 
   await logAuditEvent({
     tenantId: profile.tenant_id,
@@ -75,7 +98,7 @@ export async function createTableAction(insertData: Omit<Database['public']['Tab
     newData: data as Record<string, unknown>
   });
 
-  return data;
+  return mappedRow;
 }
 
 /**
@@ -91,6 +114,23 @@ export async function updateTableAction(tableId: string, updateData: Partial<Dat
     { cookies: { get(n) { return cookieStore.get(n)?.value } } }
   );
 
+  const rawUpdate = updateData as any;
+  const dbUpdate: any = {};
+  if (rawUpdate.name !== undefined) dbUpdate.name = rawUpdate.name;
+  if (rawUpdate.capacity !== undefined) dbUpdate.capacity = rawUpdate.capacity;
+  if (rawUpdate.section !== undefined) dbUpdate.section = rawUpdate.section;
+  if (rawUpdate.shape !== undefined) dbUpdate.shape = rawUpdate.shape;
+  if (rawUpdate.status !== undefined) dbUpdate.status = rawUpdate.status;
+  if (rawUpdate.branch_id !== undefined) dbUpdate.location_id = rawUpdate.branch_id;
+  if (rawUpdate.location_id !== undefined) dbUpdate.location_id = rawUpdate.location_id;
+  if (rawUpdate.floor_x !== undefined) dbUpdate.position_x = rawUpdate.floor_x;
+  if (rawUpdate.floor_y !== undefined) dbUpdate.position_y = rawUpdate.floor_y;
+  if (rawUpdate.position_x !== undefined) dbUpdate.position_x = rawUpdate.position_x;
+  if (rawUpdate.position_y !== undefined) dbUpdate.position_y = rawUpdate.position_y;
+  if (rawUpdate.qr_version !== undefined) dbUpdate.qr_version = rawUpdate.qr_version;
+  if (rawUpdate.qr_generated_at !== undefined) dbUpdate.qr_generated_at = rawUpdate.qr_generated_at;
+  if (rawUpdate.deleted_at !== undefined) dbUpdate.deleted_at = rawUpdate.deleted_at;
+
   const { data: oldData } = await supabase
     .from('tables')
     .select('*')
@@ -100,7 +140,7 @@ export async function updateTableAction(tableId: string, updateData: Partial<Dat
 
   const { data: newData, error } = await supabase
     .from('tables')
-    .update(updateData)
+    .update(dbUpdate)
     .eq('id', tableId)
     .eq('tenant_id', profile.tenant_id)
     .select()
@@ -109,6 +149,13 @@ export async function updateTableAction(tableId: string, updateData: Partial<Dat
   if (error) {
     throw new Error(error.message);
   }
+
+  const mappedRow = {
+    ...newData,
+    branch_id: newData.location_id,
+    floor_x: newData.position_x ?? 0,
+    floor_y: newData.position_y ?? 0
+  } as unknown as Database['public']['Tables']['tables']['Row'];
 
   await logAuditEvent({
     tenantId: profile.tenant_id,
@@ -122,7 +169,7 @@ export async function updateTableAction(tableId: string, updateData: Partial<Dat
     newData: newData ? (newData as Record<string, unknown>) : undefined
   });
 
-  return newData;
+  return mappedRow;
 }
 
 /**
@@ -142,8 +189,8 @@ export async function rearrangeTablesAction(positions: { id: string; floor_x: nu
     await supabase
       .from('tables')
       .update({
-        floor_x: pos.floor_x,
-        floor_y: pos.floor_y
+        position_x: pos.floor_x,
+        position_y: pos.floor_y
       })
       .eq('id', pos.id)
       .eq('tenant_id', profile.tenant_id);
@@ -243,6 +290,13 @@ export async function deleteTableAction(tableId: string) {
     throw new Error(error.message);
   }
 
+  const mappedRow = {
+    ...newData,
+    branch_id: newData.location_id,
+    floor_x: newData.position_x ?? 0,
+    floor_y: newData.position_y ?? 0
+  } as unknown as Database['public']['Tables']['tables']['Row'];
+
   await logAuditEvent({
     tenantId: profile.tenant_id,
     branchId: profile.branch_id || undefined,
@@ -255,5 +309,5 @@ export async function deleteTableAction(tableId: string) {
     newData: newData ? (newData as Record<string, unknown>) : undefined
   });
 
-  return newData;
+  return mappedRow;
 }
