@@ -9,7 +9,7 @@ async function check() {
       const result = await sql`
         SELECT column_name 
         FROM information_schema.columns 
-        WHERE table_name = ${table};
+        WHERE table_name = ${table} AND table_schema = 'public';
       `;
       const columns = result.map(r => r.column_name);
       console.log(`Columns in ${table}:`, columns.join(', '));
