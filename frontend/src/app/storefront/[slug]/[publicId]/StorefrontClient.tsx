@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createBrowserClient } from '@/utils/supabase/client'
+import { createClient } from '@/utils/supabase/client'
 import { HeroSection } from './sections/HeroSection'
 import { MenuSection } from './sections/MenuSection'
 import { ReviewsSection } from './sections/ReviewsSection'
@@ -51,7 +51,7 @@ interface StorefrontClientProps {
 export function StorefrontClient({
   tenant, config, settings, initialTab, initialTable
 }: StorefrontClientProps) {
-  const supabase = createBrowserClient()
+  const supabase = createClient()
   const [activeTab, setActiveTab] = useState(initialTab)
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [tableNumber, setTableNumber] = useState<string | null>(null)

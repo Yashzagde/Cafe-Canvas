@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createBrowserClient } from '@/utils/supabase/client'
+import { createClient } from '@/utils/supabase/client'
 import type { CartItem } from '../StorefrontClient'
 
 interface MenuItem {
@@ -21,7 +21,7 @@ export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cart
   tenantId: string; showPrices: boolean; featuredOnly: boolean
   currency: string; cartItems: CartItem[]; onCartUpdate: (items: CartItem[]) => void
 }) {
-  const supabase = createBrowserClient()
+  const supabase = createClient()
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
@@ -45,15 +45,15 @@ export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cart
 
     const { data, error } = await itemQuery
     if (!error && data) {
-      const processed = data.map(cat => ({
+      const processed = data.map((cat: any) => ({
         ...cat,
         menu_items: (cat.menu_items || [])
           .filter((item: MenuItem) => item.is_available)
           .filter((item: MenuItem) => !featuredOnly || item.is_featured)
           .sort((a: MenuItem, b: MenuItem) => 0) // sort_order if needed
-      })).filter(cat => cat.menu_items.length > 0)
+      })).filter((cat: any) => cat.menu_items.length > 0)
 
-      setCategories(processed)
+      setCategories(processed as any)
       if (processed.length > 0) setActiveCategory(processed[0].id)
     }
     setLoading(false)
@@ -103,13 +103,13 @@ export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cart
     }])
   }
 
-  const filteredCategories = categories.map(cat => ({
+  const filteredCategories = categories.map((cat: MenuCategory) => ({
     ...cat,
     menu_items: cat.menu_items.filter(item =>
       searchQuery === '' ||
       item.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
-  })).filter(cat => cat.menu_items.length > 0)
+  })).filter((cat: MenuCategory) => cat.menu_items.length > 0)
 
   if (loading) return (
     <div className="py-16 text-center text-gray-400">Loading menu...</div>
@@ -134,7 +134,7 @@ export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cart
 
       {/* Category tabs */}
       <div className="flex gap-3 overflow-x-auto pb-3 mb-6">
-        {categories.map(cat => (
+        {categories.map((cat: MenuCategory) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
@@ -154,8 +154,8 @@ export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cart
 
       {/* Items grid */}
       {filteredCategories
-        .filter(cat => !activeCategory || cat.id === activeCategory)
-        .map(cat => (
+        .filter((cat: MenuCategory) => !activeCategory || cat.id === activeCategory)
+        .map((cat: MenuCategory) => (
           <div key={cat.id} className="mb-8">
             <h3 className="text-lg font-semibold text-gray-700 mb-4">{cat.name}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

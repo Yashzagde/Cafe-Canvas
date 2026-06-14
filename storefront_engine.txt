@@ -1,216 +1,165 @@
 ================================================================================
-CAFECANVA STOREFRONT ENGINE CODE & SPECIFICATIONS
+CAFECANVA STOREFRONT ENGINE CODE & SPECIFICATIONS (v3.0)
 ================================================================================
 
 This document details the Next.js Storefront Engine codebase, which handles:
 1. Dynamic hostname and subdomain resolution (Tenant Identification).
-2. URL rewrites and deep QR table links routing.
+2. URL rewrites and deep QR table links routing using the security gate.
 3. Real-time client-side rendering from Supabase storefront configuration.
-4. The deployment engine interface.
+4. Live-saving and publishing interface in the Store Admin panel.
 
 --------------------------------------------------------------------------------
 1. URL & SUBDOMAIN RESOLUTION MIDDLEWARE
 --------------------------------------------------------------------------------
 File Path: frontend/src/middleware.ts
 
-This file intercepts all storefront requests, extracts the tenant subdomain prefix,
-and handles routing redirects or URL rewrites under the hood.
-
-[CODE BLOCK]
 import { type NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { getSupabaseAnonKey, getSupabaseUrl } from '@/utils/supabase/env'
+
+// Public ID format: exactly 12 alphanumeric chars (our v3 format)
+const PUBLIC_ID_REGEX = /^[a-zA-Z0-9]{12}$/
+
+// Reserved subdomains that are never tenant slugs
+const RESERVED_SUBDOMAINS = new Set(['www', 'app', 'api', 'super', 'admin', 'mail', 'cdn'])
+
+// Known storefront tab names
+const KNOWN_TABS = new Set(['home', 'menu', 'dine-in', 'delivery', 'blogs', 'offers', 'about'])
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const host = request.headers.get('host') || ''
 
-  // 1. Skip static assets, public files, and payment webhook routes
+  // ── Skip static assets and API routes ──────────────────────────────────────
   if (
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/api/') ||
-    pathname.match(/\.(?:svg|png|jpg|jpeg|gif|webp|css|js|exe|apk|mp4|blockmap)$/)
+    pathname.startsWith('/favicon') ||
+    /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2|map)$/.test(pathname)
   ) {
     return NextResponse.next()
   }
 
-  // 2. Tenant Subdomain Resolution
-  let tenantSlug = ''
-  let tenantId = ''
-
-  // Parse subdomain (e.g. brewhouse.cafecanvas.bar -> brewhouse)
-  if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
-    const parts = host.split('.')
-    const isPlatformDomain = host.includes('run.app') || host.includes('vercel.app') || host.includes('supabase.co')
-    if (parts.length > 2 && !isPlatformDomain) {
-      tenantSlug = parts[0]
-    }
-  }
-
-  // 3. Initialize Supabase Response & Client
-  let supabaseResponse = NextResponse.next({
-    request: {
-      headers: new Headers(request.headers),
-    },
-  })
-
-  // Set tenant headers for Downstream consumption (Server Actions/Components)
-  supabaseResponse.headers.set('x-tenant-slug', tenantSlug)
-  supabaseResponse.headers.set('x-tenant-id', tenantId)
-
-  const supabase = createServerClient(
-    getSupabaseUrl(),
-    getSupabaseAnonKey() || 'placeholder',
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request: {
-              headers: new Headers(request.headers),
-            },
-          })
-          supabaseResponse.headers.set('x-tenant-slug', tenantSlug)
-          supabaseResponse.headers.set('x-tenant-id', tenantId)
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // Refresh user session
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // 4. Session & Route Protection for /admin
-  const isAdminRoute = pathname.startsWith('/admin')
-  const isLoginRoute = pathname === '/admin/login'
-
-  if (isAdminRoute) {
-    if (!user && !isLoginRoute) {
-      const loginUrl = new URL('/admin/login', request.url)
-      return NextResponse.redirect(loginUrl)
-    }
-
-    if (user && isLoginRoute) {
-      const dashboardUrl = new URL('/admin', request.url)
-      return NextResponse.redirect(dashboardUrl)
-    }
-  }
-
-  const isGlobalRoute =
+  // ── Protected platform routes (handled by their own auth) ──────────────────
+  const isPlatformRoute =
     pathname.startsWith('/admin') ||
     pathname.startsWith('/superadmin') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
     pathname.startsWith('/staff') ||
-    pathname.startsWith('/kos') ||
+    pathname.startsWith('/kds') ||
     pathname.startsWith('/download') ||
     pathname.startsWith('/comingsoon')
 
-  // 4b. Table QR / Deep Link Path Resolution (/[store_slug]/[table_slug])
-  if (!isGlobalRoute) {
-    const subdirectoryMatch = pathname.match(/^\/([^\/]+)\/(?:table\/)?([a-zA-Z0-9_-]+)$/)
-    if (subdirectoryMatch) {
-      const storeSlug = subdirectoryMatch[1]
-      const tableIdent = subdirectoryMatch[2]
-      const knownTabs = ['home', 'menu', 'dine-in', 'delivery', 'products', 'blogs', 'offers', 'about']
-      
-      const url = request.nextUrl.clone()
-      url.pathname = `/${storeSlug}`
-      
-      if (knownTabs.includes(tableIdent.toLowerCase())) {
-        url.searchParams.set('tab', tableIdent)
-      } else {
-        url.searchParams.set('table', tableIdent)
-      }
-      
-      const rewriteResponse = NextResponse.rewrite(url)
-      supabaseResponse.headers.forEach((value, key) => {
-        rewriteResponse.headers.set(key, value)
-      })
-      supabaseResponse.cookies.getAll().forEach((cookie) => {
-        rewriteResponse.cookies.set(cookie.name, cookie.value)
-      })
-      return rewriteResponse
+  if (isPlatformRoute) {
+    return NextResponse.next()
+  }
+
+  // ── Subdomain detection ────────────────────────────────────────────────────
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
+  const isDeploy    = host.includes('vercel.app') || host.includes('run.app')
+  const parts       = host.split('.')
+
+  let tenantSlug = ''
+  if (!isLocalhost && !isDeploy && parts.length >= 3) {
+    const candidate = parts[0].toLowerCase()
+    if (!RESERVED_SUBDOMAINS.has(candidate)) {
+      tenantSlug = candidate
     }
   }
 
-  // 5. Rewrite tenant subdomain requests to the dynamic tenant route /[store_slug]
-  if (
-    !isGlobalRoute &&
-    tenantSlug &&
-    tenantSlug !== 'app' &&
-    tenantSlug !== 'www' &&
-    host &&
-    !host.includes('localhost') &&
-    !host.includes('127.0.0.1')
-  ) {
+  // ── CASE 1: Subdomain storefront ───────────────────────────────────────────
+  // aether-cafe.cafecanvas.bar/9xK2mPqRjL4s
+  // aether-cafe.cafecanvas.bar/9xK2mPqRjL4s?table=4
+  // aether-cafe.cafecanvas.bar/9xK2mPqRjL4s/menu
+  if (tenantSlug) {
+    const segments = pathname.split('/').filter(Boolean)  // ['9xK2mPqRjL4s'] or ['9xK2mPqRjL4s', 'menu']
+
     const url = request.nextUrl.clone()
-    const match = pathname.match(/^\/(?:table\/)?([a-zA-Z0-9_-]+)$/)
-    
-    if (match) {
-      const tableIdent = match[1]
-      const knownTabs = ['home', 'menu', 'dine-in', 'delivery', 'products', 'blogs', 'offers', 'about']
-      
-      url.pathname = `/${tenantSlug}`
-      if (knownTabs.includes(tableIdent.toLowerCase())) {
-        url.searchParams.set('tab', tableIdent)
+
+    if (segments.length === 0) {
+      // aether-cafe.cafecanvas.bar/ → need publicId, show landing
+      // Let the dynamic page handle missing publicId → redirect to error
+      url.pathname = `/storefront/${tenantSlug}`
+    } else if (segments.length >= 1) {
+      const firstSeg = segments[0]
+
+      if (PUBLIC_ID_REGEX.test(firstSeg)) {
+        // aether-cafe.cafecanvas.bar/9xK2mPqRjL4s → pass publicId to page
+        url.pathname = `/storefront/${tenantSlug}/${firstSeg}`
+
+        // Sub-tab: /9xK2mPqRjL4s/menu → pass tab param
+        if (segments[1]) {
+          const tabOrTable = segments[1].toLowerCase()
+          if (KNOWN_TABS.has(tabOrTable)) {
+            url.searchParams.set('tab', tabOrTable)
+          }
+        }
+      } else if (KNOWN_TABS.has(firstSeg.toLowerCase())) {
+        // aether-cafe.cafecanvas.bar/menu → missing publicId, tab shortcut
+        // Won't pass security gate, but route gracefully
+        url.pathname = `/storefront/${tenantSlug}`
+        url.searchParams.set('tab', firstSeg)
       } else {
-        url.searchParams.set('table', tableIdent)
+        // Unknown path → 404
+        url.pathname = '/404'
       }
-    } else {
-      url.pathname = `/${tenantSlug}${pathname}`
     }
-    
-    const rewriteResponse = NextResponse.rewrite(url)
-    
-    supabaseResponse.headers.forEach((value, key) => {
-      rewriteResponse.headers.set(key, value)
-    })
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      rewriteResponse.cookies.set(cookie.name, cookie.value)
-    })
-    
-    return rewriteResponse
+
+    return NextResponse.rewrite(url)
   }
 
-  return supabaseResponse
+  // ── CASE 2: Path-based storefront (fallback / localhost dev) ───────────────
+  // order.cafecanvas.bar/aether-cafe/9xK2mPqRjL4s
+  // localhost:3000/aether-cafe/9xK2mPqRjL4s
+  const pathMatch = pathname.match(/^\/([a-z0-9-]+)\/([a-zA-Z0-9]{12})(?:\/([a-z-]+))?$/)
+  if (pathMatch) {
+    const [, slug, publicId, tabOrUndefined] = pathMatch
+    const url = request.nextUrl.clone()
+    url.pathname = `/storefront/${slug}/${publicId}`
+    if (tabOrUndefined && KNOWN_TABS.has(tabOrUndefined)) {
+      url.searchParams.set('tab', tabOrUndefined)
+    }
+    return NextResponse.rewrite(url)
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
-[END CODE BLOCK]
 
 --------------------------------------------------------------------------------
-2. DYNAMIC REAL-TIME STOREFRONT PAGE LOADER
+2. SERVER-SIDE DYNAMIC ROUTE PAGE COMPONENT
 --------------------------------------------------------------------------------
-File Path: frontend/src/app/[store_slug]/page.tsx (Extraction)
+File Path: frontend/src/app/storefront/[slug]/[publicId]/page.tsx
 
-The storefront page resolves the tenant via store_slug (slug or public UUID) and
-loads metadata and slide arrays from the database in real-time.
+import { notFound } from 'next/navigation'
+import { createClient } from '@/utils/supabase/server'
+import { StorefrontClient } from './StorefrontClient'
+import type { Metadata } from 'next'
 
-[CODE BLOCK]
-// Segment of page.tsx loading dynamic data
-const fetchTenantAndConfig = async () => {
-  try {
-    setLoading(true);
-    
-    // Resolve tenant details and storefront configuration
-    let query = supabase.from('tenants').select(`
+interface Props {
+  params: Promise<{ slug: string; publicId: string }>
+  searchParams: Promise<{ table?: string; tab?: string }>
+}
+
+// ── Server-side tenant + config fetch ─────────────────────────────────────────
+async function getTenantData(slug: string, publicId: string) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('tenants')
+    .select(`
       id,
       name,
       slug,
       public_id,
       logo_url,
+      phone,
+      address,
+      city,
+      state,
+      is_active,
       storefront_config (
         theme_id,
         hero_slides,
@@ -227,112 +176,1159 @@ const fetchTenantAndConfig = async () => {
         show_story,
         about_title,
         about_text,
-        about_image_url
+        about_image_url,
+        primary_color,
+        accent_color,
+        font_heading,
+        font_body
+      ),
+      store_settings (
+        currency,
+        tax_cgst,
+        tax_sgst,
+        tax_inclusive,
+        payment_methods,
+        upi_id,
+        upi_name,
+        open_time,
+        close_time
       )
-    `);
-    
-    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(storeSlug);
-    
-    if (isUuid) {
-      query = query.eq('public_id', storeSlug);
-    } else {
-      query = query.eq('slug', storeSlug);
-    }
+    `)
+    // ── SECURITY GATE: BOTH slug AND publicId must match ──────────────────────
+    .eq('slug', slug)
+    .eq('public_id', publicId)
+    .eq('is_active', true)
+    .single()
 
-    const { data: tenantData, error: tenantError } = await query.maybeSingle();
-    if (tenantError) throw tenantError;
+  if (error || !data) return null
+  return data
+}
 
-    if (!tenantData) {
-      setTenant(null);
-      setLoading(false);
-      return;
-    }
+// ── Generate metadata server-side (SEO) ───────────────────────────────────────
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const resolvedParams = await props.params
+  const data = await getTenantData(resolvedParams.slug, resolvedParams.publicId)
+  if (!data) return { title: 'Not Found' }
 
-    const configData = tenantData.storefront_config;
-    const rawConfig = Array.isArray(configData) ? configData[0] : configData;
-    const resolvedThemeId = rawConfig?.theme_id || 'theme-02';
+  const config = Array.isArray(data.storefront_config)
+    ? data.storefront_config[0]
+    : data.storefront_config
 
-    // Map slides from the JSONB array
-    const slides = rawConfig?.hero_slides || [];
-    const heroUrl = slides[0]?.image_url || null;
-    const heroUrl2 = slides[1]?.image_url || null;
-    const heroUrl3 = slides[2]?.image_url || null;
-    const heroTitle = slides[0]?.title || null;
-    const heroSubtitle = slides[0]?.subtitle || null;
-    const heroTitle2 = slides[1]?.title || null;
-    const heroSubtitle2 = slides[1]?.subtitle || null;
-    const heroTitle3 = slides[2]?.title || null;
-    const heroSubtitle3 = slides[2]?.subtitle || null;
+  const heroSlides = config?.hero_slides as any[] | null
 
-    setTenant({
-      id: tenantData.id,
-      name: tenantData.name,
-      subdomain: tenantData.slug,
-      public_id: tenantData.public_id,
-      theme_id: resolvedThemeId,
-      hero_image_url: heroUrl,
-      hero_image_url_2: heroUrl2,
-      hero_image_url_3: heroUrl3,
-      hero_title: heroTitle,
-      hero_subtitle: heroSubtitle,
-      hero_title_2: heroTitle2,
-      hero_subtitle_2: heroSubtitle2,
-      hero_title_3: heroTitle3,
-      hero_subtitle_3: heroSubtitle3,
-      logo_url: tenantData.logo_url || null,
-      footer_description: rawConfig?.footer_description || null,
-      footer_hours: rawConfig?.footer_hours || null,
-      footer_address: rawConfig?.footer_address || null,
-      footer_phone: rawConfig?.footer_phone || null,
-      footer_email: rawConfig?.footer_email || null,
-      about_title: rawConfig?.about_title || null,
-      about_text: rawConfig?.about_text || null,
-      about_image_url: rawConfig?.about_image_url || null,
-    });
-
-  } catch (err) {
-    console.error("Failed to load dynamic storefront config:", err);
-  } finally {
-    setLoading(false);
+  return {
+    title: `${data.name} — Menu & Order`,
+    description: config?.footer_description || `Welcome to ${data.name}`,
+    openGraph: {
+      title: data.name,
+      description: config?.footer_description || '',
+      images: heroSlides?.[0]?.image_url
+        ? [{ url: heroSlides[0].image_url }]
+        : [],
+    },
   }
-};
-[END CODE BLOCK]
+}
+
+// ── Page (Server Component — no loading state, no useEffect, instant render) ──
+export default async function StorefrontPage(props: Props) {
+  const resolvedParams = await props.params
+  const resolvedSearchParams = await props.searchParams
+  const data = await getTenantData(resolvedParams.slug, resolvedParams.publicId)
+
+  // Invalid slug+publicId combination → generic 404 (no hint which part is wrong)
+  if (!data) notFound()
+
+  const config = Array.isArray(data.storefront_config)
+    ? data.storefront_config[0]
+    : data.storefront_config
+
+  const settings = Array.isArray(data.store_settings)
+    ? data.store_settings[0]
+    : data.store_settings
+
+  // Pass resolved tenant data to client component for interactivity
+  return (
+    <StorefrontClient
+      tenant={{
+        id:         data.id,
+        name:       data.name,
+        slug:       data.slug,
+        publicId:   data.public_id,
+        logoUrl:    data.logo_url,
+        phone:      data.phone,
+        address:    `${data.address || ''}, ${data.city || ''}, ${data.state || ''}`.trim().replace(/^,\s*/, ''),
+      }}
+      config={config as any}
+      settings={settings as any}
+      initialTab={resolvedSearchParams.tab || 'home'}
+      initialTable={resolvedSearchParams.table || null}
+    />
+  )
+}
+
+// ISR: revalidate every 60 seconds
+export const revalidate = 60
 
 --------------------------------------------------------------------------------
-3. DEPLOY STOREFRONT INTERFACE
+3. CLIENT-SIDE CONTROLLER / STATE MANAGEMENT
 --------------------------------------------------------------------------------
-File Path: frontend/src/components/admin/StorefrontEditor.tsx (Extraction)
+File Path: frontend/src/app/storefront/[slug]/[publicId]/StorefrontClient.tsx
 
-The deployment trigger buttons within the storefront experience panel:
+'use client'
 
-[CODE BLOCK]
-<div className="flex flex-wrap gap-2">
+import { useState, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import { HeroSection } from './sections/HeroSection'
+import { MenuSection } from './sections/MenuSection'
+import { ReviewsSection } from './sections/ReviewsSection'
+import { BlogSection } from './sections/BlogSection'
+import { AboutSection } from './sections/AboutSection'
+import { FooterSection } from './sections/FooterSection'
+import { StorefrontNav } from './components/StorefrontNav'
+import { TableSessionModal } from './components/TableSessionModal'
+import { CallStaffButton } from './components/CallStaffButton'
+
+export interface CartItem {
+  id: string
+  name: string
+  price_paise: number
+  quantity: number
+}
+
+interface HeroSlide {
+  image_url: string | null
+  title?:    string | null
+  subtitle?: string | null
+}
+
+interface StorefrontClientProps {
+  tenant: {
+    id: string; name: string; slug: string; publicId: string
+    logoUrl: string | null; phone: string | null; address: string
+  }
+  config: {
+    theme_id: string; hero_slides: HeroSlide[]
+    footer_description: string | null; footer_hours: string | null
+    footer_address: string | null; footer_phone: string | null; footer_email: string | null
+    show_prices: boolean; allow_orders: boolean; show_blog: boolean
+    show_reviews: boolean; show_instagram: boolean; show_story: boolean
+    about_title: string | null; about_text: string | null; about_image_url: string | null
+    primary_color: string; accent_color: string
+  } | null
+  settings: {
+    currency: string; tax_cgst: number; tax_sgst: number; tax_inclusive: boolean
+    payment_methods: string[]; upi_id: string | null; upi_name: string | null
+    open_time: string | null; close_time: string | null
+  } | null
+  initialTab: string
+  initialTable: string | null
+}
+
+export function StorefrontClient({
+  tenant, config, settings, initialTab, initialTable
+}: StorefrontClientProps) {
+  const supabase = createClient()
+  const [activeTab, setActiveTab] = useState(initialTab)
+  const [sessionToken, setSessionToken] = useState<string | null>(null)
+  const [tableNumber, setTableNumber] = useState<string | null>(null)
+  const [showTableModal, setShowTableModal] = useState(false)
+
+  // Cart state
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+
+  // ── On mount: restore or create table session ──────────────────────────────
+  useEffect(() => {
+    const storageKey = `cc_session_${tenant.slug}`
+    const storedToken = localStorage.getItem(storageKey)
+    const storedTable = localStorage.getItem(`cc_table_${tenant.slug}`)
+
+    if (storedToken && storedTable) {
+      setSessionToken(storedToken)
+      setTableNumber(storedTable)
+    } else {
+      // Show table modal
+      // If table was pre-filled from QR ?table=4 param
+      if (initialTable) {
+        // Auto-create session with pre-filled table
+        createTableSession(initialTable)
+      } else {
+        setShowTableModal(true)
+      }
+    }
+  }, [])
+
+  const createTableSession = async (tNum: string) => {
+    const { data, error } = await supabase
+      .from('table_sessions')
+      .insert({
+        tenant_id:    tenant.id,
+        table_number: tNum,
+        is_active:    true,
+      })
+      .select('id, session_token')
+      .single()
+
+    if (!error && data) {
+      const storageKey = `cc_session_${tenant.slug}`
+      localStorage.setItem(storageKey, data.session_token)
+      localStorage.setItem(`cc_table_${tenant.slug}`, tNum)
+      setSessionToken(data.session_token)
+      setTableNumber(tNum)
+      setShowTableModal(false)
+    }
+  }
+
+  // CSS custom properties from tenant theme
+  const themeStyle = {
+    '--primary':   config?.primary_color || '#C4714A',
+    '--accent':    config?.accent_color  || '#D4A843',
+  } as React.CSSProperties
+
+  return (
+    <div style={themeStyle} className="min-h-screen bg-white">
+      {/* Fixed navigation */}
+      <StorefrontNav
+        tenant={tenant}
+        tableNumber={tableNumber}
+        cartCount={cartItems.length}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        showBlog={config?.show_blog ?? false}
+        onTableClick={() => setShowTableModal(true)}
+      />
+
+      {/* Call Staff — always visible when session exists */}
+      {sessionToken && tableNumber && (
+        <CallStaffButton
+          tenantId={tenant.id}
+          tableNumber={tableNumber}
+          sessionToken={sessionToken}
+        />
+      )}
+
+      {/* Table session modal */}
+      {showTableModal && (
+        <TableSessionModal
+          storeName={tenant.name}
+          prefilledTable={initialTable}
+          onConfirm={createTableSession}
+        />
+      )}
+
+      {/* Content sections */}
+      <main className="pb-24">
+        {activeTab === 'home' && (
+          <>
+            <HeroSection slides={config?.hero_slides ?? []} storeName={tenant.name} />
+            {config?.show_story && config.about_title && (
+              <AboutSection
+                title={config.about_title}
+                text={config.about_text}
+                imageUrl={config.about_image_url}
+              />
+            )}
+            {/* Preview of menu (featured items) */}
+            <MenuSection
+              tenantId={tenant.id}
+              showPrices={config?.show_prices ?? true}
+              featuredOnly={true}
+              currency={settings?.currency || 'INR'}
+              cartItems={cartItems}
+              onCartUpdate={setCartItems}
+            />
+          </>
+        )}
+
+        {activeTab === 'menu' && (
+          <MenuSection
+            tenantId={tenant.id}
+            showPrices={config?.show_prices ?? true}
+            featuredOnly={false}
+            currency={settings?.currency || 'INR'}
+            cartItems={cartItems}
+            onCartUpdate={setCartItems}
+          />
+        )}
+
+        {activeTab === 'blogs' && config?.show_blog && (
+          <BlogSection tenantId={tenant.id} />
+        )}
+
+        {(activeTab === 'home' || activeTab === 'reviews') && config?.show_reviews && (
+          <ReviewsSection
+            tenantId={tenant.id}
+            allowNew={true}
+            sessionToken={sessionToken}
+          />
+        )}
+      </main>
+
+      <FooterSection config={config} tenant={tenant} />
+    </div>
+  )
+}
+
+--------------------------------------------------------------------------------
+4. MENU SECTION COMPONENT (REAL-TIME AVAILABILITY)
+--------------------------------------------------------------------------------
+File Path: frontend/src/app/storefront/[slug]/[publicId]/sections/MenuSection.tsx
+
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import type { CartItem } from '../StorefrontClient'
+
+interface MenuItem {
+  id: string; name: string; name_hi: string | null
+  description: string | null; price_paise: number
+  compare_price_paise: number | null; image_url: string | null
+  is_available: boolean; is_featured: boolean
+  dietary_tags: string[]; prep_time_mins: number
+}
+
+interface MenuCategory {
+  id: string; name: string; image_url: string | null; sort_order: number
+  menu_items: MenuItem[]
+}
+
+export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cartItems, onCartUpdate }: {
+  tenantId: string; showPrices: boolean; featuredOnly: boolean
+  currency: string; cartItems: CartItem[]; onCartUpdate: (items: CartItem[]) => void
+}) {
+  const supabase = createClient()
+  const [categories, setCategories] = useState<MenuCategory[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // ── Initial fetch ──────────────────────────────────────────────────────────
+  const fetchMenu = async () => {
+    let itemQuery = supabase
+      .from('menu_categories')
+      .select(`
+        id, name, image_url, sort_order,
+        menu_items (
+          id, name, name_hi, description,
+          price_paise, compare_price_paise, image_url,
+          is_available, is_featured, dietary_tags, prep_time_mins
+        )
+      `)
+      .eq('tenant_id', tenantId)
+      .eq('is_visible', true)
+      .order('sort_order', { ascending: true })
+
+    const { data, error } = await itemQuery
+    if (!error && data) {
+      const processed = data.map((cat: any) => ({
+        ...cat,
+        menu_items: (cat.menu_items || [])
+          .filter((item: MenuItem) => item.is_available)
+          .filter((item: MenuItem) => !featuredOnly || item.is_featured)
+          .sort((a: MenuItem, b: MenuItem) => 0)
+      })).filter((cat: any) => cat.menu_items.length > 0)
+
+      setCategories(processed as any)
+      if (processed.length > 0) setActiveCategory(processed[0].id)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchMenu() }, [tenantId, featuredOnly])
+
+  // ── REALTIME: listen for menu item changes ─────────────────────────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel(`menu-${tenantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event:  '*',
+          schema: 'public',
+          table:  'menu_items',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          fetchMenu()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event:  '*',
+          schema: 'public',
+          table:  'menu_categories',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => { fetchMenu() }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [tenantId])
+
+  const formatPrice = (paise: number) => {
+    return `₹${(paise / 100).toFixed(0)}`
+  }
+
+  const addToCart = (item: MenuItem) => {
+    onCartUpdate([...cartItems, {
+      id: item.id, name: item.name, price_paise: item.price_paise, quantity: 1
+    }])
+  }
+
+  const filteredCategories = categories.map((cat: MenuCategory) => ({
+    ...cat,
+    menu_items: cat.menu_items.filter(item =>
+      searchQuery === '' ||
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })).filter((cat: MenuCategory) => cat.menu_items.length > 0)
+
+  if (loading) return (
+    <div className="py-16 text-center text-gray-400">Loading menu...</div>
+  )
+
+  if (categories.length === 0) return (
+    <div className="py-16 text-center text-gray-400">Menu coming soon.</div>
+  )
+
+  return (
+    <section id="menu" className="py-8 px-4 max-w-4xl mx-auto">
+      <h2 className="text-2xl font-bold text-gray-805 mb-6">Our Menu</h2>
+
+      {/* Search */}
+      <input
+        type="text"
+        placeholder="Search items..."
+        value={searchQuery}
+        onChange={e => setSearchQuery(e.target.value)}
+        className="w-full border border-gray-200 rounded-xl px-4 py-2 mb-6 text-sm"
+      />
+
+      {/* Category tabs */}
+      <div className="flex gap-3 overflow-x-auto pb-3 mb-6">
+        {categories.map((cat: MenuCategory) => (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.id)}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              activeCategory === cat.id
+                ? 'text-white shadow-md'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-250'
+            }`}
+            style={activeCategory === cat.id
+              ? { backgroundColor: 'var(--primary)' }
+              : {}}
+          >
+            {cat.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Items grid */}
+      {filteredCategories
+        .filter((cat: MenuCategory) => !activeCategory || cat.id === activeCategory)
+        .map((cat: MenuCategory) => (
+          <div key={cat.id} className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">{cat.name}</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {cat.menu_items.map(item => (
+                <div key={item.id}
+                  className="flex gap-3 bg-white rounded-2xl border border-gray-100 p-3 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  {item.image_url && (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      className="w-20 h-20 rounded-xl object-cover flex-shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-gray-805 text-sm">{item.name}</p>
+                        {item.dietary_tags?.includes('veg') && (
+                          <span className="inline-block w-3 h-3 border-2 border-green-600 rounded-sm mr-1">
+                            <span className="block w-1.5 h-1.5 bg-green-600 rounded-full m-auto mt-0.5" />
+                          </span>
+                        )}
+                        {item.description && (
+                          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      {showPrices && (
+                        <div>
+                          <span className="font-bold text-gray-855 text-sm">
+                            {formatPrice(item.price_paise)}
+                          </span>
+                          {item.compare_price_paise && item.compare_price_paise > item.price_paise && (
+                            <span className="text-xs text-gray-400 line-through ml-1">
+                              {formatPrice(item.compare_price_paise)}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => addToCart(item)}
+                        className="px-3 py-1 rounded-lg text-white text-xs font-bold"
+                        style={{ backgroundColor: 'var(--primary)' }}
+                      >
+                        + Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+    </section>
+  )
+}
+
+--------------------------------------------------------------------------------
+5. CALL STAFF BUTTON (REAL-TIME STAFF NOTIFICATIONS)
+--------------------------------------------------------------------------------
+File Path: frontend/src/app/storefront/[slug]/[publicId]/components/CallStaffButton.tsx
+
+'use client'
+
+import { useState } from 'react'
+import { createClient } from '@/utils/supabase/client'
+
+export function CallStaffButton({ tenantId, tableNumber, sessionToken }: {
+  tenantId: string; tableNumber: string; sessionToken: string
+}) {
+  const supabase = createClient()
+  const [status, setStatus]     = useState<'idle' | 'calling' | 'done' | 'error'>('idle')
+  const [cooldown, setCooldown] = useState(false)
+
+  const handleCall = async () => {
+    if (cooldown) return
+
+    setStatus('calling')
+
+    // 1. Insert staff_call record
+    const { data: call, error } = await supabase
+      .from('staff_calls')
+      .insert({
+        tenant_id:    tenantId,
+        table_number: tableNumber,
+        message:      'Customer requesting assistance',
+        status:       'pending',
+      })
+      .select('id')
+      .single()
+
+    if (error) { setStatus('error'); return }
+
+    // 2. Broadcast via Supabase Realtime to all staff apps
+    await supabase
+      .channel(`tenant-${tenantId}-ops`)
+      .send({
+        type:    'broadcast',
+        event:   'staff_call',
+        payload: {
+          call_id:      call.id,
+          table_number: tableNumber,
+          timestamp:    new Date().toISOString(),
+        }
+      })
+
+    setStatus('done')
+    setCooldown(true)
+
+    // Reset after 30 seconds
+    setTimeout(() => {
+      setStatus('idle')
+      setCooldown(false)
+    }, 30000)
+  }
+
+  return (
+    <button
+      onClick={handleCall}
+      disabled={cooldown}
+      className={`fixed bottom-20 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white text-sm font-bold transition-all ${
+        status === 'done'
+          ? 'bg-green-500 hover:bg-green-600'
+          : cooldown
+          ? 'bg-gray-400 cursor-not-allowed'
+          : 'active:scale-95'
+      }`}
+      style={!cooldown && status !== 'done' ? { backgroundColor: 'var(--primary)' } : {}}
+    >
+      {status === 'idle'    && '🔔 Call Staff'}
+      {status === 'calling' && '⏳ Calling...'}
+      {status === 'done'    && '✓ Staff notified'}
+      {status === 'error'   && '⚠️ Try again'}
+    </button>
+  )
+}
+
+--------------------------------------------------------------------------------
+6. REVIEWS SECTION (FEEDBACK + DISPLAY)
+--------------------------------------------------------------------------------
+File Path: frontend/src/app/storefront/[slug]/[publicId]/sections/ReviewsSection.tsx
+
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
+
+interface Review {
+  id: string; customer_name: string; rating_overall: number
+  rating_food: number | null; rating_service: number | null
+  comment: string | null; created_at: string
+}
+
+export function ReviewsSection({ tenantId, allowNew, sessionToken }: {
+  tenantId: string; allowNew: boolean; sessionToken: string | null
+}) {
+  const supabase = createClient()
+  const [reviews, setReviews]       = useState<Review[]>([])
+  const [showForm, setShowForm]     = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted]   = useState(false)
+
+  // Form state
+  const [name, setName]       = useState('')
+  const [rating, setRating]   = useState(5)
+  const [ratingFood, setRatingFood]     = useState(5)
+  const [ratingService, setRatingService] = useState(5)
+  const [comment, setComment] = useState('')
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      const { data } = await supabase
+        .from('customer_feedback')
+        .select('id, customer_name, rating_overall, rating_food, rating_service, comment, created_at')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (data) setReviews(data)
+    }
+    fetchReviews()
+  }, [tenantId])
+
+  const handleSubmit = async () => {
+    if (!name.trim() || submitting) return
+    setSubmitting(true)
+
+    const { error } = await supabase
+      .from('customer_feedback')
+      .insert({
+        tenant_id:       tenantId,
+        customer_name:   name.trim(),
+        rating_overall:  rating,
+        rating_food:     ratingFood,
+        rating_service:  ratingService,
+        comment:         comment.trim() || null,
+        would_revisit:   true,
+      })
+
+    setSubmitting(false)
+    if (!error) {
+      setSubmitted(true)
+      setShowForm(false)
+      // Refresh reviews
+      const { data } = await supabase
+        .from('customer_feedback')
+        .select('id, customer_name, rating_overall, rating_food, rating_service, comment, created_at')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      if (data) setReviews(data)
+    }
+  }
+
+  const StarRating = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(star => (
+        <button key={star} onClick={() => onChange(star)}
+          className={`text-2xl transition-transform hover:scale-110 ${star <= value ? 'text-yellow-400' : 'text-gray-200'}`}
+        >★</button>
+      ))}
+    </div>
+  )
+
+  return (
+    <section id="reviews" className="py-12 px-4 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-2xl font-bold text-gray-800">Guest Reviews</h2>
+        {allowNew && !submitted && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="px-4 py-2 rounded-xl text-white text-sm font-bold"
+            style={{ backgroundColor: 'var(--primary)' }}
+          >
+            + Add Review
+          </button>
+        )}
+        {submitted && (
+          <span className="text-green-600 text-sm font-medium">✓ Thank you!</span>
+        )}
+      </div>
+
+      {/* Review form */}
+      {showForm && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
+          <h3 className="font-semibold text-gray-800 mb-4">Share your experience</h3>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Your name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm"
+            />
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Overall</label>
+              <StarRating value={rating} onChange={setRating} />
+            </div>
+            <div className="flex gap-6">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Food</label>
+                <StarRating value={ratingFood} onChange={setRatingFood} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Service</label>
+                <StarRating value={ratingService} onChange={setRatingService} />
+              </div>
+            </div>
+            <textarea
+              placeholder="Tell us more (optional)"
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              rows={3}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm resize-none"
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={!name.trim() || submitting}
+              className="w-full py-3 rounded-xl text-white font-bold disabled:opacity-50"
+              style={{ backgroundColor: 'var(--primary)' }}
+            >
+              {submitting ? 'Submitting...' : 'Submit Review'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Reviews list */}
+      {reviews.length === 0 ? (
+        <p className="text-gray-400 text-sm text-center py-8">No reviews yet. Be the first!</p>
+      ) : (
+        <div className="space-y-4">
+          {reviews.map(review => (
+            <div key={review.id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-semibold text-gray-805 text-sm">{review.customer_name}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {[1,2,3,4,5].map(s => (
+                      <span key={s} className={`text-sm ${s <= review.rating_overall ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
+                    ))}
+                  </div>
+                </div>
+                <span className="text-xs text-gray-400">
+                  {new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                </span>
+              </div>
+              {review.comment && (
+                <p className="text-sm text-gray-650 mt-2">{review.comment}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+--------------------------------------------------------------------------------
+7. BLOG SECTION COMPONENT
+--------------------------------------------------------------------------------
+File Path: frontend/src/app/storefront/[slug]/[publicId]/sections/BlogSection.tsx
+
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
+
+interface BlogPost {
+  id: string; slug: string; title: string; excerpt: string
+  image_url: string | null; author: string; published_at: string; tags: string[]
+}
+
+export function BlogSection({ tenantId }: { tenantId: string }) {
+  const supabase = createClient()
+  const [posts, setPosts]           = useState<BlogPost[]>([])
+  const [selected, setSelected]     = useState<BlogPost | null>(null)
+  const [fullContent, setFullContent] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase
+      .from('blog_posts')
+      .select('id, slug, title, excerpt, image_url, author, published_at, tags')
+      .eq('tenant_id', tenantId)
+      .eq('is_published', true)
+      .order('published_at', { ascending: false })
+      .limit(12)
+      .then(({ data }) => { if (data) setPosts(data) })
+  }, [tenantId])
+
+  const openPost = async (post: BlogPost) => {
+    setSelected(post)
+    const { data } = await supabase
+      .from('blog_posts')
+      .select('content')
+      .eq('id', post.id)
+      .single()
+    if (data) setFullContent(data.content)
+  }
+
+  if (selected) {
+    return (
+      <section className="py-8 px-4 max-w-2xl mx-auto">
+        <button onClick={() => { setSelected(null); setFullContent(null) }}
+          className="text-sm text-gray-500 mb-6 flex items-center gap-1 hover:text-gray-800">
+          ← Back to blogs
+        </button>
+        {selected.image_url && (
+          <img src={selected.image_url} alt={selected.title}
+            className="w-full h-56 object-cover rounded-2xl mb-6" />
+        )}
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">{selected.title}</h1>
+        <p className="text-xs text-gray-400 mb-6">
+          By {selected.author} · {new Date(selected.published_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+        {fullContent
+          ? <div className="prose prose-sm max-w-none text-gray-705"
+              dangerouslySetInnerHTML={{ __html: fullContent }} />
+          : <p className="text-gray-400 text-sm">Loading...</p>
+        }
+      </section>
+    )
+  }
+
+  return (
+    <section id="blogs" className="py-12 px-4 max-w-4xl mx-auto">
+      <h2 className="text-2xl font-bold text-gray-800 mb-8">From Our Blog</h2>
+      {posts.length === 0 ? (
+        <p className="text-gray-400 text-center py-8">No posts yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          {posts.map(post => (
+            <button key={post.id} onClick={() => openPost(post)}
+              className="text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+            >
+              {post.image_url && (
+                <img src={post.image_url} alt={post.title}
+                  className="w-full h-40 object-cover" />
+              )}
+              <div className="p-4">
+                <p className="font-semibold text-gray-805 text-sm line-clamp-2 mb-1">{post.title}</p>
+                <p className="text-xs text-gray-400 line-clamp-2">{post.excerpt}</p>
+                <p className="text-xs text-gray-300 mt-2">
+                  {new Date(post.published_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+--------------------------------------------------------------------------------
+8. TABLE SESSION PROMPT MODAL
+--------------------------------------------------------------------------------
+File Path: frontend/src/app/storefront/[slug]/[publicId]/components/TableSessionModal.tsx
+
+'use client'
+
+import { useState } from 'react'
+
+export function TableSessionModal({ storeName, prefilledTable, onConfirm }: {
+  storeName: string; prefilledTable: string | null
+  onConfirm: (tableNumber: string) => void
+}) {
+  const [table, setTable] = useState(prefilledTable || '')
+  const [error, setError] = useState('')
+
+  const handleSubmit = () => {
+    const trimmed = table.trim()
+    if (!trimmed) { setError('Please enter your table number'); return }
+    onConfirm(trimmed)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-gray-855">Welcome to {storeName}</h2>
+          <p className="text-sm text-gray-500 mt-1">Enter your table number to get started</p>
+        </div>
+        <input
+          type="text"
+          value={table}
+          onChange={e => { setTable(e.target.value); setError('') }}
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          placeholder="e.g. 4 or T-12"
+          className="w-full border-2 border-gray-200 focus:border-[var(--primary)] rounded-xl px-4 py-3 text-center text-xl font-bold outline-none transition-colors"
+          autoFocus
+        />
+        {error && <p className="text-red-500 text-xs text-center mt-2">{error}</p>}
+        <button
+          onClick={handleSubmit}
+          className="w-full mt-4 py-3 rounded-xl text-white font-bold text-lg cursor-pointer hover:opacity-95 transition-all"
+          style={{ backgroundColor: 'var(--primary)' }}
+        >
+          Let's Go →
+        </button>
+        <p className="text-xs text-gray-400 text-center mt-3">
+          Your table number is on the QR code stand or card
+        </p>
+      </div>
+    </div>
+  )
+}
+
+--------------------------------------------------------------------------------
+9. FOOTER SECTION
+--------------------------------------------------------------------------------
+File Path: frontend/src/app/storefront/[slug]/[publicId]/sections/FooterSection.tsx
+
+'use client'
+
+interface FooterSectionProps {
+  tenant: {
+    name: string; phone: string | null; address: string
+  }
+  config: {
+    footer_description: string | null; footer_hours: string | null
+    footer_address: string | null; footer_phone: string | null; footer_email: string | null
+  } | null
+}
+
+export function FooterSection({ tenant, config }: FooterSectionProps) {
+  const phone = config?.footer_phone || tenant.phone || ''
+  const address = config?.footer_address || tenant.address || ''
+  const hours = config?.footer_hours || 'Open daily: 8:00 AM - 11:00 PM'
+
+  return (
+    <footer className="bg-gray-950 text-gray-400 py-12 px-6 border-t border-gray-900 mt-16">
+      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="space-y-3">
+          <h3 className="text-white font-bold text-lg">{tenant.name}</h3>
+          <p className="text-xs leading-relaxed">
+            {config?.footer_description || `Premium dining experience powered by CafeCanvas OS.`}
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <h4 className="text-white font-semibold text-sm tracking-wider uppercase">Hours</h4>
+          <p className="text-xs leading-relaxed whitespace-pre-wrap">{hours}</p>
+        </div>
+
+        <div className="space-y-3">
+          <h4 className="text-white font-semibold text-sm tracking-wider uppercase">Contact Us</h4>
+          <div className="text-xs space-y-1.5 leading-relaxed">
+            {address && <p>📍 {address}</p>}
+            {phone && <p>📞 {phone}</p>}
+            {config?.footer_email && <p>✉️ {config.footer_email}</p>}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto border-t border-gray-900 mt-10 pt-6 text-center text-[10px] tracking-wider uppercase opacity-60">
+        © {new Date().getFullYear()} {tenant.name}. Powered by CafeCanvas OS.
+      </div>
+    </footer>
+  )
+}
+
+--------------------------------------------------------------------------------
+10. STICKY NAVIGATION BAR
+--------------------------------------------------------------------------------
+File Path: frontend/src/app/storefront/[slug]/[publicId]/components/StorefrontNav.tsx
+
+'use client'
+
+import { Coffee, ShoppingBag, BookOpen, Home, MessageSquare, Newspaper } from 'lucide-react'
+
+interface StorefrontNavProps {
+  tenant: {
+    name: string; logoUrl: string | null
+  }
+  tableNumber: string | null
+  cartCount: number
+  activeTab: string
+  onTabChange: (tab: string) => void
+  showBlog: boolean
+  onTableClick: () => void
+}
+
+export function StorefrontNav({
+  tenant, tableNumber, cartCount, activeTab, onTabChange, showBlog, onTableClick
+}: StorefrontNavProps) {
+  return (
+    <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between shadow-sm">
+      <div className="flex items-center gap-3.5">
+        {tenant.logoUrl ? (
+          <img src={tenant.logoUrl} alt={tenant.name} className="w-9 h-9 rounded-full object-cover shadow-sm border border-gray-150" />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center">
+            <Coffee size={18} />
+          </div>
+        )}
+        <div className="flex flex-col text-left">
+          <span className="font-extrabold text-sm text-gray-855 tracking-tight leading-tight">{tenant.name}</span>
+          {tableNumber ? (
+            <button
+              onClick={onTableClick}
+              className="text-[9px] font-black tracking-widest text-[var(--primary)] uppercase bg-[var(--primary)]/10 px-2 py-0.5 rounded-full w-fit mt-0.5 hover:bg-[var(--primary)]/20 transition-colors"
+            >
+              Table: {tableNumber}
+            </button>
+          ) : (
+            <button
+              onClick={onTableClick}
+              className="text-[9px] font-black tracking-widest text-red-600 uppercase bg-red-50 px-2 py-0.5 rounded-full w-fit mt-0.5 hover:bg-red-100 transition-colors"
+            >
+              No Table Set
+            </button>
+          )}
+        </div>
+      </div>
+
+      <nav className="hidden md:flex items-center gap-2">
+        <button
+          onClick={() => onTabChange('home')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            activeTab === 'home' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <Home size={14} />
+          <span>Home</span>
+        </button>
+        <button
+          onClick={() => onTabChange('menu')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            activeTab === 'menu' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <BookOpen size={14} />
+          <span>Menu</span>
+        </button>
+        {showBlog && (
+          <button
+            onClick={() => onTabChange('blogs')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === 'blogs' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : 'text-gray-500 hover:text-gray-800'
+          }`}
+          >
+            <Newspaper size={14} />
+            <span>Blog</span>
+          </button>
+        )}
+        <button
+          onClick={() => onTabChange('reviews')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            activeTab === 'reviews' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <MessageSquare size={14} />
+          <span>Reviews</span>
+        </button>
+      </nav>
+
+      <div className="flex items-center gap-2">
+        <button className="relative p-2.5 bg-gray-55 hover:bg-gray-100 border border-gray-200 rounded-xl text-gray-600 hover:text-gray-850 transition-all flex items-center justify-center cursor-pointer">
+          <ShoppingBag size={16} />
+          {cartCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[var(--primary)] border-2 border-white text-white rounded-full text-[9px] font-black flex items-center justify-center">
+              {cartCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Tab Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-150 px-6 py-3.5 flex justify-around shadow-lg">
+        <button
+          onClick={() => onTabChange('home')}
+          className={`flex flex-col items-center gap-1 transition-all ${
+            activeTab === 'home' ? 'text-[var(--primary)] scale-105 font-bold' : 'text-gray-400'
+          }`}
+        >
+          <Home size={18} />
+          <span className="text-[10px]">Home</span>
+        </button>
+        <button
+          onClick={() => onTabChange('menu')}
+          className={`flex flex-col items-center gap-1 transition-all ${
+            activeTab === 'menu' ? 'text-[var(--primary)] scale-105 font-bold' : 'text-gray-400'
+          }`}
+        >
+          <BookOpen size={18} />
+          <span className="text-[10px]">Menu</span>
+        </button>
+        {showBlog && (
+          <button
+            onClick={() => onTabChange('blogs')}
+            className={`flex flex-col items-center gap-1 transition-all ${
+              activeTab === 'blogs' ? 'text-[var(--primary)] scale-105 font-bold' : 'text-gray-400'
+            }`}
+          >
+            <Newspaper size={18} />
+            <span className="text-[10px]">Blog</span>
+          </button>
+        )}
+        <button
+          onClick={() => onTabChange('reviews')}
+          className={`flex flex-col items-center gap-1 transition-all ${
+            activeTab === 'reviews' ? 'text-[var(--primary)] scale-105 font-bold' : 'text-gray-400'
+          }`}
+        >
+          <MessageSquare size={18} />
+          <span className="text-[10px]">Reviews</span>
+        </button>
+      </div>
+    </header>
+  )
+}
+
+--------------------------------------------------------------------------------
+11. STOREFRONT ADMIN SAVE & DEPLOY COMPONENT (INTEGRATION)
+--------------------------------------------------------------------------------
+File Path: frontend/src/components/admin/StorefrontEditor.tsx (Saved Payload Segment)
+
+// Segment of StorefrontEditor.tsx replacing fake alert deploy buttons:
+<div className="flex items-center gap-3">
   <button
     type="button"
-    onClick={() => {
-      alert('🚀 Storefront Engine: One-time deployment verified and active. Your customer storefront is live!');
-    }}
-    className="px-4 py-2 bg-gradient-to-r from-[#d97706] to-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer hover:opacity-95 transition-all flex items-center gap-1.5 shadow-sm"
+    onClick={handleSave}
+    disabled={saving}
+    className="px-4 py-2 text-white text-xs font-bold rounded-xl disabled:opacity-50 flex items-center gap-1.5 cursor-pointer hover:opacity-95 transition-all shadow-sm"
+    style={{ background: 'linear-gradient(to right, #d97706, #b45309)' }}
   >
-    <Sparkles size={13} />
-    Deploy Storefront
+    {saving ? '⏳ Saving...' : '💾 Save & Publish'}
   </button>
-  <button
-    type="button"
-    onClick={() => {
-      alert('⚙️ Storefront Engine Deployment: Verified. Running on active Edge routing. Uptime: 100%');
-    }}
-    className="px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#1e293b]/80 border border-[#e2e8f0] text-xs font-bold rounded-xl cursor-pointer transition-all"
-  >
-    Storefront Engine Deploy Storefront
-  </button>
+
+  <div className="flex items-center gap-2">
+    <span className="relative flex h-2 w-2">
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+    </span>
+    <span className="text-[10px] font-bold text-emerald-600">
+      Storefront live at {tenantSlug || 'store'}.cafecanvas.bar/{tenantPublicId || 'publicId'}
+    </span>
+  </div>
 </div>
-<div className="flex items-center gap-2 pt-1">
-  <span className="flex h-2 w-2 relative">
-    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-  </span>
-  <span className="text-[10px] font-bold text-emerald-600">Storefront Status: Always Working (Dynamic Real-Time Live)</span>
-</div>
-[END CODE BLOCK]
-================================================================================

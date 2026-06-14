@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createBrowserClient } from '@/utils/supabase/client'
+import { createClient } from '@/utils/supabase/client'
 
 interface Review {
   id: string; customer_name: string; rating_overall: number
@@ -12,7 +12,7 @@ interface Review {
 export function ReviewsSection({ tenantId, allowNew, sessionToken }: {
   tenantId: string; allowNew: boolean; sessionToken: string | null
 }) {
-  const supabase = createBrowserClient()
+  const supabase = createClient()
   const [reviews, setReviews]       = useState<Review[]>([])
   const [showForm, setShowForm]     = useState(false)
   const [submitting, setSubmitting] = useState(false)

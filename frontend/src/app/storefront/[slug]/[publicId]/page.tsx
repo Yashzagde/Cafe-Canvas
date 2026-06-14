@@ -1,16 +1,16 @@
 import { notFound } from 'next/navigation'
-import { createServerClient } from '@/utils/supabase/server'
+import { createClient } from '@/utils/supabase/server'
 import { StorefrontClient } from './StorefrontClient'
 import type { Metadata } from 'next'
 
 interface Props {
-  params: Promise<{ slug: string; publicId: string }> | { slug: string; publicId: string }
-  searchParams: Promise<{ table?: string; tab?: string }> | { table?: string; tab?: string }
+  params: Promise<{ slug: string; publicId: string }>
+  searchParams: Promise<{ table?: string; tab?: string }>
 }
 
 // ── Server-side tenant + config fetch ─────────────────────────────────────────
 async function getTenantData(slug: string, publicId: string) {
-  const supabase = createServerClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('tenants')

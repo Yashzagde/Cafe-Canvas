@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { createBrowserClient } from '@/utils/supabase/client'
+import { createClient } from '@/utils/supabase/client'
 
 export function CallStaffButton({ tenantId, tableNumber, sessionToken }: {
   tenantId: string; tableNumber: string; sessionToken: string
 }) {
-  const supabase = createBrowserClient()
+  const supabase = createClient()
   const [status, setStatus]     = useState<'idle' | 'calling' | 'done' | 'error'>('idle')
   const [cooldown, setCooldown] = useState(false)
 

@@ -2570,40 +2570,33 @@ export default function StorefrontEditor({
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-xs font-black uppercase tracking-wider text-[#1e293b]">Storefront Engine & Deployment</h4>
-                      <p className="text-[10px] text-slate-400">One-time deploy setup for the Storefront Engine.</p>
+                      <p className="text-[10px] text-slate-400">Your storefront is dynamic and always active.</p>
                     </div>
                   </div>
                   <div className="p-4 rounded-2xl bg-[#f8fafc] border border-[#e2e8f0] space-y-3">
                     <p className="text-[11px] text-[#1e293b]/60 leading-normal">
-                      The CafeCanvas storefront uses a zero-downtime, database-driven engine. Store Admins execute a one-time deploy setup. Once active, the storefront is dynamically working in real-time, fetching live changes instantly on save.
+                      The CafeCanvas storefront uses a zero-downtime, database-driven engine. There is no manual build or deployment step required. When you save your configuration, it is published instantly in real-time.
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        onClick={() => {
-                          alert('🚀 Storefront Engine: One-time deployment verified and active. Your customer storefront is live!');
-                        }}
-                        className="px-4 py-2 bg-gradient-to-r from-[#d97706] to-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer hover:opacity-95 transition-all flex items-center gap-1.5 shadow-sm"
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="px-4 py-2 text-white text-xs font-bold rounded-xl disabled:opacity-50 flex items-center gap-1.5 cursor-pointer hover:opacity-95 transition-all shadow-sm"
+                        style={{ background: 'linear-gradient(to right, #d97706, #b45309)' }}
                       >
-                        <Sparkles size={13} />
-                        Deploy Storefront
+                        {saving ? '⏳ Saving...' : '💾 Save & Publish'}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          alert('⚙️ Storefront Engine Deployment: Verified. Running on active Edge routing. Uptime: 100%');
-                        }}
-                        className="px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#1e293b]/80 border border-[#e2e8f0] text-xs font-bold rounded-xl cursor-pointer transition-all"
-                      >
-                        Storefront Engine Deploy Storefront
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2 pt-1">
-                      <span className="flex h-2 w-2 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
-                      <span className="text-[10px] font-bold text-emerald-600">Storefront Status: Always Working (Dynamic Real-Time Live)</span>
+
+                      <div className="flex items-center gap-2">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-600">
+                          Storefront live at {tenantSlug || 'store'}.cafecanvas.bar/{tenantPublicId || 'publicId'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createBrowserClient } from '@/utils/supabase/client'
+import { createClient } from '@/utils/supabase/client'
 
 interface BlogPost {
   id: string; slug: string; title: string; excerpt: string
@@ -9,7 +9,7 @@ interface BlogPost {
 }
 
 export function BlogSection({ tenantId }: { tenantId: string }) {
-  const supabase = createBrowserClient()
+  const supabase = createClient()
   const [posts, setPosts]           = useState<BlogPost[]>([])
   const [selected, setSelected]     = useState<BlogPost | null>(null)
   const [fullContent, setFullContent] = useState<string | null>(null)
@@ -22,7 +22,7 @@ export function BlogSection({ tenantId }: { tenantId: string }) {
       .eq('is_published', true)
       .order('published_at', { ascending: false })
       .limit(12)
-      .then(({ data }) => { if (data) setPosts(data) })
+      .then(({ data }: any) => { if (data) setPosts(data as any) })
   }, [tenantId])
 
   const openPost = async (post: BlogPost) => {
