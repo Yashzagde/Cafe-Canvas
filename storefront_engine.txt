@@ -214,6 +214,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     ? data.storefront_config[0]
     : data.storefront_config
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const heroSlides = config?.hero_slides as any[] | null
 
   return {
@@ -258,7 +259,9 @@ export default async function StorefrontPage(props: Props) {
         phone:      data.phone,
         address:    `${data.address || ''}, ${data.city || ''}, ${data.state || ''}`.trim().replace(/^,\s*/, ''),
       }}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       config={config as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       settings={settings as any}
       initialTab={resolvedSearchParams.tab || 'home'}
       initialTable={resolvedSearchParams.table || null}
@@ -276,7 +279,7 @@ File Path: frontend/src/app/storefront/[slug]/[publicId]/StorefrontClient.tsx
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { HeroSection } from './sections/HeroSection'
 import { MenuSection } from './sections/MenuSection'
@@ -329,35 +332,20 @@ export function StorefrontClient({
 }: StorefrontClientProps) {
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState(initialTab)
-  const [sessionToken, setSessionToken] = useState<string | null>(null)
-  const [tableNumber, setTableNumber] = useState<string | null>(null)
+  const [sessionToken, setSessionToken] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem(`cc_session_${tenant.slug}`)
+  })
+  const [tableNumber, setTableNumber] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem(`cc_table_${tenant.slug}`)
+  })
   const [showTableModal, setShowTableModal] = useState(false)
 
   // Cart state
   const [cartItems, setCartItems] = useState<CartItem[]>([])
 
-  // ── On mount: restore or create table session ──────────────────────────────
-  useEffect(() => {
-    const storageKey = `cc_session_${tenant.slug}`
-    const storedToken = localStorage.getItem(storageKey)
-    const storedTable = localStorage.getItem(`cc_table_${tenant.slug}`)
-
-    if (storedToken && storedTable) {
-      setSessionToken(storedToken)
-      setTableNumber(storedTable)
-    } else {
-      // Show table modal
-      // If table was pre-filled from QR ?table=4 param
-      if (initialTable) {
-        // Auto-create session with pre-filled table
-        createTableSession(initialTable)
-      } else {
-        setShowTableModal(true)
-      }
-    }
-  }, [])
-
-  const createTableSession = async (tNum: string) => {
+  const createTableSession = useCallback(async (tNum: string) => {
     const { data, error } = await supabase
       .from('table_sessions')
       .insert({
@@ -376,7 +364,22 @@ export function StorefrontClient({
       setTableNumber(tNum)
       setShowTableModal(false)
     }
-  }
+  }, [tenant.id, tenant.slug, supabase])
+
+  // ── On mount: restore or create table session ──────────────────────────────
+  useEffect(() => {
+    if (!sessionToken || !tableNumber) {
+      // Show table modal
+      // If table was pre-filled from QR ?table=4 param
+      if (initialTable) {
+        // Auto-create session with pre-filled table
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        createTableSession(initialTable)
+      } else {
+        setShowTableModal(true)
+      }
+    }
+  }, [initialTable, sessionToken, tableNumber, createTableSession])
 
   // CSS custom properties from tenant theme
   const themeStyle = {
@@ -492,49 +495,59 @@ interface MenuCategory {
   menu_items: MenuItem[]
 }
 
-export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cartItems, onCartUpdate }: {
+export function MenuSection({ tenantId, showPrices, featuredOnly, currency: _currency, cartItems, onCartUpdate }: {
   tenantId: string; showPrices: boolean; featuredOnly: boolean
   currency: string; cartItems: CartItem[]; onCartUpdate: (items: CartItem[]) => void
 }) {
   const supabase = createClient()
+  const [menuVersion, setMenuVersion] = useState(0)
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // ── Initial fetch ──────────────────────────────────────────────────────────
-  const fetchMenu = async () => {
-    let itemQuery = supabase
-      .from('menu_categories')
-      .select(`
-        id, name, image_url, sort_order,
-        menu_items (
-          id, name, name_hi, description,
-          price_paise, compare_price_paise, image_url,
-          is_available, is_featured, dietary_tags, prep_time_mins
-        )
-      `)
-      .eq('tenant_id', tenantId)
-      .eq('is_visible', true)
-      .order('sort_order', { ascending: true })
-
-    const { data, error } = await itemQuery
-    if (!error && data) {
-      const processed = data.map((cat: any) => ({
-        ...cat,
-        menu_items: (cat.menu_items || [])
-          .filter((item: MenuItem) => item.is_available)
-          .filter((item: MenuItem) => !featuredOnly || item.is_featured)
-          .sort((a: MenuItem, b: MenuItem) => 0)
-      })).filter((cat: any) => cat.menu_items.length > 0)
-
-      setCategories(processed as any)
-      if (processed.length > 0) setActiveCategory(processed[0].id)
-    }
-    setLoading(false)
+  interface MenuCategoryResponse {
+    id: string
+    name: string
+    image_url: string | null
+    sort_order: number
+    menu_items: MenuItem[] | null
   }
 
-  useEffect(() => { fetchMenu() }, [tenantId, featuredOnly])
+  // ── Initial fetch ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchMenu = async () => {
+      const itemQuery = supabase
+        .from('menu_categories')
+        .select(`
+          id, name, image_url, sort_order,
+          menu_items (
+            id, name, name_hi, description,
+            price_paise, compare_price_paise, image_url,
+            is_available, is_featured, dietary_tags, prep_time_mins
+          )
+        `)
+        .eq('tenant_id', tenantId)
+        .eq('is_visible', true)
+        .order('sort_order', { ascending: true })
+
+      const { data, error } = await itemQuery
+      if (!error && data) {
+        const processed: MenuCategory[] = (data as unknown as MenuCategoryResponse[]).map(cat => ({
+          ...cat,
+          menu_items: (cat.menu_items || [])
+            .filter((item: MenuItem) => item.is_available)
+            .filter((item: MenuItem) => !featuredOnly || item.is_featured)
+        })).filter(cat => cat.menu_items.length > 0)
+
+        setCategories(processed)
+        if (processed.length > 0) setActiveCategory(processed[0].id)
+      }
+      setLoading(false)
+    }
+
+    fetchMenu()
+  }, [tenantId, featuredOnly, supabase, menuVersion])
 
   // ── REALTIME: listen for menu item changes ─────────────────────────────────
   useEffect(() => {
@@ -549,7 +562,7 @@ export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cart
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          fetchMenu()
+          setMenuVersion(prev => prev + 1)
         }
       )
       .on(
@@ -560,12 +573,14 @@ export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cart
           table:  'menu_categories',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        () => { fetchMenu() }
+        () => {
+          setMenuVersion(prev => prev + 1)
+        }
       )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [tenantId])
+  }, [tenantId, supabase])
 
   const formatPrice = (paise: number) => {
     return `₹${(paise / 100).toFixed(0)}`
@@ -699,7 +714,7 @@ File Path: frontend/src/app/storefront/[slug]/[publicId]/components/CallStaffBut
 import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 
-export function CallStaffButton({ tenantId, tableNumber, sessionToken }: {
+export function CallStaffButton({ tenantId, tableNumber, sessionToken: _sessionToken }: {
   tenantId: string; tableNumber: string; sessionToken: string
 }) {
   const supabase = createClient()
@@ -846,16 +861,6 @@ export function ReviewsSection({ tenantId, allowNew, sessionToken }: {
     }
   }
 
-  const StarRating = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map(star => (
-        <button key={star} onClick={() => onChange(star)}
-          className={`text-2xl transition-transform hover:scale-110 ${star <= value ? 'text-yellow-400' : 'text-gray-200'}`}
-        >★</button>
-      ))}
-    </div>
-  )
-
   return (
     <section id="reviews" className="py-12 px-4 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-8">
@@ -950,6 +955,16 @@ export function ReviewsSection({ tenantId, allowNew, sessionToken }: {
   )
 }
 
+const StarRating = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => (
+  <div className="flex gap-1">
+    {[1, 2, 3, 4, 5].map(star => (
+      <button key={star} onClick={() => onChange(star)}
+        className={`text-2xl transition-transform hover:scale-110 ${star <= value ? 'text-yellow-400' : 'text-gray-200'}`}
+      >★</button>
+    ))}
+  </div>
+)
+
 --------------------------------------------------------------------------------
 7. BLOG SECTION COMPONENT
 --------------------------------------------------------------------------------
@@ -979,8 +994,8 @@ export function BlogSection({ tenantId }: { tenantId: string }) {
       .eq('is_published', true)
       .order('published_at', { ascending: false })
       .limit(12)
-      .then(({ data }) => { if (data) setPosts(data) })
-  }, [tenantId])
+      .then(({ data }) => { if (data) setPosts(data as unknown as BlogPost[]) })
+  }, [tenantId, supabase])
 
   const openPost = async (post: BlogPost) => {
     setSelected(post)
@@ -1090,7 +1105,7 @@ export function TableSessionModal({ storeName, prefilledTable, onConfirm }: {
           className="w-full mt-4 py-3 rounded-xl text-white font-bold text-lg cursor-pointer hover:opacity-95 transition-all"
           style={{ backgroundColor: 'var(--primary)' }}
         >
-          Let's Go →
+          {"Let's Go →"}
         </button>
         <p className="text-xs text-gray-400 text-center mt-3">
           Your table number is on the QR code stand or card

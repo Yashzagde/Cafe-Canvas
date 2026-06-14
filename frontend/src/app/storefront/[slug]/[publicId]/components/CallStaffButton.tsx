@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 
-export function CallStaffButton({ tenantId, tableNumber, sessionToken }: {
+export function CallStaffButton({ tenantId, tableNumber, sessionToken: _sessionToken }: {
   tenantId: string; tableNumber: string; sessionToken: string
 }) {
   const supabase = createClient()

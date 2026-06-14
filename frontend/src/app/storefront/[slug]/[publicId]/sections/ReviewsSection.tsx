@@ -70,16 +70,6 @@ export function ReviewsSection({ tenantId, allowNew, sessionToken }: {
     }
   }
 
-  const StarRating = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map(star => (
-        <button key={star} onClick={() => onChange(star)}
-          className={`text-2xl transition-transform hover:scale-110 ${star <= value ? 'text-yellow-400' : 'text-gray-200'}`}
-        >★</button>
-      ))}
-    </div>
-  )
-
   return (
     <section id="reviews" className="py-12 px-4 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-8">
@@ -173,3 +163,13 @@ export function ReviewsSection({ tenantId, allowNew, sessionToken }: {
     </section>
   )
 }
+
+const StarRating = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => (
+  <div className="flex gap-1">
+    {[1, 2, 3, 4, 5].map(star => (
+      <button key={star} onClick={() => onChange(star)}
+        className={`text-2xl transition-transform hover:scale-110 ${star <= value ? 'text-yellow-400' : 'text-gray-200'}`}
+      >★</button>
+    ))}
+  </div>
+)

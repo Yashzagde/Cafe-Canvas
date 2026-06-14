@@ -37,7 +37,7 @@ export function TableSessionModal({ storeName, prefilledTable, onConfirm }: {
           className="w-full mt-4 py-3 rounded-xl text-white font-bold text-lg cursor-pointer hover:opacity-95 transition-all"
           style={{ backgroundColor: 'var(--primary)' }}
         >
-          Let's Go →
+          {"Let's Go →"}
         </button>
         <p className="text-xs text-gray-400 text-center mt-3">
           Your table number is on the QR code stand or card

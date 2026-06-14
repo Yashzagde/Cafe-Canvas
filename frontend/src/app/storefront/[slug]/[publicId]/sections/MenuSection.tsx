@@ -17,49 +17,59 @@ interface MenuCategory {
   menu_items: MenuItem[]
 }
 
-export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cartItems, onCartUpdate }: {
+export function MenuSection({ tenantId, showPrices, featuredOnly, currency: _currency, cartItems, onCartUpdate }: {
   tenantId: string; showPrices: boolean; featuredOnly: boolean
   currency: string; cartItems: CartItem[]; onCartUpdate: (items: CartItem[]) => void
 }) {
   const supabase = createClient()
+  const [menuVersion, setMenuVersion] = useState(0)
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // ── Initial fetch ──────────────────────────────────────────────────────────
-  const fetchMenu = async () => {
-    let itemQuery = supabase
-      .from('menu_categories')
-      .select(`
-        id, name, image_url, sort_order,
-        menu_items (
-          id, name, name_hi, description,
-          price_paise, compare_price_paise, image_url,
-          is_available, is_featured, dietary_tags, prep_time_mins
-        )
-      `)
-      .eq('tenant_id', tenantId)
-      .eq('is_visible', true)
-      .order('sort_order', { ascending: true })
-
-    const { data, error } = await itemQuery
-    if (!error && data) {
-      const processed = data.map((cat: any) => ({
-        ...cat,
-        menu_items: (cat.menu_items || [])
-          .filter((item: MenuItem) => item.is_available)
-          .filter((item: MenuItem) => !featuredOnly || item.is_featured)
-          .sort((a: MenuItem, b: MenuItem) => 0) // sort_order if needed
-      })).filter((cat: any) => cat.menu_items.length > 0)
-
-      setCategories(processed as any)
-      if (processed.length > 0) setActiveCategory(processed[0].id)
-    }
-    setLoading(false)
+  interface MenuCategoryResponse {
+    id: string
+    name: string
+    image_url: string | null
+    sort_order: number
+    menu_items: MenuItem[] | null
   }
 
-  useEffect(() => { fetchMenu() }, [tenantId, featuredOnly])
+  // ── Initial fetch ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchMenu = async () => {
+      const itemQuery = supabase
+        .from('menu_categories')
+        .select(`
+          id, name, image_url, sort_order,
+          menu_items (
+            id, name, name_hi, description,
+            price_paise, compare_price_paise, image_url,
+            is_available, is_featured, dietary_tags, prep_time_mins
+          )
+        `)
+        .eq('tenant_id', tenantId)
+        .eq('is_visible', true)
+        .order('sort_order', { ascending: true })
+
+      const { data, error } = await itemQuery
+      if (!error && data) {
+        const processed: MenuCategory[] = (data as unknown as MenuCategoryResponse[]).map(cat => ({
+          ...cat,
+          menu_items: (cat.menu_items || [])
+            .filter((item: MenuItem) => item.is_available)
+            .filter((item: MenuItem) => !featuredOnly || item.is_featured)
+        })).filter(cat => cat.menu_items.length > 0)
+
+        setCategories(processed)
+        if (processed.length > 0) setActiveCategory(processed[0].id)
+      }
+      setLoading(false)
+    }
+
+    fetchMenu()
+  }, [tenantId, featuredOnly, supabase, menuVersion])
 
   // ── REALTIME: listen for menu item changes ─────────────────────────────────
   useEffect(() => {
@@ -74,8 +84,7 @@ export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cart
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          // Re-fetch on any menu change (availability toggle, price update, etc.)
-          fetchMenu()
+          setMenuVersion(prev => prev + 1)
         }
       )
       .on(
@@ -86,12 +95,14 @@ export function MenuSection({ tenantId, showPrices, featuredOnly, currency, cart
           table:  'menu_categories',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        () => { fetchMenu() }
+        () => {
+          setMenuVersion(prev => prev + 1)
+        }
       )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [tenantId])
+  }, [tenantId, supabase])
 
   const formatPrice = (paise: number) => {
     return `₹${(paise / 100).toFixed(0)}`

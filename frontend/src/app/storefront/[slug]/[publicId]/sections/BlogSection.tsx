@@ -22,8 +22,8 @@ export function BlogSection({ tenantId }: { tenantId: string }) {
       .eq('is_published', true)
       .order('published_at', { ascending: false })
       .limit(12)
-      .then(({ data }: any) => { if (data) setPosts(data as any) })
-  }, [tenantId])
+      .then(({ data }) => { if (data) setPosts(data as unknown as BlogPost[]) })
+  }, [tenantId, supabase])
 
   const openPost = async (post: BlogPost) => {
     setSelected(post)

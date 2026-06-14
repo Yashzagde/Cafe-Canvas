@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { HeroSection } from './sections/HeroSection'
 import { MenuSection } from './sections/MenuSection'
@@ -53,35 +53,20 @@ export function StorefrontClient({
 }: StorefrontClientProps) {
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState(initialTab)
-  const [sessionToken, setSessionToken] = useState<string | null>(null)
-  const [tableNumber, setTableNumber] = useState<string | null>(null)
+  const [sessionToken, setSessionToken] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem(`cc_session_${tenant.slug}`)
+  })
+  const [tableNumber, setTableNumber] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem(`cc_table_${tenant.slug}`)
+  })
   const [showTableModal, setShowTableModal] = useState(false)
 
   // Cart state
   const [cartItems, setCartItems] = useState<CartItem[]>([])
 
-  // ── On mount: restore or create table session ──────────────────────────────
-  useEffect(() => {
-    const storageKey = `cc_session_${tenant.slug}`
-    const storedToken = localStorage.getItem(storageKey)
-    const storedTable = localStorage.getItem(`cc_table_${tenant.slug}`)
-
-    if (storedToken && storedTable) {
-      setSessionToken(storedToken)
-      setTableNumber(storedTable)
-    } else {
-      // Show table modal
-      // If table was pre-filled from QR ?table=4 param
-      if (initialTable) {
-        // Auto-create session with pre-filled table
-        createTableSession(initialTable)
-      } else {
-        setShowTableModal(true)
-      }
-    }
-  }, [])
-
-  const createTableSession = async (tNum: string) => {
+  const createTableSession = useCallback(async (tNum: string) => {
     const { data, error } = await supabase
       .from('table_sessions')
       .insert({
@@ -100,7 +85,22 @@ export function StorefrontClient({
       setTableNumber(tNum)
       setShowTableModal(false)
     }
-  }
+  }, [tenant.id, tenant.slug, supabase])
+
+  // ── On mount: restore or create table session ──────────────────────────────
+  useEffect(() => {
+    if (!sessionToken || !tableNumber) {
+      // Show table modal
+      // If table was pre-filled from QR ?table=4 param
+      if (initialTable) {
+        // Auto-create session with pre-filled table
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        createTableSession(initialTable)
+      } else {
+        setShowTableModal(true)
+      }
+    }
+  }, [initialTable, sessionToken, tableNumber, createTableSession])
 
   // CSS custom properties from tenant theme
   const themeStyle = {

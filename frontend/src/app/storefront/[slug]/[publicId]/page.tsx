@@ -79,6 +79,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     ? data.storefront_config[0]
     : data.storefront_config
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const heroSlides = config?.hero_slides as any[] | null
 
   return {
@@ -123,7 +124,9 @@ export default async function StorefrontPage(props: Props) {
         phone:      data.phone,
         address:    `${data.address || ''}, ${data.city || ''}, ${data.state || ''}`.trim().replace(/^,\s*/, ''),
       }}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       config={config as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       settings={settings as any}
       initialTab={resolvedSearchParams.tab || 'home'}
       initialTable={resolvedSearchParams.table || null}
