@@ -37,7 +37,7 @@ class OfflineSyncService {
   /// Queue an order locally when offline.
   Future<void> queueOrder({
     required String tenantId,
-    required String branchId,
+    required String locationId,
     String? tableId,
     String? createdBy,
     required List<Map<String, dynamic>> items,
@@ -53,7 +53,7 @@ class OfflineSyncService {
     final payload = {
       'id': tempOrderId,
       'tenant_id': tenantId,
-      'location_id': branchId,
+      'location_id': locationId,
       'table_id': tableId,
       'staff_id': createdBy,
       'items': items,
@@ -99,7 +99,7 @@ class OfflineSyncService {
 
            await OrderRepository.staticCreateOrder(
             tenantId: orderData['tenant_id'] as String,
-            branchId: orderData['location_id'] as String,
+            locationId: orderData['location_id'] as String,
             tableId: orderData['table_id'] as String?,
             createdBy: orderData['staff_id'] as String?,
             items: items,

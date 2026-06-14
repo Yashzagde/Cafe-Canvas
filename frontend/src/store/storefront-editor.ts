@@ -1,8 +1,10 @@
 import { create } from 'zustand'
+import { HeroSlide } from '@/types/database'
 
 export interface StorefrontConfig {
   id: string;
   tenant_id: string;
+  hero_slides?: HeroSlide[] | null;
   theme_id: string;
   primary_color: string;
   accent_color: string;

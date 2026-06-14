@@ -2,7 +2,7 @@
 class StoreSettings {
   final String id;
   final String tenantId;
-  final String branchId;
+  final String locationId;
   final String? gstin;
   final String? receiptHeader;
   final String receiptFooter;
@@ -28,7 +28,7 @@ class StoreSettings {
   const StoreSettings({
     required this.id,
     required this.tenantId,
-    required this.branchId,
+    required this.locationId,
     this.gstin,
     this.receiptHeader,
     this.receiptFooter = 'Thank you! Visit again.',
@@ -68,7 +68,7 @@ class StoreSettings {
   factory StoreSettings.fromJson(Map<String, dynamic> json) => StoreSettings(
         id: json['id'] as String,
         tenantId: json['tenant_id'] as String,
-        branchId: (json['location_id'] ?? json['branch_id'] ?? '') as String,
+        locationId: (json['location_id'] ?? '') as String,
         gstin: json['gstin'] as String?,
         receiptHeader: json['receipt_header'] as String?,
         receiptFooter: json['receipt_footer'] as String? ?? 'Thank you! Visit again.',
@@ -96,7 +96,7 @@ class StoreSettings {
 
   Map<String, dynamic> toJson() => {
         'tenant_id': tenantId,
-        'location_id': branchId,
+        'location_id': locationId,
         'gstin': gstin,
         'receipt_header': receiptHeader,
         'receipt_footer': receiptFooter,
@@ -144,7 +144,7 @@ class StoreSettings {
       StoreSettings(
         id: id,
         tenantId: tenantId,
-        branchId: branchId,
+        locationId: locationId,
         gstin: gstin ?? this.gstin,
         receiptHeader: receiptHeader ?? this.receiptHeader,
         receiptFooter: receiptFooter ?? this.receiptFooter,

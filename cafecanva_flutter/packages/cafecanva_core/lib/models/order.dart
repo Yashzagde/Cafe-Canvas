@@ -4,7 +4,7 @@ import 'order_item.dart';
 class Order {
   final String id;
   final String tenantId;
-  final String branchId;
+  final String locationId;
   final String? tableId;
   final String? customerName;
   final int customerCount;
@@ -22,7 +22,7 @@ class Order {
   const Order({
     required this.id,
     required this.tenantId,
-    required this.branchId,
+    required this.locationId,
     this.tableId,
     this.customerName,
     this.customerCount = 1,
@@ -52,7 +52,7 @@ class Order {
   factory Order.fromJson(Map<String, dynamic> json) => Order(
         id: json['id'] as String,
         tenantId: json['tenant_id'] as String,
-        branchId: (json['location_id'] ?? json['branch_id'] ?? '') as String,
+        locationId: (json['location_id'] ?? '') as String,
         tableId: json['table_id'] as String?,
         customerName: json['customer_name'] as String?,
         customerCount: json['customer_count'] as int? ?? 1,
@@ -69,7 +69,7 @@ class Order {
 
   Map<String, dynamic> toJson() => {
         'tenant_id': tenantId,
-        'branch_id': branchId,
+        'location_id': locationId,
         'table_id': tableId,
         'customer_name': customerName,
         'customer_count': customerCount,
@@ -93,7 +93,7 @@ class Order {
       Order(
         id: id,
         tenantId: tenantId,
-        branchId: branchId,
+        locationId: locationId,
         tableId: tableId,
         customerName: customerName,
         customerCount: customerCount,

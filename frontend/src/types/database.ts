@@ -1,3 +1,11 @@
+export interface HeroSlide {
+  image_url: string | null;
+  title?: string | null;
+  subtitle?: string | null;
+  cta_text?: string | null;
+  cta_link?: string | null;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -586,24 +594,16 @@ export interface Database {
           show_reviews: boolean;
           show_instagram: boolean;
           show_story: boolean;
-          hero_image_url: string | null;
-          hero_image_url_2: string | null;
-          hero_image_url_3: string | null;
           logo_url: string | null;
           footer_description: string | null;
           footer_hours: string | null;
           footer_address: string | null;
           footer_phone: string | null;
           footer_email: string | null;
-          hero_title: string | null;
-          hero_subtitle: string | null;
-          hero_title_2: string | null;
-          hero_subtitle_2: string | null;
-          hero_title_3: string | null;
-          hero_subtitle_3: string | null;
           about_title: string | null;
           about_text: string | null;
           about_image_url: string | null;
+          hero_slides: HeroSlide[] | null;
           updated_at: string;
         };
         Insert: {
@@ -621,24 +621,16 @@ export interface Database {
           show_reviews?: boolean;
           show_instagram?: boolean;
           show_story?: boolean;
-          hero_image_url?: string | null;
-          hero_image_url_2?: string | null;
-          hero_image_url_3?: string | null;
           logo_url?: string | null;
           footer_description?: string | null;
           footer_hours?: string | null;
           footer_address?: string | null;
           footer_phone?: string | null;
           footer_email?: string | null;
-          hero_title?: string | null;
-          hero_subtitle?: string | null;
-          hero_title_2?: string | null;
-          hero_subtitle_2?: string | null;
-          hero_title_3?: string | null;
-          hero_subtitle_3?: string | null;
           about_title?: string | null;
           about_text?: string | null;
           about_image_url?: string | null;
+          hero_slides?: HeroSlide[] | null;
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['storefront_config']['Insert']>;

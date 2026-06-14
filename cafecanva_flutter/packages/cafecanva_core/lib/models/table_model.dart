@@ -2,7 +2,7 @@
 class CafeTable {
   final String id;
   final String tenantId;
-  final String branchId;
+  final String locationId;
   final String name;
   final int capacity;
   final String section;
@@ -17,7 +17,7 @@ class CafeTable {
   const CafeTable({
     required this.id,
     required this.tenantId,
-    required this.branchId,
+    required this.locationId,
     required this.name,
     this.capacity = 4,
     this.section = 'indoor',
@@ -49,7 +49,7 @@ class CafeTable {
     return CafeTable(
       id: json['id'] as String,
       tenantId: json['tenant_id'] as String,
-      branchId: (json['location_id'] ?? json['branch_id'] ?? '') as String,
+      locationId: (json['location_id'] ?? '') as String,
       name: (json['name'] ?? '') as String,
       capacity: json['capacity'] as int? ?? 4,
       section: json['section'] as String? ?? 'indoor',
@@ -65,7 +65,7 @@ class CafeTable {
 
   Map<String, dynamic> toJson() => {
         'tenant_id': tenantId,
-        'location_id': branchId,
+        'location_id': locationId,
         'name': name,
         'capacity': capacity,
         'section': section,
@@ -87,7 +87,7 @@ class CafeTable {
       CafeTable(
         id: id,
         tenantId: tenantId,
-        branchId: branchId,
+        locationId: locationId,
         name: name ?? this.name,
         capacity: capacity ?? this.capacity,
         section: section ?? this.section,

@@ -2,7 +2,7 @@
 class UserProfile {
   final String id;
   final String? tenantId;
-  final String? branchId;
+  final String? locationId;
   final String name;
   final String? email;
   final String? phone;
@@ -17,7 +17,7 @@ class UserProfile {
   const UserProfile({
     required this.id,
     this.tenantId,
-    this.branchId,
+    this.locationId,
     required this.name,
     this.email,
     this.phone,
@@ -44,7 +44,7 @@ class UserProfile {
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         id: json['id'] as String,
         tenantId: json['tenant_id'] as String?,
-        branchId: json['location_id'] as String?,
+        locationId: json['location_id'] as String?,
         name: (json['full_name'] ?? json['name'] ?? '') as String,
         email: json['email'] as String?,
         phone: json['phone'] as String?,
@@ -60,7 +60,7 @@ class UserProfile {
   Map<String, dynamic> toJson() => {
         'id': id,
         'tenant_id': tenantId,
-        'location_id': branchId,
+        'location_id': locationId,
         'full_name': name,
         'email': email,
         'phone': phone,
@@ -74,7 +74,7 @@ class UserProfile {
 
   UserProfile copyWith({
     String? tenantId,
-    String? branchId,
+    String? locationId,
     String? name,
     String? email,
     String? phone,
@@ -88,7 +88,7 @@ class UserProfile {
       UserProfile(
         id: id,
         tenantId: tenantId ?? this.tenantId,
-        branchId: branchId ?? this.branchId,
+        locationId: locationId ?? this.locationId,
         name: name ?? this.name,
         email: email ?? this.email,
         phone: phone ?? this.phone,

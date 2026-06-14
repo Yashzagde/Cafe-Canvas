@@ -19,13 +19,10 @@ export 'models/order.dart';
 export 'models/order_item.dart';
 export 'models/bill.dart';
 export 'models/customer.dart';
-export 'models/discount.dart';
-export 'models/coupon.dart';
 export 'models/store_settings.dart';
 export 'models/staff_call.dart';
 export 'models/attendance.dart';
 export 'models/notification_log_entry.dart';
-export 'models/branding.dart';
 export 'models/storefront_config.dart';
 
 // Services

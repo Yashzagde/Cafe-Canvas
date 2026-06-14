@@ -10,10 +10,10 @@ class RealtimeService {
 
   /// Subscribe POS to real-time table status changes within a branch
   RealtimeChannel subscribeToTableChanges({
-    required String branchId,
+    required String locationId,
     required void Function(PostgresChangePayload payload) onTableUpdated,
   }) {
-    final key = 'tables:branch:$branchId';
+    final key = 'tables:branch:$locationId';
     _channels[key]?.unsubscribe();
 
     final channel = SupabaseService.client
@@ -25,7 +25,7 @@ class RealtimeService {
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
             column: 'location_id',
-            value: branchId,
+            value: locationId,
           ),
           callback: onTableUpdated,
         )
@@ -37,12 +37,12 @@ class RealtimeService {
 
   /// Subscribe KDS to new orders and kitchen-order-item status changes
   RealtimeChannel subscribeToKitchenOrders({
-    required String branchId,
+    required String locationId,
     required String tenantId,
     required void Function(PostgresChangePayload payload) onOrderCreated,
     required void Function(PostgresChangePayload payload) onOrderItemUpdated,
   }) {
-    final key = 'kds:branch:$branchId';
+    final key = 'kds:branch:$locationId';
     _channels[key]?.unsubscribe();
 
     var channel = SupabaseService.client.channel(key);
@@ -55,7 +55,7 @@ class RealtimeService {
       filter: PostgresChangeFilter(
         type: PostgresChangeFilterType.eq,
         column: 'location_id',
-        value: branchId,
+        value: locationId,
       ),
       callback: onOrderCreated,
     );
@@ -80,11 +80,11 @@ class RealtimeService {
 
   /// Subscribe staff to active "Call Waiter" requests in a branch and private broadcasts
   RealtimeChannel subscribeToStaffCalls({
-    required String branchId,
+    required String locationId,
     required String tenantId,
     required void Function(Map<String, dynamic> record) onCallReceived,
   }) {
-    final key = 'private-calls:$tenantId:$branchId';
+    final key = 'private-calls:$tenantId:$locationId';
     _channels[key]?.unsubscribe();
 
     final channel = SupabaseService.client
@@ -96,7 +96,7 @@ class RealtimeService {
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
             column: 'location_id',
-            value: branchId,
+            value: locationId,
           ),
           callback: (payload) {
             onCallReceived(payload.newRecord);

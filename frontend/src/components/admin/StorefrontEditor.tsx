@@ -1228,6 +1228,75 @@ export default function StorefrontEditor({
     'Specialized Displays'
   ];
 
+  const mapDbConfigToUiConfig = (data: any) => {
+    if (!data) return null;
+    const slides = data.hero_slides || [];
+    return {
+      ...data,
+      hero_image_url: slides[0]?.image_url || null,
+      hero_image_url_2: slides[1]?.image_url || null,
+      hero_image_url_3: slides[2]?.image_url || null,
+      hero_title: slides[0]?.title || null,
+      hero_subtitle: slides[0]?.subtitle || null,
+      hero_title_2: slides[1]?.title || null,
+      hero_subtitle_2: slides[1]?.subtitle || null,
+      hero_title_3: slides[2]?.title || null,
+      hero_subtitle_3: slides[2]?.subtitle || null,
+    };
+  };
+
+  const mapUiConfigToDbPayload = (config: any) => {
+    const slides: any[] = [];
+    
+    const slide1 = {
+      image_url: config.hero_image_url || null,
+      title: config.hero_title || null,
+      subtitle: config.hero_subtitle || null,
+    };
+    if (slide1.image_url || slide1.title || slide1.subtitle) {
+      slides.push(slide1);
+    }
+
+    const slide2 = {
+      image_url: config.hero_image_url_2 || null,
+      title: config.hero_title_2 || null,
+      subtitle: config.hero_subtitle_2 || null,
+    };
+    if (slide2.image_url || slide2.title || slide2.subtitle) {
+      slides.push(slide2);
+    }
+
+    const slide3 = {
+      image_url: config.hero_image_url_3 || null,
+      title: config.hero_title_3 || null,
+      subtitle: config.hero_subtitle_3 || null,
+    };
+    if (slide3.image_url || slide3.title || slide3.subtitle) {
+      slides.push(slide3);
+    }
+
+    const allowedKeys = [
+      'theme_id', 'primary_color', 'accent_color', 'font_heading', 'font_body',
+      'banner_text', 'show_prices', 'allow_orders', 'show_blog', 'show_reviews',
+      'show_instagram', 'show_story', 'logo_url', 'footer_description', 'footer_hours',
+      'footer_address', 'footer_phone', 'footer_email', 'about_title', 'about_text',
+      'about_image_url', 'hero_slides'
+    ];
+
+    const configWithSlides = {
+      ...config,
+      hero_slides: slides
+    };
+
+    const allowedData: any = {};
+    for (const key of allowedKeys) {
+      if (key in configWithSlides) {
+        allowedData[key] = configWithSlides[key];
+      }
+    }
+    return allowedData;
+  };
+
   const loadConfig = async () => {
     try {
       const { data, error } = await supabase
@@ -1239,7 +1308,7 @@ export default function StorefrontEditor({
       if (error) throw error;
 
       if (data) {
-        setConfig(data);
+        setConfig(mapDbConfigToUiConfig(data) as any);
       } else {
         console.log('No storefront configuration found. Initializing default...');
         const { data: newConfig, error: insertError } = await supabase
@@ -1260,7 +1329,7 @@ export default function StorefrontEditor({
 
         if (insertError) throw insertError;
         if (newConfig) {
-          setConfig(newConfig);
+          setConfig(mapDbConfigToUiConfig(newConfig) as any);
         }
       }
     } catch (err) {
@@ -1286,21 +1355,7 @@ export default function StorefrontEditor({
         setIsNameDirty(false);
       }
 
-      const allowedData: any = {};
-      const allowedKeys = [
-        'theme_id', 'primary_color', 'accent_color', 'font_heading', 'font_body',
-        'banner_text', 'show_prices', 'allow_orders', 'show_blog', 'show_reviews',
-        'show_instagram', 'show_story', 'hero_image_url', 'hero_image_url_2',
-        'hero_image_url_3', 'logo_url', 'footer_description', 'footer_hours',
-        'footer_address', 'footer_phone', 'footer_email', 'hero_title',
-        'hero_subtitle', 'hero_title_2', 'hero_subtitle_2', 'hero_title_3',
-        'hero_subtitle_3', 'about_title', 'about_text', 'about_image_url'
-      ];
-      for (const key of allowedKeys) {
-        if (key in config) {
-          allowedData[key] = (config as any)[key];
-        }
-      }
+      const allowedData = mapUiConfigToDbPayload(config);
 
       const { data: updated, error } = await supabase
         .from('storefront_config')
@@ -1313,7 +1368,7 @@ export default function StorefrontEditor({
       if (error) throw error;
 
       if (updated) {
-        setConfig(updated);
+        setConfig(mapDbConfigToUiConfig(updated) as any);
         clearDirty();
       }
     } catch (err: any) {
@@ -1340,21 +1395,7 @@ export default function StorefrontEditor({
           setIsNameDirty(false);
         }
 
-        const allowedData: any = {};
-        const allowedKeys = [
-          'theme_id', 'primary_color', 'accent_color', 'font_heading', 'font_body',
-          'banner_text', 'show_prices', 'allow_orders', 'show_blog', 'show_reviews',
-          'show_instagram', 'show_story', 'hero_image_url', 'hero_image_url_2',
-          'hero_image_url_3', 'logo_url', 'footer_description', 'footer_hours',
-          'footer_address', 'footer_phone', 'footer_email', 'hero_title',
-          'hero_subtitle', 'hero_title_2', 'hero_subtitle_2', 'hero_title_3',
-          'hero_subtitle_3', 'about_title', 'about_text', 'about_image_url'
-        ];
-        for (const key of allowedKeys) {
-          if (key in config) {
-            allowedData[key] = (config as any)[key];
-          }
-        }
+        const allowedData = mapUiConfigToDbPayload(config);
 
         const { data: updated, error } = await supabase
           .from('storefront_config')
@@ -1367,7 +1408,7 @@ export default function StorefrontEditor({
         if (error) throw error;
 
         if (updated) {
-          setConfig(updated);
+          setConfig(mapDbConfigToUiConfig(updated) as any);
           clearDirty();
         }
       }

@@ -84,8 +84,8 @@ class AuthService {
   /// Get tenant_id from JWT claims.
   static String? get tenantId => appMetadata['tenant_id'] as String? ?? _currentUserProfile?.tenantId;
 
-  /// Get branch_id from JWT claims.
-  static String? get branchId => appMetadata['branch_id'] as String? ?? _currentUserProfile?.branchId;
+  /// Get location_id from JWT claims.
+  static String? get locationId => appMetadata['location_id'] as String? ?? appMetadata['branch_id'] as String? ?? _currentUserProfile?.locationId;
 
   /// Get role from JWT claims.
   static String? get userRole => appMetadata['role'] as String? ?? _currentUserProfile?.role;
@@ -106,7 +106,7 @@ class AuthService {
     await Future.wait([
       _storage.write(key: SecureCacheKeys.refreshToken, value: refreshToken),
       _storage.write(key: SecureCacheKeys.staffPinHash, value: pinHash),
-      _storage.write(key: SecureCacheKeys.lastBranchId, value: profile.branchId),
+      _storage.write(key: SecureCacheKeys.lastBranchId, value: profile.locationId),
       _storage.write(
         key: SecureCacheKeys.staffProfile,
         value: jsonEncode(profile.toJson()),

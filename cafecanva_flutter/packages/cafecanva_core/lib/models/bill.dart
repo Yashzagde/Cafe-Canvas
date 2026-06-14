@@ -2,7 +2,7 @@
 class Bill {
   final String id;
   final String tenantId;
-  final String branchId;
+  final String locationId;
   final String? tableId;
   final List<String> orderIds;
   final int subtotal; // paise
@@ -20,7 +20,7 @@ class Bill {
   const Bill({
     required this.id,
     required this.tenantId,
-    required this.branchId,
+    required this.locationId,
     this.tableId,
     this.orderIds = const [],
     required this.subtotal,
@@ -54,7 +54,7 @@ class Bill {
     return Bill(
       id: json['id'] as String,
       tenantId: json['tenant_id'] as String,
-      branchId: (json['location_id'] ?? json['branch_id'] ?? '') as String,
+      locationId: (json['location_id'] ?? '') as String,
       tableId: json['table_id'] as String?,
       orderIds: json['order_ids'] != null ? List<String>.from(json['order_ids'] as List) : [],
       subtotal: json['subtotal'] as int,
@@ -76,7 +76,7 @@ class Bill {
     final halfTax = tax ~/ 2;
     return {
       'tenant_id': tenantId,
-      'location_id': branchId,
+      'location_id': locationId,
       'table_id': tableId,
       'order_ids': orderIds,
       'subtotal': subtotal,
