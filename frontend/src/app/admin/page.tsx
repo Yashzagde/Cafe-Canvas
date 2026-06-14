@@ -31,6 +31,7 @@ import AttendanceTab from '@/components/admin/AttendanceTab';
 import FeedbackTab from '@/components/admin/FeedbackTab';
 import SettingsTab from '@/components/admin/SettingsTab';
 import NotificationsTab from '@/components/admin/NotificationsTab';
+import OrdersTab from '@/components/admin/OrdersTab';
 
 import ReceiptPreviewModal from '@/components/billing/ReceiptPreviewModal';
 import type { ReceiptData } from '@/components/billing/types';
@@ -80,6 +81,8 @@ interface BillHistoryEntry {
   total: number;
   itemsCount: number;
   billItems: BillItem[];
+  customerName?: string;
+  customerPhone?: string;
 }
 
 interface Customer {
@@ -433,7 +436,9 @@ export default function CafeCanvaAdmin() {
           discount: (b.discount_amount ?? 0) / 100,
           total: (b.total ?? 0) / 100,
           itemsCount: billItemsList.length || 1,
-          billItems: billItemsList
+          billItems: billItemsList,
+          customerName: b.customer_name || undefined,
+          customerPhone: b.customer_phone || undefined
         };
       });
       setBillHistory(mappedHistory);
@@ -857,6 +862,17 @@ export default function CafeCanvaAdmin() {
                   setNotifications={setNotifications}
                   tenantId={tenantId}
                   toast={toast}
+                />
+              )}
+              {page === "orders" && (
+                <OrdersTab
+                  orders={rawOrdersList}
+                  tables={tables}
+                  tenantId={tenantId}
+                  branchId={activeBranch?.id || ''}
+                  toast={toast}
+                  dbPending={dbPending}
+                  onRefresh={fetchDbData}
                 />
               )}
             </>

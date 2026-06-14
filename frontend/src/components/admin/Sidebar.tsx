@@ -23,6 +23,7 @@ interface SidebarProps {
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: "📊" },
   { id: "notifications", label: "Notifications", icon: "🔔" },
+  { id: "orders", label: "Live Orders", icon: "🛍️" },
   { id: "menu", label: "Menu Catalog", icon: "🍽" },
   { id: "tables", label: "Tables & QRs", icon: "🪑" },
   { id: "billing", label: "Billing OS", icon: "🧾" },

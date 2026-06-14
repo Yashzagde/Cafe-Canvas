@@ -57,6 +57,8 @@ interface BillHistoryEntry {
   total: number; // rupees
   itemsCount: number;
   billItems: BillItem[];
+  customerName?: string;
+  customerPhone?: string;
 }
 
 interface BillingTabProps {
@@ -844,7 +846,8 @@ export default function BillingTab({
       grandTotal: entry.total,
       paymentMethod: entry.method,
       dateTime: entry.time,
-      footerMessage: storeInfo.footerMessage
+      footerMessage: storeInfo.footerMessage,
+      customerPhone: entry.customerPhone || undefined,
     };
     triggerReceipt(rData);
   };
@@ -1395,7 +1398,7 @@ export default function BillingTab({
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${T.bdr}`, background: "rgba(255,255,255,0.03)" }}>
-                        {["Bill ID", "Table", "Date & Time", "Method", "Subtotal", "GST", "SVC", "Total", "Items", "Action"].map(h => (
+                        {["Bill ID", "Table", "Customer", "Date & Time", "Method", "Subtotal", "GST", "SVC", "Total", "Items", "Action"].map(h => (
                           <th key={h} style={{ textAlign: "left", padding: "12px 14px", fontSize: "10px", fontWeight: 700, color: T.mu, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
                         ))}
                       </tr>
@@ -1410,6 +1413,14 @@ export default function BillingTab({
                           <tr key={b.id} style={{ borderBottom: `1px solid ${T.bdr}` }}>
                             <td style={{ padding: "12px 14px", fontSize: "12px", fontWeight: 700, color: T.tx, fontFamily: fm }}>{b.id}</td>
                             <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{b.table}</td>
+                            <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>
+                              <div>{b.customerName || 'Walk-in'}</div>
+                              {b.customerPhone && (
+                                <div style={{ fontSize: "10px", color: T.mu, fontWeight: 550, marginTop: "2px" }}>
+                                  📱 {b.customerPhone}
+                                </div>
+                              )}
+                            </td>
                             <td style={{ padding: "12px 14px", fontSize: "11px", color: T.mu2 }}>{dateTimeStr}</td>
                             <td style={{ padding: "12px 14px" }}><Badge color={b.method === "UPI" ? "indigo" : b.method === "CARD" ? "blue" : "gray"}>{b.method}</Badge></td>
                             <td style={{ padding: "12px 14px", fontSize: "12px", color: T.tx, fontFamily: fm }}>₹{b.sub.toFixed(2)}</td>
