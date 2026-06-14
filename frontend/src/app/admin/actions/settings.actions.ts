@@ -55,7 +55,7 @@ export async function getSettingsAction() {
         open_time: '09:00',
         close_time: '22:00',
         service_charge_type: 'none',
-        service_charge_value: 0.00
+        service_charge_value_paise: 0
       })
       .select()
       .single();
@@ -128,23 +128,16 @@ export async function updateStoreSettingsAction(updateData: {
   tax_cgst: number; // percentage, e.g. 9
   tax_sgst: number; // percentage, e.g. 9
   tax_inclusive: boolean;
-  razorpay_key_id?: string | null;
   upi_id?: string | null;
+  upi_name?: string | null;
+  payment_methods?: string[] | null;
+  min_order_amount_paise?: number | null;
   open_time?: string | null;
   close_time?: string | null;
   receipt_header?: string | null;
   receipt_footer?: string | null;
   service_charge_type?: string | null;
-  service_charge_value?: number | null;
-  active_gateway?: string | null;
-  phonepe_merchant_id?: string | null;
-  phonepe_terminal_id?: string | null;
-  googlepay_merchant_id?: string | null;
-  googlepay_terminal_id?: string | null;
-  paytm_merchant_id?: string | null;
-  paytm_terminal_id?: string | null;
-  bharatpe_merchant_id?: string | null;
-  bharatpe_terminal_id?: string | null;
+  service_charge_value?: number | null; // percentage or flat (visual)
 }) {
   const profile = await requirePermission('settings.edit');
   const supabase = await getSupabase();
@@ -167,23 +160,18 @@ export async function updateStoreSettingsAction(updateData: {
       tax_cgst: cgstBasisPoints,
       tax_sgst: sgstBasisPoints,
       tax_inclusive: updateData.tax_inclusive,
-      razorpay_key_id: updateData.razorpay_key_id ?? null,
       upi_id: updateData.upi_id ?? null,
+      upi_name: updateData.upi_name ?? null,
+      payment_methods: updateData.payment_methods ?? ['cash', 'upi'],
+      min_order_amount_paise: updateData.min_order_amount_paise ?? 0,
       open_time: updateData.open_time ?? null,
       close_time: updateData.close_time ?? null,
       receipt_header: updateData.receipt_header ?? null,
       receipt_footer: updateData.receipt_footer ?? null,
       service_charge_type: updateData.service_charge_type ?? 'none',
-      service_charge_value: updateData.service_charge_value ?? 0.00,
-      active_gateway: updateData.active_gateway ?? 'razorpay',
-      phonepe_merchant_id: updateData.phonepe_merchant_id ?? null,
-      phonepe_terminal_id: updateData.phonepe_terminal_id ?? null,
-      googlepay_merchant_id: updateData.googlepay_merchant_id ?? null,
-      googlepay_terminal_id: updateData.googlepay_terminal_id ?? null,
-      paytm_merchant_id: updateData.paytm_merchant_id ?? null,
-      paytm_terminal_id: updateData.paytm_terminal_id ?? null,
-      bharatpe_merchant_id: updateData.bharatpe_merchant_id ?? null,
-      bharatpe_terminal_id: updateData.bharatpe_terminal_id ?? null,
+      service_charge_value_paise: updateData.service_charge_value != null
+        ? Math.round(updateData.service_charge_value * 100)
+        : 0,
     }, { onConflict: 'tenant_id' })
     .select()
     .single();

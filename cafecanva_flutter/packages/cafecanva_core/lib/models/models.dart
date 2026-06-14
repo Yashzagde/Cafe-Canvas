@@ -329,8 +329,8 @@ class ModifierGroup {
     itemId: json['item_id'] as String,
     name: json['name'] as String,
     required: json['required'] as bool? ?? false,
-    minSelect: json['min_select'] as int? ?? 0,
-    maxSelect: json['max_select'] as int? ?? 1,
+    minSelect: (json['min_selections'] ?? json['min_select']) as int? ?? 0,
+    maxSelect: (json['max_selections'] ?? json['max_select']) as int? ?? 1,
     options: options,
   );
 
@@ -363,7 +363,7 @@ class ModifierOption {
     id: json['id'] as String,
     groupId: json['group_id'] as String,
     name: json['name'] as String,
-    extraPrice: ((json['extra_price'] as num) * 100).round(), // num -> paise
+    extraPrice: json['price_delta_paise'] as int? ?? (json['extra_price'] != null ? ((json['extra_price'] as num) * 100).round() : 0),
     isDefault: json['is_default'] as bool? ?? false,
   );
 
@@ -406,7 +406,7 @@ class TableModel {
   factory TableModel.fromJson(Map<String, dynamic> json) => TableModel(
     id: json['id'] as String,
     tenantId: (json['tenant_id'] ?? json['org_id']) as String,
-    branchId: json['branch_id'] as String,
+    branchId: (json['location_id'] ?? json['branch_id'] ?? '') as String,
     name: json['name'] as String,
     capacity: json['capacity'] as int? ?? 2,
     section: json['section'] as String? ?? 'Main Floor',
@@ -536,7 +536,7 @@ class OrderModel {
   factory OrderModel.fromJson(Map<String, dynamic> json, [List<OrderItemModel> items = const []]) => OrderModel(
     id: json['id'] as String,
     tenantId: (json['tenant_id'] ?? json['org_id']) as String,
-    branchId: json['branch_id'] as String,
+    branchId: (json['location_id'] ?? json['branch_id'] ?? '') as String,
     tableId: json['table_id'] as String?,
     customerId: json['customer_id'] as String?,
     createdBy: json['created_by'] as String?,
@@ -773,7 +773,7 @@ class TableSession {
     id: json['id'] as String,
     tableId: json['table_id'] as String,
     tenantId: (json['tenant_id'] ?? json['org_id']) as String,
-    checkInAt: DateTime.parse(json['check_in_at'] as String),
+    checkInAt: DateTime.parse((json['started_at'] ?? json['check_in_at'] ?? DateTime.now().toIso8601String()) as String),
     checkOutAt: json['check_out_at'] != null ? DateTime.parse(json['check_out_at'] as String) : null,
     durationMinutes: json['duration_minutes'] as int?,
     totalRevenue: ((json['total_revenue'] as num? ?? 0) * 100).round(), // num -> paise

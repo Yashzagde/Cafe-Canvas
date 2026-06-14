@@ -723,8 +723,12 @@ export default function StorefrontEditor({
   const [storeName, setStoreName] = useState(tenantName);
   const [isNameDirty, setIsNameDirty] = useState(false);
   const [localIp, setLocalIp] = useState('localhost');
+  const [origin, setOrigin] = useState('https://cafecanvas.bar');
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
     fetch('/api/local-ip')
       .then(res => res.json())
       .then(data => {
@@ -769,7 +773,10 @@ export default function StorefrontEditor({
   // Fetch storefront QR code base64 when slug/domain changes
   useEffect(() => {
     const fetchQrCode = async () => {
-      const storefrontUrl = `https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`;
+      const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('192.168.') || origin.includes('10.0.');
+      const storefrontUrl = isLocal
+        ? `${origin}/${tenantSlug || tenantPublicId || 'store'}`
+        : `https://${tenantSlug || tenantPublicId || 'store'}.cafecanvas.bar`;
       const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(storefrontUrl)}`;
       try {
         const base64 = await fetchImageAsBase64(qrApiUrl);
@@ -779,7 +786,7 @@ export default function StorefrontEditor({
       }
     };
     fetchQrCode();
-  }, [tenantSlug, tenantPublicId, fetchImageAsBase64]);
+  }, [tenantSlug, tenantPublicId, fetchImageAsBase64, origin]);
 
   // Download storefront QR code card as PNG
   const downloadStorefrontQR = async () => {
@@ -2492,13 +2499,13 @@ export default function StorefrontEditor({
                     <input
                       type="text"
                       readOnly
-                      value={`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`}
+                      value={`${origin}/${tenantSlug || tenantPublicId || 'store'}`}
                       className="flex-1 px-4 py-3 bg-white border border-[#e2e8f0] rounded-xl text-xs font-mono select-all focus:outline-none text-slate-600"
                     />
                     <button
                       type="button"
                       onClick={() => {
-                        navigator.clipboard.writeText(`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`);
+                        navigator.clipboard.writeText(`${origin}/${tenantSlug || tenantPublicId || 'store'}`);
                         alert('Subdirectory URL copied!');
                       }}
                       className="px-4 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer transition-all shrink-0"
@@ -2506,7 +2513,7 @@ export default function StorefrontEditor({
                       Copy
                     </button>
                     <a
-                      href={`https://cafecanvas.bar/${tenantSlug || tenantPublicId || 'store'}`}
+                      href={`${origin}/${tenantSlug || tenantPublicId || 'store'}`}
                       target="_blank"
                       rel="noreferrer"
                       className="px-4 py-2.5 bg-[#1e293b] hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-all shrink-0"

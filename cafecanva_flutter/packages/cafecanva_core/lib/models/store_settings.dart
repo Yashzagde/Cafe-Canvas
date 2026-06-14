@@ -72,10 +72,12 @@ class StoreSettings {
         gstin: json['gstin'] as String?,
         receiptHeader: json['receipt_header'] as String?,
         receiptFooter: json['receipt_footer'] as String? ?? 'Thank you! Visit again.',
-        cgstPercent: double.tryParse(json['cgst_percent']?.toString() ?? '2.5') ?? 2.5,
-        sgstPercent: double.tryParse(json['sgst_percent']?.toString() ?? '2.5') ?? 2.5,
+        cgstPercent: (double.tryParse(json['tax_cgst']?.toString() ?? '') ?? 250.0) / 100.0,
+        sgstPercent: (double.tryParse(json['tax_sgst']?.toString() ?? '') ?? 250.0) / 100.0,
         serviceChargeType: json['service_charge_type'] as String? ?? 'percent',
-        serviceChargeValue: double.tryParse(json['service_charge_value']?.toString() ?? '5.0') ?? 5.0,
+        serviceChargeValue: json['service_charge_value_paise'] != null
+            ? (json['service_charge_value_paise'] as num) / 100.0
+            : (double.tryParse(json['service_charge_value']?.toString() ?? '5.0') ?? 5.0),
         storeName: (json['store_name'] ?? json['receipt_header'] ?? '') as String?,
         address: json['address'] as String?,
         printerWidth: json['printer_width'] as String?,

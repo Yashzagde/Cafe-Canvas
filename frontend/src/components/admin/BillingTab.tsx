@@ -165,7 +165,7 @@ export default function BillingTab({
 
         const { data: settings } = await supabase
           .from('store_settings')
-          .select('receipt_header, receipt_footer, tax_cgst, tax_sgst, service_charge_type, service_charge_value')
+          .select('receipt_header, receipt_footer, tax_cgst, tax_sgst, service_charge_type, service_charge_value_paise')
           .eq('tenant_id', tenantId)
           .maybeSingle();
 
@@ -183,7 +183,12 @@ export default function BillingTab({
 
         if (settings?.service_charge_type) {
           serviceChargeType = settings.service_charge_type as any;
-          serviceChargeValue = parseFloat(settings.service_charge_value?.toString() || '0');
+          const scValuePaise = (settings as any).service_charge_value_paise;
+          if (scValuePaise !== undefined && scValuePaise !== null) {
+            serviceChargeValue = scValuePaise / 100;
+          } else {
+            serviceChargeValue = parseFloat((settings as any).service_charge_value?.toString() || '0');
+          }
         } else if (settings?.receipt_header) {
           try {
             const parsed = JSON.parse(settings.receipt_header);
@@ -255,7 +260,7 @@ export default function BillingTab({
           receipt_footer: storeInfo.footerMessage,
           receipt_header: serializedHeader,
           service_charge_type: billingSettings.serviceChargeType,
-          service_charge_value: billingSettings.serviceChargeValue,
+          service_charge_value_paise: Math.round(billingSettings.serviceChargeValue * 100),
         }, { onConflict: 'tenant_id' });
 
       if (settingsError) throw settingsError;

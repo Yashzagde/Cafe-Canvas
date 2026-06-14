@@ -165,21 +165,17 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
           setCgst((settings.tax_cgst || 250) / 100);
           setSgst((settings.tax_sgst || 250) / 100);
           setTaxInclusive(settings.tax_inclusive || false);
-          setRazorpayKey(settings.razorpay_key_id || '');
           setUpiId(settings.upi_id || '');
-          setActiveGateway((settings as any).active_gateway || 'razorpay');
-          setPhonepeMerchantId((settings as any).phonepe_merchant_id || '');
-          setPhonepeTerminalId((settings as any).phonepe_terminal_id || '');
-          setGooglepayMerchantId((settings as any).googlepay_merchant_id || '');
-          setGooglepayTerminalId((settings as any).googlepay_terminal_id || '');
-          setPaytmMerchantId((settings as any).paytm_merchant_id || '');
-          setPaytmTerminalId((settings as any).paytm_terminal_id || '');
-          setBharatpeMerchantId((settings as any).bharatpe_merchant_id || '');
-          setBharatpeTerminalId((settings as any).bharatpe_terminal_id || '');
           setOpenTime(settings.open_time?.slice(0, 5) || '09:00');
           setCloseTime(settings.close_time?.slice(0, 5) || '22:00');
           setServiceChargeType((settings as any).service_charge_type || 'none');
-          setServiceChargeValue(parseFloat((settings as any).service_charge_value?.toString() || '0.00'));
+          
+          const scValuePaise = (settings as any).service_charge_value_paise;
+          if (scValuePaise !== undefined && scValuePaise !== null) {
+            setServiceChargeValue(scValuePaise / 100);
+          } else {
+            setServiceChargeValue(parseFloat((settings as any).service_charge_value?.toString() || '0.00'));
+          }
         }
       }
     } catch (err: any) {
@@ -272,21 +268,11 @@ export default function SettingsTab({ toast, tenantName, setTenantName, setTenan
         tax_cgst: cgst,
         tax_sgst: sgst,
         tax_inclusive: taxInclusive,
-        razorpay_key_id: razorpayKey,
         upi_id: upiId,
         open_time: openTime,
         close_time: closeTime,
         service_charge_type: serviceChargeType,
         service_charge_value: serviceChargeValue,
-        active_gateway: activeGateway,
-        phonepe_merchant_id: phonepeMerchantId,
-        phonepe_terminal_id: phonepeTerminalId,
-        googlepay_merchant_id: googlepayMerchantId,
-        googlepay_terminal_id: googlepayTerminalId,
-        paytm_merchant_id: paytmMerchantId,
-        paytm_terminal_id: paytmTerminalId,
-        bharatpe_merchant_id: bharatpeMerchantId,
-        bharatpe_terminal_id: bharatpeTerminalId,
       });
 
       if (updated) {

@@ -28,7 +28,7 @@ class TableSession {
         id: json['id'] as String,
         tenantId: json['tenant_id'] as String,
         tableId: json['table_id'] as String,
-        checkInAt: DateTime.parse(json['check_in_at'] as String),
+        checkInAt: DateTime.parse((json['started_at'] ?? json['check_in_at'] ?? DateTime.now().toIso8601String()) as String),
         checkOutAt: json['check_out_at'] != null ? DateTime.parse(json['check_out_at'] as String) : null,
         durationMinutes: json['duration_minutes'] as int?,
         totalRevenue: json['total_revenue'] as int?,

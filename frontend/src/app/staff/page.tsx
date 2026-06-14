@@ -368,15 +368,15 @@ export default function StaffPOS() {
         const combined = dbGroups.map(g => {
           const groupOpts = dbOptions ? dbOptions.filter(o => o.group_id === g.id).map(o => ({
             ...o,
-            extraPrice: o.extra_price / 100, // convert price to base ₹
+            extraPrice: (o.price_delta_paise ?? o.extra_price ?? 0) / 100, // convert price to base ₹
             isDefault: o.is_default || false
           })) : [];
           return {
             id: g.id,
             name: g.name,
             required: g.required || false,
-            minSelect: g.min_select || 0,
-            maxSelect: g.max_select || 1,
+            minSelect: g.min_selections ?? g.min_select ?? 0,
+            maxSelect: g.max_selections ?? g.max_select ?? 1,
             options: groupOpts
           };
         });

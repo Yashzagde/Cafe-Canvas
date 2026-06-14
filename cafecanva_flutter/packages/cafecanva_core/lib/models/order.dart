@@ -52,7 +52,7 @@ class Order {
   factory Order.fromJson(Map<String, dynamic> json) => Order(
         id: json['id'] as String,
         tenantId: json['tenant_id'] as String,
-        branchId: json['branch_id'] as String,
+        branchId: (json['location_id'] ?? json['branch_id'] ?? '') as String,
         tableId: json['table_id'] as String?,
         customerName: json['customer_name'] as String?,
         customerCount: json['customer_count'] as int? ?? 1,

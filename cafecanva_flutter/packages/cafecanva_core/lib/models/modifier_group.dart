@@ -25,8 +25,8 @@ class ModifierGroup {
         itemId: json['item_id'] as String,
         name: json['name'] as String,
         required: json['required'] as bool? ?? false,
-        minSelect: json['min_select'] as int? ?? 0,
-        maxSelect: json['max_select'] as int? ?? 1,
+        minSelect: (json['min_selections'] ?? json['min_select']) as int? ?? 0,
+        maxSelect: (json['max_selections'] ?? json['max_select']) as int? ?? 1,
         updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : null,
       );
 
@@ -80,7 +80,7 @@ class ModifierOption {
         id: json['id'] as String,
         groupId: json['group_id'] as String,
         name: json['name'] as String,
-        extraPrice: json['extra_price'] as int? ?? 0,
+        extraPrice: (json['price_delta_paise'] ?? json['extra_price'] ?? 0) as int,
         isDefault: json['is_default'] as bool? ?? false,
       );
 
