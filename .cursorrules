@@ -173,4 +173,8 @@ import { foo } from '../../utils/bar'
 
 // ❌ user_metadata for auth decisions
 auth.jwt() -> 'user_metadata' ->> 'role'
+
+// ❌ Client-side generated primary key IDs (UUIDs)
+const tenantId = crypto.randomUUID()
+await supabase.from('tenants').insert({ id: tenantId, ... }) // Let Supabase auto-generate via DEFAULT gen_random_uuid()!
 ```
