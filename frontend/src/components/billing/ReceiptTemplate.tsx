@@ -8,8 +8,8 @@ import type { ReceiptData } from './types';
  * Renders at 302px width (80mm thermal paper).
  * Uses monospace font for alignment like real receipts.
  */
-const ReceiptTemplate = forwardRef<HTMLDivElement, { data: ReceiptData }>(
-  ({ data }, ref) => {
+const ReceiptTemplate = forwardRef<HTMLDivElement, { data: ReceiptData; paperWidth?: 58 | 80 }>(
+  ({ data, paperWidth = 80 }, ref) => {
     const now = data.dateTime || new Date().toLocaleString('en-IN');
 
     return (
@@ -17,7 +17,7 @@ const ReceiptTemplate = forwardRef<HTMLDivElement, { data: ReceiptData }>(
         ref={ref}
         id="receipt-print-area"
         style={{
-          width: '302px',
+          width: paperWidth === 58 ? '219px' : '302px',
           padding: '12px 8px',
           fontFamily: "'Courier New', 'Courier', monospace",
           fontSize: '12px',
@@ -83,15 +83,22 @@ const ReceiptTemplate = forwardRef<HTMLDivElement, { data: ReceiptData }>(
           <thead>
             <tr style={{ borderBottom: '1px dashed #999' }}>
               <th style={{ textAlign: 'left', padding: '4px 0', fontWeight: 700 }}>Item</th>
-              <th style={{ textAlign: 'center', padding: '4px 0', fontWeight: 700, width: '30px' }}>Qty</th>
-              <th style={{ textAlign: 'right', padding: '4px 0', fontWeight: 700, width: '50px' }}>Rate</th>
-              <th style={{ textAlign: 'right', padding: '4px 0', fontWeight: 700, width: '60px' }}>Amt</th>
+              <th style={{ textAlign: 'center', padding: '4px 0', fontWeight: 700, width: paperWidth === 58 ? '25px' : '30px' }}>Qty</th>
+              <th style={{ textAlign: 'right', padding: '4px 0', fontWeight: 700, width: paperWidth === 58 ? '40px' : '50px' }}>Rate</th>
+              <th style={{ textAlign: 'right', padding: '4px 0', fontWeight: 700, width: paperWidth === 58 ? '50px' : '60px' }}>Amt</th>
             </tr>
           </thead>
           <tbody>
             {data.items.map((item, i) => (
               <tr key={i}>
-                <td style={{ padding: '3px 0', fontSize: '11px', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <td style={{
+                  padding: '3px 0',
+                  fontSize: '11px',
+                  maxWidth: paperWidth === 58 ? '88px' : '140px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
                   {item.name}
                 </td>
                 <td style={{ textAlign: 'center', padding: '3px 0' }}>{item.qty}</td>
@@ -185,7 +192,7 @@ const ReceiptTemplate = forwardRef<HTMLDivElement, { data: ReceiptData }>(
           textAlign: 'center', fontSize: '10px', color: '#ccc', marginTop: '8px',
           borderTop: '1px dashed #ccc', paddingTop: '4px'
         }}>
-          ✂ - - - - - - - - - - - - - - - - - - - -
+          {paperWidth === 58 ? '✂ - - - - - - - - - - -' : '✂ - - - - - - - - - - - - - - - - - - - -'}
         </div>
       </div>
     );

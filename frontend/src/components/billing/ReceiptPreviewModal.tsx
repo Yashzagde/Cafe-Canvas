@@ -5,6 +5,7 @@ import { X, Printer, Download, Share2, Settings, Check } from 'lucide-react';
 import ReceiptTemplate from './ReceiptTemplate';
 import type { ReceiptData, PrintSettings } from './types';
 import { DEFAULT_PRINT_SETTINGS } from './types';
+import { buildReceiptESCPOS, printViaWebUSB, printViaWebSerial } from './escpos';
 
 interface ReceiptPreviewModalProps {
   show: boolean;
@@ -17,7 +18,32 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
   const [printing, setPrinting] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
   const [shared, setShared] = useState(false);
-  const [settings, setSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
+  
+  // Persist print settings in local storage
+  const [settings, setSettings] = useState<PrintSettings>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('cafecanva_print_settings');
+        if (saved) {
+          return { ...DEFAULT_PRINT_SETTINGS, ...JSON.parse(saved) };
+        }
+      } catch (err) {
+        console.error('Failed to load print settings:', err);
+      }
+    }
+    return DEFAULT_PRINT_SETTINGS;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('cafecanva_print_settings', JSON.stringify(settings));
+      } catch (err) {
+        console.error('Failed to save print settings:', err);
+      }
+    }
+  }, [settings]);
+
   const [showSettings, setShowSettings] = useState(false);
   const [whatsappPhone, setWhatsappPhone] = useState('');
 
@@ -108,6 +134,123 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
       }, 1000);
     };
   }, [data.billId, settings.paperWidth]);
+
+  // ─── GENERAL PRINT CONTROLLER ───
+  const handlePrint = useCallback(async () => {
+    if (settings.method === 'browser') {
+      handleBrowserPrint();
+    } else if (settings.method === 'escpos') {
+      if (!receiptRef.current) return;
+      setPrinting(true);
+      try {
+        const escposItems = data.items.map((item) => ({
+          name: item.name,
+          qty: item.qty,
+          price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
+          total: typeof item.total === 'number' ? item.total : parseFloat(item.total) || 0,
+        }));
+
+        const escposData = {
+          storeName: data.storeName,
+          storeAddress: data.storeAddress,
+          storePhone: data.storePhone,
+          gstNumber: data.gstNumber,
+          billId: data.billId,
+          tableName: data.tableName,
+          dateTime: data.dateTime || new Date().toLocaleString('en-IN'),
+          items: escposItems,
+          subtotal: data.subtotal,
+          gstAmount: data.gstAmount,
+          gstPercent: data.gstPercent,
+          serviceCharge: data.serviceCharge,
+          servicePercent: data.servicePercent,
+          discountAmount: data.discountAmount,
+          discountPercent: data.discountPercent,
+          grandTotal: data.grandTotal,
+          paymentMethod: data.paymentMethod,
+          cashReceived: data.cashReceived,
+          changeDue: data.changeDue,
+          footerMessage: data.footerMessage,
+        };
+
+        const bytes = buildReceiptESCPOS(escposData, settings.paperWidth);
+        const success = await printViaWebUSB(bytes);
+        if (!success) {
+          const serialSuccess = await printViaWebSerial(bytes);
+          if (!serialSuccess) {
+            alert('Failed to print via ESC/POS USB or Serial. Please check connection and permissions.');
+          }
+        }
+      } catch (err) {
+        console.error('ESC/POS printing failed:', err);
+        alert('Failed to print via ESC/POS printer.');
+      } finally {
+        setPrinting(false);
+      }
+    } else if (settings.method === 'network') {
+      if (!settings.networkIp) {
+        alert('Please configure Network Printer IP in settings.');
+        setShowSettings(true);
+        return;
+      }
+      setPrinting(true);
+      try {
+        const escposItems = data.items.map((item) => ({
+          name: item.name,
+          qty: item.qty,
+          price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
+          total: typeof item.total === 'number' ? item.total : parseFloat(item.total) || 0,
+        }));
+
+        const escposData = {
+          storeName: data.storeName,
+          storeAddress: data.storeAddress,
+          storePhone: data.storePhone,
+          gstNumber: data.gstNumber,
+          billId: data.billId,
+          tableName: data.tableName,
+          dateTime: data.dateTime || new Date().toLocaleString('en-IN'),
+          items: escposItems,
+          subtotal: data.subtotal,
+          gstAmount: data.gstAmount,
+          gstPercent: data.gstPercent,
+          serviceCharge: data.serviceCharge,
+          servicePercent: data.servicePercent,
+          discountAmount: data.discountAmount,
+          discountPercent: data.discountPercent,
+          grandTotal: data.grandTotal,
+          paymentMethod: data.paymentMethod,
+          cashReceived: data.cashReceived,
+          changeDue: data.changeDue,
+          footerMessage: data.footerMessage,
+        };
+
+        const bytes = buildReceiptESCPOS(escposData, settings.paperWidth);
+        const byteArray = Array.from(bytes);
+
+        const response = await fetch('/api/print/network', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ip: settings.networkIp,
+            port: settings.networkPort || 9100,
+            payload: byteArray
+          })
+        });
+        const resData = await response.json();
+        if (response.ok && resData.success) {
+          alert('Sent print job to network printer.');
+        } else {
+          throw new Error(resData.error || 'Server returned error status');
+        }
+      } catch (err: any) {
+        console.error('Network print error:', err);
+        alert(`Failed to print to network printer: ${err.message || 'Check connection.'}`);
+      } finally {
+        setPrinting(false);
+      }
+    }
+  }, [settings, data, handleBrowserPrint]);
 
   // ─── PDF DOWNLOAD ───
   const handleDownloadPDF = useCallback(async () => {
@@ -257,47 +400,86 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
             }}>
               Print Settings
             </div>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: '10px', color: '#57534e', display: 'block', marginBottom: '4px' }}>
-                  Paper Width
-                </label>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {([58, 80] as const).map((w) => (
-                    <button
-                      key={w}
-                      onClick={() => setSettings((p) => ({ ...p, paperWidth: w }))}
-                      style={{
-                        padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
-                        cursor: 'pointer', border: '1px solid',
-                        background: settings.paperWidth === w ? 'rgba(217,119,6,0.08)' : 'transparent',
-                        color: settings.paperWidth === w ? '#b45309' : '#57534e',
-                        borderColor: settings.paperWidth === w ? 'rgba(217,119,6,0.3)' : '#e7e5e4',
-                      }}
-                    >
-                      {w}mm
-                    </button>
-                  ))}
+            <div style={{ display: 'flex', gap: '10px', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '10px', color: '#57534e', display: 'block', marginBottom: '4px' }}>
+                    Paper Width
+                  </label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {([58, 80] as const).map((w) => (
+                      <button
+                        key={w}
+                        onClick={() => setSettings((p) => ({ ...p, paperWidth: w }))}
+                        style={{
+                          padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
+                          cursor: 'pointer', border: '1px solid',
+                          background: settings.paperWidth === w ? 'rgba(217,119,6,0.08)' : 'transparent',
+                          color: settings.paperWidth === w ? '#b45309' : '#57534e',
+                          borderColor: settings.paperWidth === w ? 'rgba(217,119,6,0.3)' : '#e7e5e4',
+                        }}
+                      >
+                        {w}mm
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '10px', color: '#57534e', display: 'block', marginBottom: '4px' }}>
+                    Print Method
+                  </label>
+                  <select
+                    value={settings.method}
+                    onChange={(e) => setSettings((p) => ({ ...p, method: e.target.value as PrintSettings['method'] }))}
+                    style={{
+                      background: '#ffffff', border: '1px solid #e7e5e4',
+                      borderRadius: '6px', padding: '5px 8px', color: '#1c1917', fontSize: '11px',
+                      outline: 'none', width: '100%', cursor: 'pointer',
+                    }}
+                  >
+                    <option value="browser">Browser Print</option>
+                    <option value="escpos">ESC/POS USB</option>
+                    <option value="network">Network Printer</option>
+                  </select>
                 </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: '10px', color: '#57534e', display: 'block', marginBottom: '4px' }}>
-                  Print Method
-                </label>
-                <select
-                  value={settings.method}
-                  onChange={(e) => setSettings((p) => ({ ...p, method: e.target.value as PrintSettings['method'] }))}
-                  style={{
-                    background: '#ffffff', border: '1px solid #e7e5e4',
-                    borderRadius: '6px', padding: '5px 8px', color: '#1c1917', fontSize: '11px',
-                    outline: 'none', width: '100%', cursor: 'pointer',
-                  }}
-                >
-                  <option value="browser">Browser Print</option>
-                  <option value="escpos">ESC/POS USB</option>
-                  <option value="network">Network Printer</option>
-                </select>
-              </div>
+
+              {settings.method === 'network' && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <div style={{ flex: 2 }}>
+                    <label style={{ fontSize: '10px', color: '#57534e', display: 'block', marginBottom: '4px' }}>
+                      Printer IP Address
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="192.168.1.100"
+                      value={settings.networkIp || ''}
+                      onChange={(e) => setSettings((p) => ({ ...p, networkIp: e.target.value }))}
+                      style={{
+                        background: '#ffffff', border: '1px solid #e7e5e4',
+                        borderRadius: '6px', padding: '5px 8px', color: '#1c1917', fontSize: '11px',
+                        outline: 'none', width: '100%',
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '10px', color: '#57534e', display: 'block', marginBottom: '4px' }}>
+                      Port
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="9100"
+                      value={settings.networkPort || ''}
+                      onChange={(e) => setSettings((p) => ({ ...p, networkPort: parseInt(e.target.value) || undefined }))}
+                      style={{
+                        background: '#ffffff', border: '1px solid #e7e5e4',
+                        borderRadius: '6px', padding: '5px 8px', color: '#1c1917', fontSize: '11px',
+                        outline: 'none', width: '100%',
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -313,7 +495,7 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
             borderRadius: '4px',
             overflow: 'hidden',
           }}>
-            <ReceiptTemplate ref={receiptRef} data={data} />
+            <ReceiptTemplate ref={receiptRef} data={data} paperWidth={settings.paperWidth} />
           </div>
         </div>
 
@@ -359,7 +541,7 @@ export default function ReceiptPreviewModal({ show, onClose, data }: ReceiptPrev
           <ActionButton
             icon={printing ? <Spinner /> : <Printer size={16} />}
             label={printing ? 'Printing…' : 'Print Receipt'}
-            onClick={handleBrowserPrint}
+            onClick={handlePrint}
             primary
             disabled={printing}
           />
