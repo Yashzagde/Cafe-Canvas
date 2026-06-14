@@ -100,6 +100,11 @@ boundaries.
 - The Store Admin console includes a 'Deploy Storefront' and 'Storefront Engine Deploy Storefront' interface inside the Storefront Experience tab (Storefront Link sub-tab).
 - This deployment is a one-time configuration step for the store administrator. After this initial deploy setup, the storefront is continuously live and working in real-time, pulling configuration data dynamically from the database.
 
+### 2.10 Database-Driven ID Generation
+- Never generate primary key UUIDs or IDs in the application tier (frontend, Node API, server actions) using `crypto.randomUUID()`, `v4()`, or similar libraries before database insert.
+- Always omit the primary key `id` column from the insert payload, allowing Supabase (PostgreSQL) to generate the UUID via `DEFAULT gen_random_uuid()` or database sequences.
+- Retrieve the generated ID from the database after a successful insert using `.select('id').single()` or `.select().single()`.
+
 ---
 
 ## ═══════════════════════════════════════════
