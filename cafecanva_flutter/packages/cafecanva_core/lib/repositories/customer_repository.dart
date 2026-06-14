@@ -5,11 +5,10 @@ import '../services/supabase_service.dart';
 class CustomerRepository {
   CustomerRepository._();
 
-  static Future<List<Customer>> getCustomers(String tenantId, String branchId) async {
+  static Future<List<Customer>> getCustomers(String tenantId) async {
     final data = await SupabaseService.from('customers')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
         .isFilter('deleted_at', null)
         .order('name');
     return (data as List).map((e) => Customer.fromJson(e)).toList();

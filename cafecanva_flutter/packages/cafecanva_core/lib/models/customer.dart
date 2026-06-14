@@ -2,7 +2,6 @@
 class Customer {
   final String id;
   final String tenantId;
-  final String branchId;
   final String name;
   final String? phone;
   final String? notes;
@@ -14,7 +13,6 @@ class Customer {
   const Customer({
     required this.id,
     required this.tenantId,
-    required this.branchId,
     required this.name,
     this.phone,
     this.notes,
@@ -29,7 +27,6 @@ class Customer {
   factory Customer.fromJson(Map<String, dynamic> json) => Customer(
         id: json['id'] as String,
         tenantId: json['tenant_id'] as String,
-        branchId: json['branch_id'] as String,
         name: json['name'] as String,
         phone: json['phone'] as String?,
         notes: json['notes'] as String?,
@@ -41,7 +38,6 @@ class Customer {
 
   Map<String, dynamic> toJson() => {
         'tenant_id': tenantId,
-        'branch_id': branchId,
         'name': name,
         'phone': phone,
         'notes': notes,
@@ -50,9 +46,14 @@ class Customer {
       };
 
   Customer copyWith({String? name, String? phone, String? notes, int? visitCount, int? totalSpend}) => Customer(
-        id: id, tenantId: tenantId, branchId: branchId,
-        name: name ?? this.name, phone: phone ?? this.phone, notes: notes ?? this.notes,
-        visitCount: visitCount ?? this.visitCount, totalSpend: totalSpend ?? this.totalSpend,
-        deletedAt: deletedAt, createdAt: createdAt,
+        id: id,
+        tenantId: tenantId,
+        name: name ?? this.name,
+        phone: phone ?? this.phone,
+        notes: notes ?? this.notes,
+        visitCount: visitCount ?? this.visitCount,
+        totalSpend: totalSpend ?? this.totalSpend,
+        deletedAt: deletedAt,
+        createdAt: createdAt,
       );
 }
