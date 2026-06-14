@@ -39,6 +39,7 @@ CafeCanvas is a multi-tenant SaaS restaurant OS for the Indian market.
 8. **INR currency** — GST in paise (integer). CGST + SGST split required
 9. **Mobile-first** — All UI works at 375px minimum
 10. **Tests** — Write tests in `/tests/` for every new file
+11. **Storefront Deployment Rule** — Storefronts are resolved dynamically via middleware routing. Store Admins execute a one-time deploy verification step, but the storefront is live and working at all times through real-time database synchronization.
 
 ## AGENT TEAM (9 SPECIALISTS)
 

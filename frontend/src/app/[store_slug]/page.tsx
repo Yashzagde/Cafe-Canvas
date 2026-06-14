@@ -279,9 +279,7 @@ export default function Storefront() {
           logo_url,
           storefront_config (
             theme_id,
-            hero_image_url,
-            hero_image_url_2,
-            hero_image_url_3,
+            hero_slides,
             footer_description,
             footer_hours,
             footer_address,
@@ -317,55 +315,55 @@ export default function Storefront() {
         }
 
         const configData = (tenantData as any).storefront_config;
-        const resolvedThemeId = Array.isArray(configData)
-          ? configData[0]?.theme_id
-          : configData?.theme_id;
+        const rawConfig = Array.isArray(configData) ? configData[0] : configData;
+        const resolvedThemeId = rawConfig?.theme_id || 'theme-02';
 
-        const heroUrl = Array.isArray(configData) ? configData[0]?.hero_image_url : configData?.hero_image_url;
-        const heroUrl2 = Array.isArray(configData) ? configData[0]?.hero_image_url_2 : configData?.hero_image_url_2;
-        const heroUrl3 = Array.isArray(configData) ? configData[0]?.hero_image_url_3 : configData?.hero_image_url_3;
-        const heroTitle = Array.isArray(configData) ? configData[0]?.hero_title : configData?.hero_title;
-        const heroSubtitle = Array.isArray(configData) ? configData[0]?.hero_subtitle : configData?.hero_subtitle;
-        const heroTitle2 = Array.isArray(configData) ? configData[0]?.hero_title_2 : configData?.hero_title_2;
-        const heroSubtitle2 = Array.isArray(configData) ? configData[0]?.hero_subtitle_2 : configData?.hero_subtitle_2;
-        const heroTitle3 = Array.isArray(configData) ? configData[0]?.hero_title_3 : configData?.hero_title_3;
-        const heroSubtitle3 = Array.isArray(configData) ? configData[0]?.hero_subtitle_3 : configData?.hero_subtitle_3;
-        const footerDescription = Array.isArray(configData) ? configData[0]?.footer_description : configData?.footer_description;
-        const footerHours = Array.isArray(configData) ? configData[0]?.footer_hours : configData?.footer_hours;
-        const footerAddress = Array.isArray(configData) ? configData[0]?.footer_address : configData?.footer_address;
-        const footerPhone = Array.isArray(configData) ? configData[0]?.footer_phone : configData?.footer_phone;
-        const footerEmail = Array.isArray(configData) ? configData[0]?.footer_email : configData?.footer_email;
-        const aboutTitle = Array.isArray(configData) ? configData[0]?.about_title : configData?.about_title;
-        const aboutText = Array.isArray(configData) ? configData[0]?.about_text : configData?.about_text;
-        const aboutImageUrl = Array.isArray(configData) ? configData[0]?.about_image_url : configData?.about_image_url;
+        const slides = rawConfig?.hero_slides || [];
+        const heroUrl = slides[0]?.image_url || null;
+        const heroUrl2 = slides[1]?.image_url || null;
+        const heroUrl3 = slides[2]?.image_url || null;
+        const heroTitle = slides[0]?.title || null;
+        const heroSubtitle = slides[0]?.subtitle || null;
+        const heroTitle2 = slides[1]?.title || null;
+        const heroSubtitle2 = slides[1]?.subtitle || null;
+        const heroTitle3 = slides[2]?.title || null;
+        const heroSubtitle3 = slides[2]?.subtitle || null;
+        
+        const footerDescription = rawConfig?.footer_description || null;
+        const footerHours = rawConfig?.footer_hours || null;
+        const footerAddress = rawConfig?.footer_address || null;
+        const footerPhone = rawConfig?.footer_phone || null;
+        const footerEmail = rawConfig?.footer_email || null;
+        const aboutTitle = rawConfig?.about_title || null;
+        const aboutText = rawConfig?.about_text || null;
+        const aboutImageUrl = rawConfig?.about_image_url || null;
 
         setTenant({
           id: tenantData.id,
           name: tenantData.name,
           subdomain: tenantData.slug,
           public_id: tenantData.public_id,
-          theme_id: resolvedThemeId || 'theme-02',
-          hero_image_url: heroUrl || null,
-          hero_image_url_2: heroUrl2 || null,
-          hero_image_url_3: heroUrl3 || null,
-          hero_title: heroTitle || null,
-          hero_subtitle: heroSubtitle || null,
-          hero_title_2: heroTitle2 || null,
-          hero_subtitle_2: heroSubtitle2 || null,
-          hero_title_3: heroTitle3 || null,
-          hero_subtitle_3: heroSubtitle3 || null,
+          theme_id: resolvedThemeId,
+          hero_image_url: heroUrl,
+          hero_image_url_2: heroUrl2,
+          hero_image_url_3: heroUrl3,
+          hero_title: heroTitle,
+          hero_subtitle: heroSubtitle,
+          hero_title_2: heroTitle2,
+          hero_subtitle_2: heroSubtitle2,
+          hero_title_3: heroTitle3,
+          hero_subtitle_3: heroSubtitle3,
           logo_url: tenantData.logo_url || null,
-          footer_description: footerDescription || null,
-          footer_hours: footerHours || null,
-          footer_address: footerAddress || null,
-          footer_phone: footerPhone || null,
-          footer_email: footerEmail || null,
-          about_title: aboutTitle || null,
-          about_text: aboutText || null,
-          about_image_url: aboutImageUrl || null
+          footer_description: footerDescription,
+          footer_hours: footerHours,
+          footer_address: footerAddress,
+          footer_phone: footerPhone,
+          footer_email: footerEmail,
+          about_title: aboutTitle,
+          about_text: aboutText,
+          about_image_url: aboutImageUrl
         });
 
-        const rawConfig = Array.isArray(configData) ? configData[0] : configData;
         setShowPrices(rawConfig?.show_prices ?? true);
         setAllowOrders(rawConfig?.allow_orders ?? true);
         setShowBlog(rawConfig?.show_blog ?? false);

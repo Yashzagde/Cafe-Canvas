@@ -95,6 +95,11 @@ boundaries.
 - Agents must never assume JWT claims are present. Always treat DB fallback as
   the authoritative source of truth when claims are missing.
 
+### 2.9 Storefront Deployment & Engine Architecture
+- Storefronts are dynamically resolved via wildcard subdomains and Next.js middleware routing rather than separate per-tenant static builds.
+- The Store Admin console includes a 'Deploy Storefront' and 'Storefront Engine Deploy Storefront' interface inside the Storefront Experience tab (Storefront Link sub-tab).
+- This deployment is a one-time configuration step for the store administrator. After this initial deploy setup, the storefront is continuously live and working in real-time, pulling configuration data dynamically from the database.
+
 ---
 
 ## ═══════════════════════════════════════════
