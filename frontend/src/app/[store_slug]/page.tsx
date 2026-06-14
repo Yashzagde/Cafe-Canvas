@@ -385,7 +385,7 @@ export default function Storefront() {
         // 3. Fetch menu items
         const { data: itemData, error: itemError } = await supabase
           .from('menu_items')
-          .select('id, category_id, name, description, price, is_available, dietary_tags, image_url')
+          .select('id, category_id, name, description, price_paise, is_available, dietary_tags, image_url')
           .eq('tenant_id', tenantData.id)
           .eq('is_available', true)
           .order('sort_order', { ascending: true });
@@ -397,7 +397,7 @@ export default function Storefront() {
           category_id: item.category_id,
           name: item.name,
           description: item.description,
-          price: item.price,
+          price: (item.price_paise ?? 0) / 100,
           image_url: item.image_url,
           status: item.is_available ? 'available' : 'unavailable',
           tags: item.dietary_tags || [],

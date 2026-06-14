@@ -8,7 +8,7 @@ class StaffPosApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'CafeCanva Staff POS',
+      title: 'Cafe Canva Staff',
       debugShowCheckedModeBanner: false,
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),

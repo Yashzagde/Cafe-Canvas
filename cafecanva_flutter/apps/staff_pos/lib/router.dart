@@ -24,9 +24,6 @@ final GoRouter staffPosRouter = GoRouter(
         await AuthService.fetchUserProfile(session.user.id);
       } catch (e) {
         debugPrint('Error fetching user profile during redirect: $e');
-        // If profile fetch fails (e.g. network/offline) and no profile is loaded,
-        // stay on the current route if it's the login/PIN pad or unauthorized screen.
-        // Otherwise redirect to login Pad so they can log in offline/online.
         if (path != '/' && path != '/unauthorized') {
           return '/';
         }
@@ -40,17 +37,16 @@ final GoRouter staffPosRouter = GoRouter(
       return '/unauthorized';
     }
 
-    if (role == 'kitchen') {
-      if (path == '/' || path == '/floor' || path == '/unauthorized' || path.startsWith('/order/') || path.startsWith('/settlement/')) {
-        return '/active-orders';
-      }
-    } else if (role == 'waiter') {
-      if (path == '/' || path == '/active-orders' || path == '/unauthorized') {
-        return '/floor';
-      }
-    } else {
-      if (path == '/' || path == '/unauthorized') {
-        return '/floor';
+    // If logged in, redirect root or unauthorized to portal choice
+    if (path == '/' || path == '/unauthorized') {
+      return '/portal-choice';
+    }
+
+    // If accessing floor (waiter POS) and no staff ID is selected, redirect to selector
+    if (path == '/floor') {
+      final selectedStaffId = Hive.box('session').get('selected_staff_id');
+      if (selectedStaffId == null) {
+        return '/waiter-staff-select';
       }
     }
 
@@ -60,6 +56,18 @@ final GoRouter staffPosRouter = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/portal-choice',
+      builder: (context, state) => const PortalChoiceScreen(),
+    ),
+    GoRoute(
+      path: '/waiter-staff-select',
+      builder: (context, state) => const WaiterStaffSelectScreen(),
+    ),
+    GoRoute(
+      path: '/kds',
+      builder: (context, state) => const KdsTableWiseScreen(),
     ),
     ShellRoute(
       builder: (context, state, child) => UserActivityWrapper(child: child),
