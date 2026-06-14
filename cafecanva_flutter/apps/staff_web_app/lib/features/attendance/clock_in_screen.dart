@@ -100,11 +100,12 @@ class _ClockInScreenState extends ConsumerState<ClockInScreen> {
       if (user == null) throw Exception('Not authenticated');
 
       final position = await _getLocation();
-      final branchId = user.appMetadata['branch_id'] as String? ?? '';
+      final locationId = user.appMetadata['location_id'] as String? ??
+          user.appMetadata['branch_id'] as String? ?? '';
 
       final result = await Supabase.instance.client.rpc('clock_in_staff', params: {
         'p_staff_id': user.id,
-        'p_branch_id': branchId,
+        'p_branch_id': locationId,
         'p_lat': position?.latitude,
         'p_lng': position?.longitude,
         'p_address': position != null

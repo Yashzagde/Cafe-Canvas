@@ -33,10 +33,10 @@ class _MenuAvailabilityScreenState extends ConsumerState<MenuAvailabilityScreen>
       if (user == null) return;
 
       final tenantId = user.appMetadata['tenant_id'] as String? ?? '';
-      final branchId = user.appMetadata['branch_id'] as String? ?? '';
+      final locationId = user.appMetadata['location_id'] as String? ?? user.appMetadata['branch_id'] as String? ?? '';
 
-      final categories = await MenuRepository.getCategories(tenantId, branchId);
-      final items = await MenuRepository.getItems(tenantId, branchId);
+      final categories = await MenuRepository.getCategories(tenantId, locationId);
+      final items = await MenuRepository.getItems(tenantId, locationId);
 
       setState(() {
         _categories = categories;
@@ -64,10 +64,10 @@ class _MenuAvailabilityScreenState extends ConsumerState<MenuAvailabilityScreen>
       // 1. Toggle status in Supabase
       await MenuRepository.toggleItemStatus(item.id, newStatus);
 
-      // 2. Log activity
+      final locationId = user.appMetadata['location_id'] as String? ?? user.appMetadata['branch_id'] as String? ?? '';
       await Supabase.instance.client.from('staff_activity_feed').insert({
         'tenant_id': user.appMetadata['tenant_id'] ?? '',
-        'branch_id': user.appMetadata['branch_id'],
+        'branch_id': locationId,
         'staff_id': user.id,
         'activity_type': 'menu_toggled',
         'entity_type': 'menu_item',

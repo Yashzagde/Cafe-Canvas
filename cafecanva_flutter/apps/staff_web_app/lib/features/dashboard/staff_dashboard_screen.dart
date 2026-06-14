@@ -35,14 +35,14 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
       _staffName = user.userMetadata?['full_name'] as String? ?? user.email?.split('@')[0] ?? 'Staff Member';
 
       final tenantId = user.appMetadata['tenant_id'] as String? ?? '';
-      final branchId = user.appMetadata['branch_id'] as String? ?? '';
+      final locationId = user.appMetadata['location_id'] as String? ?? user.appMetadata['branch_id'] as String? ?? '';
 
-      // Fetch branch name
-      if (branchId.isNotEmpty) {
+      // Fetch location name
+      if (locationId.isNotEmpty) {
         final branchData = await Supabase.instance.client
-            .from('branches')
+            .from('locations')
             .select('name')
-            .eq('id', branchId)
+            .eq('id', locationId)
             .maybeSingle();
         if (branchData != null && mounted) {
           setState(() {

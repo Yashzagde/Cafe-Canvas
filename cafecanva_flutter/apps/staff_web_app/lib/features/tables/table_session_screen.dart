@@ -67,9 +67,9 @@ class _TableSessionScreenState extends ConsumerState<TableSessionScreen> {
     if (user == null) return;
 
     try {
+      final locationId = user.appMetadata['location_id'] as String? ?? user.appMetadata['branch_id'] as String? ?? '';
       await Supabase.instance.client.from('table_sessions').insert({
         'tenant_id': user.appMetadata['tenant_id'] ?? '',
-        'branch_id': user.appMetadata['branch_id'] ?? '',
         'table_id': tableId,
         'opened_by': user.id,
         'customer_count': 1,
@@ -79,7 +79,7 @@ class _TableSessionScreenState extends ConsumerState<TableSessionScreen> {
       // Log activity
       await Supabase.instance.client.from('staff_activity_feed').insert({
         'tenant_id': user.appMetadata['tenant_id'] ?? '',
-        'branch_id': user.appMetadata['branch_id'],
+        'branch_id': locationId,
         'staff_id': user.id,
         'activity_type': 'table_opened',
         'entity_type': 'table',
@@ -111,10 +111,11 @@ class _TableSessionScreenState extends ConsumerState<TableSessionScreen> {
           })
           .eq('id', sessionId);
 
+      final locationId = user.appMetadata['location_id'] as String? ?? user.appMetadata['branch_id'] as String? ?? '';
       // Log activity
       await Supabase.instance.client.from('staff_activity_feed').insert({
         'tenant_id': user.appMetadata['tenant_id'] ?? '',
-        'branch_id': user.appMetadata['branch_id'],
+        'branch_id': locationId,
         'staff_id': user.id,
         'activity_type': 'table_closed',
         'entity_type': 'table',
