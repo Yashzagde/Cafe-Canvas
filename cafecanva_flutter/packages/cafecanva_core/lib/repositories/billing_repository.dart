@@ -27,7 +27,6 @@ class BillingRepository {
       body: {
         'tableId': tableId,
         'tenantId': tenantId,
-        'branchId': locationId,
         'locationId': locationId,
         'createdBy': createdBy,
       },

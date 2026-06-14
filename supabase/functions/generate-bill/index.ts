@@ -17,7 +17,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { tableId, tenantId, branchId, createdBy } = await req.json()
+    const body = await req.json()
+    const { tableId, tenantId, createdBy } = body
+    const locationId = body.locationId || body.branchId
 
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
 
@@ -28,7 +30,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid or missing tenantId' }, { status: 400, headers: corsHeaders })
     }
 
-    const cleanBranchId = (branchId && uuidRegex.test(branchId)) ? branchId : null
+    const cleanLocationId = (locationId && uuidRegex.test(locationId)) ? locationId : null
     const cleanCreatedBy = (createdBy && uuidRegex.test(createdBy)) ? createdBy : null
 
     // Fetch active orders for table
@@ -82,7 +84,7 @@ Deno.serve(async (req) => {
       .from('bills')
       .insert({
         tenant_id: tenantId,
-        location_id: cleanBranchId,
+        location_id: cleanLocationId,
         table_id: tableId,
         order_ids: activeOrders.map(o => o.id),
         table_number: tableRecord?.table_number || null,
