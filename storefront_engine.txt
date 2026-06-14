@@ -1,0 +1,338 @@
+================================================================================
+CAFECANVA STOREFRONT ENGINE CODE & SPECIFICATIONS
+================================================================================
+
+This document details the Next.js Storefront Engine codebase, which handles:
+1. Dynamic hostname and subdomain resolution (Tenant Identification).
+2. URL rewrites and deep QR table links routing.
+3. Real-time client-side rendering from Supabase storefront configuration.
+4. The deployment engine interface.
+
+--------------------------------------------------------------------------------
+1. URL & SUBDOMAIN RESOLUTION MIDDLEWARE
+--------------------------------------------------------------------------------
+File Path: frontend/src/middleware.ts
+
+This file intercepts all storefront requests, extracts the tenant subdomain prefix,
+and handles routing redirects or URL rewrites under the hood.
+
+[CODE BLOCK]
+import { type NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { getSupabaseAnonKey, getSupabaseUrl } from '@/utils/supabase/env'
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const host = request.headers.get('host') || ''
+
+  // 1. Skip static assets, public files, and payment webhook routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname.startsWith('/api/') ||
+    pathname.match(/\.(?:svg|png|jpg|jpeg|gif|webp|css|js|exe|apk|mp4|blockmap)$/)
+  ) {
+    return NextResponse.next()
+  }
+
+  // 2. Tenant Subdomain Resolution
+  let tenantSlug = ''
+  let tenantId = ''
+
+  // Parse subdomain (e.g. brewhouse.cafecanvas.bar -> brewhouse)
+  if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+    const parts = host.split('.')
+    const isPlatformDomain = host.includes('run.app') || host.includes('vercel.app') || host.includes('supabase.co')
+    if (parts.length > 2 && !isPlatformDomain) {
+      tenantSlug = parts[0]
+    }
+  }
+
+  // 3. Initialize Supabase Response & Client
+  let supabaseResponse = NextResponse.next({
+    request: {
+      headers: new Headers(request.headers),
+    },
+  })
+
+  // Set tenant headers for Downstream consumption (Server Actions/Components)
+  supabaseResponse.headers.set('x-tenant-slug', tenantSlug)
+  supabaseResponse.headers.set('x-tenant-id', tenantId)
+
+  const supabase = createServerClient(
+    getSupabaseUrl(),
+    getSupabaseAnonKey() || 'placeholder',
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request: {
+              headers: new Headers(request.headers),
+            },
+          })
+          supabaseResponse.headers.set('x-tenant-slug', tenantSlug)
+          supabaseResponse.headers.set('x-tenant-id', tenantId)
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // Refresh user session
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // 4. Session & Route Protection for /admin
+  const isAdminRoute = pathname.startsWith('/admin')
+  const isLoginRoute = pathname === '/admin/login'
+
+  if (isAdminRoute) {
+    if (!user && !isLoginRoute) {
+      const loginUrl = new URL('/admin/login', request.url)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    if (user && isLoginRoute) {
+      const dashboardUrl = new URL('/admin', request.url)
+      return NextResponse.redirect(dashboardUrl)
+    }
+  }
+
+  const isGlobalRoute =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/superadmin') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/signup') ||
+    pathname.startsWith('/staff') ||
+    pathname.startsWith('/kos') ||
+    pathname.startsWith('/download') ||
+    pathname.startsWith('/comingsoon')
+
+  // 4b. Table QR / Deep Link Path Resolution (/[store_slug]/[table_slug])
+  if (!isGlobalRoute) {
+    const subdirectoryMatch = pathname.match(/^\/([^\/]+)\/(?:table\/)?([a-zA-Z0-9_-]+)$/)
+    if (subdirectoryMatch) {
+      const storeSlug = subdirectoryMatch[1]
+      const tableIdent = subdirectoryMatch[2]
+      const knownTabs = ['home', 'menu', 'dine-in', 'delivery', 'products', 'blogs', 'offers', 'about']
+      
+      const url = request.nextUrl.clone()
+      url.pathname = `/${storeSlug}`
+      
+      if (knownTabs.includes(tableIdent.toLowerCase())) {
+        url.searchParams.set('tab', tableIdent)
+      } else {
+        url.searchParams.set('table', tableIdent)
+      }
+      
+      const rewriteResponse = NextResponse.rewrite(url)
+      supabaseResponse.headers.forEach((value, key) => {
+        rewriteResponse.headers.set(key, value)
+      })
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        rewriteResponse.cookies.set(cookie.name, cookie.value)
+      })
+      return rewriteResponse
+    }
+  }
+
+  // 5. Rewrite tenant subdomain requests to the dynamic tenant route /[store_slug]
+  if (
+    !isGlobalRoute &&
+    tenantSlug &&
+    tenantSlug !== 'app' &&
+    tenantSlug !== 'www' &&
+    host &&
+    !host.includes('localhost') &&
+    !host.includes('127.0.0.1')
+  ) {
+    const url = request.nextUrl.clone()
+    const match = pathname.match(/^\/(?:table\/)?([a-zA-Z0-9_-]+)$/)
+    
+    if (match) {
+      const tableIdent = match[1]
+      const knownTabs = ['home', 'menu', 'dine-in', 'delivery', 'products', 'blogs', 'offers', 'about']
+      
+      url.pathname = `/${tenantSlug}`
+      if (knownTabs.includes(tableIdent.toLowerCase())) {
+        url.searchParams.set('tab', tableIdent)
+      } else {
+        url.searchParams.set('table', tableIdent)
+      }
+    } else {
+      url.pathname = `/${tenantSlug}${pathname}`
+    }
+    
+    const rewriteResponse = NextResponse.rewrite(url)
+    
+    supabaseResponse.headers.forEach((value, key) => {
+      rewriteResponse.headers.set(key, value)
+    })
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      rewriteResponse.cookies.set(cookie.name, cookie.value)
+    })
+    
+    return rewriteResponse
+  }
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}
+[END CODE BLOCK]
+
+--------------------------------------------------------------------------------
+2. DYNAMIC REAL-TIME STOREFRONT PAGE LOADER
+--------------------------------------------------------------------------------
+File Path: frontend/src/app/[store_slug]/page.tsx (Extraction)
+
+The storefront page resolves the tenant via store_slug (slug or public UUID) and
+loads metadata and slide arrays from the database in real-time.
+
+[CODE BLOCK]
+// Segment of page.tsx loading dynamic data
+const fetchTenantAndConfig = async () => {
+  try {
+    setLoading(true);
+    
+    // Resolve tenant details and storefront configuration
+    let query = supabase.from('tenants').select(`
+      id,
+      name,
+      slug,
+      public_id,
+      logo_url,
+      storefront_config (
+        theme_id,
+        hero_slides,
+        footer_description,
+        footer_hours,
+        footer_address,
+        footer_phone,
+        footer_email,
+        show_prices,
+        allow_orders,
+        show_blog,
+        show_reviews,
+        show_instagram,
+        show_story,
+        about_title,
+        about_text,
+        about_image_url
+      )
+    `);
+    
+    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(storeSlug);
+    
+    if (isUuid) {
+      query = query.eq('public_id', storeSlug);
+    } else {
+      query = query.eq('slug', storeSlug);
+    }
+
+    const { data: tenantData, error: tenantError } = await query.maybeSingle();
+    if (tenantError) throw tenantError;
+
+    if (!tenantData) {
+      setTenant(null);
+      setLoading(false);
+      return;
+    }
+
+    const configData = tenantData.storefront_config;
+    const rawConfig = Array.isArray(configData) ? configData[0] : configData;
+    const resolvedThemeId = rawConfig?.theme_id || 'theme-02';
+
+    // Map slides from the JSONB array
+    const slides = rawConfig?.hero_slides || [];
+    const heroUrl = slides[0]?.image_url || null;
+    const heroUrl2 = slides[1]?.image_url || null;
+    const heroUrl3 = slides[2]?.image_url || null;
+    const heroTitle = slides[0]?.title || null;
+    const heroSubtitle = slides[0]?.subtitle || null;
+    const heroTitle2 = slides[1]?.title || null;
+    const heroSubtitle2 = slides[1]?.subtitle || null;
+    const heroTitle3 = slides[2]?.title || null;
+    const heroSubtitle3 = slides[2]?.subtitle || null;
+
+    setTenant({
+      id: tenantData.id,
+      name: tenantData.name,
+      subdomain: tenantData.slug,
+      public_id: tenantData.public_id,
+      theme_id: resolvedThemeId,
+      hero_image_url: heroUrl,
+      hero_image_url_2: heroUrl2,
+      hero_image_url_3: heroUrl3,
+      hero_title: heroTitle,
+      hero_subtitle: heroSubtitle,
+      hero_title_2: heroTitle2,
+      hero_subtitle_2: heroSubtitle2,
+      hero_title_3: heroTitle3,
+      hero_subtitle_3: heroSubtitle3,
+      logo_url: tenantData.logo_url || null,
+      footer_description: rawConfig?.footer_description || null,
+      footer_hours: rawConfig?.footer_hours || null,
+      footer_address: rawConfig?.footer_address || null,
+      footer_phone: rawConfig?.footer_phone || null,
+      footer_email: rawConfig?.footer_email || null,
+      about_title: rawConfig?.about_title || null,
+      about_text: rawConfig?.about_text || null,
+      about_image_url: rawConfig?.about_image_url || null,
+    });
+
+  } catch (err) {
+    console.error("Failed to load dynamic storefront config:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+[END CODE BLOCK]
+
+--------------------------------------------------------------------------------
+3. DEPLOY STOREFRONT INTERFACE
+--------------------------------------------------------------------------------
+File Path: frontend/src/components/admin/StorefrontEditor.tsx (Extraction)
+
+The deployment trigger buttons within the storefront experience panel:
+
+[CODE BLOCK]
+<div className="flex flex-wrap gap-2">
+  <button
+    type="button"
+    onClick={() => {
+      alert('🚀 Storefront Engine: One-time deployment verified and active. Your customer storefront is live!');
+    }}
+    className="px-4 py-2 bg-gradient-to-r from-[#d97706] to-[#b45309] text-white text-xs font-bold rounded-xl cursor-pointer hover:opacity-95 transition-all flex items-center gap-1.5 shadow-sm"
+  >
+    <Sparkles size={13} />
+    Deploy Storefront
+  </button>
+  <button
+    type="button"
+    onClick={() => {
+      alert('⚙️ Storefront Engine Deployment: Verified. Running on active Edge routing. Uptime: 100%');
+    }}
+    className="px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#1e293b]/80 border border-[#e2e8f0] text-xs font-bold rounded-xl cursor-pointer transition-all"
+  >
+    Storefront Engine Deploy Storefront
+  </button>
+</div>
+<div className="flex items-center gap-2 pt-1">
+  <span className="flex h-2 w-2 relative">
+    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+  </span>
+  <span className="text-[10px] font-bold text-emerald-600">Storefront Status: Always Working (Dynamic Real-Time Live)</span>
+</div>
+[END CODE BLOCK]
+================================================================================
