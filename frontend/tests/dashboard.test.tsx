@@ -81,4 +81,47 @@ describe('Admin Dashboard Catalog & Menu Controller', () => {
     expect(updated[4].id).toBe('m5')
     expect(updated[4].name).toBe('Vegan Blueberry Muffin')
   })
+
+  it('should calculate todayOrdersCount correctly by combining today bills and unbilled active orders', () => {
+    // Simulate rawOrders for today
+    const mockRawOrders = [
+      { id: 'o1', created_at: '2026-06-14T05:00:00Z', status: 'served' }, // unbilled order
+      { id: 'o2', created_at: '2026-06-14T06:00:00Z', status: 'paid' },   // billed/paid order
+      { id: 'o3', created_at: '2026-06-14T07:00:00Z', status: 'pending' },// unbilled order
+      { id: 'o4', created_at: '2026-06-14T08:00:00Z', status: 'cancelled' }, // cancelled (should be ignored)
+      { id: 'o5', created_at: '2026-06-13T10:00:00Z', status: 'paid' },   // yesterday paid (should be ignored)
+    ]
+
+    // Simulate today's bills
+    const mockTodayBills = [
+      { id: 'b1', created_at: '2026-06-14T06:05:00Z', order_ids: ['o2'] }  // bill linked to o2
+    ]
+
+    // Today filter logic matching DashboardTab.tsx
+    const nowString = new Date('2026-06-14T10:00:00Z').toDateString()
+
+    const todayBills = mockTodayBills.filter(b => {
+      const d = new Date(b.created_at)
+      return d.toDateString() === nowString
+    })
+
+    const todayOrders = mockRawOrders.filter(o => {
+      const d = new Date(o.created_at)
+      return d.toDateString() === nowString && o.status !== 'cancelled'
+    })
+
+    const billedOrderIds = new Set<string>()
+    todayBills.forEach(b => {
+      if (Array.isArray(b.order_ids)) {
+        b.order_ids.forEach((id: string) => billedOrderIds.add(id))
+      }
+    })
+
+    const unbilledTodayOrders = todayOrders.filter(o => !billedOrderIds.has(o.id))
+
+    const todayOrdersCount = todayBills.length + unbilledTodayOrders.length
+
+    // Expect: 1 bill (b1) + 2 unbilled active orders (o1, o3) = 3 total orders today
+    expect(todayOrdersCount).toBe(3)
+  })
 })

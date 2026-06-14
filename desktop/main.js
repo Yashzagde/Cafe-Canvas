@@ -44,7 +44,9 @@ function createWindow() {
       webSecurity: true
     }
   });
-  mainWindow.webContents.openDevTools();
+  if (!app.isPackaged) {
+    mainWindow.webContents.openDevTools();
+  }
 
   // Register keyboard shortcuts locally for borderless window (since menu bar is hidden on Windows)
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -274,7 +276,14 @@ app.on('window-all-closed', () => {
 // Silent thermal printing listener
 ipcMain.on('print-receipt-silent', (event, htmlContent) => {
   console.log('[Electron] Received silent print request.');
-  let workerWindow = new BrowserWindow({ show: false });
+  let workerWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true
+    }
+  });
   workerWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
 
   workerWindow.webContents.on('did-finish-load', () => {

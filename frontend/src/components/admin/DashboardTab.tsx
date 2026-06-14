@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer
@@ -37,6 +37,16 @@ interface Discount {
   active: boolean;
 }
 
+interface MenuItem {
+  id: string;
+  name: string;
+  price: number;
+  cat: string;
+  status: 'available' | 'unavailable' | 'hidden';
+  desc: string;
+  image_url?: string | null;
+}
+
 interface DashboardTabProps {
   toast: (msg: string, type?: "success" | "error" | "warning") => void;
   discounts: Discount[];
@@ -45,6 +55,8 @@ interface DashboardTabProps {
   orders: RecentOrder[];
   bills?: any[];
   rawOrders?: any[];
+  onRefresh?: () => void | Promise<void>;
+  menu?: MenuItem[];
 }
 
 function aggregateRevenue(bills: any[], period: 'daily' | 'weekly' | 'monthly'): Array<{ t: string; v: number }> {
@@ -119,10 +131,46 @@ export default function DashboardTab({
   tables,
   orders,
   bills = [],
-  rawOrders = []
+  rawOrders = [],
+  onRefresh,
+  menu = []
 }: DashboardTabProps) {
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [chartType, setChartType] = useState<"area" | "bar">("area");
+  
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    if (!autoRefreshEnabled || !onRefresh) {
+      return;
+    }
+
+    // Trigger immediate refresh on toggle on
+    onRefresh();
+
+    const intervalId = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          onRefresh();
+          return 5;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [autoRefreshEnabled, onRefresh]);
+
+  const toggleAutoRefresh = () => {
+    setAutoRefreshEnabled(prev => {
+      const next = !prev;
+      if (!next) {
+        setCountdown(5);
+      }
+      return next;
+    });
+  };
   
   const chartData = React.useMemo(() => {
     return aggregateRevenue(bills, period);
@@ -163,8 +211,87 @@ export default function DashboardTab({
   }, [computedTopItems]);
 
 
+  const smartSuggestions = React.useMemo(() => {
+    if (!menu || menu.length === 0) {
+      return [
+        { id: "d1", name: "Matcha Latte Special", pct: 15, sold: 0 },
+        { id: "d2", name: "Vegan Blueberry Muffin", pct: 20, sold: 0 },
+        { id: "d3", name: "Vanilla Espresso Cake", pct: 10, sold: 0 }
+      ];
+    }
+
+    // 1. Build a map of sales counts from rawOrders
+    const salesCounts: Record<string, number> = {};
+    rawOrders.forEach((o: any) => {
+      (o.order_items || []).forEach((item: any) => {
+        const name = item.item_name || item.name;
+        if (!name) return;
+        const qty = item.quantity || item.qty || 1;
+        salesCounts[name] = (salesCounts[name] || 0) + qty;
+      });
+    });
+
+    // 2. Map menu items to their sales count
+    const menuWithSales = menu.map(item => {
+      const sold = salesCounts[item.name] || 0;
+      return {
+        id: item.id,
+        name: item.name,
+        sold
+      };
+    });
+
+    // 3. Sort by sales ascending (lowest sales first)
+    // Secondary sort: alphabetical by name for deterministic order
+    menuWithSales.sort((a, b) => {
+      if (a.sold !== b.sold) {
+        return a.sold - b.sold;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    // 4. Take the top 3 items
+    const top3LowSell = menuWithSales.slice(0, 3);
+
+    // 5. Generate recommendations with a recommended discount percent
+    // Never sold (0 orders) -> 20% discount
+    // Low sell (1-2 orders) -> 15% discount
+    // More -> 10% discount
+    return top3LowSell.map(item => {
+      let pct = 10;
+      if (item.sold === 0) {
+        pct = 20;
+      } else if (item.sold <= 2) {
+        pct = 15;
+      }
+      return {
+        id: `flash-${item.id}`,
+        name: item.name,
+        pct,
+        sold: item.sold
+      };
+    });
+  }, [menu, rawOrders]);
+
   const applyDiscount = (id: string, name: string, pct: number) => {
-    setDiscounts(prev => prev.map(d => d.id === id ? { ...d, active: true } : d));
+    setDiscounts(prev => {
+      const exists = prev.find(d => d.id === id);
+      if (exists) {
+        return prev.map(d => d.id === id ? { ...d, active: true } : d);
+      } else {
+        return [
+          ...prev,
+          {
+            id,
+            name: `${name} Flash Discount`,
+            type: "percent",
+            value: pct,
+            validUntil: "Today Only",
+            active: true
+          }
+        ];
+      }
+    });
     toast(`Flash ${pct}% discount applied to ${name}!`, "success");
   };
 
@@ -379,7 +506,44 @@ export default function DashboardTab({
           <h2 style={{ fontSize: "20px", fontWeight: 800, color: T.tx, letterSpacing: "-0.02em", fontFamily: ff }}>Dashboard Overview</h2>
           <p style={{ fontSize: "12px", color: T.mu2, marginTop: "4px" }}>Real-time performance metrics</p>
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          {/* Auto Fast Refresh Toggle */}
+          <button
+            onClick={toggleAutoRefresh}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "6px 12px",
+              borderRadius: "10px",
+              border: `1px solid ${autoRefreshEnabled ? 'rgba(22, 163, 74, 0.3)' : T.bdr}`,
+              background: autoRefreshEnabled ? 'rgba(22, 163, 74, 0.05)' : 'transparent',
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              marginRight: "8px",
+              boxShadow: autoRefreshEnabled ? '0 0 12px rgba(22, 163, 74, 0.1)' : 'none',
+            }}
+          >
+            <span 
+              className={autoRefreshEnabled ? "animate-pulse" : ""}
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: autoRefreshEnabled ? T.em : T.mu,
+                display: "inline-block",
+              }} 
+            />
+            <span style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              color: autoRefreshEnabled ? T.em : T.tx,
+              fontFamily: ff,
+            }}>
+              {autoRefreshEnabled ? `Fast Refresh (${countdown}s)` : "Auto Refresh"}
+            </span>
+          </button>
+
           {(["daily", "weekly", "monthly"] as const).map(p => (
             <Btn key={p} onClick={() => setPeriod(p)} variant={period === p ? "primary" : "ghost"} size="sm">
               {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -498,17 +662,14 @@ export default function DashboardTab({
           </div>
           <div style={{ fontSize: "11px", color: T.mu2, marginBottom: "14px" }}>Boost sales on low-selling products</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {[
-              { id: "d1", name: "Matcha Latte Special", pct: 15, sold: 2 },
-              { id: "d2", name: "Vegan Blueberry Muffin", pct: 20, sold: 1 }
-            ].map(s => {
+            {smartSuggestions.map(s => {
               const isApplied = discounts.find(d => d.id === s.id)?.active;
               return (
                 <div key={s.id} style={{ padding: "12px", borderRadius: "8px", background: "rgba(255,255,255,0.03)", border: `1px solid ${T.bdr}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
                     <div>
                       <div style={{ fontSize: "11px", fontWeight: 600, color: T.tx }}>{s.name}</div>
-                      <div style={{ fontSize: "10px", color: T.mu }}>{s.sold} orders this week</div>
+                      <div style={{ fontSize: "10px", color: T.mu }}>{s.sold} orders sold</div>
                     </div>
                     <Badge color="rose">-{s.pct}% rec.</Badge>
                   </div>
