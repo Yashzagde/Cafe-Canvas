@@ -19,7 +19,7 @@ class BillingRepository {
   static Future<Bill> generateBill({
     required String tableId,
     required String tenantId,
-    required String branchId,
+    required String locationId,
     required String createdBy,
   }) async {
     final response = await SupabaseService.invokeFunction(
@@ -27,7 +27,8 @@ class BillingRepository {
       body: {
         'tableId': tableId,
         'tenantId': tenantId,
-        'branchId': branchId,
+        'branchId': locationId,
+        'locationId': locationId,
         'createdBy': createdBy,
       },
     );
@@ -89,7 +90,7 @@ class BillingRepository {
 
   /// Get bill history for a branch.
   static Future<List<Bill>> getBillHistory(
-    String tenantId, String branchId, {
+    String tenantId, String locationId, {
     String? fromDate,
     String? toDate,
     String? paymentMethod,
@@ -97,7 +98,7 @@ class BillingRepository {
     var query = SupabaseService.from('bills')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('location_id', branchId)
+        .eq('location_id', locationId)
         .eq('status', 'paid');
     if (fromDate != null) query = query.gte('created_at', fromDate);
     if (toDate != null) query = query.lte('created_at', toDate);

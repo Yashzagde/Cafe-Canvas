@@ -8,9 +8,9 @@ const sql = postgres(dbUrl, { ssl: 'require', max: 1 });
 async function main() {
   try {
     const columns = await sql`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public';
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'customers';
     `;
     console.table(columns);
   } catch (err) {

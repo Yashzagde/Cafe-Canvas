@@ -9,9 +9,9 @@ class OrderRepository {
   OrderRepository._();
   OrderRepository();
 
-  Future<List<Order>> fetchOrders(String branchId) {
+  Future<List<Order>> fetchOrders(String locationId) {
     final tId = AuthService.tenantId ?? 'demo-tenant-5555';
-    return getAllOrders(tId, branchId);
+    return getAllOrders(tId, locationId);
   }
 
   Future<void> updateOrderItemKdsStatus(String itemId, String kdsStatus) {
@@ -20,7 +20,7 @@ class OrderRepository {
 
   Future<Order> createOrder({
     required String tenantId,
-    required String branchId,
+    required String locationId,
     String? tableId,
     String? customerId,
     int? subtotal,
@@ -31,7 +31,7 @@ class OrderRepository {
   }) {
     return OrderRepository.staticCreateOrder(
       tenantId: tenantId,
-      branchId: branchId,
+      locationId: locationId,
       tableId: tableId,
       createdBy: 'customer',
       items: itemsData,
@@ -44,7 +44,7 @@ class OrderRepository {
   /// Create a new order with items. Returns the created order.
   static Future<Order> staticCreateOrder({
     required String tenantId,
-    required String branchId,
+    required String locationId,
     String? tableId,
     String? createdBy,
     required List<Map<String, dynamic>> items,
@@ -58,7 +58,7 @@ class OrderRepository {
       final orderData = await SupabaseService.from('orders')
           .insert({
             'tenant_id': tenantId,
-            'location_id': branchId,
+            'location_id': locationId,
             'table_id': tableId,
             'staff_id': createdBy,
             'status': 'pending',
@@ -122,11 +122,11 @@ class OrderRepository {
   }
 
   /// Get active orders for a branch.
-  static Future<List<Order>> getActiveOrders(String tenantId, String branchId) async {
+  static Future<List<Order>> getActiveOrders(String tenantId, String locationId) async {
     final data = await SupabaseService.from('orders')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('location_id', branchId)
+        .eq('location_id', locationId)
         .inFilter('status', ['pending', 'confirmed', 'preparing', 'ready', 'served', 'completed'])
         .order('created_at', ascending: false);
 
@@ -179,7 +179,7 @@ class OrderRepository {
 
   /// Get all orders (with date filter for admin).
   static Future<List<Order>> getAllOrders(
-    String tenantId, String branchId, {
+    String tenantId, String locationId, {
     String? fromDate,
     String? toDate,
     String? status,
@@ -187,7 +187,7 @@ class OrderRepository {
     var query = SupabaseService.from('orders')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('location_id', branchId);
+        .eq('location_id', locationId);
     if (status != null) query = query.eq('status', status);
     if (fromDate != null) query = query.gte('created_at', fromDate);
     if (toDate != null) query = query.lte('created_at', toDate);
