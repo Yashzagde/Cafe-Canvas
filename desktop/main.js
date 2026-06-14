@@ -21,6 +21,9 @@ const ENV_SERVERS = {
  * @returns {string}
  */
 function getFullUrl() {
+  if (currentRoute.startsWith('http://') || currentRoute.startsWith('https://')) {
+    return currentRoute;
+  }
   return `${ENV_SERVERS[currentEnv]}${currentRoute}`;
 }
 
@@ -49,21 +52,12 @@ function createWindow() {
       const isControlOrMeta = input.control || input.meta;
       const key = input.key.toLowerCase();
 
-      // Navigation Shortcuts (Ctrl + 1, Ctrl + 2, etc.)
+      // Navigation Shortcuts (Ctrl + 1)
       if (isControlOrMeta && key === '1') {
         navigateToRoute('/admin');
         event.preventDefault();
       } else if (isControlOrMeta && key === '2') {
-        navigateToRoute('/staff');
-        event.preventDefault();
-      } else if (isControlOrMeta && key === '3') {
-        navigateToRoute('/kos');
-        event.preventDefault();
-      } else if (isControlOrMeta && key === '4') {
-        navigateToRoute('/demo');
-        event.preventDefault();
-      } else if (isControlOrMeta && key === 's') {
-        navigateToRoute('/superadmin');
+        navigateToRoute('https://web.whatsapp.com');
         event.preventDefault();
       }
 
@@ -154,7 +148,13 @@ function loadCurrentUrl() {
   if (!mainWindow) return;
   const target = getFullUrl();
   console.log(`Loading URL in native shell: ${target}`);
-  mainWindow.loadURL(target);
+  if (target.includes('whatsapp.com')) {
+    mainWindow.loadURL(target, {
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+    });
+  } else {
+    mainWindow.loadURL(target);
+  }
 }
 
 /**
@@ -199,24 +199,9 @@ function buildAppMenu() {
           click: () => navigateToRoute('/admin')
         },
         {
-          label: 'Waiter POS App',
+          label: 'WhatsApp Web',
           accelerator: 'CmdOrCtrl+2',
-          click: () => navigateToRoute('/staff')
-        },
-        {
-          label: 'Kitchen KDS Monitor',
-          accelerator: 'CmdOrCtrl+3',
-          click: () => navigateToRoute('/kos')
-        },
-        {
-          label: 'Diner Storefront Menu',
-          accelerator: 'CmdOrCtrl+4',
-          click: () => navigateToRoute('/demo')
-        },
-        {
-          label: 'Super Admin Portal',
-          accelerator: 'CmdOrCtrl+S',
-          click: () => navigateToRoute('/superadmin')
+          click: () => navigateToRoute('https://web.whatsapp.com')
         }
       ]
     },

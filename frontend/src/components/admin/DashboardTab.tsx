@@ -212,7 +212,25 @@ export default function DashboardTab({
         const d = new Date(b.created_at || b.paid_at);
         return d.toDateString() === now.toDateString();
       });
-      const todayOrdersCount = todayBills.length;
+
+      // Filter rawOrders for today (excluding cancelled ones)
+      const todayOrders = rawOrders.filter(o => {
+        const d = new Date(o.created_at);
+        return d.toDateString() === now.toDateString() && o.status !== 'cancelled';
+      });
+
+      // Get set of all order IDs linked to today's bills to prevent double counting
+      const billedOrderIds = new Set<string>();
+      todayBills.forEach(b => {
+        if (Array.isArray(b.order_ids)) {
+          b.order_ids.forEach((id: string) => billedOrderIds.add(id));
+        }
+      });
+
+      // Find today's orders that are not linked to today's bills (i.e. active/unbilled orders)
+      const unbilledTodayOrders = todayOrders.filter(o => !billedOrderIds.has(o.id));
+
+      const todayOrdersCount = todayBills.length + unbilledTodayOrders.length;
       const todayRevenue = todayBills.reduce((sum, b) => sum + (b.total ?? 0) / 100, 0);
       const todayAvg = todayOrdersCount > 0 ? Math.round(todayRevenue / todayOrdersCount) : 0;
       
@@ -352,7 +370,7 @@ export default function DashboardTab({
         avgUp: avgTrendPct >= 0,
       };
     }
-  }, [period, bills]);
+  }, [period, bills, rawOrders]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>

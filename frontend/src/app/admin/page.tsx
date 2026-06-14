@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Coffee, AlertCircle, LogOut, ChevronDown, User, Layers, ShieldAlert, Award, Wifi, WifiOff, Bell } from 'lucide-react';
+import { Coffee, AlertCircle, LogOut, ChevronDown, User, Layers, ShieldAlert, Award, Wifi, WifiOff, Bell, RefreshCw } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { syncOfflineData, getCachedMenuItems, getCachedCategories, cacheMenuItems, cacheCategories, getOfflineBills, isOnline } from '@/lib/offline-queue';
@@ -164,6 +164,9 @@ export default function CafeCanvaAdmin() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
+
+  // Auto fast refresh states
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -460,6 +463,22 @@ export default function CafeCanvaAdmin() {
     }
   };
 
+  const fetchDbRef = useRef(fetchDbData);
+
+  useEffect(() => {
+    fetchDbRef.current = fetchDbData;
+  });
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const timer = setInterval(() => {
+      if (fetchDbRef.current) {
+        fetchDbRef.current();
+      }
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [autoRefresh]);
+
   useEffect(() => {
     setMounted(true);
     
@@ -682,6 +701,37 @@ export default function CafeCanvaAdmin() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Auto Fast Refresh Toggle */}
+            <button
+              onClick={() => {
+                const newValue = !autoRefresh;
+                setAutoRefresh(newValue);
+                toast(
+                  newValue ? "Auto fast refresh enabled (5s interval)" : "Auto refresh disabled",
+                  newValue ? "success" : undefined
+                );
+              }}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-[10px] font-extrabold tracking-wider uppercase transition-all duration-300 ${
+                autoRefresh
+                  ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm'
+                  : 'bg-white text-[#64748b] hover:text-[#1e293b] border-[#e2e8f0]'
+              }`}
+              title="Toggle Auto Fast Refresh (5s)"
+            >
+              <RefreshCw
+                size={12}
+                className={`${autoRefresh ? 'animate-spin text-amber-600' : 'text-[#64748b]'}`}
+                style={autoRefresh ? { animationDuration: '3s' } : undefined}
+              />
+              <span>Auto Refresh</span>
+              {autoRefresh && (
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                </span>
+              )}
+            </button>
+
             {/* Offline/Online Status Indicator */}
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase transition-all duration-300 ${
               isOnlineState 
