@@ -492,6 +492,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#FAF7F2] text-[#2D211A] font-sans antialiased overflow-x-hidden relative selection:bg-[#C9A84C]/20 selection:text-[#78350F]">
+      <link rel="preload" as="image" href="/assets/restaurant_bg.png" fetchPriority="high" />
       
       {/* BACKGROUND DECORATIVE LIQUID GLASS BLOBS */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -561,17 +562,16 @@ export default function Home() {
       <section className="relative w-full min-h-[90vh] flex items-center justify-center overflow-hidden z-10 px-6 py-12">
         <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-b from-[#FAF7F2]/10 via-[#FAF7F2]/75 to-[#FAF7F2] z-10" />
-          {mounted && (
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              playsInline 
-              className="w-full h-full object-cover opacity-25 filter sepia-[20%] brightness-[95%]"
-            >
-              <source src="/assets/hero-bg.mp4" type="video/mp4" />
-            </video>
-          )}
+          <video 
+            autoPlay 
+            loop 
+            muted 
+            playsInline 
+            poster="/assets/restaurant_bg.png"
+            className="w-full h-full object-cover opacity-25 filter sepia-[20%] brightness-[95%]"
+          >
+            <source src="/assets/hero-bg.mp4" type="video/mp4" />
+          </video>
         </div>
 
         {/* Hero Copy (Luxury Glass Panel) */}
