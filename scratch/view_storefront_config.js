@@ -7,12 +7,11 @@ const sql = postgres(dbUrl, { ssl: 'require', max: 1 });
 
 async function main() {
   try {
-    const columns = await sql`
-      SELECT column_name, data_type 
-      FROM information_schema.columns 
-      WHERE table_name = 'storefront_config';
+    const rows = await sql`
+      SELECT id, tenant_id, hero_slides
+      FROM public.storefront_config;
     `;
-    console.table(columns);
+    console.log("Storefront config rows:", JSON.stringify(rows, null, 2));
   } catch (err) {
     console.error("Error:", err.message);
   } finally {
