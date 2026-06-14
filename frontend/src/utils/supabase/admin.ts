@@ -1,10 +1,10 @@
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
-import { getSupabaseUrl } from '@/utils/supabase/env'
+import { getSupabaseUrl, getSupabaseServiceRoleKey } from '@/utils/supabase/env'
 
 /** Service-role client for platform admin API routes (bypasses RLS). */
 export function createAdminClient() {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const serviceKey = getSupabaseServiceRoleKey()
   if (!serviceKey) {
     return null
   }

@@ -6,6 +6,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { getSupabaseUrl, getSupabaseServiceRoleKey } from '@/utils/supabase/env'
 
 // ── Action catalogue (extend as new mutations are added) ──────────
 export type AuditAction =
@@ -61,9 +62,9 @@ let _adminClient: ReturnType<typeof createClient<Database>> | null = null;
 
 function getAdminClient() {
   if (!_adminClient) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) {
+    const url = getSupabaseUrl();
+    const key = getSupabaseServiceRoleKey();
+    if (!url || url === 'https://placeholder.supabase.co' || !key) {
       console.warn('[audit] Supabase url or service role key is missing. Audit log skipped.');
       return null;
     }

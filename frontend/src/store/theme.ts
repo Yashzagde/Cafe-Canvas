@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getSupabaseUrl } from '@/utils/supabase/env';
 
 export interface ThemeConfig {
   themeId: string;
@@ -40,7 +41,7 @@ export const useThemeStore = create<ThemeState>((set) => ({
       link.rel = 'stylesheet';
       document.head.appendChild(link);
     }
-    const cssUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/themes/${themeId}.css`;
+    const cssUrl = `${getSupabaseUrl()}/storage/v1/object/public/themes/${themeId}.css`;
     link.href = cssUrl;
     set((state) => ({ config: { ...state.config, themeId } }));
   },

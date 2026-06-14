@@ -5,6 +5,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { getSupabaseUrl, getSupabaseAnonKey } from '@/utils/supabase/env'
 
 export type StaffRole = 'owner' | 'manager' | 'cashier' | 'kitchen' | 'waiter' | 'staff'
 
@@ -136,8 +137,8 @@ export function canAccess(role: StaffRole, permission: Permission): boolean {
 export async function requirePermission(permission: Permission) {
   const cookieStore = await cookies()
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getSupabaseUrl(),
+    getSupabaseAnonKey() || 'placeholder',
     { cookies: { get(n) { return cookieStore.get(n)?.value } } }
   )
 
