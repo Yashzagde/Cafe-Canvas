@@ -11,14 +11,14 @@ class MenuRepository {
   MenuRepository._();
   MenuRepository();
 
-  Future<List<MenuCategory>> fetchCategories(String branchId) {
+  Future<List<MenuCategory>> fetchCategories(String locationId) {
     final tId = AuthService.tenantId ?? 'demo-tenant-5555';
-    return getCategories(tId, branchId);
+    return getCategories(tId, locationId);
   }
 
-  Future<List<MenuItem>> fetchItems(String branchId, {String? categoryId}) {
+  Future<List<MenuItem>> fetchItems(String locationId, {String? categoryId}) {
     final tId = AuthService.tenantId ?? 'demo-tenant-5555';
-    return getItems(tId, branchId, categoryId: categoryId);
+    return getItems(tId, locationId, categoryId: categoryId);
   }
 
   Future<List<ModifierGroup>> fetchModifiersForItem(String itemId) =>
@@ -27,11 +27,10 @@ class MenuRepository {
 
   // ─── CATEGORIES ───
 
-  static Future<List<MenuCategory>> getCategories(String tenantId, String branchId) async {
+  static Future<List<MenuCategory>> getCategories(String tenantId, String locationId) async {
     final data = await SupabaseService.from('menu_categories')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
         .isFilter('deleted_at', null)
         .order('sort_order');
     return (data as List).map((e) => MenuCategory.fromJson(e)).toList();
@@ -57,11 +56,10 @@ class MenuRepository {
 
   // ─── MENU ITEMS ───
 
-  static Future<List<MenuItem>> getItems(String tenantId, String branchId, {String? categoryId}) async {
+  static Future<List<MenuItem>> getItems(String tenantId, String locationId, {String? categoryId}) async {
     var query = SupabaseService.from('menu_items')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
         .isFilter('deleted_at', null);
     if (categoryId != null) {
       query = query.eq('category_id', categoryId);
@@ -70,11 +68,10 @@ class MenuRepository {
     return (data as List).map((e) => MenuItem.fromJson(e)).toList();
   }
 
-  static Future<List<MenuItem>> getAvailableItems(String tenantId, String branchId) async {
+  static Future<List<MenuItem>> getAvailableItems(String tenantId, String locationId) async {
     final data = await SupabaseService.from('menu_items')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
         .eq('status', 'available')
         .isFilter('deleted_at', null)
         .order('sort_order');

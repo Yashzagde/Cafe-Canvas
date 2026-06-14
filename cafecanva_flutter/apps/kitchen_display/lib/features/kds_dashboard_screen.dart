@@ -6,11 +6,11 @@ import 'package:cafecanva_ui/cafecanva_ui.dart';
 import 'kds/kds_audio_controller.dart';
 
 class KdsDashboardScreen extends StatefulWidget {
-  final String branchId;
+  final String locationId;
 
   const KdsDashboardScreen({
     Key? key,
-    required this.branchId,
+    required this.locationId,
   }) : super(key: key);
 
   @override
@@ -49,13 +49,13 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
         _errorMessage = null;
       });
 
-      final tables = await _tableRepo.fetchTables(widget.branchId);
+      final tables = await _tableRepo.fetchTables(widget.locationId);
       final Map<String, String> tableMap = {};
       for (final t in tables) {
         tableMap[t.id] = t.name;
       }
 
-      final activeOrders = await _orderRepo.fetchOrders(widget.branchId);
+      final activeOrders = await _orderRepo.fetchOrders(widget.locationId);
 
       if (mounted) {
         setState(() {
@@ -78,7 +78,7 @@ class _KdsDashboardScreenState extends State<KdsDashboardScreen> {
     // Blocker 3: Realtime subscriptions strictly bounded inside Postgres branch/tenant filters
     final tenantId = AuthService.tenantId ?? '';
     _realtimeService.subscribeToKitchenOrders(
-      branchId: widget.branchId,
+      locationId: widget.locationId,
       tenantId: tenantId,
       onOrderCreated: (payload) {
         final orderId = payload.newRecord['id'] as String;

@@ -106,7 +106,7 @@ class AuthService {
     await Future.wait([
       _storage.write(key: SecureCacheKeys.refreshToken, value: refreshToken),
       _storage.write(key: SecureCacheKeys.staffPinHash, value: pinHash),
-      _storage.write(key: SecureCacheKeys.lastBranchId, value: profile.locationId),
+      _storage.write(key: SecureCacheKeys.lastLocationId, value: profile.locationId),
       _storage.write(
         key: SecureCacheKeys.staffProfile,
         value: jsonEncode(profile.toJson()),

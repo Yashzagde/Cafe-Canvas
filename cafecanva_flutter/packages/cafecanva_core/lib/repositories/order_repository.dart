@@ -97,7 +97,7 @@ class OrderRepository {
 
       await OfflineSyncService.instance.queueOrder(
         tenantId: tenantId,
-        branchId: branchId,
+        locationId: locationId,
         tableId: tableId,
         createdBy: createdBy,
         items: items,
@@ -109,7 +109,7 @@ class OrderRepository {
       return Order(
         id: 'offline_temp_${DateTime.now().millisecondsSinceEpoch}',
         tenantId: tenantId,
-        branchId: branchId,
+        locationId: locationId,
         tableId: tableId,
         status: 'pending',
         subtotal: subtotal,

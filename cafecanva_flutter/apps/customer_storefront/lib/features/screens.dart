@@ -730,7 +730,7 @@ class _CartScreenState extends State<CartScreen> {
         // 1. Submit order
         final order = await _orderRepo.createOrder(
           tenantId: 'demo-tenant-5555',
-          branchId: 'demo-branch-7777',
+          locationId: 'demo-branch-7777',
           tableId: _isDineIn ? 'demo-table-1' : null,
           customerId: null,
           subtotal: subtotal,

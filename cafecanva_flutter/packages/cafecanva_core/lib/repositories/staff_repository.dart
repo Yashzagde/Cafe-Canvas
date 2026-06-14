@@ -7,11 +7,11 @@ import '../services/supabase_service.dart';
 class StaffRepository {
   StaffRepository._();
 
-  static Future<List<UserProfile>> getStaff(String tenantId, {String? branchId}) async {
+  static Future<List<UserProfile>> getStaff(String tenantId, {String? locationId}) async {
     var query = SupabaseService.from('staff_accounts')
         .select()
         .eq('tenant_id', tenantId);
-    if (branchId != null) query = query.eq('location_id', branchId);
+    if (locationId != null) query = query.eq('location_id', locationId);
     final data = await query.order('full_name');
     return (data as List).map((e) => UserProfile.fromJson(e)).toList();
   }
@@ -31,7 +31,7 @@ class StaffRepository {
   // ─── ATTENDANCE ───
 
   static Future<List<Attendance>> getAttendance(String tenantId, {String? userId, String? date}) async {
-    var query = SupabaseService.from('attendance')
+    var query = SupabaseService.from('staff_attendance')
         .select()
         .eq('tenant_id', tenantId);
     if (userId != null) query = query.eq('staff_id', userId);
@@ -40,16 +40,17 @@ class StaffRepository {
     return (data as List).map((e) => Attendance.fromJson(e)).toList();
   }
 
-  static Future<void> checkIn(String tenantId, String userId, String branchId) async {
-    await SupabaseService.from('attendance').insert({
+  static Future<void> checkIn(String tenantId, String userId, String locationId) async {
+    await SupabaseService.from('staff_attendance').insert({
       'tenant_id': tenantId,
       'staff_id': userId,
+      'branch_id': locationId,
       'check_in': DateTime.now().toUtc().toIso8601String(),
     });
   }
 
   static Future<void> checkOut(String attendanceId) async {
-    await SupabaseService.from('attendance').update({
+    await SupabaseService.from('staff_attendance').update({
       'check_out': DateTime.now().toUtc().toIso8601String(),
     }).eq('id', attendanceId);
   }

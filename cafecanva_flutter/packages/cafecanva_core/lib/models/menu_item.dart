@@ -2,7 +2,6 @@
 class MenuItem {
   final String id;
   final String tenantId;
-  final String branchId;
   final String categoryId;
   final String name;
   final String? description;
@@ -23,7 +22,6 @@ class MenuItem {
   const MenuItem({
     required this.id,
     required this.tenantId,
-    required this.branchId,
     required this.categoryId,
     required this.name,
     this.description,
@@ -50,7 +48,6 @@ class MenuItem {
   factory MenuItem.fromJson(Map<String, dynamic> json) => MenuItem(
         id: json['id'] as String,
         tenantId: json['tenant_id'] as String,
-        branchId: json['branch_id'] as String,
         categoryId: json['category_id'] as String,
         name: json['name'] as String,
         description: json['description'] as String?,
@@ -71,7 +68,6 @@ class MenuItem {
 
   Map<String, dynamic> toJson() => {
         'tenant_id': tenantId,
-        'branch_id': branchId,
         'category_id': categoryId,
         'name': name,
         'description': description,
@@ -104,7 +100,6 @@ class MenuItem {
       MenuItem(
         id: id,
         tenantId: tenantId,
-        branchId: branchId,
         categoryId: categoryId ?? this.categoryId,
         name: name ?? this.name,
         description: description ?? this.description,

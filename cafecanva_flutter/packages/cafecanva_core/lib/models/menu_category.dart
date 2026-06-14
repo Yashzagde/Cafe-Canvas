@@ -2,7 +2,6 @@
 class MenuCategory {
   final String id;
   final String tenantId;
-  final String branchId;
   final String name;
   final String? icon;
   final int sortOrder;
@@ -13,7 +12,6 @@ class MenuCategory {
   const MenuCategory({
     required this.id,
     required this.tenantId,
-    required this.branchId,
     required this.name,
     this.icon,
     this.sortOrder = 0,
@@ -25,7 +23,6 @@ class MenuCategory {
   factory MenuCategory.fromJson(Map<String, dynamic> json) => MenuCategory(
         id: json['id'] as String,
         tenantId: json['tenant_id'] as String,
-        branchId: json['branch_id'] as String,
         name: json['name'] as String,
         icon: json['icon'] as String?,
         sortOrder: json['sort_order'] as int? ?? 0,
@@ -36,7 +33,6 @@ class MenuCategory {
 
   Map<String, dynamic> toJson() => {
         'tenant_id': tenantId,
-        'branch_id': branchId,
         'name': name,
         'icon': icon,
         'sort_order': sortOrder,
@@ -46,7 +42,6 @@ class MenuCategory {
   MenuCategory copyWith({String? name, String? icon, int? sortOrder, bool? isVisible}) => MenuCategory(
         id: id,
         tenantId: tenantId,
-        branchId: branchId,
         name: name ?? this.name,
         icon: icon ?? this.icon,
         sortOrder: sortOrder ?? this.sortOrder,

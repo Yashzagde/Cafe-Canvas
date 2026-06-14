@@ -8,6 +8,7 @@ import { createClient } from '@/utils/supabase/client';
 import { getThemeDesign } from '@/lib/theme-designs';
 import { loadTenantTheme } from '@/lib/theme-engine';
 import html2canvas from 'html2canvas';
+import type { HeroSlide } from '@/types/database';
 
 
 interface StoreTheme {
@@ -1246,9 +1247,9 @@ export default function StorefrontEditor({
   };
 
   const mapUiConfigToDbPayload = (config: any) => {
-    const slides: any[] = [];
+    const slides: HeroSlide[] = [];
     
-    const slide1 = {
+    const slide1: HeroSlide = {
       image_url: config.hero_image_url || null,
       title: config.hero_title || null,
       subtitle: config.hero_subtitle || null,
@@ -1257,7 +1258,7 @@ export default function StorefrontEditor({
       slides.push(slide1);
     }
 
-    const slide2 = {
+    const slide2: HeroSlide = {
       image_url: config.hero_image_url_2 || null,
       title: config.hero_title_2 || null,
       subtitle: config.hero_subtitle_2 || null,
@@ -1266,7 +1267,7 @@ export default function StorefrontEditor({
       slides.push(slide2);
     }
 
-    const slide3 = {
+    const slide3: HeroSlide = {
       image_url: config.hero_image_url_3 || null,
       title: config.hero_title_3 || null,
       subtitle: config.hero_subtitle_3 || null,

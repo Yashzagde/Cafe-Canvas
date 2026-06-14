@@ -457,10 +457,10 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
     super.initState();
     _loadTables();
     
-    final branchId = AuthService.branchId ?? 'demo-branch-7777';
+    final locationId = AuthService.locationId ?? 'demo-branch-7777';
     // Blocker 3: Postgres real-time channels strictly bounded inside branch isolation filters
     RealtimeService.instance.subscribeToTableChanges(
-      branchId: branchId,
+      locationId: locationId,
       onTableUpdated: (payload) {
         _loadTables();
       },
@@ -487,7 +487,7 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
       );
 
       RealtimeService.instance.subscribeToStaffCalls(
-        branchId: branchId,
+        locationId: locationId,
         tenantId: tenantId,
         onCallReceived: (record) {
           _showStaffCallAlert(record);
@@ -596,20 +596,23 @@ class _FloorPlanScreenState extends State<FloorPlanScreen> {
   }
 
   Future<void> _loadTables() async {
-    final branchId = AuthService.branchId ?? 'demo-branch-7777';
+    final locationId = AuthService.locationId ?? 'demo-branch-7777';
     try {
-      final list = await _tableRepo.fetchTables(branchId);
+      final list = await _tableRepo.fetchTables(locationId);
       
       // Fetch and cache branch printer width preference from Supabase to Hive
       try {
-        final settingsRes = await SupabaseService.client
-            .from('store_settings')
-            .select('printer_width')
-            .eq('branch_id', branchId)
-            .maybeSingle();
-        if (settingsRes != null) {
-          final width = settingsRes['printer_width'] as String? ?? 'mm80';
-          await Hive.box('session').put('printer_width', width);
+        final tenantId = AuthService.tenantId;
+        if (tenantId != null) {
+          final settingsRes = await SupabaseService.client
+              .from('store_settings')
+              .select('printer_width')
+              .eq('tenant_id', tenantId)
+              .maybeSingle();
+          if (settingsRes != null) {
+            final width = settingsRes['printer_width'] as String? ?? 'mm80';
+            await Hive.box('session').put('printer_width', width);
+          }
         }
       } catch (_) {
         // Silently fallback if offline
@@ -793,10 +796,10 @@ class _OrderBuilderScreenState extends State<OrderBuilderScreen> {
   }
 
   Future<void> _loadMenu() async {
-    final branchId = AuthService.branchId ?? 'demo-branch-7777';
+    final locationId = AuthService.locationId ?? 'demo-branch-7777';
     try {
-      final categories = await _menuRepo.fetchCategories(branchId);
-      final items = await _menuRepo.fetchItems(branchId);
+      final categories = await _menuRepo.fetchCategories(locationId);
+      final items = await _menuRepo.fetchItems(locationId);
 
       if (mounted) {
         setState(() {
@@ -953,10 +956,10 @@ class _OrderBuilderScreenState extends State<OrderBuilderScreen> {
       }).toList();
 
       final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
-      final branchId = AuthService.branchId ?? 'demo-branch-7777';
+      final locationId = AuthService.locationId ?? 'demo-branch-7777';
       await _orderRepo.createOrder(
         tenantId: tenantId,
-        branchId: branchId,
+        locationId: locationId,
         tableId: widget.tableId,
         customerId: null,
         subtotal: subtotal,
@@ -1340,9 +1343,9 @@ class _ActiveOrdersQueueState extends State<ActiveOrdersQueue> {
   }
 
   Future<void> _loadActive() async {
-    final branchId = AuthService.branchId ?? 'demo-branch-7777';
+    final locationId = AuthService.locationId ?? 'demo-branch-7777';
     try {
-      final list = await _orderRepo.fetchOrders(branchId);
+      final list = await _orderRepo.fetchOrders(locationId);
       if (mounted) {
         setState(() {
           _orders = list;
@@ -1499,10 +1502,10 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
     try {
       setState(() => _isLoading = true);
       final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
-      final branchId = AuthService.branchId ?? 'demo-branch-7777';
+      final locationId = AuthService.locationId ?? 'demo-branch-7777';
 
       // Load store settings
-      final settings = await SettingsRepository.getStoreSettings(tenantId, branchId);
+      final settings = await SettingsRepository.getStoreSettings(tenantId, locationId);
 
       // Try to load existing open bill for this table first
       final existingBill = await BillingRepository.getOpenBillForTable(widget.tableId);
@@ -1521,7 +1524,7 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
       final bill = await BillingRepository.generateBill(
         tableId: widget.tableId,
         tenantId: tenantId,
-        branchId: branchId,
+        locationId: locationId,
         createdBy: createdBy,
       );
 
@@ -1559,13 +1562,11 @@ class _BillSettlementScreenState extends State<BillSettlementScreen> {
 
       final printService = BillingFactory.createPrintService(mode: PrintMode.bluetooth);
       final tenantId = AuthService.tenantId ?? 'demo-tenant-5555';
-      final branchId = AuthService.branchId ?? 'demo-branch-7777';
       await printService.printReceipt(
         bill: _bill!,
         settings: StoreSettings(
           id: 'demo-sett',
           tenantId: tenantId,
-          branchId: branchId,
           storeName: _storeSettings?.storeName ?? 'CafeCanva',
           address: _storeSettings?.address,
           gstin: _storeSettings?.gstin,

@@ -1,7 +1,8 @@
 const postgres = require('postgres');
 require('dotenv').config({ path: '.env.local' });
 
-const sql = postgres(process.env.DATABASE_URL);
+// Add ssl: 'require' option for Supabase connection
+const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
 
 async function check() {
   try {

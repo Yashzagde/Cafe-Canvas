@@ -7,11 +7,10 @@ import '../services/supabase_service.dart';
 class SettingsRepository {
   SettingsRepository._();
 
-  static Future<StoreSettings?> getStoreSettings(String tenantId, String branchId) async {
+  static Future<StoreSettings?> getStoreSettings(String tenantId, String locationId) async {
     final data = await SupabaseService.from('store_settings')
         .select()
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
         .maybeSingle();
     if (data == null) return null;
     return StoreSettings.fromJson(data);
@@ -24,8 +23,8 @@ class SettingsRepository {
 
 
 
-  static Future<String> uploadLogo(String tenantId, String branchId, List<int> imageBytes) async {
-    final path = '$tenantId/$branchId/logo.png';
+  static Future<String> uploadLogo(String tenantId, String locationId, List<int> imageBytes) async {
+    final path = '$tenantId/$locationId/logo.png';
     await SupabaseService.storage.from('menu-images').uploadBinary(
       path,
       Uint8List.fromList(imageBytes),

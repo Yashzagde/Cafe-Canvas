@@ -6,14 +6,14 @@ class AnalyticsRepository {
   AnalyticsRepository._();
 
   /// Get dashboard summary: today's revenue, order count, table occupancy.
-  static Future<Map<String, dynamic>> getDashboardSummary(String tenantId, String branchId) async {
+  static Future<Map<String, dynamic>> getDashboardSummary(String tenantId, String locationId) async {
     final today = DateFormatter.startOfTodayIso();
 
     // Today's orders
     final ordersData = await SupabaseService.from('orders')
         .select('id, total, status')
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
+        .eq('location_id', locationId)
         .gte('created_at', today);
 
     final orders = ordersData as List;
@@ -27,7 +27,7 @@ class AnalyticsRepository {
     final tablesData = await SupabaseService.from('tables')
         .select('id, status')
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
+        .eq('location_id', locationId)
         .isFilter('deleted_at', null);
 
     final tables = tablesData as List;
@@ -46,14 +46,14 @@ class AnalyticsRepository {
 
   /// Get top-selling items.
   static Future<List<Map<String, dynamic>>> getTopItems(
-    String tenantId, String branchId, {int limit = 10}
+    String tenantId, String locationId, {int limit = 10}
   ) async {
     // This would ideally be a DB function/view, but we can aggregate client-side
     final today = DateFormatter.startOfWeekIso();
     final ordersData = await SupabaseService.from('orders')
         .select('id')
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
+        .eq('location_id', locationId)
         .eq('status', 'paid')
         .gte('created_at', today);
 
@@ -84,13 +84,13 @@ class AnalyticsRepository {
 
   /// Get revenue chart data (daily for the last 7 days).
   static Future<List<Map<String, dynamic>>> getRevenueChart(
-    String tenantId, String branchId,
+    String tenantId, String locationId,
   ) async {
     final weekAgo = DateFormatter.startOfWeekIso();
     final data = await SupabaseService.from('bills')
         .select('total, created_at')
         .eq('tenant_id', tenantId)
-        .eq('branch_id', branchId)
+        .eq('location_id', locationId)
         .eq('status', 'paid')
         .gte('created_at', weekAgo)
         .order('created_at');

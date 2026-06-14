@@ -25,7 +25,7 @@ final GoRouter _router = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const KdsDashboardScreen(branchId: 'demo-branch-7777'),
+      builder: (context, state) => const KdsDashboardScreen(locationId: 'demo-branch-7777'),
     ),
     GoRoute(
       path: '/unauthorized',
